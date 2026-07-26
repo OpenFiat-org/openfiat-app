@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const SECTIONS: Array<[string, Array<[string, string]>]> = [
@@ -30,7 +31,10 @@ const SECTIONS: Array<[string, Array<[string, string]>]> = [
 export function Sidebar() {
   return (
     <aside className="w-60 shrink-0 border-r border-white/10 p-4">
-      <div className="mb-6 text-lg font-semibold text-white">OpenFiat</div>
+      <div className="mb-6 flex items-center gap-2 text-lg font-semibold text-white">
+        <Image src="/logo.png" alt="" width={24} height={24} priority />
+        OpenFiat
+      </div>
       <nav className="space-y-4">
         {SECTIONS.map(([title, links], i) => (
           <div key={title || i}>
@@ -44,7 +48,7 @@ export function Sidebar() {
                 <Link
                   key={href}
                   href={href}
-                  className="block rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                  className="block rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-brand-hover"
                 >
                   {label}
                 </Link>

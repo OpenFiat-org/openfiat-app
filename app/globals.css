@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Brand palette, sampled from the OpenFiat logo (blue → teal gradient). */
+@theme {
+  --color-brand: #0070f8;
+  --color-brand-hover: #2b8fff;
+  --color-brand-teal: #00b098;
+}
+
 body {
   background: #0a0e14;
   color: #e5e7eb;
