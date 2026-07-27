@@ -7,7 +7,8 @@ import {
   getCountry,
   searchCountries,
 } from "@/lib/data/countries";
-import { DISPUTES } from "@/lib/data/disputes";
+import { DISPUTES, DISPUTE_OUTCOMES } from "@/lib/data/disputes";
+import { DISPUTE_STAGES, disputeStageIndex, evidenceVisible, isDisputeParty } from "@/lib/types";
 import { PROPOSALS } from "@/lib/data/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
 import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
@@ -365,10 +366,94 @@ describe("disputes", () => {
     }
   });
 
-  it("closed disputes have an outcome", () => {
+  it("closed disputes have an outcome and a settled escrow", () => {
     for (const d of DISPUTES) {
-      if (d.status === "Closed") expect(d.outcome).toBeDefined();
+      if (d.stage !== "Closed") continue;
+      expect(d.outcome, d.id).toBeDefined();
+      expect(d.settlement, d.id).toBeDefined();
+      expect(d.tally, d.id).toBeDefined();
     }
+  });
+
+  it("carries the full dispute record", () => {
+    // OFS-2400 §8 enumerates what a dispute contains; a record missing the
+    // reservation or advertisement cannot be audited against the trade.
+    for (const d of DISPUTES) {
+      for (const field of [d.id, d.tradeId, d.reservationId, d.adId, d.buyerWallet, d.merchantWallet]) {
+        expect(field, d.id).toBeTruthy();
+      }
+      expect(DISPUTE_STAGES, d.id).toContain(d.stage);
+    }
+  });
+
+  it("withholds the arbitrator threshold while a case is open", () => {
+    // Chapter 11 §11.9: publishing the required count would let anyone
+    // estimate the value at risk, so it is only knowable once locked.
+    for (const d of DISPUTES) {
+      if (d.stage === "Arbitrators Joining") expect(d.seatsRequired, d.id).toBeNull();
+      else expect(d.seatsRequired, d.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("seals evidence from arbitrators who have not committed stake", () => {
+    // §11.8 information isolation — the property that makes bribery before
+    // participation pointless.
+    const joining = DISPUTES.find((d) => d.stage === "Arbitrators Joining");
+    expect(joining).toBeDefined();
+    if (!joining) return;
+    expect(joining.viewerRole).toBe("Prospective arbitrator");
+    expect(evidenceVisible(joining, false)).toBe(false);
+    expect(evidenceVisible(joining, true)).toBe(true);
+
+    // Reaching a later stage does not unseal it for a passer-by. Evidence goes
+    // to seated arbitrators; §13 distributes references, not contents.
+    const revealing = DISPUTES.find(
+      (d) => d.stage === "Reveal Phase" && !isDisputeParty(d),
+    );
+    expect(revealing).toBeDefined();
+    if (revealing) expect(evidenceVisible(revealing, false)).toBe(false);
+
+    // A party to the trade submitted the evidence, so sealing it from them
+    // would protect nothing.
+    const own = DISPUTES.find((d) => isDisputeParty(d));
+    expect(own).toBeDefined();
+    if (own) expect(evidenceVisible(own, false)).toBe(true);
+  });
+
+  it("decides by commit-and-reveal, never by a single named arbitrator", () => {
+    for (const d of DISPUTES) {
+      // More than one seat on any case that has reached voting.
+      if (disputeStageIndex(d.stage) >= disputeStageIndex("Commit Phase")) {
+        expect(d.arbitrators.length, d.id).toBeGreaterThan(1);
+      }
+      // A revealed vote always has a commitment behind it: only reveals
+      // matching an earlier commitment are counted (§11.12).
+      for (const a of d.arbitrators) {
+        if (a.revealed) expect(a.commitment, `${d.id}/${a.id}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("slashes minority reveals partially and rewards consensus", () => {
+    const closed = DISPUTES.find((d) => d.stage === "Closed");
+    expect(closed).toBeDefined();
+    if (!closed) return;
+    const minority = closed.arbitrators.filter((a) => a.withConsensus === false);
+    const majority = closed.arbitrators.filter((a) => a.withConsensus === true);
+    expect(minority.length).toBeGreaterThan(0);
+    expect(majority.length).toBeGreaterThan(minority.length);
+    for (const a of minority) {
+      expect(a.slashed, a.id).toBeGreaterThan(0);
+      // §11.16: moderate and partial — honest arbitrators sometimes disagree.
+      expect(a.slashed!).toBeLessThan(a.stake);
+    }
+    for (const a of majority) expect(a.reward, a.id).toBeGreaterThan(0);
+  });
+
+  it("does not offer partial settlement, which the spec defers", () => {
+    // OFS-2400 §17 marks Partial Settlement as future work.
+    expect(DISPUTE_OUTCOMES).not.toContain("Partial Settlement");
+    expect(DISPUTE_OUTCOMES).toHaveLength(4);
   });
 });
 
