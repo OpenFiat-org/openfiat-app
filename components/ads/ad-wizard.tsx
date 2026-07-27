@@ -22,6 +22,7 @@ interface Draft {
   premium: string;
   min: string;
   max: string;
+  minRep: string;
   liquidity: string;
   methods: string[];
 }
@@ -36,6 +37,7 @@ const DEFAULT_DRAFT: Draft = {
   premium: "0.8",
   min: "5000",
   max: "250000",
+  minRep: "",
   liquidity: "10000",
   methods: ["M-Pesa Kenya (Safaricom)"],
 };
@@ -93,7 +95,7 @@ export function AdWizard() {
     }
   }
 
-  const { step, direction, asset, fiat, pricingType, price, premium, min, max, liquidity, methods } = draft;
+  const { step, direction, asset, fiat, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
 
   // Indicative price from the static FX table
   const fx = fxPerUsd(fiat);
@@ -301,6 +303,33 @@ export function AdWizard() {
                 <span className="text-xs tabular-nums text-gray-500">Vault available {formatNumber(vaultAvailable)} {asset}</span>
               </div>
               <input value={liquidity} onChange={(e) => patch({ liquidity: e.target.value })} type="number" className={inputCls} />
+            </div>
+
+            {/* Counterparty floor. Advisory rather than enforced — see the
+                field's note in lib/types.ts — so the copy says what it does and
+                what it does not do. */}
+            <div>
+              <label className={labelCls} htmlFor="min-rep">
+                Minimum counterparty reputation
+              </label>
+              <select
+                id="min-rep"
+                value={minRep}
+                onChange={(e) => patch({ minRep: e.target.value })}
+                className={inputCls}
+              >
+                <option value="">Trade with anyone</option>
+                <option value="60">60+ — exclude poor records</option>
+                <option value="70">70+ — established counterparties</option>
+                <option value="80">80+ — strong records only</option>
+                <option value="90">90+ — very restrictive</option>
+              </select>
+              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                This client will not let anyone below your floor open an order,
+                and tells them why. It is a preference, not a protocol rule —
+                nothing on chain enforces it, and a high floor excludes every new
+                participant, which costs you volume.
+              </p>
             </div>
           </div>
         )}

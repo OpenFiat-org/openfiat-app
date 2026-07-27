@@ -89,6 +89,21 @@ export interface Advertisement {
    * they settle. Shown before a taker commits rather than discovered in chat.
    */
   terms?: string;
+  /**
+   * Minimum counterparty reputation the merchant will trade with.
+   *
+   * Not a protocol field: OFS-2100 §6 enumerates what an advertisement contains
+   * and this is not in it. It is an application-level preference, so it is
+   * advisory — this client will not open an order below it and says why, but a
+   * different client is under no obligation to honour it, and nothing on chain
+   * enforces it. Presenting it as a hard gate would be a lie about where the
+   * enforcement lives.
+   *
+   * Filtering on reputation is squarely within OFS-3000 §22, which leaves
+   * marketplace ranking to the application; requiring it is the part the
+   * protocol does not speak to.
+   */
+  minCounterpartyReputation?: number;
   status: AdStatus;
   updatedAt: string; // ISO timestamp
 }

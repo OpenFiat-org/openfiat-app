@@ -65,8 +65,8 @@ function floating(premiumPct: number): PricingModel {
 export const ADS: Advertisement[] = [
   // --- Merchant Sell ads (shown under the taker's "Buy" tab) ---
   { id: "AD-1001", merchantId: "m-kenyastar", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.45), minTrade: 5000, maxTrade: 500000, availableLiquidity: 25430.5, paymentMethods: [MPESA, EQUITY], terms: "Send from an account in your own name — third-party transfers are rejected and refunded. Use the trade ID as the M-Pesa reference. I settle 07:00–22:00 EAT.", status: "Online", updatedAt: "2026-07-27T13:58:00Z" },
-  { id: "AD-1002", merchantId: "m-swiftkes", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(0.8), minTrade: 2000, maxTrade: 250000, availableLiquidity: 12000, paymentMethods: [MPESA, POCHI, IM_BANK], terms: "Bank transfers only from a Kenyan account you hold. Put the trade ID in the reference field or I cannot match your payment. No cash deposits at the branch.", status: "Online", updatedAt: "2026-07-27T13:55:00Z" },
-  { id: "AD-1003", merchantId: "m-westlands", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.9), minTrade: 10000, maxTrade: 2000000, availableLiquidity: 85000, paymentMethods: [EQUITY, KCB, IM_BANK], terms: "Large amounts welcome. For anything above 500,000 KES message me first so I can confirm the vault has the depth. Reference must be the trade ID.", status: "Online", updatedAt: "2026-07-27T13:51:00Z" },
+  { id: "AD-1002", merchantId: "m-swiftkes", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(0.8), minTrade: 2000, maxTrade: 250000, availableLiquidity: 12000, paymentMethods: [MPESA, POCHI, IM_BANK], minCounterpartyReputation: 65, terms: "Bank transfers only from a Kenyan account you hold. Put the trade ID in the reference field or I cannot match your payment. No cash deposits at the branch.", status: "Online", updatedAt: "2026-07-27T13:55:00Z" },
+  { id: "AD-1003", merchantId: "m-westlands", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.9), minTrade: 10000, maxTrade: 2000000, availableLiquidity: 85000, paymentMethods: [EQUITY, KCB, IM_BANK], minCounterpartyReputation: 75, terms: "Large amounts welcome. For anything above 500,000 KES message me first so I can confirm the vault has the depth. Reference must be the trade ID.", status: "Online", updatedAt: "2026-07-27T13:51:00Z" },
   { id: "AD-1004", merchantId: "m-nairobihub", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(1.1), minTrade: 1000, maxTrade: 100000, availableLiquidity: 4200.75, paymentMethods: [MPESA], status: "Online", updatedAt: "2026-07-27T13:47:00Z" },
   { id: "AD-1005", merchantId: "m-mombasapay", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(133.1), minTrade: 500, maxTrade: 60000, availableLiquidity: 1850.2, paymentMethods: [MPESA, POCHI], status: "Online", updatedAt: "2026-07-27T13:40:00Z" },
   { id: "AD-1006", merchantId: "m-thika", asset: "USDC", direction: "Sell", fiatCurrency: "KES", pricing: fixed(131.8), minTrade: 3000, maxTrade: 150000, availableLiquidity: 9600, paymentMethods: [MPESA, KCB], status: "Online", updatedAt: "2026-07-27T13:32:00Z" },
@@ -358,6 +358,9 @@ function generateBook(): Advertisement[] {
         // One in seven advertisers sets no terms, which is realistic and keeps
         // the empty state on screen rather than only in theory.
         terms: GENERATED_TERMS[Math.floor(rand() * GENERATED_TERMS.length)] || undefined,
+        // About a quarter of advertisers set a floor. Kept modest — a high one
+        // excludes every new participant, which is a real cost to the merchant.
+        minCounterpartyReputation: rand() < 0.26 ? 60 + Math.floor(rand() * 4) * 5 : undefined,
         status: rand() < 0.08 ? "Paused" : "Online",
         updatedAt: generatedTimestamp(),
       });

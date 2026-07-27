@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
+import { CURRENT_USER } from "@/lib/data/merchants";
+import { compositeScore } from "@/lib/reputation";
 import type { Advertisement, Merchant, TradeDirection } from "@/lib/types";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 
@@ -63,20 +65,36 @@ export function OrderPanel({
   const fiatAmount = Number(payText) || 0;
   const cryptoAmount = Number(receiveText) || 0;
 
+  /* The merchant's own floor on who they will trade with. Advisory — see the
+     field's note in lib/types.ts — so this client refuses and explains rather
+     than pretending something on chain stopped it. */
+  const myReputation = compositeScore(CURRENT_USER);
+  const belowFloor =
+    ad.minCounterpartyReputation !== undefined &&
+    myReputation < ad.minCounterpartyReputation;
+
   const tooLow = fiatAmount > 0 && fiatAmount < minFiat;
   const tooHigh = fiatAmount > maxFiat;
   const overLiquidity = cryptoAmount > ad.availableLiquidity;
   const ready =
-    fiatAmount > 0 && !tooLow && !tooHigh && !overLiquidity && (ad.international || method !== "");
+    fiatAmount > 0 &&
+    !tooLow &&
+    !tooHigh &&
+    !overLiquidity &&
+    !belowFloor &&
+    (ad.international || method !== "");
 
   const blocker = useMemo(() => {
+    if (belowFloor) {
+      return `This advertiser trades with counterparties at ${ad.minCounterpartyReputation}/100 or above. Yours is ${myReputation}/100 — complete more trades without disputes to raise it.`;
+    }
     if (fiatAmount <= 0) return `Enter an amount between ${formatFiat(minFiat, fiat, 0)} and ${formatFiat(maxFiat, fiat, 0)}`;
     if (tooLow) return `Below this advertiser's minimum of ${formatFiat(minFiat, fiat, 0)}`;
     if (tooHigh) return `Above this advertiser's maximum of ${formatFiat(maxFiat, fiat, 0)}`;
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
     if (!ad.international && !method) return "Choose a payment method";
     return null;
-  }, [fiatAmount, tooLow, tooHigh, overLiquidity, ad, method, minFiat, maxFiat, fiat]);
+  }, [fiatAmount, tooLow, tooHigh, overLiquidity, belowFloor, myReputation, ad, method, minFiat, maxFiat, fiat]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -152,6 +170,12 @@ export function OrderPanel({
               }
             />
             <Fact label="Settles in" value={merchant.settlementSpeed} />
+            {ad.minCounterpartyReputation !== undefined && (
+              <Fact
+                label="Requires reputation"
+                value={`${ad.minCounterpartyReputation}/100 · you have ${myReputation}`}
+              />
+            )}
           </dl>
 
           <p className="mt-6 max-w-prose text-xs leading-relaxed text-gray-500">
