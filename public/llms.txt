@@ -1,0 +1,68 @@
+# OpenFiat — P2P Stablecoin Exchange
+
+> The default web application for OpenFiat, an open protocol for exchanging stablecoins for local fiat currency peer to peer. Solana programs hold escrow and settle; the OpenFiat network coordinates the marketplace — advertisements, reputation, disputes, messaging and service discovery. There is no exchange operator, and no company ever holds a user's fiat.
+
+Deployed at https://app.openfiat.network
+
+## What this app is not
+
+- **Not a custodian.** Fiat moves directly between counterparties' own bank or mobile-money accounts. There is no platform balance.
+- **Not an escrow provider.** A Solana program holds the crypto and releases it on the trade's outcome. Neither OpenFiat nor any node operator can release it early.
+- **Not an arbiter.** Disputes are decided by independent arbitrators who stake OPEN, cannot see evidence until they commit, and vote by commit-and-reveal. There is no support queue and no operator with a final say.
+- **Not KYC'd.** The protocol defines no document verification at any level (OFS-5000). Identity claims are optional, self-published and cryptographically signed; the highest merchant level publishes a business name and support contacts, and explicitly does not imply regulatory approval.
+
+## Current status
+
+Every screen is navigable with deterministic demo data. There is no backend and no wallet signer — all actions are client-side simulations, and the interface says so on every page. It becomes the live application once wired to an OpenFiat node.
+
+## How a trade works
+
+1. A taker picks an advertisement from the order book and opens the order form in place.
+2. The crypto locks in the Solana escrow program before any fiat moves.
+3. The fiat leg happens on the counterparty's own payment rail — mobile money, instant bank transfer, a local payment app, or cash.
+4. The payer marks it paid and attaches proof. Proof is required, because it is what an arbitrator reads.
+5. The receiver confirms the money arrived in their own account and escrow releases.
+6. If either side stalls or disagrees, a dispute freezes escrow and staked arbitrators decide it.
+
+## Key pages
+
+- [P2P exchange](https://app.openfiat.network/): the order book, with a three-step walkthrough and what distinguishes this from a centralised exchange.
+- [Countries](https://app.openfiat.network/countries): 253 countries and territories, each with its own market page, local currency and local payment rails.
+- [How to buy](https://app.openfiat.network/guide/buy): fiat on-ramp, step by step.
+- [How to sell](https://app.openfiat.network/guide/sell): fiat off-ramp, including the one rule that matters — never release before checking your own account.
+- [How to become a merchant](https://app.openfiat.network/guide/merchant): the OPEN bond, the liquidity vault, and what being a merchant commits you to.
+- [Disputes](https://app.openfiat.network/disputes): arbitrator eligibility, and cases at each stage of the lifecycle.
+- [Governance](https://app.openfiat.network/governance): OPEN-weighted proposals and treasury.
+- [Service providers](https://app.openfiat.network/providers): the permissionless service registry.
+- [Register a service](https://app.openfiat.network/providers/register): what a signed registration event requires. No application, no reviewer.
+- [Network](https://app.openfiat.network/network): nodes, peers and the protocol event stream.
+- [OPEN token](https://app.openfiat.network/open): the presale. OPEN is 1:1 with USDC and has no P2P market until mainnet.
+
+## Assets and currencies
+
+Stablecoins: USDT, USDC, USD1. Plus SOL. OPEN is the protocol's own token — staked by merchants, arbitrators, node operators and service providers as accountability, and used for governance. It is not the asset being traded.
+
+91 fiat currencies have local payment rails; every market also accepts cash, in person or as a bank deposit, because cash is the only rail that exists everywhere.
+
+## Reputation
+
+Eight independent dimensions per OFS-3000, not one score: settlement speed, trade success rate, dispute rate, trade volume, average ticket size, merchant age, availability, payment accuracy. The protocol deliberately defines no formula for combining them. Where this app shows a single figure, it summarises the five that describe conduct and says so — volume, ticket size and account age describe scale, not behaviour.
+
+## Specifications
+
+The protocol is defined in 26 numbered specifications and a 28-chapter whitepaper: https://github.com/OpenFiat-org/openfiat-specs
+
+Ones this app implements against most directly:
+
+- OFS-2100 — Advertisement Protocol
+- OFS-2300 — Settlement Protocol
+- OFS-2400 — Dispute Protocol
+- OFS-3000 — Reputation Engine
+- OFS-1500 — Service Registry Protocol
+- OFS-5000 — Identity Claims Protocol
+
+## Elsewhere
+
+- Website: https://openfiat.network
+- Documentation: https://docs.openfiat.network
+- Source: https://github.com/OpenFiat-org

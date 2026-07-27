@@ -650,6 +650,64 @@ describe("protocol events", () => {
   });
 });
 
+describe("sitemap coverage", () => {
+  it("lists every static page route", async () => {
+    // The hand-written half of the sitemap is the part that drifts: four routes
+    // were live and unlisted before this test existed.
+    const { default: sitemap } = await import("@/app/sitemap");
+    const listed = new Set(
+      sitemap().map((e) => new URL(e.url).pathname.replace(/\/$/, "") || "/"),
+    );
+    const staticRoutes = [
+      "/",
+      "/countries",
+      "/open",
+      "/guide",
+      "/guide/buy",
+      "/guide/sell",
+      "/guide/merchant",
+      "/disputes",
+      "/governance",
+      "/network",
+      "/explorer",
+      "/providers",
+      "/providers/register",
+      "/staking",
+      "/staking/stake",
+      "/orders",
+      "/orders/new",
+      "/ads",
+      "/ads/new",
+      "/wallet",
+      "/wallet/deposit",
+      "/wallet/withdraw",
+      "/account/identity",
+      "/account/reputation",
+      "/settings",
+    ];
+    for (const route of staticRoutes) {
+      expect(listed.has(route), route).toBe(true);
+    }
+  });
+
+  it("lists every country, and every extra currency it trades in", async () => {
+    const { default: sitemap } = await import("@/app/sitemap");
+    const listed = new Set(sitemap().map((e) => new URL(e.url).pathname));
+    for (const c of COUNTRIES) {
+      expect(listed.has(`/country/${c.slug}`), c.slug).toBe(true);
+      for (const alt of c.altCurrencies ?? []) {
+        expect(listed.has(`/country/${c.slug}/${alt.toLowerCase()}`), `${c.slug}/${alt}`).toBe(true);
+      }
+    }
+  });
+
+  it("has no duplicate entries", async () => {
+    const { default: sitemap } = await import("@/app/sitemap");
+    const urls = sitemap().map((e) => e.url);
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+});
+
 describe("QR encoding", () => {
   it("produces a scannable grid with real finder patterns", () => {
     // The failure mode of a hand-rolled encoder is a code that looks right and
