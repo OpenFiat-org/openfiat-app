@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { INTERNATIONAL_MARKET, type Advertisement, type Merchant, type StablecoinAsset, type TradeDirection } from "@/lib/types";
 import { PUBLIC_ADS, adPrice, adPriceIn, fxPerUsd } from "@/lib/data/ads";
-import { PRESALE } from "@/lib/data/sale";
 import { merchantById } from "@/lib/data/merchants";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
@@ -17,7 +16,12 @@ import { HomeExplainer } from "@/components/home/explainer";
 import { OrderPanel } from "@/components/p2p/order-panel";
 import { compositeScore } from "@/lib/reputation";
 
-const ASSETS: Array<StablecoinAsset | "OPEN"> = ["USDT", "USDC", "USD1", "SOL", "OPEN"];
+/**
+ * Assets with an order book. OPEN is deliberately absent — it has no
+ * peer-to-peer market until mainnet, so it is linked to its own page rather
+ * than offered as a book to browse.
+ */
+const TRADED_ASSETS: StablecoinAsset[] = ["USDT", "USDC", "USD1", "SOL"];
 
 type SortKey = "price" | "limits" | "completion";
 
@@ -31,7 +35,6 @@ const selectCls =
   "rounded-md border border-white/10 px-3 py-2 text-sm text-gray-300 outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
 
 const STORAGE_KEY = "openfiat:market";
-const PRESALE_PCT = Math.round((PRESALE.raised / PRESALE.cap) * 100);
 
 // Only online ads appear on the public exchange book.
 const BOOK = PUBLIC_ADS.filter((a) => a.status === "Online");
@@ -77,8 +80,7 @@ export function P2PExchange({
   savePreference?: string;
 }) {
   const [tab, setTab] = useState<TradeDirection>("Buy");
-  const [asset, setAsset] = useState<StablecoinAsset | "OPEN">("USDT");
-  const isOpenAsset = asset === "OPEN";
+  const [asset, setAsset] = useState<StablecoinAsset>("USDT");
   const [fiat, setFiat] = useState(initialFiat);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
@@ -224,7 +226,7 @@ export function P2PExchange({
           ))}
         </div>
         <div className="flex gap-1">
-          {ASSETS.map((a) => (
+          {TRADED_ASSETS.map((a) => (
             <button
               key={a}
               onClick={() => setAsset(a)}
@@ -236,6 +238,26 @@ export function P2PExchange({
               {a}
             </button>
           ))}
+          {/*
+            * OPEN is a link, not a tab.
+            *
+            * As a tab it replaced the order book with a presale panel, which
+            * left you on a page with no market and no obvious way back — and
+            * clicking the nav link for the page you are already on does not
+            * remount the view, so "go home" did not clear it either. An earlier
+            * attempt bolted an exit onto that panel, which treated the symptom.
+            * OPEN has no order book, so it does not belong in a control whose
+            * job is choosing which order book to show.
+            */}
+          <Link
+            href="/open"
+            className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+            title="OPEN is in presale — it has no peer-to-peer market until mainnet"
+          >
+            <AssetIcon asset="OPEN" size={16} />
+            OPEN
+            <span aria-hidden className="text-gray-600">↗</span>
+          </Link>
         </div>
         <p className="ml-auto text-xs text-gray-500">
           Buying crypto with fiat?{" "}
@@ -247,7 +269,7 @@ export function P2PExchange({
       </div>
 
       {/* Filter row */}
-      {!isOpenAsset && (
+      {(
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 rounded-md border border-white/10 px-3">
           {/*
@@ -302,48 +324,7 @@ export function P2PExchange({
       </div>
       )}
 
-      {/* OPEN is not P2P-traded yet — presale info instead of the book */}
-      {isOpenAsset && (
-        <div className="mt-6 max-w-2xl border-y border-white/5 py-8">
-          <p className="text-lg font-semibold text-white">OPEN is in presale</p>
-          <p className="mt-2 text-sm text-gray-400">
-            OPEN P2P trading and swapping unlock when the network goes live — until then, OPEN is only available
-            through the official sale.
-          </p>
-          <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-            <span>Presale allocation</span>
-            <span className="tabular-nums">{PRESALE_PCT}% raised</span>
-          </div>
-          <div className="mt-2 h-2 rounded-full bg-white/10">
-            <div className="h-2 rounded-full bg-gradient-to-r from-brand to-brand-teal" style={{ width: `${PRESALE_PCT}%` }} />
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-4">
-            <Link
-              href="/open"
-              className="inline-block rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
-            >
-              Buy OPEN in the presale →
-            </Link>
-            {/*
-              * A way out. Selecting OPEN replaces the order book, and the only
-              * exits were the asset tabs above — which is a dead end if you
-              * arrived here and expected a market. Clicking the nav link for the
-              * page you are already on does not remount the view, so "go home"
-              * did not clear it either.
-              */}
-            <button
-              type="button"
-              onClick={() => setAsset("USDT")}
-              className="text-sm text-gray-400 underline decoration-white/20 underline-offset-4 hover:text-white"
-            >
-              Back to the {viewFiat} order book
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Advertiser list — flat rows, no containing box (Bybit-style) */}
-      {!isOpenAsset && (
+      {(
       <div className="mt-6">
         <DataTable
           minWidth={920}
