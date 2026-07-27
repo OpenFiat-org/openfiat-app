@@ -4,6 +4,7 @@ import {
   COUNTRIES,
   COUNTRIES_BY_SLUG,
   countriesByCurrency,
+  currenciesFor,
   getCountry,
   searchCountries,
 } from "@/lib/data/countries";
@@ -87,6 +88,29 @@ describe("countries registry", () => {
     const mop = paymentMethodsForCurrency("MOP");
     expect(mop).toContain("MPay");
     expect(mop).not.toEqual(["Bank Transfer"]);
+  });
+
+  it("records countries that trade in more than one currency", () => {
+    // A single currencyCode per country is wrong where it matters most: in a
+    // dollarised economy the USD leg is often the larger P2P market, and
+    // offering only the local currency hides it.
+    for (const slug of ["zimbabwe", "lebanon", "cambodia", "panama"]) {
+      const c = COUNTRIES_BY_SLUG.get(slug);
+      expect(c, slug).toBeDefined();
+      expect(c?.altCurrencies, slug).toContain("USD");
+      expect(currenciesFor(c!)[0], slug).toBe(c!.currencyCode);
+      expect(currenciesFor(c!).length, slug).toBeGreaterThan(1);
+    }
+    // Palestine's entry noted "JOD also used" in prose with nowhere structured
+    // to put it.
+    expect(COUNTRIES_BY_SLUG.get("palestine")?.altCurrencies).toContain("JOD");
+  });
+
+  it("never repeats a country's primary currency in its alternates", () => {
+    for (const c of COUNTRIES) {
+      const all = currenciesFor(c);
+      expect(new Set(all).size, c.name).toBe(all.length);
+    }
   });
 
   it("lookups work", () => {
