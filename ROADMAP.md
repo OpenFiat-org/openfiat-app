@@ -8,7 +8,10 @@ for the canonical protocol roadmap (Chapter 26, Roadmap & Future Vision).
 ## Status
 
 **Phase: Scaffolding.** This repository currently contains architecture and
-tooling scaffolding only. No production business logic has shipped yet.
+tooling scaffolding only. No production business logic has shipped yet — but
+the app now ships a fully simulated end-to-end UI (deterministic demo data,
+client-side simulated actions) covering the P2P exchange, orders, ads, wallet,
+disputes, identity, staking, governance, and network views.
 
 ## Near term
 

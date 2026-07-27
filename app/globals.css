@@ -5,9 +5,35 @@
   --color-brand: #0070f8;
   --color-brand-hover: #2b8fff;
   --color-brand-teal: #00b098;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
   background: #0a0e14;
   color: #e5e7eb;
+  /* Full-bleed hero bands (w-screen) must not create horizontal overflow. */
+  overflow-x: clip;
+}
+
+/* Native disclosure widgets used for collapsible panels. */
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Pointer cursor on every interactive control (buttons, pills, toggles, selects). */
+button,
+[role="button"],
+[role="switch"],
+select {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }

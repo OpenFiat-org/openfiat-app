@@ -1,15 +1,63 @@
-export default function Page() {
+import type { Metadata } from "next";
+import Link from "next/link";
+import { DISPUTES } from "@/lib/data/disputes";
+import { merchantByName } from "@/lib/data/merchants";
+import { formatDateShort } from "@/lib/format";
+import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { PageHero } from "@/components/page-hero";
+import { MerchantCell } from "@/components/merchant-cell";
+import { StatusPill } from "@/components/status-pill";
+
+export const metadata: Metadata = {
+  title: "Disputes",
+  description: "OpenFiat dispute arbitration — frozen escrow, evidence, and arbitrator decisions.",
+};
+
+export default function DisputesPage() {
   return (
     <section>
-      <h1 className="text-2xl font-semibold text-white">Disputes & arbitration</h1>
-      <p className="mt-1 text-sm text-gray-400">Every dispute case on the network — visible to validators acting as arbitrators, and to the parties involved.</p>
-            <div className="mt-4 flex gap-2 text-xs">
-        <span className="rounded-full bg-white/10 px-3 py-1 text-gray-300">All cases</span>
-        <span className="rounded-full px-3 py-1 text-gray-500">My disputes</span>
-        <span className="rounded-full px-3 py-1 text-gray-500">Awaiting arbitration</span>
-      </div>
-      <div className="mt-6 rounded-lg border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
-        No data yet — this view will populate once connected to an OpenFiat node.
+      <PageHero
+        variant="scales"
+        title="Disputes"
+        description="Disputes can only be opened on active trades. Opening one freezes the escrow PDA automatically until an arbitrator rules."
+      />
+
+      <div className="mt-8">
+        <DataTable
+          minWidth={820}
+          head={
+            <tr>
+              <Th>Dispute</Th>
+              <Th>Trade</Th>
+              <Th>Counterparty</Th>
+              <Th>Your role</Th>
+              <Th>Opened</Th>
+              <Th>Arbitrator</Th>
+              <Th right>Status</Th>
+            </tr>
+          }
+        >
+          {DISPUTES.map((d) => {
+            const counterparty = merchantByName(d.counterparty);
+            return (
+              <Tr key={d.id}>
+                <Td py="py-5">
+                  <Link href={`/disputes/${d.id}`} className="font-medium text-brand hover:text-brand-hover">
+                    {d.id}
+                  </Link>
+                </Td>
+                <Td py="py-5" className="text-gray-300">{d.tradeId}</Td>
+                <Td py="py-5">
+                  {counterparty ? <MerchantCell merchant={counterparty} /> : d.counterparty}
+                </Td>
+                <Td py="py-5" className="text-gray-400">{d.userRole}</Td>
+                <Td py="py-5" className="tabular-nums text-gray-400">{formatDateShort(d.openedAt)}</Td>
+                <Td py="py-5" className="text-xs text-gray-400">{d.arbitrator}</Td>
+                <Td py="py-5" right><StatusPill status={d.status} /></Td>
+              </Tr>
+            );
+          })}
+        </DataTable>
       </div>
     </section>
   );
