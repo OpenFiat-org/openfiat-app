@@ -169,14 +169,23 @@ function flowScene(ctx: Ctx, dir: 1 | -1): Scene {
   };
 }
 
-/** Dotted rotating wireframe globe (hand-rolled 2D projection). */
+/**
+ * Dotted rotating wireframe globe (hand-rolled 2D projection), with orbit
+ * arcs that run past both band edges.
+ *
+ * The globe is sized off the band height rather than min(w, h): on a hero
+ * that is ~240px tall and 1440px wide, min() picks the height anyway and then
+ * halves it, which left a small disc floating in an otherwise empty band. The
+ * arcs are what actually span the width — a globe alone cannot, without
+ * overflowing vertically.
+ */
 function globeScene(ctx: Ctx): Scene {
   let w = 0, h = 0;
   let pts: Array<[number, number, number]> = [];
   return {
     resize(nw, nh) {
       w = nw; h = nh;
-      const n = 260;
+      const n = 320;
       pts = [];
       for (let i = 0; i < n; i++) {
         const y = 1 - (i / (n - 1)) * 2; // fibonacci sphere
@@ -187,15 +196,43 @@ function globeScene(ctx: Ctx): Scene {
     },
     frame(t) {
       ctx.clearRect(0, 0, w, h);
-      const R = Math.min(w, h) * 0.42;
-      const cx = w * 0.72, cy = h * 0.52;
+      const R = h * 0.6;
+      const cx = w * 0.72, cy = h * 0.5;
       const rot = t * 0.25;
       const cosR = Math.cos(rot), sinR = Math.sin(rot);
-      // faint latitude rings
+
+      // Orbit arcs. Radii are multiples of the full width, so each one enters
+      // at one edge and leaves at the other rather than closing inside view.
+      for (let k = 0; k < 4; k++) {
+        const rx = w * (0.34 + k * 0.22);
+        const ry = h * (0.5 + k * 0.28);
+        const tilt = -0.22 + k * 0.1 + Math.sin(t * 0.12 + k) * 0.03;
+        ctx.strokeStyle = k % 2 ? TEAL(0.07) : BLUE(0.09);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, tilt, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Travelling markers along the arcs, so the width reads as motion.
+      for (let k = 0; k < 4; k++) {
+        const rx = w * (0.34 + k * 0.22);
+        const ry = h * (0.5 + k * 0.28);
+        const tilt = -0.22 + k * 0.1;
+        const a = t * (0.3 - k * 0.05) + k * 1.7;
+        const ex = Math.cos(a) * rx, ey = Math.sin(a) * ry;
+        const px = cx + ex * Math.cos(tilt) - ey * Math.sin(tilt);
+        const py = cy + ex * Math.sin(tilt) + ey * Math.cos(tilt);
+        ctx.fillStyle = k % 2 ? TEAL(0.5) : BLUE_LIGHT(0.5);
+        ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
+      }
+
+      // Faint latitude rings on the globe itself.
       for (const lat of [-0.5, 0, 0.5]) {
+        const rr = R * Math.sqrt(1 - lat * lat);
         ctx.strokeStyle = BLUE(0.07);
         ctx.beginPath();
-        ctx.ellipse(cx, cy + R * lat, R * Math.sqrt(1 - lat * lat), R * Math.sqrt(1 - lat * lat) * 0.28, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy + R * lat, rr, rr * 0.28, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
       for (const [x0, y0, z0] of pts) {
@@ -237,7 +274,13 @@ function ledgerScene(ctx: Ctx): Scene {
   };
 }
 
-/** Beacons — concentric expanding rings from fixed points. */
+/**
+ * Beacons — concentric expanding rings from fixed points.
+ *
+ * Five beacons rather than three, spread to both edges, with a ring radius
+ * scaled off the width so they overlap instead of sitting as three isolated
+ * targets in a wide band.
+ */
 function pulseScene(ctx: Ctx): Scene {
   let w = 0, h = 0;
   return {
@@ -245,11 +288,13 @@ function pulseScene(ctx: Ctx): Scene {
     frame(t) {
       ctx.clearRect(0, 0, w, h);
       const points: Array<[number, number, boolean]> = [
-        [w * 0.22, h * 0.62, false],
-        [w * 0.55, h * 0.34, true],
-        [w * 0.82, h * 0.66, false],
+        [w * 0.04, h * 0.5, false],
+        [w * 0.24, h * 0.66, true],
+        [w * 0.46, h * 0.32, false],
+        [w * 0.68, h * 0.7, true],
+        [w * 0.92, h * 0.42, false],
       ];
-      const maxR = 120;
+      const maxR = Math.max(120, w * 0.14);
       for (const [px, py, teal] of points) {
         ctx.fillStyle = teal ? TEAL(0.4) : BLUE_LIGHT(0.4);
         ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
@@ -267,7 +312,14 @@ function pulseScene(ctx: Ctx): Scene {
   };
 }
 
-/** Arbitration scales — a slow balance beam swinging around a pivot. */
+/**
+ * Arbitration scales — a slow balance beam swinging around a pivot, with the
+ * evidence rules running out to both band edges.
+ *
+ * The beam is a fraction of the width, not of min(w, h): the latter pinned it
+ * to roughly 130px on a 1440px band, leaving the scales marooned in the
+ * middle. The horizontal rules carry the rest of the width.
+ */
 function scalesScene(ctx: Ctx): Scene {
   let w = 0, h = 0;
   return {
@@ -275,7 +327,23 @@ function scalesScene(ctx: Ctx): Scene {
     frame(t) {
       ctx.clearRect(0, 0, w, h);
       const cx = w * 0.5, cy = h * 0.30;
-      const L = Math.min(w, h) * 0.55;
+      const L = Math.min(w * 0.46, h * 3.2);
+
+      // Evidence rules: hairlines the full width of the band, densest near
+      // the beam, so the composition reaches the edges.
+      for (let k = 0; k < 5; k++) {
+        const y = h * (0.62 + k * 0.085);
+        ctx.strokeStyle = k % 2 ? TEAL(0.05) : BLUE(0.07);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+        // A single mark sliding along each rule.
+        const px = ((t * (14 + k * 6) + k * 260) % (w + 120)) - 60;
+        ctx.fillStyle = k % 2 ? TEAL(0.35) : BLUE_LIGHT(0.32);
+        ctx.fillRect(px, y - 1.5, 14, 3);
+      }
       const a = Math.sin(t * 0.55) * 0.10;
       const lx = cx - (L / 2) * Math.cos(a), ly = cy - (L / 2) * Math.sin(a);
       const rx = cx + (L / 2) * Math.cos(a), ry = cy + (L / 2) * Math.sin(a);

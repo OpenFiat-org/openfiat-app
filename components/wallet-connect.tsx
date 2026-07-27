@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CURRENT_USER } from "@/lib/data/merchants";
-import { OPEN_BALANCE } from "@/lib/data/wallet";
+import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { formatNumber, shortAddress } from "@/lib/format";
 import { MerchantAvatar } from "@/components/merchant-avatar";
 
@@ -110,6 +110,8 @@ export function WalletConnect() {
     }
   }
 
+  const shortOfBond = OPEN_BALANCE < OPEN_BOND_REQUIRED;
+
   if (connection) {
     return (
       <div className="flex items-center gap-2.5">
@@ -122,13 +124,28 @@ export function WalletConnect() {
           <MerchantAvatar name={CURRENT_USER.name} tier={CURRENT_USER.tier} size="sm" />
         </Link>
 
-        {/* OPEN balance chip — always visible once connected */}
+        {/*
+         * OPEN balance — visible on every page and at every width, not just
+         * from `sm` up. It is the number that decides whether you can publish
+         * an advertisement at all, so hiding it on a phone hides the reason
+         * the ad wizard will refuse. Amber below the merchant bond, since at
+         * that point the balance is a blocker rather than a readout.
+         */}
         <Link
           href="/open"
-          className="hidden rounded-md border border-white/10 px-3 py-2 font-mono text-xs tabular-nums text-gray-300 hover:border-white/25 sm:block"
-          title="Your OPEN balance — buy more in the presale"
+          className={`rounded-md border px-2.5 py-2 font-mono text-xs tabular-nums transition-colors sm:px-3 ${
+            shortOfBond
+              ? "border-amber-400/40 text-amber-200 hover:border-amber-400/70"
+              : "border-white/10 text-gray-300 hover:border-white/25"
+          }`}
+          title={
+            shortOfBond
+              ? `${formatNumber(OPEN_BALANCE, 0)} OPEN — below the ${formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN merchant bond. Buy more in the presale.`
+              : "Your OPEN balance — buy more in the presale"
+          }
         >
-          {formatNumber(OPEN_BALANCE, 0)} OPEN
+          {formatNumber(OPEN_BALANCE, 0)}
+          <span className="ml-1 text-gray-500">OPEN</span>
         </Link>
 
         <div className="relative" ref={menuRef}>
