@@ -368,6 +368,26 @@ export interface IdentityClaim {
   expiry?: string;
 }
 
+/**
+ * A written review left by a counterparty after a trade.
+ *
+ * The rater is a truncated wallet, not a name: OFS-5000 publishes identity
+ * claims only where a participant chose to, and a buyer who verified nothing
+ * beyond their wallet has no name to show. Borrowing the merchant's convention
+ * of display names here would invent identity for the other side.
+ */
+export interface MerchantReview {
+  id: string;
+  merchantId: string;
+  /** Truncated wallet of the counterparty who left it. */
+  rater: string;
+  positive: boolean;
+  at: string; // ISO
+  /** What the rater did, from their side of the trade. */
+  side: "Bought" | "Sold";
+  comment: string;
+}
+
 export interface ReputationDimension {
   label: string;
   score: number; // 0–100
