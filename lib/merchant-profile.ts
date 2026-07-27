@@ -86,40 +86,69 @@ export interface Verification {
 }
 
 /**
- * What the merchant has actually proven, per identity level and bond.
+ * What the merchant has published, per OFS-5000 (Identity Claims).
  *
- * Shown as a row of claims rather than one level, because the levels are
- * cumulative and a reader wants to know which specific things were checked —
- * "L2" means nothing to someone deciding whether to send money.
+ * An earlier version of this invented the labels, and got the substance wrong
+ * in a way worth recording: it showed an "ID document" badge described as a
+ * government ID checked by a verification provider. **There is no such check in
+ * this protocol.** OFS-5000 defines no KYC and no document verification at any
+ * level, and §8 states that participation never requires advancing beyond Level
+ * 0. Displaying a document badge would have implied a guarantee the protocol
+ * does not make and nobody performs.
+ *
+ * The actual levels:
+ *
+ *  L0 Wallet Identity — a valid wallet, authenticated. Everyone has this.
+ *  L1 Verified Contact — email, phone, Telegram, Discord or X, proven by OTP.
+ *     §8 is precise about what this establishes: that the wallet owner controls
+ *     the channel. Not who they are.
+ *  L2 Verified Merchant Identity — published business name, brand, support
+ *     contacts. §8: "These claims improve user confidence but do not imply
+ *     regulatory approval." That sentence is the whole reason the hover text
+ *     says so too.
+ *  L3 Trusted Infrastructure Provider — organisation and incident contacts for
+ *     operators. Not a merchant claim, so it is only shown where it applies.
+ *
+ * The bond is not an OFS-5000 claim at all — it comes from the merchant's
+ * stake — and it is included precisely because it is the only entry here with
+ * money behind it rather than a signed statement.
  */
 export function verifications(merchant: Merchant): Verification[] {
   const order: IdentityLevel[] = ["L0", "L1", "L2", "L3"];
   const level = order.indexOf(merchant.identityLevel);
-  return [
+  const claims: Verification[] = [
     {
-      label: "Email",
-      verified: level >= 1,
-      hint: "A contact address was confirmed by the merchant. It proves they can be reached, nothing about who they are.",
+      label: "Wallet",
+      verified: true,
+      hint: "Level 0: a valid wallet, authenticated by signature. Every participant has this, and the protocol never requires more.",
     },
     {
-      label: "SMS",
+      label: "Verified contact",
       verified: level >= 1,
-      hint: "A phone number was confirmed by the merchant. Same caveat as email — reachability, not identity.",
+      hint: "Level 1: a contact channel — email, phone, Telegram, Discord or X — proven by one-time password. It establishes that this wallet controls that channel, and nothing about who the person is.",
     },
     {
-      label: "ID document",
+      label: "Merchant identity",
       verified: level >= 2,
-      hint: "A government ID was checked against the person by an independent verification provider. OpenFiat never receives or stores the document — only the provider's signed claim that the check passed.",
-    },
-    {
-      label: "Business",
-      verified: level >= 3,
-      hint: "A registered company was verified in addition to the individual, so there is a legal entity behind the desk.",
-    },
-    {
-      label: "Bonded",
-      verified: merchant.stake > 0,
-      hint: `${merchant.stake.toLocaleString("en-US")} OPEN staked and slashable if a dispute goes against them. This is the one claim with money behind it.`,
+      hint: "Level 2: published business name, brand and support contacts. It improves confidence and does not imply regulatory approval — there is no KYC in this protocol and no document was checked.",
     },
   ];
+
+  // Level 3 is infrastructure identity. Showing it on a trading desk would
+  // suggest a claim that does not apply to merchants at all.
+  if (level >= 3) {
+    claims.push({
+      label: "Infrastructure provider",
+      verified: true,
+      hint: "Level 3: operational identity for infrastructure operators — organisation name, public documentation and incident contacts.",
+    });
+  }
+
+  claims.push({
+    label: "Bonded",
+    verified: merchant.stake > 0,
+    hint: `${merchant.stake.toLocaleString("en-US")} OPEN staked and slashable if a dispute goes against them. Not an identity claim — it is the only entry here with money behind it rather than a signed statement.`,
+  });
+
+  return claims;
 }
