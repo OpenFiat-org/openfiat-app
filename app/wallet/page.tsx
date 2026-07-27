@@ -112,7 +112,7 @@ export default function WalletPage() {
             <Tr key={b.asset}>
               <Td>
                 <span className="flex items-center gap-2 font-medium text-gray-200">
-                  {b.asset !== "OPEN" && <AssetIcon asset={b.asset} size={16} />}
+                  <AssetIcon asset={b.asset} size={16} />
                   {b.asset}
                 </span>
               </Td>
