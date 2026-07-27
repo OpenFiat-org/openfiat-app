@@ -13,6 +13,7 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MerchantCell } from "@/components/merchant-cell";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
+import { HomeExplainer } from "@/components/home/explainer";
 import { OrderPanel } from "@/components/p2p/order-panel";
 import { compositeScore } from "@/lib/reputation";
 
@@ -64,11 +65,14 @@ interface ViewRow {
 export function P2PExchange({
   initialFiat = INTERNATIONAL_MARKET,
   showHeading = true,
+  showExplainer = false,
   rememberPreference = false,
   savePreference,
 }: {
   initialFiat?: string;
   showHeading?: boolean;
+  /** Landing page only: the three-step walkthrough and benefits below the book. */
+  showExplainer?: boolean;
   rememberPreference?: boolean;
   savePreference?: string;
 }) {
@@ -374,6 +378,11 @@ export function P2PExchange({
         </DataTable>
       </div>
       )}
+
+      {/* Only on the landing view. On a country page the copy above already
+          explains that market, and repeating it under every book would be
+          noise rather than help. */}
+      {showExplainer && <HomeExplainer asset={asset} fiat={viewFiat} buying={tab === "Buy"} />}
     </div>
   );
 }

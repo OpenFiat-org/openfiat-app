@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 export default function P2PPage() {
   // Server render is always the deterministic International view; the
   // remembered country preference (localStorage) is applied post-mount.
-  return <P2PExchange rememberPreference />;
+  return <P2PExchange rememberPreference showExplainer />;
 }
