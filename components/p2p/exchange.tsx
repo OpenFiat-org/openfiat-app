@@ -315,9 +315,40 @@ export function P2PExchange({
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-14 text-center text-sm text-gray-500">
-                No advertisements for {asset}/{viewFiat} yet. Liquidity in this market is coming online as merchants
-                join — try another asset or the 🌐 International market.
+              {/*
+                * An empty book is the best moment to recruit a merchant: this
+                * visitor wanted to trade this pair and found nobody. Telling
+                * them to go elsewhere answers the wrong question — the market
+                * is empty because it needs someone, and it could be them.
+                */}
+              <td colSpan={5} className="px-4 py-12">
+                <div className="mx-auto max-w-xl text-center">
+                  <p className="text-sm text-gray-300">
+                    Nobody is advertising {asset}/{viewFiat} yet.
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                    This market is empty rather than closed. The first merchant in a corridor sets the price and takes
+                    every order in it — if you can settle {viewFiat}, that could be you.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                      href="/guide/merchant"
+                      className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
+                    >
+                      Become a merchant
+                    </Link>
+                    <Link
+                      href="/ads/new"
+                      className="rounded-md border border-white/15 px-4 py-2.5 text-sm text-gray-200 hover:border-white/30"
+                    >
+                      Post the first advertisement
+                    </Link>
+                  </div>
+                  <p className="mt-4 text-xs text-gray-600">
+                    Or trade a different pair — try another asset above, or the 🌐 International market, where
+                    advertisers accept any currency.
+                  </p>
+                </div>
               </td>
             </tr>
           )}

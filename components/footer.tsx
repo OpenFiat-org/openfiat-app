@@ -15,6 +15,7 @@ const FOOTER_LINKS: Array<[string, string]> = [
   ["Guide", "/guide"],
   ["How to buy", "/guide/buy"],
   ["How to sell", "/guide/sell"],
+  ["Become a merchant", "/guide/merchant"],
   ["Explorer", "/explorer"],
   ["Network", "/network"],
   ["Providers", "/providers"],

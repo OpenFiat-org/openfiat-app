@@ -60,6 +60,17 @@ export default function GuidePage() {
             </div>
             <span className="text-gray-600 group-hover:text-brand-hover">→</span>
           </Link>
+          <Link href="/guide/merchant" className="group flex items-center justify-between gap-4 py-5">
+            <div>
+              <p className="font-medium text-white group-hover:text-brand-hover">
+                How to become a merchant →
+              </p>
+              <p className="mt-1 text-sm text-gray-400">
+                Post the advertisements everyone else trades against — the bond, the vault, and what it commits you to.
+              </p>
+            </div>
+            <span className="text-gray-600 group-hover:text-brand-hover">→</span>
+          </Link>
         </div>
 
         {/* What is P2P */}
