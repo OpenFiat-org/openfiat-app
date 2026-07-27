@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Panel } from "@/components/panel";
+import { PaymentAccounts } from "@/components/settings/payment-accounts";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 
 /** Notification channels per OFS-6000. All toggles are simulated client state. */
@@ -27,6 +28,10 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-6">
+      {/* First, because it is the one setting that gates an action: you cannot
+          sell without an account to receive into. */}
+      <PaymentAccounts />
+
       <Panel title="Preferences">
         <ol className="divide-y divide-white/5">
           <li className="flex items-center justify-between gap-4 px-4 py-4">

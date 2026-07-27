@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
 import { CURRENT_USER } from "@/lib/data/merchants";
+import {
+  type SavedPaymentAccount,
+  accountsFor,
+  isComplete,
+  readAccounts,
+} from "@/lib/payment-accounts";
 import { compositeScore } from "@/lib/reputation";
 import type { Advertisement, Merchant, TradeDirection } from "@/lib/types";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
@@ -52,6 +58,14 @@ export function OrderPanel({
   const [method, setMethod] = useState(ad.paymentMethods[0] ?? "");
   const [termsOpen, setTermsOpen] = useState(false);
   const [seconds, setSeconds] = useState(QUOTE_SECONDS);
+  /* Selling means nominating an account for the buyer to pay. Read post-mount,
+     so the server render is not guessing at localStorage. */
+  const [accounts, setAccounts] = useState<SavedPaymentAccount[]>([]);
+  const [accountId, setAccountId] = useState("");
+
+  useEffect(() => {
+    setAccounts(readAccounts().filter(isComplete));
+  }, []);
 
   // The quote countdown. Restarts rather than changing the price: a moving
   // number under the cursor would be worse than a visibly stale one.
@@ -68,6 +82,11 @@ export function OrderPanel({
   /* The merchant's own floor on who they will trade with. Advisory — see the
      field's note in lib/types.ts — so this client refuses and explains rather
      than pretending something on chain stopped it. */
+  const usable = accountsFor(accounts, ad.paymentMethods, ad.international);
+  // Only relevant when selling: a buyer pays out of their own account and has
+  // nothing to nominate.
+  const needsAccount = !buy && usable.length === 0;
+
   const myReputation = compositeScore(CURRENT_USER);
   const belowFloor =
     ad.minCounterpartyReputation !== undefined &&
@@ -82,9 +101,15 @@ export function OrderPanel({
     !tooHigh &&
     !overLiquidity &&
     !belowFloor &&
+    !needsAccount &&
     (ad.international || method !== "");
 
   const blocker = useMemo(() => {
+    if (needsAccount) {
+      return accounts.length === 0
+        ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
+        : "None of your saved accounts uses a method this advertiser accepts. Add one that does in Settings.";
+    }
     if (belowFloor) {
       return `This advertiser trades with counterparties at ${ad.minCounterpartyReputation}/100 or above. Yours is ${myReputation}/100 — complete more trades without disputes to raise it.`;
     }
@@ -94,7 +119,7 @@ export function OrderPanel({
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
     if (!ad.international && !method) return "Choose a payment method";
     return null;
-  }, [fiatAmount, tooLow, tooHigh, overLiquidity, belowFloor, myReputation, ad, method, minFiat, maxFiat, fiat]);
+  }, [fiatAmount, tooLow, tooHigh, overLiquidity, belowFloor, needsAccount, accounts.length, myReputation, ad, method, minFiat, maxFiat, fiat]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -218,6 +243,27 @@ export function OrderPanel({
             icon={<AssetIcon asset={ad.asset} size={18} />}
             invalid={overLiquidity}
           />
+
+          {!buy && usable.length > 0 && (
+            <label className="mt-3 block">
+              <span className="block text-xs text-gray-500">Receive into</span>
+              <select
+                value={accountId || usable[0].id}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
+              >
+                {usable.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.method} · {a.fields[1]?.value ?? a.fields[0]?.value}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1.5 block text-xs text-gray-500">
+                The buyer sees these details field by field, so they can copy each
+                one rather than retyping it.
+              </span>
+            </label>
+          )}
 
           {ad.international ? (
             <p className="mt-3 border-l-2 border-brand-teal pl-2.5 text-xs text-gray-400">
