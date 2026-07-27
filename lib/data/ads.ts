@@ -153,6 +153,7 @@ export const MARKETS: Market[] = [
   { currency: "JPY", fx: 156, country: "JP", methods: ["Bank Transfer", "PayPay"], assets: MAJORS },
   { currency: "CNY", fx: 7.25, country: "CN", methods: ["Alipay", "WeChat Pay"], assets: MAJORS },
   { currency: "HKD", fx: 7.8, country: "HK", methods: ["FPS", "Wise", "Bank Transfer"], assets: MAJORS },
+  { currency: "TWD", fx: 32.5, country: "TW", methods: ["JKOPay", "LINE Pay", "Taiwan Pay", "Bank Transfer"], assets: MAJORS },
   { currency: "SGD", fx: 1.35, country: "SG", methods: ["PayNow", "Bank Transfer"], assets: MAJORS },
   { currency: "AUD", fx: 1.52, country: "AU", methods: ["PayID", "Bank Transfer (OSKO)"], assets: MAJORS },
   { currency: "CAD", fx: 1.36, country: "CA", methods: ["Interac e-Transfer", "Bank Transfer"], assets: MAJORS },

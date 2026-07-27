@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADS, ALL_ADS, GENERATED_ADS, MARKETS, MY_ADS, ORACLE_MID, adPrice, adPriceIn, fxPerUsd } from "@/lib/data/ads";
+import { ADS, ALL_ADS, GENERATED_ADS, MARKETS, MY_ADS, ORACLE_MID, adPrice, adPriceIn, fxPerUsd, paymentMethodsForCurrency } from "@/lib/data/ads";
 import {
   COUNTRIES,
   COUNTRIES_BY_SLUG,
@@ -57,8 +57,21 @@ describe("countries registry", () => {
     }
   });
 
-  it("Taiwan is intentionally not listed", () => {
-    expect(COUNTRIES_BY_SLUG.has("taiwan")).toBe(false);
+  it("Taiwan is listed, on the same footing as Hong Kong and Macau", () => {
+    // This assertion previously required Taiwan to be absent. It is listed now
+    // on an explicit product decision. `isRecognized: false` records
+    // non-UN-membership and nothing else — the same value Hong Kong and Macau
+    // carry — and the flag is never used to hide or relabel an entry.
+    const tw = COUNTRIES_BY_SLUG.get("taiwan");
+    expect(tw).toBeDefined();
+    expect(tw!.currencyCode).toBe("TWD");
+    expect(tw!.isRecognized).toBe(false);
+    expect(COUNTRIES_BY_SLUG.get("hong-kong")?.isRecognized).toBe(false);
+  });
+
+  it("Taiwan has a market, so its page is not a bank-transfer fallback", () => {
+    expect(paymentMethodsForCurrency("TWD")).toContain("JKOPay");
+    expect(paymentMethodsForCurrency("TWD")).not.toEqual(["Bank Transfer"]);
   });
 
   it("lookups work", () => {

@@ -38,6 +38,7 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "Interac e-Transfer", category: "Bank Transfer", aliases: ["interac", "e-transfer"] },
   { name: "PayID", category: "Bank Transfer", aliases: ["payid australia", "osko"] },
   { name: "SPEI", category: "Bank Transfer", aliases: ["spei mexico"] },
+  { name: "Taiwan Pay", category: "Bank Transfer", aliases: ["taiwan pay", "twqr"] },
   { name: "Revolut", category: "Fintech", aliases: ["rev"] },
   { name: "Wise", category: "Fintech", aliases: ["transferwise"] },
   { name: "Skrill", category: "Fintech", aliases: [] },
@@ -47,6 +48,8 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "PIX", category: "Fintech", aliases: ["pix brazil"] },
   { name: "Alipay", category: "Fintech", aliases: ["alipay china"] },
   { name: "WeChat Pay", category: "Fintech", aliases: ["wechat"] },
+  { name: "JKOPay", category: "Fintech", aliases: ["jko", "jkopay", "街口支付"] },
+  { name: "LINE Pay", category: "Fintech", aliases: ["linepay", "line"] },
   { name: "Mercado Pago", category: "Fintech", aliases: ["mercadopago"] },
   { name: "Papara", category: "Fintech", aliases: [] },
 ];
