@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { COUNTRIES, COUNTRIES_BY_SLUG } from "@/lib/data/countries";
+import { COUNTRIES, COUNTRIES_BY_SLUG, currenciesFor } from "@/lib/data/countries";
 import { paymentMethodsForCurrency } from "@/lib/data/ads";
 import { P2PExchange } from "@/components/p2p/exchange";
 
@@ -31,7 +31,8 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
   const country = COUNTRIES_BY_SLUG.get(slug);
   if (!country) notFound();
 
-  const methods = paymentMethodsForCurrency(country.currencyCode);
+  const active = country.currencyCode;
+  const methods = paymentMethodsForCurrency(active);
 
   return (
     <section>
@@ -50,8 +51,31 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
         . Escrow is locked on Solana before you pay and released only after fiat receipt is verified; OpenFiat never
         takes custody of your {country.currencyCode}.
       </p>
+
+      {/* Countries where a second currency genuinely circulates. In a
+          dollarised economy the USD book is often the larger one, so linking
+          it matters more than a footnote would suggest. */}
+      {country.altCurrencies && country.altCurrencies.length > 0 && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
+          <span className="text-gray-500">Also traded here:</span>
+          {currenciesFor(country)
+            .slice(1)
+            .map((code) => (
+              <Link
+                key={code}
+                href={`/country/${country.slug}/${code.toLowerCase()}`}
+                className="rounded border border-white/10 px-2 py-0.5 font-mono text-xs text-gray-300 hover:border-white/25 hover:text-white"
+              >
+                {code}
+              </Link>
+            ))}
+          <span className="text-xs text-gray-600">
+            {country.currencyCode} is the primary market
+          </span>
+        </p>
+      )}
       <div className="mt-8">
-        <P2PExchange initialFiat={country.currencyCode} showHeading={false} savePreference={country.slug} />
+        <P2PExchange initialFiat={active} showHeading={false} savePreference={country.slug} />
       </div>
     </section>
   );

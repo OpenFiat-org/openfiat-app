@@ -12,23 +12,39 @@ export interface CurrencyOption {
   countries: string[];
 }
 
-/** Unique currency options derived from the global countries registry. */
+/**
+ * Unique currency options derived from the global countries registry.
+ *
+ * A country contributes every currency it trades in, not only its primary one
+ * — otherwise a dollarised economy's USD book, which is often the larger of
+ * the two, never appears under that country's name in search.
+ */
 export const CURRENCY_OPTIONS: CurrencyOption[] = (() => {
   const byCode = new Map<string, CurrencyOption>();
-  for (const c of COUNTRIES) {
-    const existing = byCode.get(c.currencyCode);
+  const add = (code: string, name: string, symbol: string, countryName: string) => {
+    const existing = byCode.get(code);
     if (existing) {
-      if (existing.countries.length < 3 && !existing.countries.includes(c.name)) {
-        existing.countries.push(c.name);
+      if (existing.countries.length < 3 && !existing.countries.includes(countryName)) {
+        existing.countries.push(countryName);
       }
-    } else {
-      byCode.set(c.currencyCode, {
-        code: c.currencyCode,
-        name: c.currencyName,
-        symbol: c.currencySymbol,
-        flag: flagForCurrency(c.currencyCode),
-        countries: [c.name],
-      });
+      return;
+    }
+    byCode.set(code, {
+      code,
+      name,
+      symbol,
+      flag: flagForCurrency(code),
+      countries: [countryName],
+    });
+  };
+
+  for (const c of COUNTRIES) {
+    add(c.currencyCode, c.currencyName, c.currencySymbol, c.name);
+    for (const alt of c.altCurrencies ?? []) {
+      // The alternate's own name comes from whichever country issues it; if it
+      // is not in the registry as a primary anywhere, fall back to the code.
+      const issuer = COUNTRIES.find((o) => o.currencyCode === alt);
+      add(alt, issuer?.currencyName ?? alt, issuer?.currencySymbol ?? alt, c.name);
     }
   }
   const popular = POPULAR_CURRENCY_CODES as readonly string[];

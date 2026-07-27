@@ -371,7 +371,9 @@ function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirec
       <Td right py="py-6">
         <Link
           href={`/orders/new?ad=${ad.id}`}
-          className={`inline-block rounded-md px-6 py-2.5 text-sm font-semibold text-white transition-colors ${
+          /* Fixed floor and no wrapping, so "Sell USDT" and "Buy SOL" are the
+             same size and every row is the same height. */
+          className={`inline-block min-w-[8rem] whitespace-nowrap rounded-md px-6 py-2.5 text-center text-sm font-semibold text-white transition-colors ${
             buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
           }`}
         >

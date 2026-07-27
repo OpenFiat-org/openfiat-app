@@ -102,7 +102,7 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
       </h2>
       <div className="mt-3">
         <DataTable
-          minWidth={900}
+          minWidth={1040}
           head={
             <tr>
               <Th>Ad</Th>
@@ -118,7 +118,7 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
         >
           {ads.map((ad) => (
             <Tr key={ad.id}>
-              <Td className="font-medium text-gray-200">{ad.id}</Td>
+              <Td className="whitespace-nowrap font-medium text-gray-200">{ad.id}</Td>
               <Td className={`font-medium ${ad.direction === "Sell" ? "text-orange-400" : "text-emerald-400"}`}>
                 {ad.direction}
               </Td>
@@ -139,7 +139,10 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
               <Td right>
                 <Link
                   href={`/orders/new?ad=${ad.id}`}
-                  className={`inline-block rounded-md px-4 py-1.5 text-xs font-semibold text-white ${
+                  /* whitespace-nowrap and a floor on the width: "Buy USDT"
+                     was wrapping to two lines, which made every row a
+                     different height and the buttons different sizes. */
+                  className={`inline-block min-w-[6.5rem] whitespace-nowrap rounded-md px-4 py-1.5 text-center text-xs font-semibold text-white ${
                     ad.direction === "Sell" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
                   }`}
                 >

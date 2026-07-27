@@ -21,6 +21,17 @@ export interface Country {
   currencyName: string;
   currencySymbol: string;
   isRecognized: boolean;
+  /**
+   * Additional currencies in everyday use alongside the primary one.
+   *
+   * A single `currencyCode` per country is wrong in practice, and wrong in the
+   * places it matters most: in a dollarised or partly-dollarised economy the
+   * USD leg is often the *larger* P2P market, and offering only the local
+   * currency hides it. Zimbabwe trades in ZWG and USD, Lebanon in LBP and USD,
+   * Cambodia in KHR and USD; Palestine's own registry entry already noted
+   * "JOD also used" in prose because there was nowhere structured to put it.
+   */
+  altCurrencies?: string[];
 }
 
 function flagEmoji(code: string): string {
@@ -322,18 +333,53 @@ const RAW: Raw[] = [
   ["HM", "Heard & McDonald Islands", "AUD", "Australian dollar", "$", false],
 ];
 
+/**
+ * Countries where a second currency is in genuine circulation, by country code.
+ * Ordered by how commonly it is used for trade, most first.
+ */
+const ALT_CURRENCIES: Record<string, string[]> = {
+  ZW: ["USD", "ZAR"], // ZWG alongside the US dollar it replaced in practice
+  LB: ["USD"],
+  KH: ["USD"],
+  PA: ["USD"], // the balboa is pegged 1:1 and circulates with USD notes
+  CU: ["USD", "EUR"],
+  PS: ["JOD", "USD"], // the registry's own entry already said "JOD also used"
+  ZM: ["USD"],
+  LA: ["USD", "THB"],
+  MM: ["USD"],
+  SS: ["USD"],
+  SO: ["USD"],
+  AF: ["USD"],
+  IQ: ["USD"],
+  VE: ["USD"],
+  AR: ["USD"],
+  EC: ["USD"],
+  SV: ["USD"],
+  TL: ["USD"],
+  ZZ: [],
+};
+
 export const COUNTRIES: Country[] = RAW.map(
-  ([code, name, currencyCode, currencyName, currencySymbol, recognized = true, flagCode]) => ({
-    code,
-    name,
-    slug: slugify(name),
-    flag: flagEmoji(flagCode ?? code),
-    currencyCode,
-    currencyName,
-    currencySymbol,
-    isRecognized: recognized,
-  }),
+  ([code, name, currencyCode, currencyName, currencySymbol, recognized = true, flagCode]) => {
+    const alts = (ALT_CURRENCIES[code] ?? []).filter((c) => c !== currencyCode);
+    return {
+      code,
+      name,
+      slug: slugify(name),
+      flag: flagEmoji(flagCode ?? code),
+      currencyCode,
+      currencyName,
+      currencySymbol,
+      isRecognized: recognized,
+      ...(alts.length > 0 ? { altCurrencies: alts } : {}),
+    };
+  },
 );
+
+/** Every currency a country trades in, primary first. */
+export function currenciesFor(country: Country): string[] {
+  return [country.currencyCode, ...(country.altCurrencies ?? [])];
+}
 
 export const COUNTRIES_BY_SLUG: ReadonlyMap<string, Country> = new Map(
   COUNTRIES.map((c) => [c.slug, c]),
