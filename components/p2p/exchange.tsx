@@ -14,6 +14,7 @@ import { MerchantCell } from "@/components/merchant-cell";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { OrderPanel } from "@/components/p2p/order-panel";
+import { compositeScore } from "@/lib/reputation";
 
 const ASSETS: Array<StablecoinAsset | "OPEN"> = ["USDT", "USDC", "USD1", "SOL", "OPEN"];
 
@@ -78,6 +79,7 @@ export function P2PExchange({
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
   const [sort, setSort] = useState<SortKey>("price");
+  const [minRep, setMinRep] = useState(0);
 
   // Apply the remembered market after mount (landing page only).
   useEffect(() => {
@@ -155,7 +157,11 @@ export function P2PExchange({
       const minFiat = ad.minTrade * fx;
       const maxFiat = ad.maxTrade * fx;
       if (fiatAmount > 0 && (fiatAmount < minFiat || fiatAmount > maxFiat)) continue;
-      out.push({ ad, merchant: merchantById(ad.merchantId), price, minFiat, maxFiat, fiat: viewFiat });
+      const merchant = merchantById(ad.merchantId);
+      // OFS-3000 §22 leaves marketplace ranking and filtering to the
+      // application and names reputation as a dimension to consider.
+      if (minRep > 0 && compositeScore(merchant) < minRep) continue;
+      out.push({ ad, merchant, price, minFiat, maxFiat, fiat: viewFiat });
     }
     switch (sort) {
       case "price":
@@ -260,6 +266,19 @@ export function P2PExchange({
             ))}
           </select>
         )}
+        {/* Advertiser reputation floor. The counterpart to a merchant's own
+            minimum: both sides get to decline. */}
+        <select
+          value={minRep}
+          onChange={(e) => setMinRep(Number(e.target.value))}
+          className={selectCls}
+          title="Hide advertisers below this reputation"
+        >
+          <option value={0}>Any reputation</option>
+          <option value={70}>70+ reputation</option>
+          <option value={80}>80+ reputation</option>
+          <option value={90}>90+ reputation</option>
+        </select>
         <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls}>
           {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
             <option key={k} value={k}>Sort: {SORT_LABELS[k]}</option>

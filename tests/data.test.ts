@@ -179,6 +179,34 @@ describe("advertisements", () => {
   });
 });
 
+describe("reputation as a trading control", () => {
+  it("keeps advertiser floors modest enough to be tradeable", () => {
+    // A floor that excludes every new participant costs the merchant volume,
+    // so the data should not model unreachable requirements.
+    const withFloor = ALL_ADS.filter((a) => a.minCounterpartyReputation !== undefined);
+    expect(withFloor.length).toBeGreaterThan(0);
+    for (const ad of withFloor) {
+      expect(ad.minCounterpartyReputation, ad.id).toBeGreaterThanOrEqual(50);
+      expect(ad.minCounterpartyReputation, ad.id).toBeLessThanOrEqual(90);
+    }
+  });
+
+  it("leaves most of the book open to anyone", () => {
+    // The floor is a minority behaviour. If most ads carried one, a new
+    // participant could not start trading at all.
+    const withFloor = ALL_ADS.filter((a) => a.minCounterpartyReputation !== undefined);
+    expect(withFloor.length / ALL_ADS.length).toBeLessThan(0.5);
+  });
+
+  it("has advertisers the current user can actually trade with", () => {
+    const mine = compositeScore(CURRENT_USER);
+    const reachable = ALL_ADS.filter(
+      (a) => a.minCounterpartyReputation === undefined || mine >= a.minCounterpartyReputation,
+    );
+    expect(reachable.length).toBeGreaterThan(0);
+  });
+});
+
 describe("generated global book", () => {
   it("generates deep global liquidity", () => {
     expect(GENERATED_ADS.length).toBeGreaterThanOrEqual(300);
