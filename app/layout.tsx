@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/sidebar";
+import { TopNav } from "@/components/top-nav";
+import { Footer } from "@/components/footer";
+import { SimulatedBadge } from "@/components/simulated-badge";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "OpenFiat", template: "%s · OpenFiat" },
+  metadataBase: new URL("https://app.openfiat.network"),
+  title: { default: "OpenFiat — P2P Stablecoin Exchange", template: "%s · OpenFiat" },
   description:
-    "Trade, stake, vote, and resolve disputes on the OpenFiat network — the default web application for users and validators.",
+    "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by audited Solana programs.",
   icons: {
     icon: [
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
@@ -19,12 +26,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen antialiased">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 p-8">{children}</main>
-        </div>
+        <TopNav />
+        <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+        <Footer />
+        <SimulatedBadge />
       </body>
     </html>
   );
