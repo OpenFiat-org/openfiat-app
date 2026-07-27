@@ -267,7 +267,7 @@ function identityLabel(level: string): string {
   switch (level) {
     case "L0": return "Wallet Identity";
     case "L1": return "Verified Contact";
-    case "L2": return "Verified Merchant Identity";
+    case "L2": return "Merchant Business Profile";
     default: return "Trusted Infrastructure Provider";
   }
 }

@@ -104,8 +104,7 @@ export interface Verification {
  *     the channel. Not who they are.
  *  L2 Verified Merchant Identity — published business name, brand, support
  *     contacts. §8: "These claims improve user confidence but do not imply
- *     regulatory approval." That sentence is the whole reason the hover text
- *     says so too.
+ *     regulatory approval." Deliberately not shown as a badge — see below.
  *  L3 Trusted Infrastructure Provider — organisation and incident contacts for
  *     operators. Not a merchant claim, so it is only shown where it applies.
  *
@@ -127,12 +126,15 @@ export function verifications(merchant: Merchant): Verification[] {
       verified: level >= 1,
       hint: "Level 1: a contact channel — email, phone, Telegram, Discord or X — proven by one-time password. It establishes that this wallet controls that channel, and nothing about who the person is.",
     },
-    {
-      label: "Merchant identity",
-      verified: level >= 2,
-      hint: "Level 2: published business name, brand and support contacts. It improves confidence and does not imply regulatory approval — there is no KYC in this protocol and no document was checked.",
-    },
   ];
+
+  // OFS-5000 level 2 is a *self-published* business profile — a name, a brand
+  // and support contacts, signed by the merchant. No row for it, because a tick
+  // beside anything called "identity" reads as "we checked their documents",
+  // which is the one thing this protocol never does. What level 2 actually
+  // contains is the business name and support contacts shown elsewhere on the
+  // profile; those speak for themselves without a verification badge implying
+  // someone vouched for them.
 
   // Level 3 is infrastructure identity. Showing it on a trading desk would
   // suggest a claim that does not apply to merchants at all.

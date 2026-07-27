@@ -19,12 +19,21 @@ export const IDENTITY_CLAIMS: IdentityClaim[] = [
     expiry: "Renews 15 Mar 2027",
   },
   {
+    // OFS-5000 §Level 2 lists exactly five things: merchant display name,
+    // business name, brand logo, support email, support phone — self-published
+    // and signed, then "These claims improve user confidence but do not imply
+    // regulatory approval."
+    //
+    // This entry previously claimed a company registration number and a
+    // beneficial-owner check. Neither exists in the protocol. It described KYC
+    // that nobody performs and that OFS-5000 defines at no level, which is
+    // exactly the wrong thing for a screen headed "Verified".
     level: "L2",
-    title: "Verified Merchant Identity",
-    description: "Business registration and beneficial-owner checks required to publish advertisements.",
+    title: "Merchant Business Profile",
+    description:
+      "A published trading name, brand and support contacts, signed by your own wallet. Nobody verifies these against a registry — they are how counterparties reach you, not proof of who you are.",
     status: "Verified",
-    details: ["OpenWallet Ke Ltd — reg. PVT-9Q2X-2026", "Beneficial owner verified", "Verified 02 Apr 2026"],
-    expiry: "Renews 02 Apr 2027",
+    details: ["Trading as OpenWallet Ke", "support@openwallet.ke", "Published 02 Apr 2026"],
   },
   {
     level: "L3",

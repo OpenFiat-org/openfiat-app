@@ -6,6 +6,7 @@ import type { StablecoinAsset } from "@/lib/types";
 import { fxPerUsd } from "@/lib/data/ads";
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED, VAULTS } from "@/lib/data/wallet";
 import { formatNumber } from "@/lib/format";
+import { AssetIcon } from "@/components/asset-icon";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { MethodPicker } from "@/components/ads/method-picker";
 
@@ -228,10 +229,11 @@ export function AdWizard() {
                   <button
                     key={a}
                     onClick={() => patch({ asset: a })}
-                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                    className={`flex items-center gap-2 rounded-md border px-4 py-2 text-sm transition-colors ${
                       asset === a ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
                     }`}
                   >
+                    <AssetIcon asset={a} size={18} />
                     {a}
                   </button>
                 ))}
