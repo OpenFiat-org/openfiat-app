@@ -3,6 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CURRENT_USER, MERCHANTS, adCapacityFor, reputationFor } from "@/lib/data/merchants";
 import { compositeScore } from "@/lib/reputation";
+import {
+  lifetimeOrders,
+  ratingFor,
+  recentOrders,
+  releaseTime,
+  verifications,
+} from "@/lib/merchant-profile";
 import { adsForMerchant, adPrice, paymentMethodsForMerchant } from "@/lib/data/ads";
 import { getCountry } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber, shortAddress } from "@/lib/format";
@@ -41,6 +48,9 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
   const ads = adsForMerchant(merchant.id);
   const methods = paymentMethodsForMerchant(merchant.id);
   const reputation = reputationFor(merchant);
+  const recent = recentOrders(merchant);
+  const lifetime = lifetimeOrders(merchant);
+  const rating = ratingFor(merchant);
   const capacity = adCapacityFor(merchant);
 
   return (
@@ -63,6 +73,19 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
               </span>
             )}
           </div>
+          {/* What was actually checked, rather than a level code. "L2" means
+              nothing to someone deciding whether to send money. */}
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+            {verifications(merchant).map((v) => (
+              <span
+                key={v.label}
+                title={v.verified ? v.hint : `Not verified. ${v.hint}`}
+                className={`cursor-help ${v.verified ? "text-emerald-300" : "text-gray-600 line-through"}`}
+              >
+                {v.verified ? "✓" : "○"} {v.label}
+              </span>
+            ))}
+          </p>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
             <span>
               {country?.flag} {country?.name ?? merchant.countryCode}
@@ -78,27 +101,42 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
       <div className="mt-8">
         <MetricStrip
           items={[
-            /* First, and with the tier beneath it. This is the page someone
-               opens to decide whether to trade with a stranger, and it was the
-               one place showing every input except the summary. */
+            /* Reputation first. This is the page someone opens to decide
+               whether to trade with a stranger, and it was the one place
+               showing every input to the score except the score. */
             {
               label: "Reputation",
               value: `${compositeScore(merchant)}/100`,
               sub: `${merchant.tier} tier · conduct only`,
             },
-            { label: "Total orders", value: formatNumber(merchant.orders, 0) },
+            {
+              label: "Orders, 30 days",
+              value: formatNumber(recent.total, 0),
+              sub: `Buy ${formatNumber(recent.buy, 0)} · Sell ${formatNumber(recent.sell, 0)}`,
+            },
+            {
+              label: "Orders, all time",
+              value: formatNumber(lifetime.total, 0),
+              sub: `Buy ${formatNumber(lifetime.buy, 0)} · Sell ${formatNumber(lifetime.sell, 0)}`,
+            },
             { label: "Completion", value: `${merchant.completionRate}%` },
+            {
+              label: "Positive ratings",
+              value: `${rating.goodPct}%`,
+              sub: `${formatNumber(rating.up, 0)} up · ${formatNumber(rating.down, 0)} down`,
+            },
+            { label: "Avg release time", value: releaseTime(merchant) },
             { label: "30d volume", value: `${formatNumber(merchant.volume30d, 0)} USDT` },
-            { label: "Avg ticket", value: `${formatNumber(merchant.avgTicket, 0)} USDT` },
-            { label: "Settlement speed", value: merchant.settlementSpeed },
             { label: "Merchant age", value: merchant.merchantAge },
           ]}
         />
       </div>
 
       {/* Active advertisements */}
+      {/* Named from the visitor's side, not the merchant's. "Sell ads" makes a
+          reader work out what they would be doing. */}
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-        Active advertisements ({ads.length})
+        Trade with {merchant.name} ({ads.length} advertisement{ads.length === 1 ? "" : "s"})
       </h2>
       <div className="mt-3">
         <DataTable
@@ -134,7 +172,20 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
               </Td>
               <Td right num className="text-gray-300">{formatCrypto(ad.availableLiquidity, ad.asset)}</Td>
               <Td className="text-xs text-gray-400">
-                {ad.international ? "🌐 Any payment method" : ad.paymentMethods.join(", ")}
+                {ad.international ? (
+                  <span className="border-l-2 border-brand-teal pl-1.5">🌐 Any payment method</span>
+                ) : (
+                  /* One per line with its own marker. Comma-joined, a
+                     four-method list reads as one long string and you cannot
+                     scan for the rail you hold. */
+                  <span className="flex flex-col gap-1">
+                    {ad.paymentMethods.map((m) => (
+                      <span key={m} className="border-l-2 border-amber-400/60 pl-1.5">
+                        {m}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </Td>
               <Td right>
                 <Link

@@ -22,6 +22,7 @@ import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
 import { pseudoSignature } from "@/lib/format";
+import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
 import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
 
@@ -135,6 +136,43 @@ describe("merchants", () => {
       expect(m.completionRate).toBeGreaterThan(0);
       expect(m.completionRate).toBeLessThanOrEqual(100);
       expect(countryCodes.has(m.countryCode), `${m.name} -> ${m.countryCode}`).toBe(true);
+    }
+  });
+});
+
+describe("merchant profile figures", () => {
+  it("splits orders without inventing or losing any", () => {
+    for (const m of MERCHANTS) {
+      const life = lifetimeOrders(m);
+      expect(life.buy + life.sell, m.name).toBe(m.orders);
+      const recent = recentOrders(m);
+      expect(recent.buy + recent.sell, m.name).toBe(recent.total);
+    }
+  });
+
+  it("never claims more recent orders than the account has ever done", () => {
+    // A desk that is months old cannot have done all its trades this month.
+    for (const m of MERCHANTS) {
+      expect(recentOrders(m).total, m.name).toBeLessThanOrEqual(m.orders);
+    }
+  });
+
+  it("keeps ratings coherent with completion rate", () => {
+    // A merchant completing 99.8% of trades with a 70% rating would be
+    // incoherent, and a reader would rightly not trust either number.
+    for (const m of MERCHANTS) {
+      const r = ratingFor(m);
+      expect(Math.abs(r.goodPct - m.completionRate), m.name).toBeLessThanOrEqual(2);
+      expect(r.up + r.down, m.name).toBe(r.count);
+      // Most people never leave a rating.
+      expect(r.count, m.name).toBeLessThan(m.orders);
+    }
+  });
+
+  it("only claims a bond when there is stake behind it", () => {
+    for (const m of MERCHANTS) {
+      const bonded = verifications(m).find((v) => v.label === "Bonded");
+      expect(bonded?.verified, m.name).toBe(m.stake > 0);
     }
   });
 });
