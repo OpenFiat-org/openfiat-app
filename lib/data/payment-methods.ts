@@ -31,7 +31,14 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "KCB", category: "Bank Transfer", aliases: ["kcb bank", "kenya commercial bank"] },
   { name: "Bank Transfer", category: "Bank Transfer", aliases: ["wire", "bank"] },
   { name: "SEPA", category: "Bank Transfer", aliases: ["sepa transfer", "iban"] },
-  { name: "Faster Payments", category: "Bank Transfer", aliases: ["fps", "faster payments uk"] },
+  /*
+   * "FPS" is deliberately not an alias here. Hong Kong's Faster Payment
+   * System is a different rail run by a different central bank, and a
+   * merchant in either place typing "fps" should not be handed the other
+   * country's system.
+   */
+  { name: "Faster Payments (UK)", category: "Bank Transfer", aliases: ["faster payments uk"] },
+  { name: "FPS (Faster Payment System)", category: "Bank Transfer", aliases: ["fps", "fps hong kong", "轉數快"] },
   { name: "ACH", category: "Bank Transfer", aliases: ["ach transfer"] },
   { name: "Wire Transfer", category: "Bank Transfer", aliases: ["swift", "wire"] },
   { name: "PromptPay", category: "Bank Transfer", aliases: ["promptpay thailand"] },
@@ -50,6 +57,18 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "WeChat Pay", category: "Fintech", aliases: ["wechat"] },
   { name: "JKOPay", category: "Fintech", aliases: ["jko", "jkopay", "街口支付"] },
   { name: "LINE Pay", category: "Fintech", aliases: ["linepay", "line"] },
+  /*
+   * AlipayHK and WeChat Pay HK are separate products from the mainland
+   * Alipay and WeChat Pay above, on separate accounts — a Hong Kong wallet
+   * cannot receive from a mainland one. Listing them apart is what lets a
+   * merchant state which they actually hold.
+   */
+  { name: "PayMe", category: "Fintech", aliases: ["payme", "payme hsbc"] },
+  { name: "AlipayHK", category: "Fintech", aliases: ["alipay hk", "alipayhk", "支付寶香港"] },
+  { name: "WeChat Pay HK", category: "Fintech", aliases: ["wechat hk", "weixin hk"] },
+  { name: "Octopus (O! ePay)", category: "Fintech", aliases: ["octopus", "oepay", "o! epay", "八達通"] },
+  { name: "MPay", category: "Fintech", aliases: ["mpay", "macau pass", "澳門通"] },
+  { name: "BOC Pay", category: "Fintech", aliases: ["boc pay", "bank of china pay"] },
   { name: "Mercado Pago", category: "Fintech", aliases: ["mercadopago"] },
   { name: "Papara", category: "Fintech", aliases: [] },
 ];
