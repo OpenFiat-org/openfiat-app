@@ -22,6 +22,27 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
+  /*
+   * There was no openGraph or twitter metadata anywhere in the app, so every
+   * link shared from it previewed as a bare URL — no title, no description, no
+   * image. Declared once here and inherited by every route; a route with its
+   * own opengraph-image overrides only the image.
+   */
+  openGraph: {
+    type: "website",
+    siteName: "OpenFiat",
+    locale: "en",
+    url: "/",
+    title: "OpenFiat — P2P Stablecoin Exchange",
+    description:
+      "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by audited Solana programs.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpenFiat — P2P Stablecoin Exchange",
+    description:
+      "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by audited Solana programs; disputes decided by staked arbitrators.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
