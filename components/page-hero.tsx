@@ -101,7 +101,9 @@ function meshScene(ctx: Ctx, mouse: Mouse): Scene {
   return {
     resize(nw, nh) {
       w = nw; h = nh;
-      const count = Math.min(90, Math.max(24, Math.floor(w / 16)));
+      // Was w/16 capped at 90, which on a wide band produced a solid web of
+      // links rather than a network you can read the shape of.
+      const count = Math.min(44, Math.max(14, Math.floor(w / 30)));
       const rand = rng(11);
       pts = Array.from({ length: count }, () => ({
         x: rand() * w, y: rand() * h, vx: (rand() - 0.5) * 0.3, vy: (rand() - 0.5) * 0.3,
@@ -125,7 +127,7 @@ function meshScene(ctx: Ctx, mouse: Mouse): Scene {
           const b = pts[j];
           const d2 = (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
           if (d2 < 130 * 130) {
-            ctx.strokeStyle = BLUE((1 - Math.sqrt(d2) / 130) * 0.22);
+            ctx.strokeStyle = BLUE((1 - Math.sqrt(d2) / 130) * 0.13);
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
           }
         }
@@ -135,7 +137,7 @@ function meshScene(ctx: Ctx, mouse: Mouse): Scene {
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
         }
       }
-      ctx.fillStyle = BLUE_LIGHT(0.55);
+      ctx.fillStyle = BLUE_LIGHT(0.4);
       for (const p of pts) ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
     },
   };
@@ -250,19 +252,21 @@ function globeScene(ctx: Ctx): Scene {
 function ledgerScene(ctx: Ctx): Scene {
   let w = 0, h = 0, cols = 0;
   return {
-    resize(nw, nh) { w = nw; h = nh; cols = Math.max(6, Math.floor(w / 46)); },
+    // Was w/46 with a 26px tick pitch — dozens of columns of dashes
+    // reading as confetti across the whole band.
+    resize(nw, nh) { w = nw; h = nh; cols = Math.max(4, Math.floor(w / 108)); },
     frame(t) {
       ctx.clearRect(0, 0, w, h);
-      const spacing = 26;
+      const spacing = 44;
       for (let i = 0; i < cols; i++) {
-        const x = i * 46 + 22;
+        const x = i * 108 + 40;
         const up = i % 3 !== 0;
         const offset = ((up ? t * 22 : -t * 22) + i * 37) % spacing;
         for (let y = -spacing; y < h + spacing; y += spacing) {
           const yy = y + (up ? offset : -offset) + spacing;
           if (yy < 0 || yy > h) continue;
           const teal = (i + Math.round(y / spacing)) % 5 === 0;
-          ctx.strokeStyle = teal ? TEAL(0.22) : BLUE(0.16);
+          ctx.strokeStyle = teal ? TEAL(0.13) : BLUE(0.1);
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(x, yy);
@@ -409,24 +413,61 @@ function bloomScene(ctx: Ctx): Scene {
   };
 }
 
-/** Ballot — slowly rising/falling result bars. */
+/**
+ * Ballot — a few tallies filling toward a quorum line.
+ *
+ * Was sixteen bars oscillating on independent sine phases along the bottom of
+ * the band, which is exactly where the metric strip sits: chunky rectangles
+ * pumping up and down behind the numbers. It read as noise because it was
+ * noise — sixteen unrelated oscillators say nothing about voting.
+ *
+ * Four horizontal tallies now fill slowly toward a quorum marker and hold
+ * there, which is what a vote actually looks like, and they sit in the upper
+ * band away from the text.
+ */
 function ballotScene(ctx: Ctx): Scene {
   let w = 0, h = 0;
   return {
     resize(nw, nh) { w = nw; h = nh; },
     frame(t) {
       ctx.clearRect(0, 0, w, h);
-      const n = 16;
-      const bw = w / (n * 2);
-      for (let i = 0; i < n; i++) {
-        const frac = i / (n - 1);
-        const bh = h * 0.12 + h * 0.14 * (1 + Math.sin(t * 0.6 + i * 0.85)) / 2;
-        // blue → teal lerp across the row
-        const r = Math.round(0 + 0 * frac);
-        const g = Math.round(112 + (176 - 112) * frac);
-        const b = Math.round(248 + (152 - 248) * frac);
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.13)`;
-        ctx.fillRect(i * 2 * bw + bw * 0.5, h - bh, bw, bh);
+      const rows = 4;
+      const quorum = w * 0.74;
+
+      // Quorum line: the threshold every tally is measured against.
+      ctx.strokeStyle = BLUE(0.1);
+      ctx.setLineDash([3, 5]);
+      ctx.beginPath();
+      ctx.moveTo(quorum, h * 0.16);
+      ctx.lineTo(quorum, h * 0.84);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (let i = 0; i < rows; i++) {
+        const y = h * (0.28 + (i * 0.16));
+        // Each tally eases toward its own share and settles, rather than
+        // oscillating forever. Periods are long and mutually prime-ish so they
+        // do not visibly loop together.
+        const target = 0.45 + i * 0.14;
+        const progress = Math.min(1, (t % (26 + i * 5)) / (9 + i * 2));
+        const eased = 1 - (1 - progress) ** 3;
+        const x1 = w * 0.18;
+        const x2 = x1 + (quorum - x1) * target * eased * 1.25;
+
+        ctx.strokeStyle = i % 2 ? TEAL(0.1) : BLUE(0.12);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(Math.min(x2, w), y);
+        ctx.stroke();
+
+        // Track behind the tally, so an unfilled row still reads as a row.
+        ctx.strokeStyle = BLUE(0.04);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(w * 0.94, y);
+        ctx.stroke();
       }
     },
   };
@@ -502,11 +543,26 @@ function HeroCanvas({ variant }: { variant: HeroVariant }) {
     };
   }, [variant]);
 
+  /*
+   * Faded out under the reading column.
+   *
+   * Every scene drew at full strength across the whole band, so the headline,
+   * description and metric strip all sat on top of moving geometry — legible,
+   * but restless to read. The mask keeps the animation where there is nothing
+   * to read (the right of the band) and removes it where there is. It applies
+   * to all variants at once, which is the right level to fix this at: the
+   * problem was never one scene's design, it was every scene competing with
+   * the text.
+   */
+  const fade =
+    "linear-gradient(to right, transparent 0%, transparent 26%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.85) 74%, #000 100%)";
+
   return (
     <canvas
       ref={ref}
       data-variant={variant}
       className="pointer-events-none absolute inset-0 h-full w-full"
+      style={{ maskImage: fade, WebkitMaskImage: fade }}
       aria-hidden
     />
   );
