@@ -13,6 +13,7 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MerchantCell } from "@/components/merchant-cell";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
+import { OrderPanel } from "@/components/p2p/order-panel";
 
 const ASSETS: Array<StablecoinAsset | "OPEN"> = ["USDT", "USDC", "USD1", "SOL", "OPEN"];
 
@@ -327,11 +328,20 @@ export function P2PExchange({
   );
 }
 
+/**
+ * One advertisement, which expands in place into the order form.
+ *
+ * Expanding beats navigating away: the price, limits and the advertiser you are
+ * comparing against stay on screen while you decide the amount, which is the
+ * whole reason the order book is a list.
+ */
 function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirection }) {
   const { ad, merchant, price, minFiat, maxFiat, fiat } = row;
   const buy = userDirection === "Buy";
+  const [open, setOpen] = useState(false);
 
   return (
+    <>
     <Tr>
       <Td py="py-6">
         <MerchantCell merchant={merchant} size="md" />
@@ -369,17 +379,35 @@ function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirec
         )}
       </Td>
       <Td right py="py-6">
-        <Link
-          href={`/orders/new?ad=${ad.id}`}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
           /* Fixed floor and no wrapping, so "Sell USDT" and "Buy SOL" are the
              same size and every row is the same height. */
           className={`inline-block min-w-[8rem] whitespace-nowrap rounded-md px-6 py-2.5 text-center text-sm font-semibold text-white transition-colors ${
             buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
           }`}
         >
-          {userDirection} {ad.asset}
-        </Link>
+          {open ? "Hide" : `${userDirection} ${ad.asset}`}
+        </button>
       </Td>
     </Tr>
+    {open && (
+      <tr>
+        <td colSpan={5} className="p-0">
+          <OrderPanel
+            ad={ad}
+            merchant={merchant}
+            price={price}
+            fiat={fiat}
+            minFiat={minFiat}
+            maxFiat={maxFiat}
+            userDirection={userDirection}
+            onClose={() => setOpen(false)}
+          />
+        </td>
+      </tr>
+    )}
+    </>
   );
 }

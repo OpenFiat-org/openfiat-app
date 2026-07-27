@@ -57,3 +57,37 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   appearance: textfield;
 }
+
+/*
+ * Thin dark scrollbar for overlay panels.
+ *
+ * The default scrollbar is drawn by the OS in its own light chrome, which on a
+ * dark dropdown reads as a bright stripe down the edge — the panel looks broken
+ * rather than scrollable. Firefox gets `scrollbar-color`; WebKit needs the
+ * pseudo-elements.
+ */
+.scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+  background-clip: content-box;
+}
