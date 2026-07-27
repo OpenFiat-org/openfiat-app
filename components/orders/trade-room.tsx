@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { SETTLEMENT_STEPS, type SettlementStatus, type Trade, type TradeEvent } from "@/lib/types";
+import type { SettlementStatus, Trade, TradeEvent } from "@/lib/types";
 import { merchantById } from "@/lib/data/merchants";
 import { formatCrypto, formatDate, formatFiat, formatNumber, shortSig } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { MerchantCell } from "@/components/merchant-cell";
+import { SettlementSteps } from "@/components/orders/settlement-steps";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 
@@ -49,7 +50,6 @@ export function TradeRoom({ trade }: { trade: Trade }) {
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
   const counterparty = merchantById(trade.counterpartyId);
-  const stepIndex = SETTLEMENT_STEPS.indexOf(status);
   const terminal = TERMINAL.has(status);
   const buy = trade.direction === "Buy";
   const awaitingPayment = status === "Awaiting Payment";
@@ -188,12 +188,15 @@ export function TradeRoom({ trade }: { trade: Trade }) {
             <div>
               <p className="text-xs text-gray-500">Current step</p>
               <p className="mt-0.5 text-lg font-semibold text-white">{bannerLabel}</p>
+              {/* Under the step, not beside the action. As a sibling of the
+                  button it read as a second thing to attend to; here it is a
+                  property of the step you are on. */}
+              {!terminal && (
+                <p className="mt-1 text-xs tabular-nums text-amber-300">
+                  {buy ? "Pay within" : "Buyer pays within"} {mm}:{ss}
+                </p>
+              )}
             </div>
-            {!terminal && (
-              <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-xs font-medium tabular-nums text-amber-300">
-                {buy ? "Pay within" : "Buyer pays within"} {mm}:{ss}
-              </span>
-            )}
             <div className="ml-auto flex items-center gap-2.5">
               {primaryAction}
               {terminal && status === "Disputed" && (
@@ -204,38 +207,13 @@ export function TradeRoom({ trade }: { trade: Trade }) {
             </div>
           </div>
 
-          {/* Compact horizontal stepper — labels on the current step only */}
-          <ol className="mt-5 flex items-start border-t border-white/5 pt-5">
-            {SETTLEMENT_STEPS.map((step, i) => {
-              const done = i < stepIndex || status === "Completed";
-              const current = i === stepIndex && status !== "Completed" && !terminal;
-              return (
-                <li key={step} className="flex flex-1 items-start last:flex-none">
-                  <div className="relative flex flex-col items-center">
-                    <span
-                      className={`flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold ${
-                        done
-                          ? "border-emerald-400/50 bg-emerald-400/15 text-emerald-300"
-                          : current
-                            ? "border-brand bg-brand/20 text-brand-hover"
-                            : "border-white/15 text-gray-600"
-                      }`}
-                    >
-                      {done ? "✓" : i + 1}
-                    </span>
-                    {current && (
-                      <span className="absolute left-1/2 top-7 w-28 -translate-x-1/2 text-center text-[10px] leading-tight text-brand-hover">
-                        {step}
-                      </span>
-                    )}
-                  </div>
-                  {i < SETTLEMENT_STEPS.length - 1 && (
-                    <span className={`mx-1 mt-3 h-px flex-1 ${done ? "bg-emerald-400/40" : "bg-white/10"}`} />
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+          <SettlementSteps
+            status={status}
+            counterpartyName={counterparty.name}
+            buy={buy}
+            terminal={terminal}
+          />
+
           {terminal && status !== "Completed" && (
             <div className="mt-4 flex items-center gap-3 border-t border-white/5 pt-4">
               <StatusPill status={status} />
