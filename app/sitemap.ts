@@ -3,6 +3,7 @@ import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
 import { DISPUTES } from "@/lib/data/disputes";
 import { CURRENT_USER, MERCHANTS } from "@/lib/data/merchants";
 import { PROVIDERS } from "@/lib/data/providers";
+import { PAIRS } from "@/lib/pairs";
 
 const BASE = "https://app.openfiat.network";
 const LAST_UPDATED = new Date("2026-07-28");
@@ -80,6 +81,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       .map((code) => entry(`/country/${c.slug}/${code.toLowerCase()}`, 0.7, "daily")),
   ]);
 
+  /*
+   * Pair pages, ranked with the country markets. "convert USDT to KES" and "buy
+   * USDT in Kenya" are the same intent expressed two ways, and both deserve to
+   * be found.
+   */
+  const pairRoutes = PAIRS.map((pair) => entry(`/${pair.slug}`, 0.9, "daily"));
+
   const merchantRoutes = [...MERCHANTS, CURRENT_USER].map((m) =>
     entry(`/merchants/${m.id}`, 0.6, "daily"),
   );
@@ -95,6 +103,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...guides,
     ...publicSurfaces,
     ...countryRoutes,
+    ...pairRoutes,
     ...merchantRoutes,
     ...providerRoutes,
     ...disputeRoutes,
