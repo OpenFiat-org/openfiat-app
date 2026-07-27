@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { NETWORK_NODES } from "@/lib/data/network";
+
 import {
   NODE_CHANGED_EVENT,
+  connectableNodes,
   readNodeSelection,
   writeNodeSelection,
   type NodeSelection,
@@ -85,7 +86,10 @@ function AccessNodeModal({
   const [error, setError] = useState("");
   const [connected, setConnected] = useState<string | null>(null);
 
-  const online = NETWORK_NODES.filter((n) => n.status === "Online");
+  /* Only roles a client can attach to. Offering an oracle or a notification
+     gateway here let someone point their interface at a service that has no
+     API for it. */
+  const online = connectableNodes();
 
   function useNode(id: string) {
     writeNodeSelection(id);
