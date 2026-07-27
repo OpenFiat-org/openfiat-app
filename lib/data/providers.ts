@@ -189,6 +189,10 @@ function build(
     registeredAt,
     description,
     wallet: pseudoAddress(`openfiat-provider-${id}`),
+    // Derived deterministically from the service ID, like the wallet above.
+    nodeIdentity: `node-${id.replace(/^svc-/, "")}-01`,
+    peerId: `12D3Koo${pseudoAddress(`peer-${id}`).slice(0, 45)}`,
+    publicKey: pseudoAddress(`pubkey-${id}`),
     signature: pseudoAddress(`openfiat-sig-${id}`) + pseudoAddress(`sig-${id}`),
   };
 }

@@ -76,6 +76,24 @@ export default async function ProviderPage({ params }: { params: Promise<Params>
                 </li>
               ))}
             </ol>
+            <p className="border-t border-white/10 px-4 py-2.5 text-[11px] leading-relaxed text-gray-500">
+              Connect using the peer ID below, not the hostname alone. The
+              endpoint says where to dial; the peer ID and public key are what
+              prove you reached this provider and not someone who advertised the
+              same address.
+            </p>
+          </Panel>
+
+          {/* OFS-1500 §5. Without these a registry entry is just a URL, and a
+              node has no way to tell a real provider from an impostor. */}
+          <Panel title="Identity — verify before you connect">
+            <div className="divide-y divide-white/5 px-4">
+              <IdRow label="Peer ID" value={provider.peerId} />
+              <IdRow label="Node identity" value={provider.nodeIdentity} />
+              <IdRow label="Public key" value={provider.publicKey} />
+              <IdRow label="Wallet (registration signer)" value={provider.wallet} />
+              <IdRow label="Registration signature" value={provider.signature} />
+            </div>
           </Panel>
 
           <Panel title="Capabilities">
@@ -129,6 +147,19 @@ function Row({ label, value, mono, copy }: { label: string; value: string; mono?
       <span className={`flex min-w-0 items-center gap-2 text-right text-gray-200 ${mono ? "font-mono text-xs" : ""}`}>
         <span className="truncate">{value}</span>
         {copy && <CopyButton value={copy} />}
+      </span>
+    </div>
+  );
+}
+
+/** One copyable identity value. */
+function IdRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5 text-sm">
+      <span className="shrink-0 text-gray-500">{label}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 truncate font-mono text-xs text-gray-300">{value}</span>
+        <CopyButton value={value} />
       </span>
     </div>
   );

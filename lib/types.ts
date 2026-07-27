@@ -467,7 +467,10 @@ export type ServiceType =
   | "Merchant Gateway"
   | "Public API Node";
 
-export type ProviderStatus = "Online" | "Degraded" | "Offline";
+/** OFS-1500 §11. Maintenance is a distinct state from degraded: one is
+ *  planned, the other is not, and a client picking a provider should be able to
+ *  tell them apart. */
+export type ProviderStatus = "Online" | "Maintenance" | "Degraded" | "Offline";
 
 export interface PricingItem {
   item: string;
@@ -483,6 +486,16 @@ export interface ServiceProvider {
   name: string;
   /** Provider wallet (registration signer). */
   wallet: string;
+  /**
+   * The rest of the §5 identity. A registered endpoint URL on its own proves
+   * nothing — anyone can advertise a host. A node connecting to a provider
+   * needs the peer ID it expects to handshake with and the public key the
+   * registration was signed under, or the registry becomes a list of addresses
+   * an attacker can impersonate.
+   */
+  nodeIdentity: string;
+  peerId: string;
+  publicKey: string;
   endpoints: string[];
   protocolVersions: string[];
   region: string;

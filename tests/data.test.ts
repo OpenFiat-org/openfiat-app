@@ -553,6 +553,42 @@ describe("liquidity vaults", () => {
   });
 });
 
+describe("service registry", () => {
+  it("carries the full OFS-1500 §5 identity", () => {
+    // An endpoint URL alone proves nothing: anyone can advertise a host. A node
+    // needs the peer ID it expects to handshake with and the key the
+    // registration was signed under, or the registry is a list of addresses an
+    // attacker can impersonate.
+    for (const p of PROVIDERS) {
+      expect(p.wallet, p.id).toBeTruthy();
+      expect(p.peerId, p.id).toBeTruthy();
+      expect(p.nodeIdentity, p.id).toBeTruthy();
+      expect(p.publicKey, p.id).toBeTruthy();
+      expect(p.signature, p.id).toBeTruthy();
+    }
+  });
+
+  it("carries everything a registration event requires (\u00a77)", () => {
+    for (const p of PROVIDERS) {
+      expect(p.endpoints.length, p.id).toBeGreaterThan(0);
+      expect(p.protocolVersions.length, p.id).toBeGreaterThan(0);
+      expect(p.region, p.id).toBeTruthy();
+      expect(p.capabilities.length, p.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("uses only the health states the spec defines (\u00a711)", () => {
+    for (const p of PROVIDERS) {
+      expect(["Online", "Maintenance", "Degraded", "Offline"], p.id).toContain(p.status);
+    }
+  });
+
+  it("keeps service ids unique", () => {
+    const ids = PROVIDERS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
 describe("staking roles", () => {
   it("covers every protocol role with a positive minimum bond", () => {
     const roles = STAKING_ROLES.map((r) => r.role);
