@@ -79,7 +79,16 @@ export default function NetworkPage() {
             {PROTOCOL_EVENTS.map((e, i) => (
               <li key={i} className="flex flex-wrap items-center gap-x-4 gap-y-0.5 px-4 py-2.5 text-sm">
                 <span className="w-36 shrink-0 text-xs tabular-nums text-gray-600">{formatDate(e.timestamp)}</span>
-                <span className="w-44 shrink-0 font-mono text-xs text-brand-hover">{e.type}</span>
+                {/* The longest type — MerchantAvailabilityChanged — overran a
+                    w-44 column and butted straight into the actor beside it.
+                    Truncating with a title keeps the columns aligned and the
+                    full value reachable. */}
+                <span
+                  title={e.type}
+                  className="w-56 shrink-0 truncate pr-2 font-mono text-xs text-brand-hover"
+                >
+                  {e.type}
+                </span>
                 <span className="w-28 shrink-0 truncate text-xs text-gray-500">{e.actor}</span>
                 <span className="min-w-0 flex-1 text-gray-300">{e.summary}</span>
               </li>

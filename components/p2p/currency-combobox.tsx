@@ -110,7 +110,10 @@ export function CurrencyCombobox({
           setQuery("");
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 text-sm text-gray-200 hover:border-white/25"
+        aria-expanded={open}
+        className={`relative flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-gray-200 transition-colors ${
+          open ? "border-brand/60 bg-brand/[0.06] text-white" : "border-white/10 hover:border-white/25"
+        }`}
       >
         {isInternational ? (
           <>
@@ -131,7 +134,17 @@ export function CurrencyCombobox({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute z-50 mt-2 w-[22rem] overflow-hidden rounded-lg border border-white/15 bg-[#10151d] shadow-2xl">
+          {/*
+            * A notch pointing back at the trigger. Without it the panel reads
+            * as an unmoored sheet — you can see a list of currencies but not
+            * which control produced it, and with several filters in a row that
+            * is a real question.
+            */}
+          <div className="absolute z-50 mt-2 w-[24rem] rounded-lg border border-white/15 bg-[#10151d] shadow-2xl">
+            <span
+              aria-hidden
+              className="absolute -top-[5px] left-5 h-2 w-2 rotate-45 border-l border-t border-white/15 bg-[#10151d]"
+            />
             <div className="border-b border-white/10 p-3">
               <input
                 ref={inputRef}
@@ -141,7 +154,7 @@ export function CurrencyCombobox({
                 className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
               />
             </div>
-            <ul className="max-h-80 divide-y divide-white/5 overflow-y-auto">
+            <ul className="scrollbar-dark max-h-80 divide-y divide-white/5 overflow-y-auto rounded-b-lg">
               {showInternational && (
                 <li>
                   <button

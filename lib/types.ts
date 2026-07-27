@@ -80,6 +80,15 @@ export interface Advertisement {
   paymentMethods: string[];
   /** Borderless ad: priced in USD, accepts any fiat currency (FX-converted) and any payment method. */
   international?: boolean;
+  /**
+   * Advertiser terms — the merchant's own conditions, in their own words.
+   *
+   * OFS-2100 §13 lets a merchant declare methods but not the practical
+   * conditions around them, and those conditions are what disputes turn on:
+   * whose name must be on the transfer, what reference to use, which hours
+   * they settle. Shown before a taker commits rather than discovered in chat.
+   */
+  terms?: string;
   status: AdStatus;
   updatedAt: string; // ISO timestamp
 }

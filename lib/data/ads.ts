@@ -64,9 +64,9 @@ function floating(premiumPct: number): PricingModel {
 
 export const ADS: Advertisement[] = [
   // --- Merchant Sell ads (shown under the taker's "Buy" tab) ---
-  { id: "AD-1001", merchantId: "m-kenyastar", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.45), minTrade: 5000, maxTrade: 500000, availableLiquidity: 25430.5, paymentMethods: [MPESA, EQUITY], status: "Online", updatedAt: "2026-07-27T13:58:00Z" },
-  { id: "AD-1002", merchantId: "m-swiftkes", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(0.8), minTrade: 2000, maxTrade: 250000, availableLiquidity: 12000, paymentMethods: [MPESA, POCHI, IM_BANK], status: "Online", updatedAt: "2026-07-27T13:55:00Z" },
-  { id: "AD-1003", merchantId: "m-westlands", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.9), minTrade: 10000, maxTrade: 2000000, availableLiquidity: 85000, paymentMethods: [EQUITY, KCB, IM_BANK], status: "Online", updatedAt: "2026-07-27T13:51:00Z" },
+  { id: "AD-1001", merchantId: "m-kenyastar", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.45), minTrade: 5000, maxTrade: 500000, availableLiquidity: 25430.5, paymentMethods: [MPESA, EQUITY], terms: "Send from an account in your own name — third-party transfers are rejected and refunded. Use the trade ID as the M-Pesa reference. I settle 07:00–22:00 EAT.", status: "Online", updatedAt: "2026-07-27T13:58:00Z" },
+  { id: "AD-1002", merchantId: "m-swiftkes", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(0.8), minTrade: 2000, maxTrade: 250000, availableLiquidity: 12000, paymentMethods: [MPESA, POCHI, IM_BANK], terms: "Bank transfers only from a Kenyan account you hold. Put the trade ID in the reference field or I cannot match your payment. No cash deposits at the branch.", status: "Online", updatedAt: "2026-07-27T13:55:00Z" },
+  { id: "AD-1003", merchantId: "m-westlands", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(132.9), minTrade: 10000, maxTrade: 2000000, availableLiquidity: 85000, paymentMethods: [EQUITY, KCB, IM_BANK], terms: "Large amounts welcome. For anything above 500,000 KES message me first so I can confirm the vault has the depth. Reference must be the trade ID.", status: "Online", updatedAt: "2026-07-27T13:51:00Z" },
   { id: "AD-1004", merchantId: "m-nairobihub", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: floating(1.1), minTrade: 1000, maxTrade: 100000, availableLiquidity: 4200.75, paymentMethods: [MPESA], status: "Online", updatedAt: "2026-07-27T13:47:00Z" },
   { id: "AD-1005", merchantId: "m-mombasapay", asset: "USDT", direction: "Sell", fiatCurrency: "KES", pricing: fixed(133.1), minTrade: 500, maxTrade: 60000, availableLiquidity: 1850.2, paymentMethods: [MPESA, POCHI], status: "Online", updatedAt: "2026-07-27T13:40:00Z" },
   { id: "AD-1006", merchantId: "m-thika", asset: "USDC", direction: "Sell", fiatCurrency: "KES", pricing: fixed(131.8), minTrade: 3000, maxTrade: 150000, availableLiquidity: 9600, paymentMethods: [MPESA, KCB], status: "Online", updatedAt: "2026-07-27T13:32:00Z" },
@@ -80,8 +80,8 @@ export const ADS: Advertisement[] = [
   { id: "AD-1014", merchantId: "m-saopix", asset: "USDT", direction: "Sell", fiatCurrency: "BRL", pricing: fixed(5.71), minTrade: 200, maxTrade: 60000, availableLiquidity: 18300, paymentMethods: [PIX], status: "Online", updatedAt: "2026-07-27T12:58:00Z" },
 
   // --- Merchant Buy ads (shown under the taker's "Sell" tab) ---
-  { id: "AD-1015", merchantId: "m-kenyastar", asset: "USDT", direction: "Buy", fiatCurrency: "KES", pricing: fixed(129.8), minTrade: 5000, maxTrade: 600000, availableLiquidity: 40000, paymentMethods: [MPESA, EQUITY], status: "Online", updatedAt: "2026-07-27T13:56:00Z" },
-  { id: "AD-1016", merchantId: "m-westlands", asset: "USDT", direction: "Buy", fiatCurrency: "KES", pricing: floating(-0.7), minTrade: 10000, maxTrade: 1500000, availableLiquidity: 90000, paymentMethods: [EQUITY, KCB, IM_BANK], status: "Online", updatedAt: "2026-07-27T13:49:00Z" },
+  { id: "AD-1015", merchantId: "m-kenyastar", asset: "USDT", direction: "Buy", fiatCurrency: "KES", pricing: fixed(129.8), minTrade: 5000, maxTrade: 600000, availableLiquidity: 40000, paymentMethods: [MPESA, EQUITY], terms: "I pay out within 10 minutes during working hours. Give me the exact M-Pesa number registered in your name — I will not send to a third party.", status: "Online", updatedAt: "2026-07-27T13:56:00Z" },
+  { id: "AD-1016", merchantId: "m-westlands", asset: "USDT", direction: "Buy", fiatCurrency: "KES", pricing: floating(-0.7), minTrade: 10000, maxTrade: 1500000, availableLiquidity: 90000, paymentMethods: [EQUITY, KCB, IM_BANK], terms: "Equity or KCB only. I send from a business account, so the sender name will not match my display name here; that is normal and the transfer reference will carry the trade ID.", status: "Online", updatedAt: "2026-07-27T13:49:00Z" },
   { id: "AD-1017", merchantId: "m-nairobihub", asset: "USDT", direction: "Buy", fiatCurrency: "KES", pricing: fixed(129.35), minTrade: 1000, maxTrade: 120000, availableLiquidity: 8800, paymentMethods: [MPESA, POCHI], status: "Online", updatedAt: "2026-07-27T13:43:00Z" },
   { id: "AD-1018", merchantId: "m-swiftkes", asset: "USDC", direction: "Buy", fiatCurrency: "KES", pricing: floating(-0.5), minTrade: 2000, maxTrade: 200000, availableLiquidity: 15000, paymentMethods: [MPESA, IM_BANK], status: "Online", updatedAt: "2026-07-27T13:36:00Z" },
   { id: "AD-1019", merchantId: "m-thika", asset: "USD1", direction: "Buy", fiatCurrency: "KES", pricing: fixed(129.1), minTrade: 1500, maxTrade: 50000, availableLiquidity: 3200, paymentMethods: [MPESA], status: "Online", updatedAt: "2026-07-27T13:27:00Z" },
@@ -274,6 +274,24 @@ function mulberry32(seed: number): () => number {
 
 const rand = mulberry32(0x0f1a7);
 
+/**
+ * Advertiser terms for the generated book, picked deterministically.
+ *
+ * Written as the conditions that actually cause disputes — whose name is on the
+ * transfer, what reference to use, what hours they settle — because that is
+ * what the field is for. A merchant with no terms is left with none rather than
+ * given filler.
+ */
+const GENERATED_TERMS = [
+  "Send only from an account in your own name. Third-party payments are refunded, not settled.",
+  "Put the trade ID in the payment reference. Without it I cannot match your transfer and will have to ask for a screenshot.",
+  "I settle within 15 minutes during local business hours. Outside those hours expect the full payment window.",
+  "No cash deposits at a branch counter — the receipt does not show who sent it, which makes a dispute unwinnable for both of us.",
+  "Please do not mark as paid before the money has actually left your account. Marking early and then cancelling costs us both reputation.",
+  "Happy to trade large amounts. Message me in the trade chat before sending anything near my maximum.",
+  "",
+];
+
 /** Round a fiat price to sensible precision for the currency's magnitude. */
 function roundPrice(value: number, fx: number): number {
   const decimals = fx >= 10000 ? 0 : fx >= 1 ? 2 : 3;
@@ -337,6 +355,9 @@ function generateBook(): Advertisement[] {
         availableLiquidity:
           asset === "SOL" ? round2(5 + rand() * 500) : round2(500 + rand() * 99500),
         paymentMethods: pickMethods(mk.methods),
+        // One in seven advertisers sets no terms, which is realistic and keeps
+        // the empty state on screen rather than only in theory.
+        terms: GENERATED_TERMS[Math.floor(rand() * GENERATED_TERMS.length)] || undefined,
         status: rand() < 0.08 ? "Paused" : "Online",
         updatedAt: generatedTimestamp(),
       });
