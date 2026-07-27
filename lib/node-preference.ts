@@ -1,4 +1,4 @@
-import type { NetworkNode } from "@/lib/types";
+import type { NetworkNode, NodeRole } from "@/lib/types";
 import { NETWORK_NODES } from "@/lib/data/network";
 
 /**
@@ -19,10 +19,29 @@ export interface NodeSelection {
   custom: boolean;
 }
 
+/**
+ * Node roles a user interface can actually attach to.
+ *
+ * The picker previously offered any Online node, which let you select a
+ * notification gateway, an oracle, a snapshot host or a risk-intelligence
+ * provider as your access node. None of those serve a client: they are services
+ * that *nodes* consume, published in the service registry for discovery, and an
+ * interface pointed at one has nothing to talk to.
+ *
+ * Bootstrap nodes are excluded for a different reason — their job is to hand
+ * out peers so a joining node can find the network, not to answer marketplace
+ * queries.
+ */
+export const CONNECTABLE_ROLES: NodeRole[] = ["Full Node", "Public API Node"];
+
+export function connectableNodes(): NetworkNode[] {
+  return NETWORK_NODES.filter(
+    (n) => CONNECTABLE_ROLES.includes(n.role) && n.status === "Online",
+  );
+}
+
 export function defaultNode(): NetworkNode {
-  return [...NETWORK_NODES]
-    .filter((n) => n.status === "Online")
-    .sort((a, b) => a.latencyMs - b.latencyMs)[0];
+  return [...connectableNodes()].sort((a, b) => a.latencyMs - b.latencyMs)[0];
 }
 
 export function resolveNodeSelection(raw: string | null): NodeSelection {
@@ -30,7 +49,10 @@ export function resolveNodeSelection(raw: string | null): NodeSelection {
     if (raw.startsWith("custom:")) {
       return { id: raw.slice(7), role: "Custom Node", region: "Self-hosted", latencyMs: null, custom: true };
     }
-    const node = NETWORK_NODES.find((n) => n.id === raw && n.status === "Online");
+    // Also guards against a stale localStorage value naming a node that is no
+    // longer connectable — the role check has to happen on read, not only in
+    // the picker.
+    const node = connectableNodes().find((n) => n.id === raw);
     if (node) {
       return { id: node.id, role: node.role, region: node.region, latencyMs: node.latencyMs, custom: false };
     }

@@ -7,6 +7,7 @@ import { MetricStrip } from "@/components/metrics";
 import { PageHero } from "@/components/page-hero";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
+import { CONNECTABLE_ROLES } from "@/lib/node-preference";
 import { NodeUseButton } from "@/components/network/node-use-button";
 
 export const metadata: Metadata = {
@@ -67,7 +68,25 @@ export default function NetworkPage() {
               <Td py="py-5" right num className="w-20 text-gray-300">{n.peers}</Td>
               <Td py="py-5" right num className="w-24 text-gray-400">{n.status === "Offline" ? "—" : `${n.latencyMs} ms`}</Td>
               <Td py="py-5" right className="w-24"><StatusPill status={n.status} /></Td>
-              <Td py="py-5" right className="w-24">{n.status === "Online" && <NodeUseButton nodeId={n.id} />}</Td>
+              {/* Only full and public API nodes serve a client. The rest are
+                  services nodes consume, so offering "Use" on them would let
+                  someone point their interface at something with no API for it. */}
+              <Td py="py-5" right className="w-24">
+                {n.status === "Online" && CONNECTABLE_ROLES.includes(n.role) ? (
+                  <NodeUseButton nodeId={n.id} />
+                ) : (
+                  <span
+                    className="text-[11px] text-gray-600"
+                    title={
+                      CONNECTABLE_ROLES.includes(n.role)
+                        ? "Offline — cannot be used right now"
+                        : "This is a service that nodes consume, not an endpoint an interface connects to. Browse it in the service registry."
+                    }
+                  >
+                    {CONNECTABLE_ROLES.includes(n.role) ? "—" : "service"}
+                  </span>
+                )}
+              </Td>
             </Tr>
           ))}
         </DataTable>

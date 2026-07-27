@@ -12,7 +12,8 @@ import { DISPUTES, DISPUTE_OUTCOMES } from "@/lib/data/disputes";
 import { DISPUTE_STAGES, disputeStageIndex, evidenceVisible, isDisputeParty } from "@/lib/types";
 import { PROPOSALS } from "@/lib/data/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
-import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
+import { NETWORK_NODES, PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
+import { connectableNodes, defaultNode } from "@/lib/node-preference";
 import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
@@ -541,6 +542,36 @@ describe("protocol events", () => {
   it("event timestamps are fixed ISO strings", () => {
     for (const e of PROTOCOL_EVENTS) {
       expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    }
+  });
+});
+
+describe("access nodes", () => {
+  it("only offers node roles an interface can attach to", () => {
+    // The picker used to offer any Online node, which let you select a
+    // notification gateway, an oracle, a snapshot host or a risk-intelligence
+    // provider as your access node. Those are services nodes consume, not
+    // endpoints a browser talks to.
+    for (const n of connectableNodes()) {
+      expect(["Full Node", "Public API Node"], n.id).toContain(n.role);
+      expect(n.status, n.id).toBe("Online");
+    }
+  });
+
+  it("excludes the service roles from the connectable set", () => {
+    const ids = new Set(connectableNodes().map((n) => n.id));
+    const services = NETWORK_NODES.filter(
+      (n) => !["Full Node", "Public API Node"].includes(n.role),
+    );
+    expect(services.length).toBeGreaterThan(0);
+    for (const s of services) expect(ids.has(s.id), s.id).toBe(false);
+  });
+
+  it("defaults to the lowest-latency connectable node", () => {
+    const node = defaultNode();
+    expect(node).toBeDefined();
+    for (const other of connectableNodes()) {
+      expect(node.latencyMs).toBeLessThanOrEqual(other.latencyMs);
     }
   });
 });
