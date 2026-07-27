@@ -91,3 +91,28 @@ input[type="number"] {
   background: rgba(255, 255, 255, 0.28);
   background-clip: content-box;
 }
+
+/*
+ * Chrome's autofill highlight.
+ *
+ * When a value is autofilled or pasted from the browser's own store, Chrome
+ * paints the field with a light blue background of its own — applied with
+ * !important, so no background rule can override it. The inset box-shadow is
+ * the only way to cover it, and the absurd transition delay stops Chrome
+ * re-applying the colour on focus changes.
+ *
+ * Without this, a dark form flashes a white field the moment someone pastes an
+ * amount into it.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #f4f6f8;
+  -webkit-box-shadow: 0 0 0 1000px #0a0e14 inset;
+  box-shadow: 0 0 0 1000px #0a0e14 inset;
+  caret-color: #f4f6f8;
+  transition: background-color 9999s ease-out 0s;
+}

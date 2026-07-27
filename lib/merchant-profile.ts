@@ -99,22 +99,22 @@ export function verifications(merchant: Merchant): Verification[] {
     {
       label: "Email",
       verified: level >= 1,
-      hint: "A contact address was confirmed by the merchant.",
+      hint: "A contact address was confirmed by the merchant. It proves they can be reached, nothing about who they are.",
     },
     {
       label: "SMS",
       verified: level >= 1,
-      hint: "A phone number was confirmed by the merchant.",
+      hint: "A phone number was confirmed by the merchant. Same caveat as email — reachability, not identity.",
     },
     {
-      label: "Identity",
+      label: "ID document",
       verified: level >= 2,
-      hint: "A document check was completed by a verification provider — not by OpenFiat, which never holds the documents.",
+      hint: "A government ID was checked against the person by an independent verification provider. OpenFiat never receives or stores the document — only the provider's signed claim that the check passed.",
     },
     {
       label: "Business",
       verified: level >= 3,
-      hint: "A registered business was verified in addition to the individual.",
+      hint: "A registered company was verified in addition to the individual, so there is a legal entity behind the desk.",
     },
     {
       label: "Bonded",
