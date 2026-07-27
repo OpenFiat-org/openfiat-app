@@ -157,6 +157,10 @@ const RAW: Raw[] = [
   ["YE", "Yemen", "YER", "Yemeni rial", "﷼"],
   // Asia — territories & partially recognized
   ["PS", "Palestine", "ILS", "Israeli new shekel (JOD also used)", "₪", false],
+  // Grouped here with Hong Kong and Macau: `isRecognized: false` records
+  // non-UN-membership and nothing more, and the UI never hides these entries
+  // or labels them differently. The column heading is "Country / Territory".
+  ["TW", "Taiwan", "TWD", "New Taiwan dollar", "NT$", false],
   ["HK", "Hong Kong", "HKD", "Hong Kong dollar", "HK$", false],
   ["MO", "Macau", "MOP", "Macanese pataca", "MOP$", false],
   ["XNC", "Northern Cyprus", "TRY", "Turkish lira", "₺", false, "TR"],

@@ -213,11 +213,7 @@ export function P2PExchange({
                 asset === a ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
               }`}
             >
-              {a === "OPEN" ? (
-                <span className="inline-block h-3 w-3 rotate-45 bg-gradient-to-br from-brand to-brand-teal" />
-              ) : (
-                <AssetIcon asset={a} size={16} />
-              )}
+              <AssetIcon asset={a} size={16} />
               {a}
             </button>
           ))}

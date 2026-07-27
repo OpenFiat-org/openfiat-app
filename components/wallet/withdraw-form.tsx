@@ -64,7 +64,7 @@ export function WithdrawForm({ initialAsset }: { initialAsset?: string }) {
                   asset === a ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
                 }`}
               >
-                {a !== "OPEN" && <AssetIcon asset={a} size={16} />}
+                <AssetIcon asset={a} size={16} />
                 {a}
               </button>
             ))}

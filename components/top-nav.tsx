@@ -55,7 +55,7 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0e14]/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-5 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 text-lg font-semibold text-white">
-          <Image src="/logo.png" alt="" width={28} height={28} priority />
+          <Image src="/logo-mark.png" alt="" width={28} height={28} priority />
           OpenFiat
         </Link>
 
