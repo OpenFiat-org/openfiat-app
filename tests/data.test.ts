@@ -23,6 +23,7 @@ import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
 import qr from "qrcode-generator";
 import { pseudoAddress, pseudoSignature } from "@/lib/format";
+import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
 import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
 import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
@@ -137,6 +138,42 @@ describe("merchants", () => {
       expect(m.completionRate).toBeGreaterThan(0);
       expect(m.completionRate).toBeLessThanOrEqual(100);
       expect(countryCodes.has(m.countryCode), `${m.name} -> ${m.countryCode}`).toBe(true);
+    }
+  });
+});
+
+describe("merchant reviews", () => {
+  it("only exists for merchants that were written, not all of them", () => {
+    // Ratings are derived; reviews are prose and cannot be. Two merchants have
+    // them as a sample rather than forty having fabricated testimony.
+    const withReviews = new Set(REVIEWS.map((r) => r.merchantId));
+    expect(withReviews.size).toBe(2);
+    for (const id of withReviews) {
+      expect(merchantIds.has(id), id).toBe(true);
+    }
+  });
+
+  it("never claims more written reviews than total ratings", () => {
+    // Most people rate without commenting, so the written subset must be the
+    // smaller of the two — the reverse would be incoherent.
+    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
+      const merchant = merchantById(id);
+      expect(reviewsFor(id).length, id).toBeLessThan(ratingFor(merchant).count);
+    }
+  });
+
+  it("includes negative reviews, since a page of praise says nothing", () => {
+    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
+      expect(reviewsFor(id).some((r) => !r.positive), id).toBe(true);
+    }
+  });
+
+  it("returns reviews newest first", () => {
+    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
+      const list = reviewsFor(id);
+      for (let i = 1; i < list.length; i++) {
+        expect(list[i - 1].at >= list[i].at, id).toBe(true);
+      }
     }
   });
 });

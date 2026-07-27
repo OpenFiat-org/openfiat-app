@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CURRENT_USER, MERCHANTS, adCapacityFor, reputationFor } from "@/lib/data/merchants";
+import { reviewsFor } from "@/lib/data/reviews";
 import { compositeScore } from "@/lib/reputation";
+import { ProfileTabs } from "@/components/merchants/profile-tabs";
 import {
   lifetimeOrders,
   ratingFor,
@@ -51,6 +53,7 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
   const recent = recentOrders(merchant);
   const lifetime = lifetimeOrders(merchant);
   const rating = ratingFor(merchant);
+  const reviews = reviewsFor(merchant.id);
   const capacity = adCapacityFor(merchant);
 
   return (
@@ -133,12 +136,14 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
       </div>
 
       {/* Active advertisements */}
-      {/* Named from the visitor's side, not the merchant's. "Sell ads" makes a
-          reader work out what they would be doing. */}
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-        Trade with {merchant.name} ({ads.length} advertisement{ads.length === 1 ? "" : "s"})
-      </h2>
-      <div className="mt-3">
+      {/* Ads and reviews as tabs, per the reference layout. The table is passed
+          in rather than rendered inside the client component, so it stays a
+          server component and the ad data never crosses the boundary. */}
+      <ProfileTabs
+        adCount={ads.length}
+        ratingCount={rating.count}
+        reviews={reviews}
+        ads={
         <DataTable
           minWidth={1040}
           head={
@@ -210,7 +215,8 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
             </tr>
           )}
         </DataTable>
-      </div>
+        }
+      />
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         {/* Reputation */}
