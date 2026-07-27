@@ -21,7 +21,8 @@ import { OPEN_PRICE_USDC, PRESALE, SALE_PHASES } from "@/lib/data/sale";
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
-import { pseudoSignature } from "@/lib/format";
+import qr from "qrcode-generator";
+import { pseudoAddress, pseudoSignature } from "@/lib/format";
 import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
 import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
@@ -609,6 +610,28 @@ describe("protocol events", () => {
     for (const e of PROTOCOL_EVENTS) {
       expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     }
+  });
+});
+
+describe("QR encoding", () => {
+  it("produces a scannable grid with real finder patterns", () => {
+    // The failure mode of a hand-rolled encoder is a code that looks right and
+    // does not scan, which is why this uses a library — and why the structure
+    // is asserted rather than assumed.
+    const address = pseudoAddress("openfiat-deposit-USDT");
+    const code = qr(0, "M");
+    code.addData(address);
+    code.make();
+    const n = code.getModuleCount();
+    // A 44-character payload at level M needs more than the smallest version.
+    expect(n).toBeGreaterThanOrEqual(25);
+    // Finder pattern: a dark 7x7 ring with a light second row inside it.
+    expect(code.isDark(0, 0)).toBe(true);
+    expect(code.isDark(0, 6)).toBe(true);
+    expect(code.isDark(1, 1)).toBe(false);
+    // Present in all three corners.
+    expect(code.isDark(0, n - 1)).toBe(true);
+    expect(code.isDark(n - 1, 0)).toBe(true);
   });
 });
 
