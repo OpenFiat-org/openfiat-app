@@ -149,30 +149,187 @@ export interface Trade {
   events: TradeEvent[];
 }
 
-export type DisputeStatus =
-  | "Evidence Submitted"
-  | "Investigation"
-  | "Decision"
-  | "Closed";
+/*
+ * Dispute resolution, modelled on OFS-2400 (ODP) and Chapter 11.
+ *
+ * The protocol is not a judge model. A case is published with metadata only,
+ * qualified arbitrators volunteer by committing OPEN stake, evidence is
+ * withheld until they are accepted, the required number of them is never
+ * disclosed, and they vote by commit-and-reveal. Every type below exists to
+ * keep one of those properties representable.
+ */
 
+/** OFS-2400 §14, in order. The stepper walks this list. */
+export const DISPUTE_STAGES = [
+  "Opened",
+  "Escrow Frozen",
+  "Evidence Submitted",
+  "Investigation",
+  "Arbitrators Joining",
+  "Case Locked",
+  "Evidence Released",
+  "Commit Phase",
+  "Reveal Phase",
+  "Decision",
+  "Escrow Released",
+  "Reputation Updated",
+  "Closed",
+] as const;
+
+export type DisputeStage = (typeof DISPUTE_STAGES)[number];
+
+/**
+ * Who is looking at a case. "Buyer" and "Seller" are parties to the disputed
+ * trade; the other two are third parties who may arbitrate it. A party cannot
+ * arbitrate their own dispute, so the two sets never overlap.
+ */
+export type DisputeViewerRole =
+  | "Buyer"
+  | "Seller"
+  | "Arbitrator"
+  | "Prospective arbitrator";
+
+/** Grounds for opening, per OFS-2400 §5 / Chapter 11 §11.3. */
+export type DisputeCategory =
+  | "Merchant rejected payment"
+  | "Buyer disputes rejection"
+  | "Incorrect payment reported"
+  | "Escrow issue reported"
+  | "Payment delay exceeded timeout"
+  | "Fraud suspected"
+  | "No agreement reached";
+
+/**
+ * OFS-2400 §17. "Partial Settlement" is explicitly marked future work there,
+ * so it is not a value this version can produce.
+ */
 export type DisputeOutcome =
   | "Buyer Wins"
   | "Merchant Wins"
   | "Mutual Settlement"
   | "Invalid Dispute";
 
+/**
+ * OFS-2400 §10-12. Protocol evidence is cryptographically verifiable and so
+ * carries the most weight; risk intelligence informs but never decides
+ * (§12). The distinction is shown rather than flattened into one list.
+ */
+export type EvidenceKind = "Protocol" | "Participant" | "Risk Intelligence";
+
+export interface EvidenceEntry {
+  /** Immutable reference — evidence is append-only (§9). */
+  ref: string;
+  kind: EvidenceKind;
+  label: string;
+  /** Protocol identifier, never a legal identity (Chapter 11 §11.8). */
+  submittedBy: string;
+  at: string;
+  /** Content hash; large files live off-protocol with the hash recorded (§13). */
+  hash: string;
+  detail?: string;
+}
+
+/** One arbitrator's participation in a case. */
+export interface ArbitratorSeat {
+  /** Protocol identifier only. */
+  id: string;
+  /** OPEN committed to join (Chapter 11 §11.7). */
+  stake: number;
+  reputation: number;
+  joinedAt: string;
+  /** Commitment published during the commit phase (§11.12). */
+  commitment?: string;
+  /** Revealed vote; only reveals matching the commitment are counted. */
+  revealed?: DisputeOutcome;
+  /** Set once consensus is known (§11.13). */
+  withConsensus?: boolean;
+  /** Moderate partial slash for a minority reveal (§11.16). */
+  slashed?: number;
+  /** Reward for participating with consensus (§11.15). */
+  reward?: number;
+  /** True for the seat held by the current user. */
+  isYou?: boolean;
+}
+
+/** Chapter 11 §11.6. Governance may change these over time. */
+export interface ArbitratorEligibility {
+  minStake: number;
+  minReputation: number;
+  minProtocolAgeDays: number;
+  activePenalties: number;
+}
+
 export interface Dispute {
+  /** Permanent, for audit (OFS-2400 §7). */
   id: string;
   tradeId: string;
+  reservationId: string;
+  adId: string;
+  /** Wallets, per the §8 record — not names. */
+  buyerWallet: string;
+  merchantWallet: string;
   counterparty: string;
-  userRole: "Buyer" | "Seller";
+  /**
+   * How the current user relates to this case. A party to the trade and a
+   * third-party juror are different viewers with different rights, and
+   * collapsing them into one "role" is what makes the evidence seal
+   * unrepresentable — a buyer always sees their own case, an arbitrator only
+   * after committing stake.
+   */
+  viewerRole: DisputeViewerRole;
+  category: DisputeCategory;
   openedAt: string; // ISO
-  status: DisputeStatus;
-  arbitrator: string;
+  stage: DisputeStage;
+  /** Asset held in the frozen escrow. */
+  asset: string;
+  amount: number;
+  fiatCurrency: string;
+  fiatAmount: number;
+  /** OPEN required to join this case as an arbitrator. */
+  arbitrationStake: number;
+  filingFee: number;
+  arbitrators: ArbitratorSeat[];
+  /**
+   * Chapter 11 §11.9: the required arbitrator count is withheld while a case
+   * is open, because publishing it would leak the value at risk. It becomes
+   * knowable only once the case locks.
+   */
+  seatsRequired: number | null;
+  evidence: EvidenceEntry[];
   outcome?: DisputeOutcome;
+  /** Tally of revealed votes once the reveal phase closes. */
+  tally?: Partial<Record<DisputeOutcome, number>>;
   resolutionNote?: string;
-  reputationImpact?: string;
-  evidence: TradeEvent[];
+  settlement?: string[];
+  reputationImpact?: string[];
+}
+
+/** Where a case sits in the §14 sequence. */
+export function disputeStageIndex(stage: DisputeStage): number {
+  return DISPUTE_STAGES.indexOf(stage);
+}
+
+/** True for the buyer or seller of the disputed trade. */
+export function isDisputeParty(dispute: Dispute): boolean {
+  return dispute.viewerRole === "Buyer" || dispute.viewerRole === "Seller";
+}
+
+/**
+ * Evidence stays sealed until an arbitrator has committed stake and been
+ * accepted (Chapter 11 §11.8) — the property that makes bribery before
+ * participation pointless, since there is nothing to bribe about yet.
+ *
+ * Note what does *not* unseal it: reaching a later stage. Evidence is released
+ * to seated arbitrators, never published to the network — §13 distributes
+ * evidence *references* so every node agrees on what exists, and §23 keeps the
+ * contents private. A case at reveal stage is no more readable to a passer-by
+ * than one still collecting arbitrators.
+ *
+ * Parties to the trade submitted the evidence, so sealing it from them would
+ * protect nothing.
+ */
+export function evidenceVisible(dispute: Dispute, joined: boolean): boolean {
+  return isDisputeParty(dispute) || joined;
 }
 
 export type IdentityLevel = "L0" | "L1" | "L2" | "L3";
