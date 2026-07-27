@@ -309,12 +309,28 @@ export function P2PExchange({
           <div className="mt-2 h-2 rounded-full bg-white/10">
             <div className="h-2 rounded-full bg-gradient-to-r from-brand to-brand-teal" style={{ width: `${PRESALE_PCT}%` }} />
           </div>
-          <Link
-            href="/open"
-            className="mt-5 inline-block rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
-          >
-            Buy OPEN in the presale →
-          </Link>
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <Link
+              href="/open"
+              className="inline-block rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+            >
+              Buy OPEN in the presale →
+            </Link>
+            {/*
+              * A way out. Selecting OPEN replaces the order book, and the only
+              * exits were the asset tabs above — which is a dead end if you
+              * arrived here and expected a market. Clicking the nav link for the
+              * page you are already on does not remount the view, so "go home"
+              * did not clear it either.
+              */}
+            <button
+              type="button"
+              onClick={() => setAsset("USDT")}
+              className="text-sm text-gray-400 underline decoration-white/20 underline-offset-4 hover:text-white"
+            >
+              Back to the {viewFiat} order book
+            </button>
+          </div>
         </div>
       )}
 

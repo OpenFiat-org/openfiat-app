@@ -59,13 +59,49 @@ input[type="number"] {
 }
 
 /*
- * Thin dark scrollbar for overlay panels.
+ * Dark scrollbars, everywhere.
  *
- * The default scrollbar is drawn by the OS in its own light chrome, which on a
- * dark dropdown reads as a bright stripe down the edge — the panel looks broken
- * rather than scrollable. Firefox gets `scrollbar-color`; WebKit needs the
- * pseudo-elements.
+ * The OS draws scrollbars in its own light chrome, so on a dark surface every
+ * scroll region gets a bright stripe down its edge and reads as broken rather
+ * than scrollable. This started as an opt-in class for the currency dropdown,
+ * then the same problem turned up in the trade-session chat — which is the
+ * signal that it belongs at the root, not on each container. Any new scroll
+ * region now inherits it instead of waiting to be noticed.
+ *
+ * Firefox uses `scrollbar-color`; WebKit needs the pseudo-elements.
  */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Kept as an explicit opt-in for the few places that want a narrower bar than
+   the global one — overlay panels, where 10px crowds the content. */
 .scrollbar-dark {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
