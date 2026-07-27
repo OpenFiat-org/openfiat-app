@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
+import { CopyButton } from "@/components/copy-button";
+import { QrCode } from "@/components/qr-code";
 import { CURRENT_USER } from "@/lib/data/merchants";
+import { WALLET_BALANCES } from "@/lib/data/wallet";
 import {
   type SavedPaymentAccount,
   accountsFor,
@@ -12,7 +15,7 @@ import {
 } from "@/lib/payment-accounts";
 import { compositeScore } from "@/lib/reputation";
 import type { Advertisement, Merchant, TradeDirection } from "@/lib/types";
-import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
+import { formatCrypto, formatFiat, formatNumber, pseudoAddress } from "@/lib/format";
 
 /** How long a quoted price stands before it refreshes. */
 const QUOTE_SECONDS = 40;
@@ -82,6 +85,16 @@ export function OrderPanel({
   /* The merchant's own floor on who they will trade with. Advisory — see the
      field's note in lib/types.ts — so this client refuses and explains rather
      than pretending something on chain stopped it. */
+  /* Limits are published in fiat, but a seller is typing crypto, so the same
+     bounds have to be expressed in the unit the field accepts. */
+  const minCrypto = minFiat / price;
+  const maxCrypto = Math.min(maxFiat / price, ad.availableLiquidity);
+
+  /* What the seller actually holds of this asset. Zero is the interesting case:
+     the panel offers a deposit instead of a dead button. */
+  const balance =
+    WALLET_BALANCES.find((b) => b.asset === ad.asset)?.balance ?? 0;
+
   const usable = accountsFor(accounts, ad.paymentMethods, ad.international);
   // Only relevant when selling: a buyer pays out of their own account and has
   // nothing to nominate.
@@ -102,9 +115,16 @@ export function OrderPanel({
     !overLiquidity &&
     !belowFloor &&
     !needsAccount &&
+    (buy || (balance > 0 && cryptoAmount <= balance)) &&
     (ad.international || method !== "");
 
   const blocker = useMemo(() => {
+    if (!buy && balance <= 0) {
+      return `You hold no ${ad.asset} to sell. Deposit some first — the address is below.`;
+    }
+    if (!buy && cryptoAmount > balance) {
+      return `You hold ${formatCrypto(balance, ad.asset)}, less than the ${formatCrypto(cryptoAmount, ad.asset)} this order needs.`;
+    }
     if (needsAccount) {
       return accounts.length === 0
         ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
@@ -119,7 +139,7 @@ export function OrderPanel({
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
     if (!ad.international && !method) return "Choose a payment method";
     return null;
-  }, [fiatAmount, tooLow, tooHigh, overLiquidity, belowFloor, needsAccount, accounts.length, myReputation, ad, method, minFiat, maxFiat, fiat]);
+  }, [fiatAmount, cryptoAmount, balance, buy, tooLow, tooHigh, overLiquidity, belowFloor, needsAccount, accounts.length, myReputation, ad, method, minFiat, maxFiat, fiat]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -137,8 +157,37 @@ export function OrderPanel({
     setPayText(n > 0 ? (n * price).toFixed(2) : "");
   }
 
-  const payLabel = buy ? "I will pay" : "I will receive";
-  const receiveLabel = buy ? "I will receive" : "I will sell";
+  /*
+   * The primary field is whichever amount the user actually decides.
+   *
+   * Buying, that is the fiat they are willing to spend. Selling, it is the
+   * crypto they hold — a seller thinks "sell 500 USDT", not "receive 35,330
+   * AFN", and asking for the receive amount first made them work the exchange
+   * rate backwards before they could enter anything. Both fields still drive
+   * each other; this is about which one leads.
+   */
+  const cryptoField = (
+    <Field
+      label={buy ? "I will receive" : "I will sell"}
+      value={receiveText}
+      onChange={onReceive}
+      placeholder={buy ? "0.00" : `${formatNumber(minCrypto, 2)} ~ ${formatNumber(maxCrypto, 2)}`}
+      unit={ad.asset}
+      icon={<AssetIcon asset={ad.asset} size={18} />}
+      invalid={overLiquidity || (!buy && (tooLow || tooHigh))}
+    />
+  );
+
+  const fiatField = (
+    <Field
+      label={buy ? "I will pay" : "I will receive"}
+      value={payText}
+      onChange={onPay}
+      placeholder={buy ? `${formatNumber(minFiat, 0)} ~ ${formatNumber(maxFiat, 0)}` : "0.00"}
+      unit={fiat}
+      invalid={buy && (tooLow || tooHigh)}
+    />
+  );
 
   return (
     <div className="border-t border-white/5 bg-white/[0.015]">
@@ -225,24 +274,9 @@ export function OrderPanel({
             </span>
           </div>
 
-          <Field
-            label={payLabel}
-            value={payText}
-            onChange={onPay}
-            placeholder={`${formatNumber(minFiat, 0)} ~ ${formatNumber(maxFiat, 0)}`}
-            unit={fiat}
-            invalid={tooLow || tooHigh}
-          />
-
-          <Field
-            label={receiveLabel}
-            value={receiveText}
-            onChange={onReceive}
-            placeholder="0.00"
-            unit={ad.asset}
-            icon={<AssetIcon asset={ad.asset} size={18} />}
-            invalid={overLiquidity}
-          />
+          {buy ? fiatField : cryptoField}
+          {!buy && <QuickAmounts balance={balance} asset={ad.asset} onPick={onReceive} />}
+          {buy ? cryptoField : fiatField}
 
           {!buy && usable.length > 0 && (
             <label className="mt-3 block">
@@ -308,10 +342,95 @@ export function OrderPanel({
               {/* The reason, always. A disabled button with no explanation is
                   the single most common way these flows lose people. */}
               <p className="mt-2 text-xs text-amber-300">{blocker}</p>
+              {!buy && balance <= 0 && <DepositPrompt asset={ad.asset} />}
             </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Quick amounts off the seller's own balance.
+ *
+ * A seller usually wants to move a round share of what they hold, not a figure
+ * they arrived at through the exchange rate. 100% is the one that matters and
+ * the one people reach for, so it is labelled as such rather than as a
+ * percentage.
+ */
+function QuickAmounts({
+  balance,
+  asset,
+  onPick,
+}: {
+  balance: number;
+  asset: string;
+  onPick: (next: string) => void;
+}) {
+  if (balance <= 0) return null;
+  const fractions: Array<[string, number]> = [
+    ["25%", 0.25],
+    ["50%", 0.5],
+    ["75%", 0.75],
+    ["All", 1],
+  ];
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      {fractions.map(([label, f]) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => onPick(String(Number((balance * f).toFixed(6))))}
+          className="flex-1 rounded-pill border border-white/10 py-1.5 text-xs text-gray-400 transition-colors hover:border-white/25 hover:text-white"
+        >
+          {label}
+        </button>
+      ))}
+      <span className="shrink-0 pl-1 text-xs tabular-nums text-gray-600">
+        {formatCrypto(balance, asset)}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Where to get some, when you have none.
+ *
+ * Reached only from the sell side with a zero balance — the case where the form
+ * can never be completed, so offering the deposit address is the only useful
+ * thing left on screen. Deliberately inline rather than a link away: sending
+ * someone to another page to fetch an address and back again loses the order
+ * they had picked.
+ */
+function DepositPrompt({ asset }: { asset: string }) {
+  const address = pseudoAddress(`openfiat-deposit-${asset}`);
+  return (
+    <div className="mt-5 rounded-md border border-white/10 bg-white/[0.02] p-4">
+      <p className="text-sm font-medium text-white">Deposit {asset} to sell it</p>
+      <p className="mt-1 text-xs leading-relaxed text-gray-500">
+        Send {asset} on Solana to this address. It arrives in your wallet, and
+        from there you can fund a vault or sell it directly.
+      </p>
+      <div className="mt-3 flex items-start gap-3">
+        <QrCode value={address} />
+        <div className="min-w-0 flex-1">
+          <p className="break-all font-mono text-xs text-gray-300">{address}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <CopyButton value={address} />
+            <Link
+              href={`/wallet/deposit?asset=${asset}`}
+              className="text-xs text-brand hover:text-brand-hover"
+            >
+              Full deposit page →
+            </Link>
+          </div>
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
+        Solana only. Sending {asset} over another network loses it, and nobody
+        can reverse that.
+      </p>
     </div>
   );
 }

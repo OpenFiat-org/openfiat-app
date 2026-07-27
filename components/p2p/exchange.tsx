@@ -84,6 +84,14 @@ export function P2PExchange({
   const [method, setMethod] = useState("");
   const [sort, setSort] = useState<SortKey>("price");
   const [minRep, setMinRep] = useState(0);
+  /*
+   * Which advertisement's order form is open — one at a time.
+   *
+   * Held here rather than per row: with each row owning its own state you could
+   * expand several at once, which stacks two live countdowns and two amount
+   * forms and leaves it ambiguous which one the next click belongs to.
+   */
+  const [openAd, setOpenAd] = useState<string | null>(null);
 
   // Apply the remembered market after mount (landing page only).
   useEffect(() => {
@@ -350,7 +358,13 @@ export function P2PExchange({
           }
         >
           {rows.map((row) => (
-            <AdRow key={row.ad.id} row={row} userDirection={tab} />
+            <AdRow
+              key={row.ad.id}
+              row={row}
+              userDirection={tab}
+              open={openAd === row.ad.id}
+              onToggle={() => setOpenAd((current) => (current === row.ad.id ? null : row.ad.id))}
+            />
           ))}
           {rows.length === 0 && (
             <tr>
@@ -410,10 +424,19 @@ export function P2PExchange({
  * comparing against stay on screen while you decide the amount, which is the
  * whole reason the order book is a list.
  */
-function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirection }) {
+function AdRow({
+  row,
+  userDirection,
+  open,
+  onToggle,
+}: {
+  row: ViewRow;
+  userDirection: TradeDirection;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const { ad, merchant, price, minFiat, maxFiat, fiat } = row;
   const buy = userDirection === "Buy";
-  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -456,7 +479,7 @@ function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirec
       <Td right py="py-6">
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={onToggle}
           /* Fixed floor and no wrapping, so "Sell USDT" and "Buy SOL" are the
              same size and every row is the same height. */
           className={`inline-block min-w-[8rem] whitespace-nowrap rounded-md px-6 py-2.5 text-center text-sm font-semibold text-white transition-colors ${
@@ -478,7 +501,7 @@ function AdRow({ row, userDirection }: { row: ViewRow; userDirection: TradeDirec
             minFiat={minFiat}
             maxFiat={maxFiat}
             userDirection={userDirection}
-            onClose={() => setOpen(false)}
+            onClose={onToggle}
           />
         </td>
       </tr>
