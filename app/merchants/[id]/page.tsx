@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CURRENT_USER, MERCHANTS, adCapacityFor, reputationFor } from "@/lib/data/merchants";
+import { compositeScore } from "@/lib/reputation";
 import { adsForMerchant, adPrice, paymentMethodsForMerchant } from "@/lib/data/ads";
 import { getCountry } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber, shortAddress } from "@/lib/format";
@@ -77,6 +78,14 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
       <div className="mt-8">
         <MetricStrip
           items={[
+            /* First, and with the tier beneath it. This is the page someone
+               opens to decide whether to trade with a stranger, and it was the
+               one place showing every input except the summary. */
+            {
+              label: "Reputation",
+              value: `${compositeScore(merchant)}/100`,
+              sub: `${merchant.tier} tier · conduct only`,
+            },
             { label: "Total orders", value: formatNumber(merchant.orders, 0) },
             { label: "Completion", value: `${merchant.completionRate}%` },
             { label: "30d volume", value: `${formatNumber(merchant.volume30d, 0)} USDT` },

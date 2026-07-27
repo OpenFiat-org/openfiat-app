@@ -4,7 +4,12 @@
  * "openfiat:custom-methods") merge with this registry in the picker.
  */
 
-export type PaymentMethodCategory = "Mobile Money" | "Bank Transfer" | "Fintech";
+/** OFS-2100 §13 lists Cash Deposit alongside the electronic rails. */
+export type PaymentMethodCategory =
+  | "Mobile Money"
+  | "Bank Transfer"
+  | "Fintech"
+  | "Cash";
 
 export interface PaymentMethodInfo {
   name: string;
@@ -13,6 +18,18 @@ export interface PaymentMethodInfo {
 }
 
 export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
+  /*
+   * Cash. OFS-2100 §13 names Cash Deposit as a first-class method, and cash is
+   * the only rail that exists in every country — which is the point: a market
+   * with no local electronic system is still tradeable.
+   *
+   * Two forms, because they carry very different risk. A deposit at the
+   * counterparty's bank leaves a paper trail an arbitrator can read; handing
+   * over notes in person leaves none, so the trade rests entirely on the escrow
+   * and on meeting somewhere sensible.
+   */
+  { name: "Cash Deposit", category: "Cash", aliases: ["cash deposit", "bank deposit", "cash at bank", "deposit cash"] },
+  { name: "Cash in Person", category: "Cash", aliases: ["cash", "cash in person", "face to face", "f2f", "meet in person"] },
   { name: "M-Pesa Kenya (Safaricom)", category: "Mobile Money", aliases: ["mpesa", "m-pesa", "safaricom"] },
   { name: "Mpesa Pochi la Biashara", category: "Mobile Money", aliases: ["pochi", "pochi la biashara"] },
   { name: "MTN Mobile Money", category: "Mobile Money", aliases: ["mtn", "momo", "mtn momo"] },
@@ -46,6 +63,42 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "PayID", category: "Bank Transfer", aliases: ["payid australia", "osko"] },
   { name: "SPEI", category: "Bank Transfer", aliases: ["spei mexico"] },
   { name: "Taiwan Pay", category: "Bank Transfer", aliases: ["taiwan pay", "twqr"] },
+  { name: "Toss", category: "Fintech", aliases: ["toss korea"] },
+  { name: "KakaoPay", category: "Fintech", aliases: ["kakao pay", "kakao"] },
+  { name: "BLIK", category: "Bank Transfer", aliases: ["blik poland"] },
+  { name: "Swish", category: "Bank Transfer", aliases: ["swish sweden"] },
+  { name: "Vipps", category: "Bank Transfer", aliases: ["vipps norway"] },
+  { name: "MobilePay", category: "Bank Transfer", aliases: ["mobilepay denmark"] },
+  { name: "TWINT", category: "Bank Transfer", aliases: ["twint switzerland"] },
+  { name: "Kaspi.kz", category: "Fintech", aliases: ["kaspi", "kaspi gold"] },
+  { name: "Idram", category: "Fintech", aliases: ["idram armenia"] },
+  { name: "Payme", category: "Fintech", aliases: ["payme uzbekistan"] },
+  { name: "Click", category: "Fintech", aliases: ["click uzbekistan"] },
+  { name: "eSewa", category: "Mobile Money", aliases: ["esewa nepal"] },
+  { name: "Khalti", category: "Mobile Money", aliases: ["khalti nepal"] },
+  { name: "Wing", category: "Mobile Money", aliases: ["wing cambodia"] },
+  { name: "ABA Pay", category: "Bank Transfer", aliases: ["aba", "aba bank"] },
+  { name: "QPay", category: "Fintech", aliases: ["qpay mongolia"] },
+  { name: "CliQ", category: "Bank Transfer", aliases: ["cliq jordan"] },
+  { name: "Zain Cash", category: "Mobile Money", aliases: ["zaincash"] },
+  { name: "Fawran", category: "Bank Transfer", aliases: ["fawran qatar"] },
+  { name: "KNET", category: "Bank Transfer", aliases: ["knet kuwait"] },
+  { name: "BenefitPay", category: "Fintech", aliases: ["benefit pay bahrain"] },
+  { name: "Thawani", category: "Fintech", aliases: ["thawani oman"] },
+  { name: "D17", category: "Fintech", aliases: ["d17 tunisia"] },
+  { name: "BaridiMob", category: "Fintech", aliases: ["baridimob algeria", "baridi"] },
+  { name: "EcoCash", category: "Mobile Money", aliases: ["ecocash zimbabwe"] },
+  { name: "M-Pesa Mozambique", category: "Mobile Money", aliases: ["mpesa mozambique"] },
+  { name: "Orange Money", category: "Mobile Money", aliases: ["orange"] },
+  { name: "Juice by MCB", category: "Bank Transfer", aliases: ["juice mauritius", "mcb juice"] },
+  { name: "SINPE Movil", category: "Bank Transfer", aliases: ["sinpe", "sinpe movil"] },
+  { name: "Yappy", category: "Fintech", aliases: ["yappy panama"] },
+  { name: "Tigo Money", category: "Mobile Money", aliases: ["tigo"] },
+  { name: "Lynk", category: "Fintech", aliases: ["lynk jamaica"] },
+  { name: "WiPay", category: "Fintech", aliases: ["wipay"] },
+  { name: "tPago", category: "Fintech", aliases: ["tpago dominican"] },
+  { name: "LankaPay", category: "Bank Transfer", aliases: ["lankapay", "ceft"] },
+  { name: "BCEL One", category: "Bank Transfer", aliases: ["bcel", "bcel one laos"] },
   { name: "Revolut", category: "Fintech", aliases: ["rev"] },
   { name: "Wise", category: "Fintech", aliases: ["transferwise"] },
   { name: "Skrill", category: "Fintech", aliases: [] },
