@@ -25,6 +25,7 @@ import qr from "qrcode-generator";
 import { pseudoAddress, pseudoSignature } from "@/lib/format";
 import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
 import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
+import { PAIRS, findPair } from "@/lib/pairs";
 import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
 
@@ -646,6 +647,47 @@ describe("protocol events", () => {
   it("event timestamps are fixed ISO strings", () => {
     for (const e of PROTOCOL_EVENTS) {
       expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    }
+  });
+});
+
+describe("pair landing pages", () => {
+  it("only generates pairs that have a market behind them", () => {
+    // Every asset against every currency would be a thousand-odd mostly-empty
+    // pages, which dilutes the ones that rank and teaches a crawler the site is
+    // thin. A pair earns a page by having advertisements.
+    expect(PAIRS.length).toBeGreaterThan(0);
+    for (const pair of PAIRS) {
+      expect(pair.ads, pair.slug).toBeGreaterThan(0);
+      expect(pair.rate, pair.slug).toBeGreaterThan(0);
+      expect(pair.methods.length, pair.slug).toBeGreaterThan(0);
+    }
+  });
+
+  it("covers the pairs people actually search for", () => {
+    for (const slug of ["usdt/kes", "usdc/kes", "usdt/ngn", "usdt/inr", "usdt/php"]) {
+      const [asset, currency] = slug.split("/");
+      expect(findPair(asset, currency), slug).toBeDefined();
+    }
+  });
+
+  it("rejects a pair with no market rather than rendering an empty page", () => {
+    expect(findPair("usdt", "zzz")).toBeUndefined();
+    expect(findPair("nope", "kes")).toBeUndefined();
+  });
+
+  it("has slugs that round-trip through the lookup", () => {
+    for (const pair of PAIRS) {
+      const [asset, currency] = pair.slug.split("/");
+      expect(findPair(asset, currency)?.slug, pair.slug).toBe(pair.slug);
+    }
+  });
+
+  it("is listed in the sitemap", async () => {
+    const { default: sitemap } = await import("@/app/sitemap");
+    const listed = new Set(sitemap().map((e) => new URL(e.url).pathname));
+    for (const pair of PAIRS) {
+      expect(listed.has(`/${pair.slug}`), pair.slug).toBe(true);
     }
   });
 });
