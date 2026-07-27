@@ -231,12 +231,21 @@ export function P2PExchange({
       {!isOpenAsset && (
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 rounded-md border border-white/10 px-3">
+          {/*
+           * Text with a decimal keypad, not type="number". The number input
+           * paints its own stepper, which the browser draws on a light
+           * background regardless of the field's colours — that was the white
+           * block beside the currency code. It also changes value on scroll,
+           * which is a hazard on a filter row. Non-numeric input is filtered
+           * on the way in instead.
+           */}
           <input
-            type="number"
-            min="0"
+            type="text"
+            inputMode="decimal"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
             placeholder="Amount"
+            aria-label={`Amount in ${viewFiat}`}
             className="w-32 bg-transparent py-2 text-sm tabular-nums text-white outline-none placeholder:text-gray-600"
           />
           <span className="text-xs text-gray-500">{viewFiat}</span>

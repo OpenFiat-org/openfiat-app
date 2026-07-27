@@ -115,14 +115,14 @@ export function CurrencyCombobox({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute z-50 mt-1 w-80 rounded-md border border-white/15 bg-[#10151d] shadow-xl">
-            <div className="border-b border-white/10 p-2">
+          <div className="absolute z-50 mt-2 w-[22rem] overflow-hidden rounded-lg border border-white/15 bg-[#10151d] shadow-2xl">
+            <div className="border-b border-white/10 p-3">
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search country or currency…"
-                className="w-full rounded border border-white/10 bg-white/5 px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
               />
             </div>
             <ul className="max-h-80 divide-y divide-white/5 overflow-y-auto">

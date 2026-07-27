@@ -7,6 +7,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   distDir: process.env.BUILD_DIST_DIR || ".next",
+
+  /*
+   * The country index and its pages moved from /p2p to /countries and
+   * /country/<slug>. Permanent redirects rather than deletions: every country
+   * page is an indexed SEO surface, and /p2p links exist in the sitemap
+   * already submitted.
+   */
+  async redirects() {
+    return [
+      { source: "/p2p", destination: "/countries", permanent: true },
+      { source: "/p2p/:slug", destination: "/country/:slug", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

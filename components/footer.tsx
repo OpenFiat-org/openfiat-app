@@ -11,7 +11,7 @@ import {
 } from "@/lib/node-preference";
 
 const FOOTER_LINKS: Array<[string, string]> = [
-  ["Countries", "/p2p"],
+  ["Countries", "/countries"],
   ["Guide", "/guide"],
   ["How to buy", "/guide/buy"],
   ["How to sell", "/guide/sell"],

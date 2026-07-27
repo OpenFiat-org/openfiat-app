@@ -37,3 +37,23 @@ select {
 button:disabled {
   cursor: not-allowed;
 }
+
+/*
+ * Hide the native number-input stepper.
+ *
+ * Chrome and Safari paint the spinner on their own light background regardless
+ * of the field's colours, which showed as a white block inside dark inputs.
+ * Firefox gets the same treatment via appearance: textfield. Numeric semantics
+ * (decimal keypad on mobile, min/max validation) are kept — only the chrome
+ * goes.
+ */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+}
