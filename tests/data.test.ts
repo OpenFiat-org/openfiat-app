@@ -14,6 +14,7 @@ import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
 import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
+import { OPEN_PRICE_USDC, PRESALE, SALE_PHASES } from "@/lib/data/sale";
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
@@ -408,6 +409,29 @@ describe("OPEN token", () => {
   it("balance covers the merchant bond constant", () => {
     expect(OPEN_BOND_REQUIRED).toBe(5000);
     expect(OPEN_BALANCE).toBeGreaterThanOrEqual(OPEN_BOND_REQUIRED);
+  });
+
+  it("prices the presale at 1 OPEN = 1 USDC", () => {
+    // [CONFIRMED] in OFS-4100 §3, and enforced on chain by
+    // `open_entitlement_for`, which applies no rate beyond a decimal scale.
+    // Any other value here is a number the program would refuse.
+    expect(OPEN_PRICE_USDC).toBe(1);
+    expect(PRESALE.priceUsdc).toBe(1);
+  });
+
+  it("caps the presale at the size of its own bucket", () => {
+    // At 1:1 the bucket is the ceiling, so the two move together — OFS-4100 §2
+    // is explicit that they must never be changed independently.
+    expect(PRESALE.cap).toBe(30_000_000);
+    expect(PRESALE.softCap).toBeLessThan(PRESALE.cap);
+    expect(PRESALE.maxContribution).toBeLessThanOrEqual(PRESALE.cap);
+    expect(PRESALE.minContribution).toBeLessThan(PRESALE.maxContribution);
+  });
+
+  it("offers one presale price, with market pricing only after mainnet", () => {
+    const priced = SALE_PHASES.filter((p) => p.priceUsdc !== null);
+    expect(priced).toHaveLength(1);
+    expect(priced[0].priceUsdc).toBe(OPEN_PRICE_USDC);
   });
 });
 

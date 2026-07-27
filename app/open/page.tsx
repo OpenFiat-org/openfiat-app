@@ -54,7 +54,11 @@ export default function OpenTokenPage() {
               {SALE_PHASES.map((p) => (
                 <Tr key={p.name}>
                   <Td py="py-5" className="font-medium text-white">{p.name}</Td>
-                  <Td py="py-5" right num className="text-gray-200">${p.priceUsdc.toFixed(2)}</Td>
+                  {/* Null price means market priced — there is no fixed rate
+                      after the presale, so a figure would be invented. */}
+                  <Td py="py-5" right num className="text-gray-200">
+                    {p.priceUsdc === null ? "—" : `$${p.priceUsdc.toFixed(2)}`}
+                  </Td>
                   <Td py="py-5" right num className="text-gray-400">{p.allocation}</Td>
                   <Td py="py-5" right><StatusPill status={p.status} /></Td>
                 </Tr>
