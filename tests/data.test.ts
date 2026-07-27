@@ -551,7 +551,7 @@ describe("payment methods registry", () => {
     const names = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
     expect(new Set(names).size).toBe(names.length);
     for (const m of PAYMENT_METHOD_REGISTRY) {
-      expect(["Mobile Money", "Bank Transfer", "Fintech"]).toContain(m.category);
+      expect(["Mobile Money", "Bank Transfer", "Fintech", "Cash"]).toContain(m.category);
       expect(Array.isArray(m.aliases)).toBe(true);
     }
   });
@@ -573,6 +573,31 @@ describe("payment methods registry", () => {
     expect(names).toContain("Alipay");
     expect(names).toContain("WeChat Pay HK");
     expect(names).toContain("WeChat Pay");
+  });
+
+  it("offers cash in every market, and as the fallback", () => {
+    // Cash is the only rail that exists everywhere, and a currency with no
+    // market entry is exactly where the banking rail is least dependable — so
+    // bank transfer alone is the wrong default there.
+    for (const mk of MARKETS) {
+      expect(mk.methods, mk.currency).toContain("Cash Deposit");
+      expect(mk.methods, mk.currency).toContain("Cash in Person");
+    }
+    const unlisted = paymentMethodsForCurrency("XZZ");
+    expect(unlisted).toContain("Cash Deposit");
+    expect(unlisted).toContain("Bank Transfer");
+  });
+
+  it("covers the world's larger economies with local rails", () => {
+    // Most currencies used to fall through to ["Bank Transfer"], which showed
+    // no local rail at all on the majority of country pages.
+    for (const code of ["KRW", "PLN", "CHF", "SEK", "KZT", "NPR", "QAR", "TND", "CRC", "NZD"]) {
+      const methods = paymentMethodsForCurrency(code);
+      const local = methods.filter(
+        (m) => m !== "Bank Transfer" && m !== "Cash Deposit" && m !== "Cash in Person",
+      );
+      expect(local.length, code).toBeGreaterThan(0);
+    }
   });
 
   it("type-ahead search finds methods by name and alias", () => {

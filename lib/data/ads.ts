@@ -44,6 +44,8 @@ export const UPI = "UPI";
 export const SEPA = "SEPA";
 export const PIX = "PIX";
 export const BANK_TRANSFER = "Bank Transfer";
+export const CASH_DEPOSIT = "Cash Deposit";
+export const CASH_IN_PERSON = "Cash in Person";
 
 export const PAYMENT_METHODS: string[] = [
   MPESA, POCHI, IM_BANK, EQUITY, KCB,
@@ -167,14 +169,95 @@ export const MARKETS: Market[] = [
   { currency: "CAD", fx: 1.36, country: "CA", methods: ["Interac e-Transfer", "Bank Transfer"], assets: MAJORS },
   { currency: "ETB", fx: 120, country: "ET", methods: ["Telebirr", "CBE Birr"], assets: SMALL },
   { currency: "VES", fx: 36.5, country: "VE", methods: ["Pago Móvil", "Bank Transfer"], assets: SMALL },
+  // ── Europe ──
+  { currency: "PLN", fx: 4.05, country: "PL", methods: ["BLIK", "Bank Transfer", "Revolut"], assets: MAJORS },
+  { currency: "CZK", fx: 23.2, country: "CZ", methods: ["Bank Transfer", "Revolut"], assets: MID },
+  { currency: "SEK", fx: 10.6, country: "SE", methods: ["Swish", "Bank Transfer"], assets: MAJORS },
+  { currency: "NOK", fx: 10.9, country: "NO", methods: ["Vipps", "Bank Transfer"], assets: MID },
+  { currency: "DKK", fx: 6.85, country: "DK", methods: ["MobilePay", "Bank Transfer"], assets: MID },
+  { currency: "CHF", fx: 0.89, country: "CH", methods: ["TWINT", "Bank Transfer", "Revolut"], assets: MAJORS },
+  { currency: "HUF", fx: 360, country: "HU", methods: ["Bank Transfer", "Revolut"], assets: MID },
+  { currency: "RON", fx: 4.57, country: "RO", methods: ["Bank Transfer", "Revolut"], assets: MID },
+  { currency: "BGN", fx: 1.8, country: "BG", methods: ["Bank Transfer", "Revolut"], assets: MID },
+  // ── Asia-Pacific ──
+  { currency: "KRW", fx: 1380, country: "KR", methods: ["Toss", "KakaoPay", "Bank Transfer"], assets: MAJORS },
+  { currency: "NZD", fx: 1.66, country: "NZ", methods: ["Bank Transfer", "Wise"], assets: MID },
+  { currency: "LKR", fx: 300, country: "LK", methods: ["LankaPay", "Bank Transfer"], assets: SMALL },
+  { currency: "NPR", fx: 134, country: "NP", methods: ["eSewa", "Khalti", "Bank Transfer"], assets: SMALL },
+  { currency: "KHR", fx: 4050, country: "KH", methods: ["Wing", "ABA Pay", "Bank Transfer"], assets: SMALL },
+  { currency: "LAK", fx: 21500, country: "LA", methods: ["BCEL One", "Bank Transfer"], assets: SMALL },
+  { currency: "MNT", fx: 3400, country: "MN", methods: ["QPay", "Bank Transfer"], assets: SMALL },
+  // ── Central Asia & Caucasus ──
+  { currency: "KZT", fx: 480, country: "KZ", methods: ["Kaspi.kz", "Bank Transfer"], assets: MID },
+  { currency: "UZS", fx: 12600, country: "UZ", methods: ["Payme", "Click", "Bank Transfer"], assets: SMALL },
+  { currency: "GEL", fx: 2.7, country: "GE", methods: ["Bank Transfer", "Wise"], assets: MID },
+  { currency: "AMD", fx: 390, country: "AM", methods: ["Idram", "Bank Transfer"], assets: SMALL },
+  { currency: "AZN", fx: 1.7, country: "AZ", methods: ["Bank Transfer"], assets: SMALL },
+  // ── Middle East ──
+  { currency: "JOD", fx: 0.71, country: "JO", methods: ["CliQ", "Bank Transfer"], assets: MID },
+  { currency: "IQD", fx: 1310, country: "IQ", methods: ["Zain Cash", "Bank Transfer"], assets: SMALL },
+  { currency: "QAR", fx: 3.64, country: "QA", methods: ["Fawran", "Bank Transfer"], assets: MID },
+  { currency: "KWD", fx: 0.307, country: "KW", methods: ["KNET", "Bank Transfer"], assets: MID },
+  { currency: "BHD", fx: 0.377, country: "BH", methods: ["BenefitPay", "Bank Transfer"], assets: MID },
+  { currency: "OMR", fx: 0.385, country: "OM", methods: ["Thawani", "Bank Transfer"], assets: SMALL },
+  // ── Africa ──
+  { currency: "TND", fx: 3.1, country: "TN", methods: ["D17", "Bank Transfer"], assets: SMALL },
+  { currency: "DZD", fx: 134, country: "DZ", methods: ["BaridiMob", "Bank Transfer"], assets: SMALL },
+  { currency: "ZMW", fx: 26, country: "ZM", methods: ["MTN Mobile Money", "Airtel Money", "Bank Transfer"], assets: SMALL },
+  { currency: "ZWG", fx: 26, country: "ZW", methods: ["EcoCash", "Bank Transfer"], assets: SMALL },
+  { currency: "MZN", fx: 64, country: "MZ", methods: ["M-Pesa Mozambique", "Bank Transfer"], assets: SMALL },
+  { currency: "BWP", fx: 13.6, country: "BW", methods: ["Orange Money", "Bank Transfer"], assets: SMALL },
+  { currency: "MUR", fx: 46, country: "MU", methods: ["Juice by MCB", "Bank Transfer"], assets: SMALL },
+  { currency: "RWF", fx: 1300, country: "RW", methods: ["MTN Mobile Money", "Airtel Money"], assets: SMALL },
+  { currency: "CDF", fx: 2800, country: "CD", methods: ["Airtel Money", "Orange Money"], assets: SMALL },
+  // ── Latin America & Caribbean ──
+  { currency: "CRC", fx: 515, country: "CR", methods: ["SINPE Movil", "Bank Transfer"], assets: SMALL },
+  { currency: "PAB", fx: 1, country: "PA", methods: ["Yappy", "Bank Transfer"], assets: MID },
+  { currency: "GTQ", fx: 7.75, country: "GT", methods: ["Bank Transfer"], assets: SMALL },
+  { currency: "DOP", fx: 60, country: "DO", methods: ["tPago", "Bank Transfer"], assets: SMALL },
+  { currency: "BOB", fx: 6.9, country: "BO", methods: ["Bank Transfer", "Tigo Money"], assets: SMALL },
+  { currency: "PYG", fx: 7500, country: "PY", methods: ["Tigo Money", "Bank Transfer"], assets: SMALL },
+  { currency: "UYU", fx: 40, country: "UY", methods: ["Bank Transfer", "Mercado Pago"], assets: SMALL },
+  { currency: "JMD", fx: 156, country: "JM", methods: ["Lynk", "Bank Transfer"], assets: SMALL },
+  { currency: "TTD", fx: 6.8, country: "TT", methods: ["WiPay", "Bank Transfer"], assets: SMALL },
+
   { currency: "MMK", fx: 2100, country: "MM", methods: ["KBZPay", "Wave Money"], assets: SMALL },
   { currency: "AFN", fx: 71, country: "AF", methods: ["Bank Transfer", "Hawala"], assets: SMALL },
   { currency: "IRR", fx: 580000, country: "IR", methods: ["Shetab Bank Transfer"], assets: SMALL },
 ];
 
-/** Payment methods typical for a currency's primary market (SEO + filters). */
+/*
+ * Cash, appended to every market in place.
+ *
+ * Cash is the one rail that exists everywhere — a country with no instant
+ * payment system, no mobile money and an unreliable banking sector is still
+ * tradeable in notes, which is much of the point of a peer-to-peer protocol.
+ * OFS-2100 §13 lists Cash Deposit as a first-class method alongside the
+ * electronic ones.
+ *
+ * Done here rather than in `paymentMethodsForCurrency` so the ad generator sees
+ * it too: adding cash only to the display would advertise a method no
+ * advertisement actually offers.
+ */
+for (const mk of MARKETS) {
+  mk.methods = [...mk.methods, CASH_DEPOSIT, CASH_IN_PERSON];
+}
+
+/**
+ * Payment methods typical for a currency's primary market (SEO + filters).
+ *
+ * The fallback is cash plus a bank transfer rather than a bank transfer alone:
+ * a currency with no market entry is precisely the case where the banking rail
+ * is least dependable, so offering only that would be the wrong default.
+ */
 export function paymentMethodsForCurrency(currency: string): string[] {
-  return MARKETS.find((mk) => mk.currency === currency)?.methods ?? ["Bank Transfer"];
+  return (
+    MARKETS.find((mk) => mk.currency === currency)?.methods ?? [
+      BANK_TRANSFER,
+      CASH_DEPOSIT,
+      CASH_IN_PERSON,
+    ]
+  );
 }
 
 /** Fixed-seed PRNG (mulberry32) — deterministic across builds and renders. */
