@@ -74,6 +74,19 @@ describe("countries registry", () => {
     expect(paymentMethodsForCurrency("TWD")).not.toEqual(["Bank Transfer"]);
   });
 
+  it("Hong Kong and Macau carry their own local rails", () => {
+    // Both were reachable before but had nothing local: HKD listed a bare
+    // "FPS" plus Wise, and MOP had no market at all, so Macau fell through to
+    // the generic ["Bank Transfer"] default.
+    const hkd = paymentMethodsForCurrency("HKD");
+    expect(hkd).toContain("PayMe");
+    expect(hkd).toContain("FPS (Faster Payment System)");
+
+    const mop = paymentMethodsForCurrency("MOP");
+    expect(mop).toContain("MPay");
+    expect(mop).not.toEqual(["Bank Transfer"]);
+  });
+
   it("lookups work", () => {
     expect(getCountry("KE")?.name).toBe("Kenya");
     expect(getCountry("ke")?.currencyCode).toBe("KES");
@@ -406,6 +419,25 @@ describe("payment methods registry", () => {
       expect(["Mobile Money", "Bank Transfer", "Fintech"]).toContain(m.category);
       expect(Array.isArray(m.aliases)).toBe(true);
     }
+  });
+
+  it("does not confuse Hong Kong's FPS with the UK's Faster Payments", () => {
+    // Different rails, different central banks, same abbreviation. "fps" used
+    // to resolve to the UK entry, which would have a Hong Kong merchant
+    // advertising a system they cannot receive on.
+    expect(searchPaymentMethods("fps")).toContain("FPS (Faster Payment System)");
+    expect(searchPaymentMethods("fps")).not.toContain("Faster Payments (UK)");
+    expect(searchPaymentMethods("faster payments uk")).toContain("Faster Payments (UK)");
+  });
+
+  it("keeps Hong Kong wallets distinct from their mainland namesakes", () => {
+    // An AlipayHK account cannot receive from a mainland Alipay account, so
+    // the two must be separately selectable.
+    const names = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
+    expect(names).toContain("AlipayHK");
+    expect(names).toContain("Alipay");
+    expect(names).toContain("WeChat Pay HK");
+    expect(names).toContain("WeChat Pay");
   });
 
   it("type-ahead search finds methods by name and alias", () => {
