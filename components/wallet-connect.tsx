@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CURRENT_USER } from "@/lib/data/merchants";
+import { BAND_TEXT, COMPOSITE_NOTE, compositeScore, scoreBand } from "@/lib/reputation";
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { formatNumber, shortAddress } from "@/lib/format";
 import { MerchantAvatar } from "@/components/merchant-avatar";
@@ -111,17 +112,25 @@ export function WalletConnect() {
   }
 
   const shortOfBond = OPEN_BALANCE < OPEN_BOND_REQUIRED;
+  const myScore = compositeScore(CURRENT_USER);
 
   if (connection) {
     return (
       <div className="flex items-center gap-2.5">
-        {/* Reputation chip — compact tier-ringed avatar, always visible once connected */}
+        {/*
+         * Your own reputation, on every page. The avatar alone showed the tier
+         * as a ring colour, which nobody can read as a number — the figure is
+         * what a counterparty judges you on, so it is stated.
+         */}
         <Link
           href="/account/reputation"
-          className="flex items-center rounded-full hover:opacity-80"
-          title={`Your reputation: ${CURRENT_USER.tier} tier`}
+          className="flex items-center gap-2 rounded-full hover:opacity-80"
+          title={`Your reputation: ${myScore}/100, ${CURRENT_USER.tier} tier. ${COMPOSITE_NOTE}`}
         >
           <MerchantAvatar name={CURRENT_USER.name} tier={CURRENT_USER.tier} size="sm" />
+          <span className={`hidden text-xs tabular-nums sm:inline ${BAND_TEXT[scoreBand(myScore)]}`}>
+            {myScore}
+          </span>
         </Link>
 
         {/*

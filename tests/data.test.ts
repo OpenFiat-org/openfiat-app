@@ -20,6 +20,7 @@ import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
 import { pseudoSignature } from "@/lib/format";
+import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
 
 const merchantIds = new Set([...MERCHANTS.map((m) => m.id), CURRENT_USER.id]);
@@ -454,6 +455,55 @@ describe("disputes", () => {
     // OFS-2400 §17 marks Partial Settlement as future work.
     expect(DISPUTE_OUTCOMES).not.toContain("Partial Settlement");
     expect(DISPUTE_OUTCOMES).toHaveLength(4);
+  });
+});
+
+describe("reputation", () => {
+  it("scores the eight dimensions OFS-3000 §6 defines", () => {
+    const labels = reputationFor(MERCHANTS[0]).map((d) => d.label);
+    expect(labels).toEqual([
+      "Settlement Speed",
+      "Trade Success Rate",
+      "Dispute Rate",
+      "Trade Volume",
+      "Average Ticket Size",
+      "Merchant Age",
+      "Availability",
+      "Payment Accuracy",
+    ]);
+  });
+
+  it("summarises conduct, not scale", () => {
+    // Volume, ticket size and age describe how big a desk is, not how it
+    // behaves. Averaging them in dragged a 99.8%-completion Institutional
+    // merchant into the 70s, which reads as mediocre. Guard against that
+    // returning: a merchant with excellent conduct must score in the top band
+    // regardless of how small their tickets are.
+    for (const m of MERCHANTS) {
+      if (m.completionRate >= 99.5 && m.availability === "Online") {
+        expect(compositeScore(m), m.name).toBeGreaterThanOrEqual(80);
+      }
+    }
+  });
+
+  it("tracks tier order across the roster", () => {
+    const byTier = (tier: string) =>
+      MERCHANTS.filter((m) => m.tier === tier).map((m) => compositeScore(m));
+    const institutional = byTier("Institutional");
+    const explorer = byTier("Explorer");
+    if (institutional.length && explorer.length) {
+      const min = (xs: number[]) => Math.min(...xs);
+      const max = (xs: number[]) => Math.max(...xs);
+      expect(min(institutional)).toBeGreaterThan(max(explorer));
+    }
+  });
+
+  it("stays inside 0-100", () => {
+    for (const m of MERCHANTS) {
+      const score = compositeScore(m);
+      expect(score, m.name).toBeGreaterThanOrEqual(0);
+      expect(score, m.name).toBeLessThanOrEqual(100);
+    }
   });
 });
 
