@@ -64,7 +64,7 @@ export function CountryIndex() {
           {results.map((c) => (
             <Tr key={c.code}>
               <Td>
-                <Link href={`/p2p/${c.slug}`} className="font-medium text-gray-200 hover:text-brand-hover">
+                <Link href={`/country/${c.slug}`} className="font-medium text-gray-200 hover:text-brand-hover">
                   <span className="mr-2">{c.flag}</span>
                   {c.name}
                 </Link>
@@ -72,7 +72,7 @@ export function CountryIndex() {
               <Td className="font-medium text-gray-300">{c.currencyCode}</Td>
               <Td className="text-xs text-gray-500">{c.currencyName}</Td>
               <Td right>
-                <Link href={`/p2p/${c.slug}`} className="text-sm text-brand hover:text-brand-hover">
+                <Link href={`/country/${c.slug}`} className="text-sm text-brand hover:text-brand-hover">
                   Trade →
                 </Link>
               </Td>

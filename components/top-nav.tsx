@@ -8,7 +8,7 @@ import { WalletConnect } from "@/components/wallet-connect";
 
 const MAIN_LINKS: Array<[string, string]> = [
   ["P2P Exchange", "/"],
-  ["Countries", "/p2p"],
+  ["Countries", "/countries"],
   ["Disputes", "/disputes"],
   ["Governance", "/governance"],
 ];

@@ -6,28 +6,28 @@ import { paymentMethodsForCurrency } from "@/lib/data/ads";
 import { P2PExchange } from "@/components/p2p/exchange";
 
 interface Params {
-  country: string;
+  slug: string;
 }
 
 /** One statically-prerendered SEO page per country/territory in the registry. */
 export function generateStaticParams(): Params[] {
-  return COUNTRIES.map((c) => ({ country: c.slug }));
+  return COUNTRIES.map((c) => ({ slug: c.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const { country: slug } = await params;
+  const { slug } = await params;
   const country = COUNTRIES_BY_SLUG.get(slug);
   if (!country) return {};
   const methods = paymentMethodsForCurrency(country.currencyCode).slice(0, 3).join(", ");
   return {
     title: { absolute: `Buy & Sell USDT in ${country.name} — P2P Exchange | OpenFiat` },
     description: `Buy and sell USDT, USDC, USD1, and SOL with ${country.currencyName} (${country.currencyCode}) in ${country.name}. Pay with ${methods}. Escrow enforced by audited Solana programs — OpenFiat never takes custody of your fiat.`,
-    alternates: { canonical: `/p2p/${country.slug}` },
+    alternates: { canonical: `/country/${country.slug}` },
   };
 }
 
 export default async function CountryP2PPage({ params }: { params: Promise<Params> }) {
-  const { country: slug } = await params;
+  const { slug } = await params;
   const country = COUNTRIES_BY_SLUG.get(slug);
   if (!country) notFound();
 
@@ -35,7 +35,7 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
 
   return (
     <section>
-      <Link href="/p2p" className="text-sm text-gray-500 hover:text-white">
+      <Link href="/countries" className="text-sm text-gray-500 hover:text-white">
         ← All countries
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-white">

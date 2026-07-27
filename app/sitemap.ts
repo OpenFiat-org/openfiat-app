@@ -9,7 +9,7 @@ const LAST_UPDATED = new Date("2026-07-27");
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
-    "/p2p",
+    "/countries",
     "/guide",
     "/guide/buy",
     "/guide/sell",
@@ -34,7 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const countryRoutes = COUNTRIES.map((c) => ({
-    url: `${BASE}/p2p/${c.slug}`,
+    url: `${BASE}/country/${c.slug}`,
     lastModified: LAST_UPDATED,
   }));
 
