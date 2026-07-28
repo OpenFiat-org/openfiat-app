@@ -50,7 +50,7 @@ export const STAKING_ROLES: StakingRole[] = [
     minBond: 50000,
     staked: 0,
     status: "Not bonded",
-    requirement: "Per OFP-019: a 50,000 OPEN bond is required to join the arbitration pool and rule on disputes.",
+    requirement: "Per OFIP-0019: a 50,000 OPEN bond is required to join the arbitration pool and rule on disputes.",
     rewards: "Arbitration fees per resolved case",
   },
   {

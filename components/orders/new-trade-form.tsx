@@ -156,7 +156,7 @@ export function NewTradeForm({
               Place Order
             </button>
             <p className="mt-2 text-center text-[11px] text-gray-600">
-              Simulated action — your reservation holds for ~20 minutes; no funds move.
+              Simulated action — your reservation holds for ~30 minutes; no funds move.
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ export function NewTradeForm({
             <p className="mt-1">Pay within 15 minutes · no third-party payments · mark as paid only after sending.</p>
           </div>
           <div className="py-3 text-xs text-gray-500">
-            Your {buy ? "escrow-protected" : "vault-backed"} reservation holds for ~20 minutes. Escrow is enforced by
+            Your {buy ? "escrow-protected" : "vault-backed"} reservation holds for ~30 minutes. Escrow is enforced by
             audited Solana programs; OpenFiat never takes custody of fiat.
           </div>
         </div>

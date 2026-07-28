@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const UTILITY: Array<{ title: string; description: string; href: string; link: string }> = [
   { title: "Merchant bonds", description: "Publishing ads requires a 5,000 OPEN bond — 1 ad slot per 5,000 OPEN.", href: "/staking", link: "Stake as a merchant" },
   { title: "Node & arbitrator staking", description: "Operators bond OPEN to serve the network; arbitrators bond 50,000 OPEN to rule on disputes.", href: "/staking", link: "Bond for a role" },
-  { title: "Governance voting", description: "OPEN-weighted votes decide OFPs — fees, assets, treasury spend.", href: "/governance", link: "See proposals" },
+  { title: "Governance voting", description: "OPEN-weighted votes decide OFIPs — fees, assets, treasury spend.", href: "/governance", link: "See proposals" },
   { title: "Protocol fees", description: "Trade, dispute, and service fees are denominated in OPEN and accrue to the treasury.", href: "/governance", link: "View treasury" },
 ];
 

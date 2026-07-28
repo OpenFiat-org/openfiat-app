@@ -7,6 +7,7 @@ import { merchantById } from "@/lib/data/merchants";
 import { formatCrypto, formatDate, formatFiat, formatNumber, shortSig } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { MerchantCell } from "@/components/merchant-cell";
+import { ReservationSteps } from "@/components/orders/reservation-steps";
 import { SettlementSteps } from "@/components/orders/settlement-steps";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
@@ -33,7 +34,8 @@ function fmtSize(bytes: number): string {
 export function TradeRoom({ trade }: { trade: Trade }) {
   const [status, setStatus] = useState<SettlementStatus>(trade.status);
   const [events, setEvents] = useState<TradeEvent[]>(trade.events);
-  const [secondsLeft, setSecondsLeft] = useState(20 * 60);
+  // 30 min default per OFS-2200 §12/§12a — governance-configurable, not a constant.
+  const [secondsLeft, setSecondsLeft] = useState(30 * 60);
   const [draft, setDraft] = useState("");
   const [proof, setProof] = useState<AttachedFile | null>(null);
   const [proofError, setProofError] = useState(false);
@@ -206,6 +208,8 @@ export function TradeRoom({ trade }: { trade: Trade }) {
               )}
             </div>
           </div>
+
+          <ReservationSteps />
 
           <SettlementSteps
             status={status}

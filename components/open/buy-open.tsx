@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PRESALE } from "@/lib/data/sale";
+import { PRESALE, PUBLIC_SALE_PRICE_USDC } from "@/lib/data/sale";
 import { formatNumber } from "@/lib/format";
 import { Panel } from "@/components/panel";
 
@@ -20,7 +20,11 @@ export function BuyOpen() {
   const belowMin = amount > 0 && amount < PRESALE.minContribution;
   const aboveMax = amount > PRESALE.maxContribution;
   const valid = amount >= PRESALE.minContribution && amount <= PRESALE.maxContribution;
-  const pct = Math.round((PRESALE.raised / PRESALE.cap) * 100);
+  // The target is a goal, not a cap (OFS-4100 §3) — raised can exceed it,
+  // and the presale keeps selling out of the 200M OPEN bucket regardless.
+  // The bar itself still clamps at 100% so a display can't over-fill.
+  const pct = Math.round((PRESALE.raised / PRESALE.target) * 100);
+  const targetReached = PRESALE.raised >= PRESALE.target;
 
   if (done) {
     return (
@@ -48,17 +52,26 @@ export function BuyOpen() {
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6">
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>Allocation raised</span>
+            <span>Raised toward target</span>
             <span className="tabular-nums">
-              ${formatNumber(PRESALE.raised, 0)} / ${formatNumber(PRESALE.cap, 0)} ({pct}%)
+              ${formatNumber(PRESALE.raised, 0)} / ${formatNumber(PRESALE.target, 0)} ({pct}%)
             </span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-white/10">
-            <div className="h-2 rounded-full bg-gradient-to-r from-brand to-brand-teal" style={{ width: `${pct}%` }} />
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-brand to-brand-teal"
+              style={{ width: `${Math.min(pct, 100)}%` }}
+            />
           </div>
           <p className="mt-3 text-xs text-gray-500">
+            {targetReached
+              ? `Target reached — the ${formatNumber(PRESALE.bucketOpen, 0)} OPEN Community Presale allocation isn't a cap, so the sale keeps going.`
+              : `$${formatNumber(PRESALE.target, 0)} is a goal, not a cap — the presale sells from the full ${formatNumber(PRESALE.bucketOpen, 0)} OPEN Community Presale allocation.`}
+          </p>
+          <p className="mt-3 text-xs text-gray-500">
             Min {formatNumber(PRESALE.minContribution, 0)} {payWith} · max {formatNumber(PRESALE.maxContribution, 0)}{" "}
-            {payWith} per wallet.
+            {payWith} per wallet. Unsold OPEN after the presale closes moves to a Public Sale at{" "}
+            {PUBLIC_SALE_PRICE_USDC} {payWith}/OPEN.
           </p>
         </div>
 

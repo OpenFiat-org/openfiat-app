@@ -11,13 +11,14 @@ import {
 import { DISPUTES, DISPUTE_OUTCOMES } from "@/lib/data/disputes";
 import { DISPUTE_STAGES, disputeStageIndex, evidenceVisible, isDisputeParty } from "@/lib/types";
 import { PROPOSALS } from "@/lib/data/governance";
+import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
 import { NETWORK_NODES, PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
 import { connectableNodes, defaultNode } from "@/lib/node-preference";
 import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
-import { OPEN_PRICE_USDC, PRESALE, SALE_PHASES } from "@/lib/data/sale";
+import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
 import { VAULTS } from "@/lib/data/wallet";
@@ -858,7 +859,7 @@ describe("staking roles", () => {
       expect(r.staked).toBeGreaterThanOrEqual(0);
       expect(r.requirement.length).toBeGreaterThan(0);
     }
-    // OFP-019 arbitrator bond
+    // OFIP-0019 arbitrator bond
     expect(STAKING_ROLES.find((r) => r.role === "arbitrator")!.minBond).toBe(50000);
   });
 });
@@ -941,19 +942,25 @@ describe("OPEN token", () => {
     expect(PRESALE.priceUsdc).toBe(1);
   });
 
-  it("caps the presale at the size of its own bucket", () => {
-    // At 1:1 the bucket is the ceiling, so the two move together — OFS-4100 §2
-    // is explicit that they must never be changed independently.
-    expect(PRESALE.cap).toBe(30_000_000);
-    expect(PRESALE.softCap).toBeLessThan(PRESALE.cap);
-    expect(PRESALE.maxContribution).toBeLessThanOrEqual(PRESALE.cap);
+  it("sells the entire presale bucket toward a target, not a cap", () => {
+    // OFS-4100 §2-3: the Community Presale bucket is the full 20% of supply
+    // (200,000,000 OPEN), and the presale has no hard cap distinct from it —
+    // it sells at 1:1 toward a $2,000,000 target that demand may exceed.
+    expect(PRESALE.bucketOpen).toBe(200_000_000);
+    expect(PRESALE.target).toBe(2_000_000);
     expect(PRESALE.minContribution).toBeLessThan(PRESALE.maxContribution);
+    // Simulated `raised` deliberately exceeds `target`, to illustrate that
+    // exceeding it doesn't stop the sale — see lib/data/sale.ts.
+    expect(PRESALE.raised).toBeGreaterThan(PRESALE.target);
   });
 
-  it("offers one presale price, with market pricing only after mainnet", () => {
+  it("offers a presale and a public-sale price, with market pricing only after mainnet", () => {
+    // Two priced phases against the one bucket (OFS-4100 §3): the presale at
+    // 1:1, then a Public Sale at 1.25 for whatever the presale didn't sell.
     const priced = SALE_PHASES.filter((p) => p.priceUsdc !== null);
-    expect(priced).toHaveLength(1);
+    expect(priced).toHaveLength(2);
     expect(priced[0].priceUsdc).toBe(OPEN_PRICE_USDC);
+    expect(priced[1].priceUsdc).toBe(PUBLIC_SALE_PRICE_USDC);
   });
 });
 
@@ -962,6 +969,58 @@ describe("governance", () => {
     for (const p of PROPOSALS) {
       expect(p.votesFor + p.votesAgainst + p.votesAbstain).toBe(100);
     }
+  });
+
+  it("uses the OFIP identifier, not the superseded OFP one", () => {
+    // OFS-4100 §5: whitepaper's "OFIP" chosen over OFS-4000's "OFP".
+    for (const p of PROPOSALS) {
+      expect(p.id).toMatch(/^OFIP-\d{4}$/);
+    }
+  });
+
+  it("derives quorum and approval threshold from category, not per-proposal", () => {
+    // OFS-4100 §5: the two move together per category, they are not
+    // independently configurable per proposal.
+    for (const p of PROPOSALS) {
+      const rule = CATEGORY_RULES[p.category];
+      expect(p.quorumPct).toBe(rule.quorumPct);
+      expect(p.approvalThresholdPct).toBe(rule.approvalThresholdPct);
+    }
+  });
+
+  it("requires a higher bar for Protocol-Upgrade and Constitutional proposals", () => {
+    for (const category of ["Protocol-Upgrade", "Constitutional"] as const) {
+      expect(CATEGORY_RULES[category].quorumPct).toBe(20);
+      expect(CATEGORY_RULES[category].approvalThresholdPct).toBe(66);
+    }
+    for (const category of ["Informational", "Standards", "Parameter"] as const) {
+      expect(CATEGORY_RULES[category].quorumPct).toBe(10);
+      expect(CATEGORY_RULES[category].approvalThresholdPct).toBe(50);
+    }
+    expect(CATEGORY_RULES.Treasury.quorumPct).toBe(10);
+    expect(CATEGORY_RULES.Treasury.approvalThresholdPct).toBe(60);
+  });
+
+  it("posts the same stake deposit for every proposal", () => {
+    expect(PROPOSAL_STAKE_DEPOSIT_OPEN).toBe(5000);
+    for (const p of PROPOSALS) {
+      expect(p.depositOpen).toBe(PROPOSAL_STAKE_DEPOSIT_OPEN);
+    }
+  });
+
+  it("refunds the deposit exactly when quorum was met, regardless of outcome", () => {
+    // OFS-4100 §5: refund condition is quorum-met, not proposal pass/fail —
+    // OFIP-0016 below is Rejected but still refunds, since turnout cleared quorum.
+    for (const p of PROPOSALS) {
+      if (p.status === "Active") {
+        expect(p.depositRefunded).toBeNull();
+      } else {
+        expect(p.depositRefunded).toBe(p.turnoutPct >= p.quorumPct);
+      }
+    }
+    const rejectedButQuorate = PROPOSALS.find((p) => p.id === "OFIP-0016");
+    expect(rejectedButQuorate?.status).toBe("Rejected");
+    expect(rejectedButQuorate?.depositRefunded).toBe(true);
   });
 });
 

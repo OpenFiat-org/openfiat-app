@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { proposalById } from "@/lib/data/governance";
+import { CATEGORY_RULES } from "@/lib/governance";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
+import { CategoryBadge } from "@/components/governance/category-badge";
 import { VotePanel } from "@/components/governance/vote-panel";
 import { VoteBar } from "@/components/governance/vote-bar";
 
@@ -25,6 +27,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
         <span className="font-mono text-sm text-gray-500">{proposal.id}</span>
         <h1 className="text-xl font-semibold text-white">{proposal.title}</h1>
         <StatusPill status={proposal.status} />
+        <CategoryBadge category={proposal.category} />
       </div>
       <p className="mt-1 text-sm text-gray-500">{proposal.votingEnds}</p>
 
@@ -42,10 +45,24 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
               Turnout {proposal.turnoutPct}% of {proposal.quorumPct}% quorum
               {proposal.turnoutPct >= proposal.quorumPct ? " — quorum reached" : " — quorum not yet reached"}
             </p>
+            <p className="text-xs tabular-nums text-gray-500">
+              {CATEGORY_RULES[proposal.category].thresholdLabel} required to pass ({proposal.approvalThresholdPct}% For)
+              {proposal.votesFor >= proposal.approvalThresholdPct
+                ? " — threshold met"
+                : " — threshold not met"}
+            </p>
           </div>
           <div className="border-t border-white/10 px-4 py-3">
             <VotePanel status={proposal.status} />
             <p className="mt-2 text-[11px] text-gray-600">Voting is simulated — no transaction is signed.</p>
+          </div>
+          <div className="border-t border-white/10 px-4 py-3 text-xs text-gray-500">
+            <span className="text-gray-400">Proposal deposit:</span> {proposal.depositOpen.toLocaleString()} OPEN
+            {proposal.depositRefunded === null
+              ? " — held until the voting deadline"
+              : proposal.depositRefunded
+                ? " — refunded (quorum was met)"
+                : " — forfeited to the Ecosystem Treasury (quorum wasn't met)"}
           </div>
         </Panel>
       </div>

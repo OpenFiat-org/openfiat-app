@@ -23,7 +23,7 @@ const TRADE_INPUTS: Array<Omit<Trade, "paymentFields" | "txSig" | "escrowSig">> 
     createdAt: "2026-07-27T13:58:00Z",
     updatedAt: "2 min ago",
     events: [
-      { time: "13:58", kind: "event", actor: "Protocol", text: "ReservationRequested — reservation created on AD-1001 (first-come-first-served, 20 min timeout)." },
+      { time: "13:58", kind: "event", actor: "Protocol", text: "ReservationRequested — reservation created on AD-1001 (first-come-first-served, 30 min timeout)." },
       { time: "13:58", kind: "event", actor: "Protocol", text: "ReservationValidated — merchant availability and limits verified." },
       { time: "13:59", kind: "event", actor: "Protocol", text: "ReservationAccepted — KenyaStarTrades accepted the reservation." },
       { time: "13:59", kind: "event", actor: "Protocol", text: "EscrowLocked — 250.00 USDT locked in escrow PDA on Solana." },
@@ -245,7 +245,7 @@ const TRADE_INPUTS: Array<Omit<Trade, "paymentFields" | "txSig" | "escrowSig">> 
     updatedAt: "4 days ago",
     events: [
       { time: "19:30", kind: "event", actor: "Protocol", text: "ReservationRequested — reservation created on AD-1017." },
-      { time: "19:50", kind: "event", actor: "Protocol", text: "ReservationExpired — 20 min reservation timeout reached; escrow never locked." },
+      { time: "20:00", kind: "event", actor: "Protocol", text: "ReservationExpired — 30 min reservation timeout reached; escrow never locked." },
     ],
   },
   {

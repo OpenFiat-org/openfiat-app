@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PROPOSALS, TREASURY } from "@/lib/data/governance";
 import { formatNumber } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { CategoryBadge } from "@/components/governance/category-badge";
 import { MetricStrip } from "@/components/metrics";
 import { PageHero } from "@/components/page-hero";
 import { StatusPill } from "@/components/status-pill";
@@ -10,7 +11,7 @@ import { VoteStack } from "@/components/governance/vote-bar";
 
 export const metadata: Metadata = {
   title: "Governance",
-  description: "OpenFiat governance — OFPs, OPEN-weighted voting, and the protocol treasury.",
+  description: "OpenFiat governance — OFIPs, OPEN-weighted voting, and the protocol treasury.",
 };
 
 export default function GovernancePage() {
@@ -19,7 +20,7 @@ export default function GovernancePage() {
       <PageHero
         variant="ballot"
         title="Governance"
-        description="OpenFiat Proposals (OFPs) are decided by OPEN-weighted voting; executed proposals move the on-chain treasury."
+        description="OpenFiat Improvement Proposals (OFIPs) are decided by OPEN-weighted voting; executed proposals move the on-chain treasury."
       >
         <MetricStrip
           items={[
@@ -38,6 +39,7 @@ export default function GovernancePage() {
             <tr>
               <Th>Proposal</Th>
               <Th>Proposal</Th>
+              <Th className="w-28">Category</Th>
               <Th className="w-64">Votes (For / Against / Abstain)</Th>
               <Th className="w-24">Quorum</Th>
               <Th className="w-32">Voting</Th>
@@ -52,6 +54,9 @@ export default function GovernancePage() {
                   <span className="mr-2 font-mono text-xs text-gray-500">{p.id}</span>
                   <span className="font-medium text-white group-hover:text-brand-hover">{p.title}</span>
                 </Link>
+              </Td>
+              <Td py="py-5" className="w-28">
+                <CategoryBadge category={p.category} />
               </Td>
               <Td py="py-5" className="w-64">
                 <VoteStack proposal={p} />

@@ -135,6 +135,27 @@ export const SETTLEMENT_STEPS: SettlementStatus[] = [
   "Completed",
 ];
 
+/**
+ * OFS-2200 §18, in order — a separate state machine from settlement, not a
+ * prefix of it. Reservation owns everything up to and including "Escrow
+ * Locked"; that state is the handoff point where authority passes to
+ * settlement (OFS-2300 §20), which is why "Escrow Locked" opens
+ * `SETTLEMENT_STEPS` above rather than being a settlement-owned state.
+ *
+ * Every `Trade` in this app already exists past that handoff — a trade
+ * object doesn't exist until its reservation resolved to Escrow Locked — so
+ * this phase is always fully complete by the time a trade room renders it.
+ * It's still drawn, not skipped: without it, the settlement stepper's
+ * "Escrow Locked" reads as the start of the trade rather than the point one
+ * phase handed off to another.
+ */
+export const RESERVATION_STEPS = [
+  "Requested",
+  "Validated",
+  "Accepted",
+  "Escrow Locked",
+] as const;
+
 /** One standardized, individually-copyable payment detail (per method shape). */
 export interface PaymentField {
   label: string;
@@ -451,8 +472,18 @@ export interface StakingSummary {
 
 export type ProposalStatus = "Active" | "Passed" | "Rejected" | "Executed";
 
+/** OFS-4100 §5's 6-category taxonomy, chosen over OFS-4000's 5-category one. */
+export type ProposalCategory =
+  | "Informational"
+  | "Standards"
+  | "Parameter"
+  | "Treasury"
+  | "Protocol-Upgrade"
+  | "Constitutional";
+
 export interface Proposal {
-  id: string; // OFP-###
+  id: string; // OFIP-####
+  category: ProposalCategory;
   title: string;
   description: string;
   status: ProposalStatus;
@@ -460,8 +491,15 @@ export interface Proposal {
   votesFor: number; // percent
   votesAgainst: number; // percent
   votesAbstain: number; // percent
-  quorumPct: number; // required quorum
+  /** Required quorum, set by category (OFS-4100 §5) — 10% standard, 20% for Protocol-Upgrade/Constitutional. */
+  quorumPct: number;
+  /** Required For-share to pass, set by category — 50/60/66 (simple majority / Treasury / Protocol-Upgrade & Constitutional). */
+  approvalThresholdPct: number;
   turnoutPct: number; // current turnout
+  /** [PROPOSED — NEEDS SIGN-OFF] OFS-4100 §5: 5,000 OPEN, refunded if quorum is met by the deadline. */
+  depositOpen: number;
+  /** null while voting is still open; set once the deadline passes. */
+  depositRefunded: boolean | null;
 }
 
 export type NodeStatus = "Online" | "Syncing" | "Offline";

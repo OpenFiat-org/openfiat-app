@@ -79,7 +79,7 @@ function synthesizeTrade(id: string, query: Record<string, string | string[] | u
     createdAt: "2026-07-27T14:00:00Z",
     updatedAt: "just now",
     events: [
-      { time: "now", kind: "event" as const, actor: "Protocol", text: "ReservationRequested — reservation created (first-come-first-served, 20 min timeout)." },
+      { time: "now", kind: "event" as const, actor: "Protocol", text: "ReservationRequested — reservation created (first-come-first-served, 30 min timeout)." },
       { time: "now", kind: "event" as const, actor: "Protocol", text: "ReservationValidated — merchant availability and limits verified." },
       { time: "now", kind: "event" as const, actor: "Protocol", text: "EscrowLocked — crypto locked in escrow PDA on Solana (simulated)." },
     ],
