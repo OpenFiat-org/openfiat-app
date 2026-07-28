@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Client } from "@openfiat/sdk";
 
 import {
   NODE_CHANGED_EVENT,
@@ -85,6 +86,7 @@ function AccessNodeModal({
   const [host, setHost] = useState("");
   const [error, setError] = useState("");
   const [connected, setConnected] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   /* Only roles a client can attach to. Offering an oracle or a notification
      gateway here let someone point their interface at a service that has no
@@ -97,14 +99,33 @@ function AccessNodeModal({
     setTimeout(onClose, 600);
   }
 
-  function connectCustom() {
+  /**
+   * A custom node is the one case in this footer that's a real host the
+   * user actually runs — so, unlike the picker list above (`NETWORK_NODES`,
+   * simulated), this is a genuine `getVersion` call via `@openfiat/sdk`
+   * before accepting the address, not just a format check.
+   */
+  async function connectCustom() {
     const value = host.trim();
     if (!/^[\w.-]+:\d{2,5}$/.test(value)) {
       setError("Enter a host:port address, e.g. p2p.mynode.example:9000");
       return;
     }
     setError("");
-    useNode(`custom:${value}`);
+    setChecking(true);
+    try {
+      const client = new Client({ endpoint: `http://${value}`, timeoutMs: 5_000 });
+      const version = await client.call<Record<string, never>, { version: string }>(
+        "getVersion",
+        {},
+      );
+      setError(`✓ reachable — openfiat-node ${version.version}`);
+      useNode(`custom:${value}`);
+    } catch {
+      setError(`Could not reach an OpenFiat node at ${value}`);
+    } finally {
+      setChecking(false);
+    }
   }
 
   return (
@@ -117,7 +138,7 @@ function AccessNodeModal({
           <div>
             <h2 className="text-base font-semibold text-white">Access node</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              Connected: {selection?.id ?? "…"} — all data in this demo is simulated regardless.
+              Connected: {selection?.id ?? "…"} — the node list below is simulated; a custom node is checked live.
             </p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
@@ -160,13 +181,16 @@ function AccessNodeModal({
             />
             <button
               onClick={connectCustom}
-              className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+              disabled={checking}
+              className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Connect
+              {checking ? "Checking…" : "Connect"}
             </button>
           </div>
           {error && <p className="mt-1.5 text-xs text-amber-300">{error}</p>}
-          <p className="mt-2 text-[11px] text-gray-600">Simulated — no connection is actually established.</p>
+          <p className="mt-2 text-[11px] text-gray-600">
+            Sends a real getVersion request to the address above over HTTP.
+          </p>
         </div>
       </div>
     </div>
