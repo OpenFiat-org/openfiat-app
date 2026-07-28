@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@openfiat/sdk':
-        specifier: file:../openfiat-sdks/typescript
-        version: file:../openfiat-sdks/typescript
+        specifier: github:OpenFiat-org/openfiat-sdks#132a8db5e93f759672458e0b0ba832ee76ecfa55&path:typescript
+        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/132a8db5e93f759672458e0b0ba832ee76ecfa55#path:typescript
       next:
         specifier: ^16.2.12
         version: 16.2.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -501,8 +501,9 @@ packages:
   '@noble/ed25519@2.3.0':
     resolution: {integrity: sha512-M7dvXL2B92/M7dw9+gzuydL8qn/jiqNHaoR3Q+cb1q1GHV7uwE17WCyFMG+Y+TZb5izcaXk5TdJRrDUxHXL78A==}
 
-  '@openfiat/sdk@file:../openfiat-sdks/typescript':
-    resolution: {directory: ../openfiat-sdks/typescript, type: directory}
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/132a8db5e93f759672458e0b0ba832ee76ecfa55#path:typescript':
+    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/132a8db5e93f759672458e0b0ba832ee76ecfa55}
+    version: 0.1.0
     engines: {node: '>=20'}
 
   '@rollup/rollup-android-arm-eabi@4.62.3':
@@ -2012,7 +2013,7 @@ snapshots:
 
   '@noble/ed25519@2.3.0': {}
 
-  '@openfiat/sdk@file:../openfiat-sdks/typescript':
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/132a8db5e93f759672458e0b0ba832ee76ecfa55#path:typescript':
     dependencies:
       '@noble/ed25519': 2.3.0
 

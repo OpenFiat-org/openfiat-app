@@ -18,7 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@openfiat/sdk": "file:../openfiat-sdks/typescript",
+    "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#132a8db5e93f759672458e0b0ba832ee76ecfa55&path:typescript",
     "next": "^16.2.12",
     "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
