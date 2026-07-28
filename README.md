@@ -25,6 +25,15 @@ more) without centralized infrastructure.
 
 This repository (Application) — the default openfiat web application — trading, network view, staking, governance, disputes, and transaction history for users and validators.
 
+This is the actively-developed OpenFiat frontend. It covers the same ground
+[`openfiat-apps`](https://github.com/OpenFiat-org/openfiat-apps)'s Node.js
+packages were scaffolding (network explorer, merchant dashboard, wallet) —
+see `/explorer`, `/merchants/[id]`, and `/wallet` below — with a real design,
+navigation, and data model. `openfiat-apps` is no longer under active
+development; its Rust `explorer/indexer` still runs for real against
+[`openfiat-core`](https://github.com/OpenFiat-org/openfiat-core), but its
+frontend packages are kept only for reference.
+
 For the full protocol motivation and design, see the
 [whitepaper](https://github.com/OpenFiat-org/openfiat-specs) and the
 [protocol specifications](https://github.com/OpenFiat-org/openfiat-specs/tree/main/Whitepaper/Specifications).
