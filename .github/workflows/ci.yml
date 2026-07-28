@@ -12,11 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # package.json depends on "@openfiat/sdk": "file:../openfiat-sdks/typescript"
+      # (no npm-published version exists yet) — check that repo out as a
+      # sibling directory and build its dist/ so the file: dependency resolves.
+      - uses: actions/checkout@v7
+        with:
+          repository: OpenFiat-org/openfiat-sdks
+          path: ../openfiat-sdks
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "pnpm"
+      - working-directory: ../openfiat-sdks/typescript
+        run: pnpm install --no-frozen-lockfile && pnpm build
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
