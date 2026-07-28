@@ -20,7 +20,7 @@ jobs:
         with:
           repository: OpenFiat-org/openfiat-sdks
           path: openfiat-sdks-checkout
-      - run: mkdir -p ../openfiat-sdks && cp -r openfiat-sdks-checkout/. ../openfiat-sdks/
+      - run: mkdir -p ../openfiat-sdks && cp -r openfiat-sdks-checkout/. ../openfiat-sdks/ && rm -rf openfiat-sdks-checkout
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
