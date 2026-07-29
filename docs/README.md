@@ -4,5 +4,9 @@ Extended documentation for `openfiat-app` lives here. High-level architecture an
 
 ## Contents
 
-- `architecture.md` — component architecture and diagrams
-- `getting-started.md` — local setup walkthrough
+- [`architecture.md`](architecture.md) — the simulated-vs-live route split, and
+  what each of the two independent live surfaces (Solana devnet, an OpenFiat
+  node) actually talks to
+- [`getting-started.md`](getting-started.md) — running the app locally, and
+  what it takes to see live data instead of the demo data every route ships
+  with by default

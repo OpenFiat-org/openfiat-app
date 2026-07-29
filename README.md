@@ -46,10 +46,40 @@ all point at that domain.
 
 ## Status
 
-The app ships a **fully simulated end-to-end UI** — every screen is navigable
-with deterministic demo data (no backend, no wallet signer; all actions are
-client-side simulations marked "Simulated data"). It becomes the default
-OpenFiat app interface once wired to a live node.
+The app is being cut over from a fully simulated demo to live data one route
+at a time, verified against real devnet state before each cutover:
+
+- **Live** — real wallet-signed Solana transactions and/or real network
+  calls, no demo data: **Staking** (`/staking`) bonds OPEN via a real
+  `openfiat-staking` transaction and reads back the real `StakeAccount`;
+  **Governance** (`/governance`) reads real `GovernanceConfig`/`Proposal`
+  accounts and casts a real, wallet-signed vote — both talk directly to
+  Solana devnet, no OpenFiat node needed. **Explorer**'s protocol-event feed
+  and chain stats (`/explorer`) and **Service Providers** (`/providers`)
+  make real JSON-RPC/WebSocket calls (`lib/live-explorer.ts`,
+  `lib/live-providers.ts`) against whichever OpenFiat node the footer's
+  access-node picker resolves to — point it at a real running node (a
+  local `openfiat-core` docker-compose cluster, or a custom `host:port`) to
+  see genuine data; its default node list is itself simulated.
+- **Still simulated** — deterministic demo data, no backend: the P2P
+  exchange book and country pages (`/`, `/p2p/*`), **Orders**/trade room
+  (`/orders/*`), **Wallet** (`/wallet/*`), **Disputes** (`/disputes/*`), the
+  **Post Advertisement** wizard (`/ads/new`), merchant profiles
+  (`/merchants/[id]`), and Explorer's own per-address/merchant lookup
+  (`/explorer/address/[address]`). These render with a floating "Simulated
+  data" badge (`components/simulated-badge.tsx`) — note that badge is
+  currently unconditional site-wide, so it still appears on the live routes
+  above too; don't take its presence on a page as proof that page is
+  simulated.
+- The **OPEN token** hub (`/open`) is a presale-readiness UI against the real
+  `openfiat-presale` program, but no sale contract has been deployed and no
+  terms are final — nothing there is purchasable yet.
+
+Real on-chain reads/writes are devnet-only (`lib/onchain-config.ts`):
+program ids `HaPpM1QYM3dKp3sX7zhEdft9hB6ncu6xfALAbkyQChQP` (escrow),
+`HYEXk8XQukBkZbiYB33JyVefQDxqyCpPudad3wBCyYmx` (staking), and
+`AVJfKUjHsizkGGUy8sdz4Xma2hVgmgvgg8GmUMs8E4eE` (governance), against the
+real devnet OPEN Token-2022 mint. There is no mainnet deployment.
 
 Features:
 
@@ -161,14 +191,24 @@ Features:
 │   ├── staking/               OPEN staking, merchant bond
 │   ├── governance/            proposals + voting ([id])
 │   ├── network/               nodes + protocol event stream
+│   ├── providers/             OFS-1500 Service Registry ([id])
+│   ├── open/                  OPEN presale hub
+│   ├── guide/                 beginner P2P walkthrough
 │   ├── settings/              preferences + notification channels
 │   ├── sitemap.ts             all static routes + all country pages
 │   └── robots.ts
-├── components/                top-nav, panel, data-table, metrics, p2p/, orders/, ads/, governance/, settings/
+├── components/                top-nav, panel, data-table, metrics, p2p/, orders/, ads/, governance/, settings/, staking/
 ├── lib/
 │   ├── types.ts               protocol entity types
 │   ├── format.ts              deterministic number/date helpers
-│   └── data/                  simulated demo data (countries, merchants, ads, trades, …)
+│   ├── data/                  simulated demo data (countries, merchants, ads, trades, …)
+│   ├── onchain-config.ts      devnet program ids, mint, shared Connection
+│   ├── onchain-decode.ts      decodes raw Anchor account bytes read back from Solana
+│   ├── wallet-connection.ts   injected-provider wallet connect/signer state
+│   ├── live-staking.ts        reads a real StakeAccount for the connected wallet
+│   ├── live-governance.ts     reads real GovernanceConfig/Proposal accounts
+│   ├── live-explorer.ts       reads protocol events + node stats from a real node cluster
+│   └── live-providers.ts      reads the real OFS-1500 Service Registry
 ├── public/
 ├── tests/                     mock-data + countries registry integrity tests
 └── docs/
