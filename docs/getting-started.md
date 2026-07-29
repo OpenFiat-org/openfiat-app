@@ -33,7 +33,7 @@ Two different "live" surfaces exist, and they connect to different things:
   (`lib/data/network.ts`) is simulated, so pick "Custom" and enter a real
   node's `host:port` — for example a local
   [`openfiat-core`](https://github.com/OpenFiat-org/openfiat-core)
-  docker-compose cluster on `localhost:8080` — to see genuine data.
+  docker-compose cluster on `localhost:7080` — to see genuine data.
 
 ## Verifying a change
 
