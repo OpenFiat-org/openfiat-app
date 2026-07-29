@@ -1,4 +1,5 @@
 import { Client, providers, type ServiceRecord, type ServiceType as LiveServiceType } from "@openfiat/sdk";
+import { formatPricing } from "@/lib/earnings";
 import type { ServiceType } from "@/lib/types";
 
 /**
@@ -50,7 +51,11 @@ function toRow(record: ServiceRecord): DirectoryRow {
     type: serviceTypeLabel(record.service_type),
     region: record.region ?? "—",
     capabilities: record.capabilities,
-    priceLabel: record.pricing ?? "—",
+    // A declared price is now a token/amount/unit triple rather than free
+    // text. Absent pricing already means free (OFS-4100 §9.5), so an
+    // unpriced service says so rather than showing a placeholder dash that
+    // reads as "unknown".
+    priceLabel: formatPricing(record.pricing) ?? "Free",
     // OFS-1500 tracks a Health state (Online/Maintenance/Degraded/Offline),
     // not a rolling uptime percentage — showing a fabricated number here
     // would be less honest than admitting this isn't tracked.

@@ -37,6 +37,7 @@ const ACCOUNT_MENU: MenuSection[] = [
       { label: "Wallet", href: "/wallet", marker: "◈", description: "Balances & liquidity vaults" },
       { label: "Staking", href: "/staking", marker: "◎", description: "Bond OPEN as a merchant, node, or arbitrator" },
       { label: "Arbitrate", href: "/arbitrate", marker: "⚖", description: "Work a dispute case and cast your ruling" },
+      { label: "Earnings", href: "/earnings", marker: "▤", description: "What your node, oracle or gateway has earned" },
       { label: "Settings", href: "/settings", marker: "⚙", description: "Preferences & notifications" },
     ],
   },
