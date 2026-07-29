@@ -1,16 +1,17 @@
-import type { Proposal } from "@/lib/types";
-
-/** Single stacked vote bar: For (emerald) / Against (red) / Abstain (gray). */
-export function VoteStack({ proposal: p }: { proposal: Proposal }) {
+/**
+ * Single stacked vote bar: For (emerald) / Against (red). Two-way only —
+ * the real on-chain `Proposal` (OFS-4200 §6) has no "abstain" bucket, so
+ * unlike the earlier mock this never shows one.
+ */
+export function VoteStack({ forPct, againstPct }: { forPct: number; againstPct: number }) {
   return (
     <span className="flex items-center gap-2">
       <span className="flex h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
-        <span className="bg-emerald-500" style={{ width: `${p.votesFor}%` }} />
-        <span className="bg-red-400" style={{ width: `${p.votesAgainst}%` }} />
-        <span className="bg-gray-500" style={{ width: `${p.votesAbstain}%` }} />
+        <span className="bg-emerald-500" style={{ width: `${forPct}%` }} />
+        <span className="bg-red-400" style={{ width: `${againstPct}%` }} />
       </span>
       <span className="whitespace-nowrap text-xs tabular-nums text-gray-500">
-        {p.votesFor}% · {p.votesAgainst}% · {p.votesAbstain}%
+        {forPct.toFixed(1)}% · {againstPct.toFixed(1)}%
       </span>
     </span>
   );

@@ -15,10 +15,14 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#7bc79271bc9c3861962a7fb1d2c81ddaad14485b&path:typescript",
+    "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#cc8748f001afebbadc6150e0bb8f5f28e3b0d640&path:typescript",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
     "next": "^16.2.12",
     "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.0.0",

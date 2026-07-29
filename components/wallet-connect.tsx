@@ -7,40 +7,19 @@ import { BAND_TEXT, COMPOSITE_NOTE, compositeScore, scoreBand } from "@/lib/repu
 import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { formatNumber, shortAddress } from "@/lib/format";
 import { MerchantAvatar } from "@/components/merchant-avatar";
-
-interface SolanaProvider {
-  isPhantom?: boolean;
-  connect(): Promise<{ publicKey: { toString(): string } }>;
-}
-
-declare global {
-  interface Window {
-    solana?: SolanaProvider;
-    phantom?: { solana?: SolanaProvider };
-    solflare?: SolanaProvider;
-    backpack?: SolanaProvider;
-    coinbaseSolana?: SolanaProvider;
-  }
-}
-
-const WALLET_STORAGE_KEY = "openfiat:wallet";
-
-interface Connection {
-  wallet: string;
-  address: string;
-}
-
-function injected(key: "solana" | "phantom" | "solflare" | "backpack" | "coinbaseSolana"): SolanaProvider | undefined {
-  if (typeof window === "undefined") return undefined;
-  if (key === "phantom") return window.phantom?.solana ?? window.solana;
-  return window[key];
-}
+import {
+  injectedProvider,
+  readWalletConnection,
+  writeWalletConnection,
+  type SolanaProvider,
+  type WalletConnection as Connection,
+} from "@/lib/wallet-connection";
 
 const WALLETS: Array<{ name: string; descriptor: string; provider: () => SolanaProvider | undefined }> = [
-  { name: "Phantom", descriptor: "Browser extension & mobile", provider: () => injected("phantom") },
-  { name: "Solflare", descriptor: "Browser extension & mobile", provider: () => injected("solflare") },
-  { name: "Backpack", descriptor: "xNFT wallet", provider: () => injected("backpack") },
-  { name: "Coinbase Wallet", descriptor: "Browser extension", provider: () => injected("coinbaseSolana") },
+  { name: "Phantom", descriptor: "Browser extension & mobile", provider: () => injectedProvider("phantom") },
+  { name: "Solflare", descriptor: "Browser extension & mobile", provider: () => injectedProvider("solflare") },
+  { name: "Backpack", descriptor: "xNFT wallet", provider: () => injectedProvider("backpack") },
+  { name: "Coinbase Wallet", descriptor: "Browser extension", provider: () => injectedProvider("coinbaseSolana") },
   { name: "Ledger", descriptor: "Hardware wallet via Solana app", provider: () => undefined },
 ];
 
@@ -57,12 +36,7 @@ export function WalletConnect() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(WALLET_STORAGE_KEY);
-      if (saved) setConnection(JSON.parse(saved) as Connection);
-    } catch {
-      /* localStorage unavailable */
-    }
+    setConnection(readWalletConnection());
   }, []);
 
   // Close the wallet dropdown on outside pointer-down.
@@ -94,21 +68,13 @@ export function WalletConnect() {
     setConnection(next);
     setConnecting(null);
     setModalOpen(false);
-    try {
-      localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* localStorage unavailable */
-    }
+    writeWalletConnection(next);
   }
 
   function disconnect() {
     setConnection(null);
     setMenuOpen(false);
-    try {
-      localStorage.removeItem(WALLET_STORAGE_KEY);
-    } catch {
-      /* localStorage unavailable */
-    }
+    writeWalletConnection(null);
   }
 
   const shortOfBond = OPEN_BALANCE < OPEN_BOND_REQUIRED;

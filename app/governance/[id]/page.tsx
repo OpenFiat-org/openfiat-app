@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { proposalById } from "@/lib/data/governance";
+import { fetchProposal } from "@/lib/live-governance";
+import { categoryLabel, hashFingerprint, statusLabel, toOpen, turnoutPct, votePercentages, votingEndsLabel } from "@/lib/proposal-display";
 import { CATEGORY_RULES } from "@/lib/governance";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
@@ -15,8 +16,21 @@ export const metadata: Metadata = {
 
 export default async function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const proposal = proposalById(id.toUpperCase());
+  let proposalId: bigint;
+  try {
+    proposalId = BigInt(id);
+  } catch {
+    notFound();
+  }
+
+  const proposal = await fetchProposal(proposalId!);
   if (!proposal) notFound();
+
+  const { forPct, againstPct } = votePercentages(proposal);
+  const category = categoryLabel(proposal.category);
+  const rule = CATEGORY_RULES[category];
+  const thresholdPct = proposal.thresholdSnapshot / 100;
+  const turnout = turnoutPct(proposal);
 
   return (
     <section className="max-w-3xl">
@@ -24,43 +38,50 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
         ← Back to Governance
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="font-mono text-sm text-gray-500">{proposal.id}</span>
-        <h1 className="text-xl font-semibold text-white">{proposal.title}</h1>
-        <StatusPill status={proposal.status} />
-        <CategoryBadge category={proposal.category} />
+        <span className="font-mono text-sm text-gray-500">#{proposal.id.toString()}</span>
+        <h1 className="font-mono text-lg font-semibold text-white">{hashFingerprint(proposal.titleHash)}</h1>
+        <StatusPill status={statusLabel(proposal)} />
+        <CategoryBadge category={category} />
       </div>
-      <p className="mt-1 text-sm text-gray-500">{proposal.votingEnds}</p>
+      <p className="mt-1 text-sm text-gray-500">{votingEndsLabel(proposal)}</p>
 
       <div className="mt-8 space-y-6">
-        <Panel title="Description">
-          <p className="px-4 py-3 text-sm leading-relaxed text-gray-300">{proposal.description}</p>
+        <Panel title="On-chain record">
+          <div className="space-y-1.5 px-4 py-3 text-sm text-gray-300">
+            <p>
+              Title/summary are stored on-chain only as a hash (
+              <span className="font-mono text-xs text-gray-500">{hashFingerprint(proposal.titleHash)}</span> /{" "}
+              <span className="font-mono text-xs text-gray-500">{hashFingerprint(proposal.summaryHash)}</span>) —
+              this page shows the real on-chain fields, not a reconstructed title.
+            </p>
+            <p className="text-xs text-gray-500">
+              Proposer: <span className="font-mono">{proposal.proposer.toBase58()}</span>
+            </p>
+          </div>
         </Panel>
 
         <Panel title="Votes">
           <div className="space-y-1.5 px-4 py-3">
-            <VoteBar label="For" pct={proposal.votesFor} cls="bg-emerald-500" />
-            <VoteBar label="Against" pct={proposal.votesAgainst} cls="bg-red-400" />
-            <VoteBar label="Abstain" pct={proposal.votesAbstain} cls="bg-gray-500" />
+            <VoteBar label="For" pct={forPct} cls="bg-emerald-500" />
+            <VoteBar label="Against" pct={againstPct} cls="bg-red-400" />
             <p className="pt-1 text-xs tabular-nums text-gray-500">
-              Turnout {proposal.turnoutPct}% of {proposal.quorumPct}% quorum
-              {proposal.turnoutPct >= proposal.quorumPct ? " — quorum reached" : " — quorum not yet reached"}
+              Turnout {turnout.toFixed(1)}% of quorum
+              {proposal.quorumMet ? " — quorum reached" : " — quorum not yet reached"}
             </p>
             <p className="text-xs tabular-nums text-gray-500">
-              {CATEGORY_RULES[proposal.category].thresholdLabel} required to pass ({proposal.approvalThresholdPct}% For)
-              {proposal.votesFor >= proposal.approvalThresholdPct
-                ? " — threshold met"
-                : " — threshold not met"}
+              {rule.thresholdLabel} required to pass ({thresholdPct.toFixed(1)}% For)
+              {forPct >= thresholdPct ? " — threshold met" : " — threshold not met"}
             </p>
           </div>
           <div className="border-t border-white/10 px-4 py-3">
-            <VotePanel status={proposal.status} />
-            <p className="mt-2 text-[11px] text-gray-600">Voting is simulated — no transaction is signed.</p>
+            <VotePanel proposalId={proposal.id} state={proposal.state} />
+            <p className="mt-2 text-[11px] text-gray-600">Submits a real vote to the openfiat-governance program on Solana devnet.</p>
           </div>
           <div className="border-t border-white/10 px-4 py-3 text-xs text-gray-500">
-            <span className="text-gray-400">Proposal deposit:</span> {proposal.depositOpen.toLocaleString()} OPEN
-            {proposal.depositRefunded === null
-              ? " — held until the voting deadline"
-              : proposal.depositRefunded
+            <span className="text-gray-400">Proposal deposit:</span> {toOpen(proposal.stakeDeposit).toLocaleString()} OPEN
+            {!proposal.depositSettled
+              ? " — held until tally_and_finalize + refund_or_forfeit_deposit run"
+              : proposal.quorumMet
                 ? " — refunded (quorum was met)"
                 : " — forfeited to the Ecosystem Treasury (quorum wasn't met)"}
           </div>
