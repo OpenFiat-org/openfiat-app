@@ -15,9 +15,17 @@ import type {
  * four cases below exist to show that sequence at four different points.
  */
 
-/** Chapter 11 §11.6, as the network currently parameterises it. */
+/**
+ * Chapter 11 §11.6, as the network currently parameterises it.
+ *
+ * `minStake` is the deployed StakingConfig's arbitrator minimum
+ * (`min_stake_by_role[Role::Arbitrator]` = 10,000 OPEN, per OFS-4100 §4),
+ * not an illustrative figure — the arbitration console gates on it. The
+ * reputation, age and penalty thresholds below are still placeholder;
+ * nothing on chain enforces them yet.
+ */
 export const ARBITRATOR_REQUIREMENTS: ArbitratorEligibility = {
-  minStake: 50_000,
+  minStake: 10_000,
   minReputation: 80,
   minProtocolAgeDays: 30,
   activePenalties: 0,
@@ -86,12 +94,12 @@ export const DISPUTES: Dispute[] = [
     amount: 450,
     fiatCurrency: "KES",
     fiatAmount: 59_391,
-    arbitrationStake: 50_000,
+    arbitrationStake: 12_000,
     filingFee: 25,
     seatsRequired: null,
     arbitrators: [
-      { id: "arb:4f81c2", stake: 50_000, reputation: 91, joinedAt: "2026-07-27T09:48:00Z" },
-      { id: "arb:9a03de", stake: 50_000, reputation: 84, joinedAt: "2026-07-27T10:02:00Z" },
+      { id: "arb:4f81c2", stake: 18_500, reputation: 91, joinedAt: "2026-07-27T09:48:00Z" },
+      { id: "arb:9a03de", stake: 11_200, reputation: 84, joinedAt: "2026-07-27T10:02:00Z" },
     ],
     evidence: [
       {
@@ -153,15 +161,15 @@ export const DISPUTES: Dispute[] = [
     amount: 1_500,
     fiatCurrency: "KES",
     fiatAmount: 195_720,
-    arbitrationStake: 50_000,
+    arbitrationStake: 12_000,
     filingFee: 25,
     seatsRequired: 5,
     arbitrators: [
-      { id: "arb:4f81c2", stake: 50_000, reputation: 91, joinedAt: "2026-07-26T17:41:00Z", commitment: "0x8c1f…a20b" },
-      { id: "arb:71bd90", stake: 50_000, reputation: 88, joinedAt: "2026-07-26T17:52:00Z", commitment: "0x44de…9f13" },
-      { id: "arb:you", stake: 50_000, reputation: 86, joinedAt: "2026-07-26T18:04:00Z", isYou: true },
-      { id: "arb:c2ee15", stake: 50_000, reputation: 83, joinedAt: "2026-07-26T18:19:00Z", commitment: "0x0b77…31ca" },
-      { id: "arb:e93a48", stake: 50_000, reputation: 95, joinedAt: "2026-07-26T18:26:00Z" },
+      { id: "arb:4f81c2", stake: 18_500, reputation: 91, joinedAt: "2026-07-26T17:41:00Z", commitment: "0x8c1f…a20b" },
+      { id: "arb:71bd90", stake: 24_000, reputation: 88, joinedAt: "2026-07-26T17:52:00Z", commitment: "0x44de…9f13" },
+      { id: "arb:you", stake: 10_000, reputation: 86, joinedAt: "2026-07-26T18:04:00Z", isYou: true },
+      { id: "arb:c2ee15", stake: 15_750, reputation: 83, joinedAt: "2026-07-26T18:19:00Z", commitment: "0x0b77…31ca" },
+      { id: "arb:e93a48", stake: 31_400, reputation: 95, joinedAt: "2026-07-26T18:26:00Z" },
     ],
     evidence: [
       {
@@ -229,13 +237,13 @@ export const DISPUTES: Dispute[] = [
     amount: 900,
     fiatCurrency: "KES",
     fiatAmount: 119_205,
-    arbitrationStake: 50_000,
+    arbitrationStake: 12_000,
     filingFee: 25,
     seatsRequired: 3,
     arbitrators: [
-      { id: "arb:4f81c2", stake: 50_000, reputation: 91, joinedAt: "2026-07-25T12:58:00Z", commitment: "0x2a9c…7701", revealed: "Buyer Wins" },
-      { id: "arb:b7f120", stake: 50_000, reputation: 87, joinedAt: "2026-07-25T13:10:00Z", commitment: "0xdd41…3e8a", revealed: "Buyer Wins" },
-      { id: "arb:e93a48", stake: 50_000, reputation: 95, joinedAt: "2026-07-25T13:22:00Z", commitment: "0x91b0…c26f" },
+      { id: "arb:4f81c2", stake: 18_500, reputation: 91, joinedAt: "2026-07-25T12:58:00Z", commitment: "0x2a9c…7701", revealed: "Buyer Wins" },
+      { id: "arb:b7f120", stake: 21_300, reputation: 87, joinedAt: "2026-07-25T13:10:00Z", commitment: "0xdd41…3e8a", revealed: "Buyer Wins" },
+      { id: "arb:e93a48", stake: 31_400, reputation: 95, joinedAt: "2026-07-25T13:22:00Z", commitment: "0x91b0…c26f" },
     ],
     evidence: [
       {
@@ -284,15 +292,15 @@ export const DISPUTES: Dispute[] = [
     amount: 300,
     fiatCurrency: "KES",
     fiatAmount: 39_510,
-    arbitrationStake: 50_000,
+    arbitrationStake: 12_000,
     filingFee: 25,
     seatsRequired: 5,
     arbitrators: [
-      { id: "arb:4f81c2", stake: 50_000, reputation: 91, joinedAt: "2026-07-20T14:02:00Z", commitment: "0x71aa…0c39", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
-      { id: "arb:71bd90", stake: 50_000, reputation: 88, joinedAt: "2026-07-20T14:11:00Z", commitment: "0x5b02…ff81", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
-      { id: "arb:8ac401", stake: 50_000, reputation: 86, joinedAt: "2026-07-20T14:20:00Z", commitment: "0xc390…12ab", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
-      { id: "arb:c2ee15", stake: 50_000, reputation: 83, joinedAt: "2026-07-20T14:33:00Z", commitment: "0x2f81…77b0", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
-      { id: "arb:d40b71", stake: 50_000, reputation: 79, joinedAt: "2026-07-20T14:40:00Z", commitment: "0x9ee1…4a02", revealed: "Merchant Wins", withConsensus: false, slashed: 5_000 },
+      { id: "arb:4f81c2", stake: 18_500, reputation: 91, joinedAt: "2026-07-20T14:02:00Z", commitment: "0x71aa…0c39", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
+      { id: "arb:71bd90", stake: 24_000, reputation: 88, joinedAt: "2026-07-20T14:11:00Z", commitment: "0x5b02…ff81", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
+      { id: "arb:8ac401", stake: 16_800, reputation: 86, joinedAt: "2026-07-20T14:20:00Z", commitment: "0xc390…12ab", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
+      { id: "arb:c2ee15", stake: 15_750, reputation: 83, joinedAt: "2026-07-20T14:33:00Z", commitment: "0x2f81…77b0", revealed: "Buyer Wins", withConsensus: true, reward: 180 },
+      { id: "arb:d40b71", stake: 13_500, reputation: 79, joinedAt: "2026-07-20T14:40:00Z", commitment: "0x9ee1…4a02", revealed: "Merchant Wins", withConsensus: false, slashed: 1_350 },
     ],
     outcome: "Buyer Wins",
     tally: { "Buyer Wins": 4, "Merchant Wins": 1 },
