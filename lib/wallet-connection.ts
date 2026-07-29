@@ -28,6 +28,18 @@ export interface SolanaProvider {
   signAndSendTransaction(
     transaction: import("@solana/web3.js").Transaction,
   ): Promise<SolanaSignResult>;
+  /**
+   * Raw Ed25519 signature over arbitrary bytes — no prefixing, unlike
+   * Ethereum's `personal_sign`. Every wallet listed below implements it, but
+   * it stays optional here because a connection can be restored from storage
+   * for a provider that is no longer injected.
+   *
+   * This is what makes the wallet usable as a protocol identity: OpenFiat's
+   * off-chain events are verified as a raw Ed25519 signature over the
+   * payload's JSON bytes, against a PeerId derived from the same public key.
+   * See `lib/arbitration.ts`.
+   */
+  signMessage?(message: Uint8Array): Promise<{ signature: Uint8Array }>;
 }
 
 declare global {

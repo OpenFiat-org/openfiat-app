@@ -71,26 +71,33 @@ export function decodeStakeAccount(data: Uint8Array): DecodedStakeAccount {
   };
 }
 
+/** Number of `Role` variants; the length of `min_stake_by_role`. */
+export const ROLE_COUNT = 7;
+
 export interface DecodedStakingConfig {
   admin: PublicKey;
   mint: PublicKey;
-  minStake: bigint;
-  minStakeArbitrator: bigint;
+  /** Indexed by `Role`: Merchant, Arbitrator, NodeOperator,
+   *  NotificationProvider, OracleProvider, RiskIntelligenceProvider,
+   *  SnapshotProvider. */
+  minStakeByRole: bigint[];
   unbondingPeriodSecs: bigint;
   slashBps: number;
 }
 
-/** Layout: disc(8) admin(32) mint(32) min_stake(8) min_stake_arbitrator(8)
+/** Layout: disc(8) admin(32) mint(32) min_stake_by_role(7 * 8)
  *  unbonding_period_secs(8) slash_bps(2) ... (remaining fields unused here). */
 export function decodeStakingConfig(data: Uint8Array): DecodedStakingConfig {
   checkDiscriminator(data, STAKING_CONFIG_DISCRIMINATOR, "StakingConfig");
+  const minStakeByRole: bigint[] = [];
+  for (let i = 0; i < ROLE_COUNT; i++) minStakeByRole.push(readU64(data, 72 + i * 8));
+  const tail = 72 + ROLE_COUNT * 8;
   return {
     admin: readPubkey(data, 8),
     mint: readPubkey(data, 40),
-    minStake: readU64(data, 72),
-    minStakeArbitrator: readU64(data, 80),
-    unbondingPeriodSecs: readI64(data, 88),
-    slashBps: readU16(data, 96),
+    minStakeByRole,
+    unbondingPeriodSecs: readI64(data, tail),
+    slashBps: readU16(data, tail + 8),
   };
 }
 

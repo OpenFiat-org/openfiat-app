@@ -31,8 +31,7 @@ function toHuman(raw: bigint): number {
 }
 
 function useLiveStaking() {
-  const [minStake, setMinStake] = useState<number | null>(null);
-  const [minStakeArbitrator, setMinStakeArbitrator] = useState<number | null>(null);
+  const [minStakeByRole, setMinStakeByRole] = useState<number[] | null>(null);
   const [positions, setPositions] = useState<Record<string, number | null>>({});
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,8 +52,7 @@ function useLiveStaking() {
       try {
         const config = await fetchStakingConfig();
         if (cancelled) return;
-        setMinStake(config ? toHuman(config.minStake) : null);
-        setMinStakeArbitrator(config ? toHuman(config.minStakeArbitrator) : null);
+        setMinStakeByRole(config ? config.minStakeByRole.map(toHuman) : null);
 
         if (walletAddress) {
           const owner = new PublicKey(walletAddress);
@@ -80,16 +78,26 @@ function useLiveStaking() {
     };
   }, [walletAddress]);
 
-  return { minStake, minStakeArbitrator, positions, walletAddress, loading, error };
+  return { minStakeByRole, positions, walletAddress, loading, error };
 }
 
-function liveMinBond(role: StakingRole, minStake: number | null, minStakeArbitrator: number | null): number {
-  if (role.role === "arbitrator") return minStakeArbitrator ?? role.minBond;
-  return minStake ?? role.minBond;
+/** Maps this panel's role keys onto the on-chain `Role` discriminant, which
+ *  is also the index into `min_stake_by_role`. */
+const ROLE_INDEX: Record<string, number> = {
+  merchant: 0,
+  arbitrator: 1,
+  node: 2,
+  provider: 3,
+};
+
+function liveMinBond(role: StakingRole, minStakeByRole: number[] | null): number {
+  const index = ROLE_INDEX[role.role];
+  if (minStakeByRole === null || index === undefined) return role.minBond;
+  return minStakeByRole[index] ?? role.minBond;
 }
 
 export function StakingRolesPanel() {
-  const { minStake, minStakeArbitrator, positions, walletAddress, loading, error } = useLiveStaking();
+  const { minStakeByRole, positions, walletAddress, loading, error } = useLiveStaking();
 
   return (
     <div>
@@ -99,7 +107,7 @@ export function StakingRolesPanel() {
       )}
       <div className="divide-y divide-white/5 border-y border-white/5">
         {STAKING_ROLES.map((r) => {
-          const minBond = liveMinBond(r, minStake, minStakeArbitrator);
+          const minBond = liveMinBond(r, minStakeByRole);
           const staked = walletAddress ? (positions[r.role] ?? null) : null;
           const active = staked !== null && staked > 0;
           return (

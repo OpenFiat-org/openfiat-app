@@ -59,16 +59,24 @@ describe("decodeStakingConfig", () => {
       45, 134, 252, 82, 37, 57, 84, 25, // discriminator
       ...admin.toBytes(),
       ...mint.toBytes(),
-      ...u64le(1_000_000_000_000n), // min_stake
-      ...u64le(10_000_000_000_000n), // min_stake_arbitrator
+      // min_stake_by_role, indexed by Role (7 entries)
+      ...u64le(1_000_000_000_000n), // Merchant
+      ...u64le(10_000_000_000_000n), // Arbitrator
+      ...u64le(1_000_000_000_000n), // NodeOperator
+      ...u64le(5_000_000_000_000n), // NotificationProvider
+      ...u64le(1_000_000_000_000n), // OracleProvider
+      ...u64le(1_000_000_000_000n), // RiskIntelligenceProvider
+      ...u64le(1_000_000_000_000n), // SnapshotProvider
       ...i64le(604_800n), // unbonding_period_secs
       ...u16le(1000), // slash_bps
     ]);
     const decoded = decodeStakingConfig(bytes);
     expect(decoded.admin.equals(admin)).toBe(true);
     expect(decoded.mint.equals(mint)).toBe(true);
-    expect(decoded.minStake).toBe(1_000_000_000_000n);
-    expect(decoded.minStakeArbitrator).toBe(10_000_000_000_000n);
+    expect(decoded.minStakeByRole).toHaveLength(7);
+    expect(decoded.minStakeByRole[0]).toBe(1_000_000_000_000n);
+    expect(decoded.minStakeByRole[1]).toBe(10_000_000_000_000n);
+    expect(decoded.minStakeByRole[3]).toBe(5_000_000_000_000n);
     expect(decoded.unbondingPeriodSecs).toBe(604_800n);
     expect(decoded.slashBps).toBe(1000);
   });
