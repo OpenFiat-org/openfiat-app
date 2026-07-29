@@ -33,9 +33,9 @@ export const PROPOSALS: Proposal[] = [
   proposal({
     id: "OFIP-0021",
     category: "Parameter",
-    title: "Reduce taker fee from 0.15% to 0.10%",
+    title: "Reduce settlement fee from 0.85% to 0.60%",
     description:
-      "Lowers the protocol taker fee on settled trades from 0.15% to 0.10% to stay competitive with centralized P2P desks. The fee continues to accrue to the treasury; the reduction is expected to be offset by higher trade volume.",
+      "Lowers the protocol settlement fee on completed trades from 0.85% to 0.60% to stay competitive with centralized P2P desks. The fee is borne by the buyer and continues to accrue to the four treasury sub-accounts; the reduction is expected to be offset by higher trade volume.",
     status: "Active",
     votingEnds: "Ends in 2 days",
     votesFor: 62,
