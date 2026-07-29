@@ -859,8 +859,16 @@ describe("staking roles", () => {
       expect(r.staked).toBeGreaterThanOrEqual(0);
       expect(r.requirement.length).toBeGreaterThan(0);
     }
-    // OFIP-0019 arbitrator bond
-    expect(STAKING_ROLES.find((r) => r.role === "arbitrator")!.minBond).toBe(50000);
+    // Minimums must match the deployed StakingConfig on devnet, because the
+    // stake form submits against that program — a wrong number here is a
+    // transaction that fails on chain. Flat minimum 1,000 OPEN, arbitrator
+    // 10,000 (OFS-4100 §4), notification gateway 5,000.
+    const minBondFor = (role: string) =>
+      STAKING_ROLES.find((r) => r.role === role)?.minBond;
+    expect(minBondFor("merchant")).toBe(1000);
+    expect(minBondFor("node")).toBe(1000);
+    expect(minBondFor("arbitrator")).toBe(10000);
+    expect(minBondFor("provider")).toBe(5000);
   });
 });
 

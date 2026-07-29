@@ -1,9 +1,15 @@
 import type { StakingPosition, StakingSummary } from "@/lib/types";
 
 /**
- * Simulated OPEN staking. Every protocol role is bonded: merchants to publish
- * ads, node operators to serve infrastructure, arbitrators to join the
- * arbitration pool, and service providers to register on OFS-1500.
+ * OPEN staking. Every protocol role is bonded: merchants to publish ads, node
+ * operators to serve infrastructure, arbitrators to join the arbitration pool,
+ * and service providers to register on OFS-1500.
+ *
+ * The `minBond` figures below are the real minimums from the deployed
+ * `StakingConfig` on devnet, not illustrative numbers — the stake form submits
+ * against the live program, so a wrong minimum here is a transaction that
+ * fails on chain. Balances, rewards and positions further down are still
+ * placeholder: the app has no reward-history source yet.
  */
 export const STAKING_SUMMARY: StakingSummary = {
   totalStaked: 25000,
@@ -29,37 +35,41 @@ export const STAKING_ROLES: StakingRole[] = [
   {
     role: "merchant",
     title: "Merchant bond",
-    minBond: 5000,
+    minBond: 1000,
     staked: 5000,
     status: "Active",
-    requirement: "Required to publish advertisements. 1 ad slot per 5,000 OPEN bonded.",
+    requirement:
+      "Required to publish advertisements. The deployed staking config sets the flat minimum at 1,000 OPEN.",
     rewards: "Fee share per settled trade",
   },
   {
     role: "node",
     title: "Node Operator stake",
-    minBond: 10000,
+    minBond: 1000,
     staked: 20000,
     status: "Active",
-    requirement: "Stake against a node you operate (full node, gateway, oracle) to earn epoch rewards.",
-    rewards: "8–11% APR per epoch",
+    requirement:
+      "Stake against a node you operate. The deployed staking config sets the flat minimum at 1,000 OPEN.",
+    rewards: "Share of protocol revenue; the formula is not published",
   },
   {
     role: "arbitrator",
     title: "Arbitrator bond",
-    minBond: 50000,
+    minBond: 10000,
     staked: 0,
     status: "Not bonded",
-    requirement: "Per OFIP-0019: a 50,000 OPEN bond is required to join the arbitration pool and rule on disputes.",
+    requirement:
+      "Ten times the flat minimum, per OFS-4100 §4: min_stake_arbitrator is 10,000 OPEN in the deployed config.",
     rewards: "Arbitration fees per resolved case",
   },
   {
     role: "provider",
     title: "Service Provider stake",
-    minBond: 2500,
+    minBond: 5000,
     staked: 0,
     status: "Not bonded",
-    requirement: "Registration stake for OFS-1500 service providers (notification, oracle, risk, snapshots).",
+    requirement:
+      "Registration stake for OFS-1500 service providers. Notification gateways post 5,000 OPEN; other provider roles post the 1,000 flat minimum.",
     rewards: "Service revenue from subscribers",
   },
 ];
