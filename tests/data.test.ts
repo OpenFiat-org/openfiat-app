@@ -954,10 +954,14 @@ describe("OPEN token", () => {
   it("sells the entire presale bucket toward a target, not a cap", () => {
     // OFS-4100 §2-3: the Community Presale bucket is the full 20% of supply
     // (200,000,000 OPEN), and the presale has no hard cap distinct from it —
-    // it sells at 1:1 toward a $2,000,000 target that demand may exceed.
+    // it sells at 1:1 toward a $20,000,000 target that demand may exceed.
     expect(PRESALE.bucketOpen).toBe(200_000_000);
-    expect(PRESALE.target).toBe(2_000_000);
+    expect(PRESALE.target).toBe(20_000_000);
     expect(PRESALE.minContribution).toBeLessThan(PRESALE.maxContribution);
+    // No soft cap: with no minimum to raise there is no shortfall condition,
+    // so contributions are not refundable on that ground (§3). Asserted so a
+    // reintroduced figure here fails rather than quietly implying refunds.
+    expect(PRESALE.softCap).toBeNull();
     // Simulated `raised` deliberately exceeds `target`, to illustrate that
     // exceeding it doesn't stop the sale — see lib/data/sale.ts.
     expect(PRESALE.raised).toBeGreaterThan(PRESALE.target);
