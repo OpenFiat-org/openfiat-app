@@ -93,7 +93,7 @@ function AccessNodeModal({
      API for it. */
   const online = connectableNodes();
 
-  function useNode(id: string) {
+  function selectNode(id: string) {
     writeNodeSelection(id);
     setConnected(id);
     setTimeout(onClose, 600);
@@ -120,7 +120,7 @@ function AccessNodeModal({
         {},
       );
       setError(`✓ reachable — openfiat-node ${version.version}`);
-      useNode(`custom:${value}`);
+      selectNode(`custom:${value}`);
     } catch {
       setError(`Could not reach an OpenFiat node at ${value}`);
     } finally {
@@ -160,7 +160,7 @@ function AccessNodeModal({
                 </span>
               ) : (
                 <button
-                  onClick={() => useNode(n.id)}
+                  onClick={() => selectNode(n.id)}
                   className="rounded-md border border-white/15 px-3 py-1 text-xs text-gray-300 hover:bg-white/5"
                 >
                   {connected === n.id ? "✓" : "Use this node"}

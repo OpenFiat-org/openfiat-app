@@ -189,7 +189,7 @@ export function P2PExchange({
         break;
     }
     return out;
-  }, [tab, asset, fiat, isInternational, viewFiat, amount, method, sort]);
+  }, [tab, asset, fiat, isInternational, viewFiat, amount, method, sort, minRep]);
 
   return (
     <div>
