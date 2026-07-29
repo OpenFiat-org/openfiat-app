@@ -726,6 +726,7 @@ describe("sitemap coverage", () => {
       "/wallet/withdraw",
       "/account/identity",
       "/account/reputation",
+      "/account/counterparties",
       "/settings",
     ];
     for (const route of staticRoutes) {

@@ -46,6 +46,7 @@ const ACCOUNT_MENU: MenuSection[] = [
     items: [
       { label: "Identity", href: "/account/identity", marker: "✓", description: "Verification levels L0–L3" },
       { label: "Reputation", href: "/account/reputation", marker: "◆", description: "Your tier & dimensions" },
+      { label: "Counterparties", href: "/account/counterparties", marker: "⇄", description: "Who you trade with, and how often" },
     ],
   },
 ];

@@ -16,6 +16,7 @@ import { adsForMerchant, adPrice, paymentMethodsForMerchant } from "@/lib/data/a
 import { getCountry } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber, shortAddress } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
+import { TradedBadge } from "@/components/counterparties/traded-badge";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MerchantAvatar } from "@/components/merchant-avatar";
 import { MetricStrip } from "@/components/metrics";
@@ -97,6 +98,11 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
               {shortAddress(merchant.wallet)}
               <CopyButton value={merchant.wallet} />
             </span>
+            {/* Your own history with this wallet, if you have read it. Every
+                other figure on this page is the same for every visitor;
+                this one is only ever yours, and renders nothing at all
+                unless you are signed in and have traded with them. */}
+            <TradedBadge wallet={merchant.wallet} />
           </p>
         </div>
       </div>
