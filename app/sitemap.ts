@@ -70,6 +70,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/staking/stake",
     "/account/identity",
     "/account/reputation",
+    "/account/counterparties",
     "/settings",
   ].map((path) => entry(path, 0.2, "monthly"));
 
