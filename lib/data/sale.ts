@@ -14,15 +14,26 @@
  *   - The Community Presale bucket is the entire 20% of supply
  *     (200,000,000 OPEN, §2) — not sized to cap the raise. The presale has
  *     no hard cap distinct from that bucket: it sells at 1:1 toward a
- *     $2,000,000 *target* (a goal, not a ceiling) and keeps selling out of
+ *     $20,000,000 *target* (a goal, not a ceiling) and keeps selling out of
  *     the same bucket for as long as demand continues past that target.
  *   - Whatever remains unsold when the presale closes moves to a Public
  *     Sale phase at 1 OPEN = 1.25 USDC — a second, higher-priced phase for
  *     the bucket's remainder, not a separate allocation.
  *
- * Still §3's proposal, marked [PROPOSED — NEEDS SIGN-OFF]: the 5,000,000
- * USDC soft cap below which contributions are refundable, and the 50 USDC
- * minimum.
+ * There is no soft cap and no refund condition derived from one — §3 records
+ * this as [CONFIRMED]. An earlier draft proposed a 5,000,000 USDC soft cap
+ * below which contributions were refundable; with no minimum to raise there
+ * is no threshold to fall short of, so the term was withdrawn rather than
+ * reworded. Nothing in this file should imply a refundable presale.
+ *
+ * Note the deployed program still *has* a `soft_cap` field and a `refund`
+ * instruction — that is how "no minimum" is expressed on chain, by setting
+ * `soft_cap = 0` so the `SoftCapMissed` state refunds are gated on can never
+ * be reached. Code reading those from the chain is correct; only the stated
+ * terms changed.
+ *
+ * Still §3's proposal, marked [PROPOSED — NEEDS SIGN-OFF]: the 50 USDC
+ * minimum contribution.
  *
  * `raised` is the only simulated figure — the live number comes from the
  * program's own `total_raised` once this app is wired to a node. It is
@@ -43,11 +54,16 @@ export const PRESALE = {
   phase: "Community Presale",
   status: "Live" as const,
   priceUsdc: OPEN_PRICE_USDC,
-  /** Simulated. Real value is `SaleConfig.total_raised` on chain. */
-  raised: 4_120_000,
+  /** Simulated. Real value is `SaleConfig.total_raised` on chain. Kept
+   *  deliberately above `target` — the whole point of the figure is to show
+   *  the presale selling past its goal rather than stopping at it, so it has
+   *  to move whenever the target does. */
+  raised: 24_500_000,
   /** [CONFIRMED] A goal, not a cap — see the file-level comment. */
-  target: 2_000_000,
-  softCap: 5_000_000,
+  target: 20_000_000,
+  /** [CONFIRMED] None. There is no minimum to raise, so no shortfall
+   *  condition exists and contributions are not refundable on that ground. */
+  softCap: null,
   minContribution: 50,
   maxContribution: 1_000_000,
   bucketOpen: PRESALE_BUCKET_OPEN,
