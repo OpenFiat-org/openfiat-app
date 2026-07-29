@@ -19,7 +19,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#246199ebd349d568b1a7bfc08ede39a898ce02dd&path:typescript",
+    "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#f0c4000014d92654c1ffb307fe88038f7b854585&path:typescript",
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
     "bs58": "^6.0.0",
