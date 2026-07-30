@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
 import { CURRENT_USER, MERCHANTS } from "@/lib/data/merchants";
-import { PROVIDERS } from "@/lib/data/providers";
 import { PAIRS } from "@/lib/pairs";
 
 const BASE = "https://app.openfiat.network";
@@ -92,7 +91,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry(`/merchants/${m.id}`, 0.6, "daily"),
   );
 
-  const providerRoutes = PROVIDERS.map((p) => entry(`/providers/${p.id}`, 0.5, "weekly"));
+  // No per-provider routes. They used to be generated from a fixture, so
+  // this sitemap submitted 19 invented service providers to search engines
+  // as real, indexable pages. The directory reads the live registry now,
+  // and a live per-provider page does not exist yet — publishing the
+  // fabricated ones in the meantime is worse than publishing none.
+  const providerRoutes: MetadataRoute.Sitemap = [];
 
   // Individual dispute case pages are not listed here: the docket is read
   // from a live node (`lib/live-disputes.ts`), not a static fixture, so there

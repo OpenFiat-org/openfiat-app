@@ -14,7 +14,6 @@ import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data
 import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
 import { connectableNodes, defaultNode, resolveNodeSelection } from "@/lib/node-preference";
 import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
-import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
 import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
 import qr from "qrcode-generator";
@@ -395,42 +394,6 @@ describe("explorer index", () => {
   });
 });
 
-describe("service providers (OFS-1500)", () => {
-  it("ids are unique and every field is present", () => {
-    expect(new Set(PROVIDERS.map((p) => p.id)).size).toBe(PROVIDERS.length);
-    for (const p of PROVIDERS) {
-      expect(p.name.length).toBeGreaterThan(0);
-      expect(p.wallet).toMatch(/^[1-9A-HJ-NP-Za-km-z]{44}$/);
-      expect(p.signature.length).toBeGreaterThanOrEqual(80);
-      expect(p.endpoints.length, p.id).toBeGreaterThanOrEqual(1);
-      expect(p.capabilities.length, p.id).toBeGreaterThanOrEqual(1);
-      expect(p.protocolVersions.length).toBeGreaterThanOrEqual(1);
-      expect(p.region.length).toBeGreaterThan(0);
-      expect(p.pricing.length, p.id).toBeGreaterThanOrEqual(1);
-      for (const price of p.pricing) {
-        expect(price.item.length).toBeGreaterThan(0);
-        expect(price.price.length).toBeGreaterThan(0);
-      }
-      expect(p.registeredAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
-      expect(p.description.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("every OFS-1500 service type is represented", () => {
-    for (const type of Object.keys(PROVIDER_TYPES)) {
-      expect(providersByType(type as keyof typeof PROVIDER_TYPES).length, type).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it("uptime is a percentage and lookup helpers work", () => {
-    for (const p of PROVIDERS) {
-      expect(p.uptimePct).toBeGreaterThan(0);
-      expect(p.uptimePct).toBeLessThanOrEqual(100);
-      expect(getProvider(p.id)?.id).toBe(p.id);
-    }
-    expect(PROVIDERS.length).toBeGreaterThanOrEqual(18);
-  });
-});
 
 describe("reputation", () => {
   it("scores the eight dimensions OFS-3000 §6 defines", () => {
@@ -678,41 +641,6 @@ describe("access nodes", () => {
  * `scripts/prove-devnet-vault-deposit-withdraw.ts` against devnet.
  */
 
-describe("service registry", () => {
-  it("carries the full OFS-1500 §5 identity", () => {
-    // An endpoint URL alone proves nothing: anyone can advertise a host. A node
-    // needs the peer ID it expects to handshake with and the key the
-    // registration was signed under, or the registry is a list of addresses an
-    // attacker can impersonate.
-    for (const p of PROVIDERS) {
-      expect(p.wallet, p.id).toBeTruthy();
-      expect(p.peerId, p.id).toBeTruthy();
-      expect(p.nodeIdentity, p.id).toBeTruthy();
-      expect(p.publicKey, p.id).toBeTruthy();
-      expect(p.signature, p.id).toBeTruthy();
-    }
-  });
-
-  it("carries everything a registration event requires (\u00a77)", () => {
-    for (const p of PROVIDERS) {
-      expect(p.endpoints.length, p.id).toBeGreaterThan(0);
-      expect(p.protocolVersions.length, p.id).toBeGreaterThan(0);
-      expect(p.region, p.id).toBeTruthy();
-      expect(p.capabilities.length, p.id).toBeGreaterThan(0);
-    }
-  });
-
-  it("uses only the health states the spec defines (\u00a711)", () => {
-    for (const p of PROVIDERS) {
-      expect(["Online", "Maintenance", "Degraded", "Offline"], p.id).toContain(p.status);
-    }
-  });
-
-  it("keeps service ids unique", () => {
-    const ids = PROVIDERS.map((p) => p.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-});
 
 describe("staking roles", () => {
   it("covers every protocol role with a positive minimum bond", () => {

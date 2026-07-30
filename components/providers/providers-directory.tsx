@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
-import { PROVIDERS, PROVIDER_TYPES, TYPE_COLORS } from "@/lib/data/providers";
+import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/data/providers";
 import { fetchLiveProviders, type DirectoryRow } from "@/lib/live-providers";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { MetricStrip } from "@/components/metrics";
 import { StatusPill } from "@/components/status-pill";
 
 const FILTERS: Array<{ key: ServiceType | "All"; label: string }> = [
@@ -14,29 +15,38 @@ const FILTERS: Array<{ key: ServiceType | "All"; label: string }> = [
   ...(Object.entries(PROVIDER_TYPES) as Array<[ServiceType, string]>).map(([key, label]) => ({ key, label })),
 ];
 
-const MOCK_ROWS: DirectoryRow[] = PROVIDERS.map((p) => ({
-  id: p.id,
-  name: p.name,
-  type: p.type,
-  region: p.region,
-  capabilities: p.capabilities,
-  priceLabel: `${p.pricing[0].price} / ${p.pricing[0].item}`,
-  uptimeLabel: `${p.uptimePct}%`,
-  status: p.status,
-  href: `/providers/${p.id}`,
-}));
+interface DirectoryState {
+  rows: DirectoryRow[];
+  loading: boolean;
+  error: string | null;
+}
 
 /**
- * Live data only when the user has picked a real, live-checked custom
- * node (see the footer's "Access node" modal) — every other selection
- * keeps the simulated directory, the same narrow-scope precedent the
- * footer's own node connectivity check already established.
+ * The registry as the selected node reports it.
+ *
+ * # This used to show a fixture to almost everybody
+ *
+ * The previous version fetched live data only when the user had typed a
+ * *custom* node, and fell back to a hand-written directory of invented
+ * providers otherwise — so every visitor who did not go looking for the
+ * node picker saw fabricated uptime percentages and pricing presented as
+ * the network's real service registry. The default selection, which is
+ * what essentially everyone uses, never triggered a fetch at all.
+ *
+ * It also built the URL as `http://${selection.id}`, from the wrong
+ * field: `id` is `custom:<host>` for a custom node, so the request went
+ * to `http://custom:host` and could not have succeeded even for the one
+ * case that was supposed to work. The fixture was not a fallback anybody
+ * was falling back *from*.
+ *
+ * Now every selection is queried, over `selection.url`, and there is no
+ * fixture to fall back to. An unreachable node says so; an empty registry
+ * says that; neither invents providers.
  */
-function useProviderRows(): { rows: DirectoryRow[]; live: boolean; loading: boolean; error: string | null } {
-  const [state, setState] = useState<{ rows: DirectoryRow[]; live: boolean; loading: boolean; error: string | null }>({
-    rows: MOCK_ROWS,
-    live: false,
-    loading: false,
+function useProviderRows(): DirectoryState {
+  const [state, setState] = useState<DirectoryState>({
+    rows: [],
+    loading: true,
     error: null,
   });
 
@@ -45,22 +55,22 @@ function useProviderRows(): { rows: DirectoryRow[]; live: boolean; loading: bool
 
     async function load() {
       const selection = readNodeSelection();
-      if (!selection.custom) {
-        setState({ rows: MOCK_ROWS, live: false, loading: false, error: null });
-        return;
-      }
-      setState((s) => ({ ...s, live: true, loading: true, error: null }));
+      setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        const rows = await fetchLiveProviders(`http://${selection.id}`);
-        if (!cancelled) setState({ rows, live: true, loading: false, error: null });
+        const rows = await fetchLiveProviders(selection.url);
+        if (!cancelled) setState({ rows, loading: false, error: null });
       } catch {
         if (!cancelled) {
-          setState({ rows: MOCK_ROWS, live: false, loading: false, error: `Could not reach ${selection.id} — showing simulated data.` });
+          setState({
+            rows: [],
+            loading: false,
+            error: `Could not read the registry from ${selection.label}.`,
+          });
         }
       }
     }
 
-    load();
+    void load();
     window.addEventListener(NODE_CHANGED_EVENT, load);
     return () => {
       cancelled = true;
@@ -71,9 +81,40 @@ function useProviderRows(): { rows: DirectoryRow[]; live: boolean; loading: bool
   return state;
 }
 
+/**
+ * Counts over what the registry actually returned.
+ *
+ * There is deliberately no "average uptime" here. The page used to show
+ * one, computed from a fixture field; a real OFS-1500 record carries a
+ * health state and a last-update timestamp, and no uptime percentage
+ * exists anywhere in the protocol to average. A number with no source is
+ * worse than an absent one, because a reader cannot tell it is missing.
+ */
+export function ProvidersMetrics() {
+  const { rows, loading, error } = useProviderRows();
+  const count = (type: ServiceType) => rows.filter((r) => r.type === type).length;
+
+  if (error) {
+    return <p className="mt-6 text-sm text-amber-300">{error}</p>;
+  }
+
+  return (
+    <MetricStrip
+      items={[
+        { label: "Registered services", value: loading ? "…" : String(rows.length) },
+        { label: "Notifications", value: loading ? "…" : String(count("Notification Provider")) },
+        { label: "Oracles", value: loading ? "…" : String(count("Oracle Provider")) },
+        { label: "Risk intel", value: loading ? "…" : String(count("Risk Intelligence Provider")) },
+        { label: "Snapshots", value: loading ? "…" : String(count("Snapshot Provider")) },
+        { label: "Public API", value: loading ? "…" : String(count("Public API Node")) },
+      ]}
+    />
+  );
+}
+
 export function ProvidersDirectory() {
   const [filter, setFilter] = useState<ServiceType | "All">("All");
-  const { rows, live, loading, error } = useProviderRows();
+  const { rows, loading, error } = useProviderRows();
   const visible = filter === "All" ? rows : rows.filter((p) => p.type === filter);
 
   return (
@@ -94,13 +135,16 @@ export function ProvidersDirectory() {
             </button>
           ))}
         </div>
-        {live && (
+        {error ? (
+          <span className="text-xs text-amber-300">{error}</span>
+        ) : (
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
-            <span className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`} />
-            {loading ? "Loading live registry…" : "Live from your access node"}
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`}
+            />
+            {loading ? "Reading the registry…" : "Live from your access node"}
           </span>
         )}
-        {error && <span className="text-xs text-amber-300">{error}</span>}
       </div>
 
       <div className="mt-4">

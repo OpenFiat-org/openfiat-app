@@ -55,9 +55,9 @@ const LIVE_ROUTES = [
  * data. The picker lists the real cluster now, so every selection is a real
  * endpoint and the distinction has no meaning.
  *
- * Note these are still matched exactly, not by prefix: `/providers/[id]` and
- * `/explorer/address/[address]` continue to read fixtures, so claiming the
- * whole subtree is live would be the overstatement this badge exists to
+ * Note these are still matched exactly, not by prefix:
+ * `/explorer/address/[address]` continues to read a fixture, so claiming
+ * the whole subtree is live would be the overstatement this badge exists to
  * prevent.
  */
 const NODE_DEPENDENT_ROUTES: string[] = [];
