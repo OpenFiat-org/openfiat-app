@@ -18,8 +18,8 @@ export interface DirectoryRow {
   priceLabel: string;
   uptimeLabel: string;
   status: string;
-  /** `/providers/[id]` only exists for the static mock dataset. */
-  href: string | null;
+  /** `/providers/<service id>`, which reads the same registry record. */
+  href: string;
 }
 
 const LIVE_TYPE_LABEL: Record<string, ServiceType> = {
@@ -61,19 +61,46 @@ function toRow(record: ServiceRecord): DirectoryRow {
     // would be less honest than admitting this isn't tracked.
     uptimeLabel: "—",
     status: record.health,
-    href: null,
+    href: `/providers/${encodeURIComponent(record.service_id)}`,
   };
 }
 
 /**
- * Fetches every registered service from a live node's Service Registry
- * (OFS-1500) — the real counterpart to `lib/data/providers.ts`'s
- * simulated `PROVIDERS`. Used only when the user has picked a real,
- * live-checked custom node (see `lib/node-preference.ts`); every other
- * access-node selection keeps using the static mock dataset.
+ * Every registered service from a node's Service Registry (OFS-1500).
  */
 export async function fetchLiveProviders(endpoint: string): Promise<DirectoryRow[]> {
   const client = new Client({ endpoint, timeoutMs: 5_000 });
   const records = await providers.getProviders(client);
   return records.map(toRow);
+}
+
+
+/**
+ * One registry record, as the node reports it.
+ *
+ * Deliberately the raw `ServiceRecord` rather than a `DirectoryRow`: the
+ * detail page shows fields the table has no room for, and every one of
+ * them is a field OFS-1500 actually defines. The page it feeds does not
+ * invent an uptime percentage or a latency reading, which is what made
+ * the fixture-backed version it replaces dishonest.
+ *
+ * `null` when the registry has no such service. That is an ordinary
+ * answer — an id from a stale link, or a record this node has not
+ * replicated — and not an error to throw at the caller.
+ */
+export async function fetchProviderRecord(
+  endpoint: string,
+  serviceId: string,
+): Promise<ServiceRecord | null> {
+  const client = new Client({ endpoint, timeoutMs: 5_000 });
+  try {
+    return await providers.getProvider(client, serviceId);
+  } catch {
+    return null;
+  }
+}
+
+/** The display label for a record's service type. */
+export function labelForServiceType(type: LiveServiceType): ServiceType {
+  return serviceTypeLabel(type);
 }

@@ -40,6 +40,9 @@ const LIVE_ROUTES = [
   // block height.
   "/explorer",
   "/providers",
+  // The per-service page reads the same registry record the directory
+  // row came from.
+  "/providers/[id]",
   "/network",
   // The merchant name here is a real signed identity claim; the rest of the
   // page is genuinely local preference, which is not the same as simulated.

@@ -8,7 +8,8 @@ import { MetricStrip } from "@/components/metrics";
 import { StatusPill } from "@/components/status-pill";
 import { NodeUseButton } from "@/components/network/node-use-button";
 import { formatNumber } from "@/lib/format";
-import { NETWORK_LABEL, SOLANA_CLUSTER, knownNodes, type KnownNode } from "@/lib/node-endpoint";
+import { NETWORK_LABEL, SOLANA_CLUSTER, type KnownNode } from "@/lib/node-endpoint";
+import { discoverNodes } from "@/lib/live-nodes";
 import { fetchLiveNetworkStats } from "@/lib/live-explorer";
 
 /**
@@ -59,15 +60,25 @@ async function probe(node: KnownNode): Promise<Probe> {
 }
 
 export function LiveNetwork() {
-  const nodes = knownNodes();
+  const [nodes, setNodes] = useState<KnownNode[]>([]);
   const [probes, setProbes] = useState<Record<string, Probe>>({});
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Discovered, not compiled in. The list used to be
+      // `knownNodes()` — a build-time constant — so this view showed
+      // exactly as many nodes as the last release happened to know
+      // about, and could never show one launched since. Nodes that want
+      // to be used register themselves (OFS-1500), so the real list is
+      // the seed plus what the registry reports.
+      const discovered = await discoverNodes();
+      if (cancelled) return;
+      setNodes(discovered);
+
       const entries = await Promise.all(
-        nodes.map(async (n) => [n.id, await probe(n)] as const),
+        discovered.map(async (n) => [n.id, await probe(n)] as const),
       );
       if (!cancelled) {
         setProbes(Object.fromEntries(entries));
@@ -77,8 +88,6 @@ export function LiveNetwork() {
     return () => {
       cancelled = true;
     };
-    // Derived from build-time config, stable across renders.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const reachable = nodes.filter((n) => probes[n.id]?.latencyMs != null).length;
@@ -103,8 +112,14 @@ export function LiveNetwork() {
           },
           {
             label: "RPC-connected nodes",
-            value: String(nodes.filter((n) => n.chainMode === "RpcConnected").length),
-            sub: "read Solana directly",
+            // Counted from what each node answered, not from the list's
+            // own `chainMode`: a discovered node's registration says
+            // nothing about whether it reads Solana, so only the probe
+            // knows.
+            value: checking
+              ? "…"
+              : String(nodes.filter((n) => probes[n.id]?.blockHeight != null).length),
+            sub: "answered getChainStatus",
           },
         ]}
       />
