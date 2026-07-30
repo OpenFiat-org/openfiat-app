@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CURRENT_USER, MERCHANTS, reputationFor } from "@/lib/data/merchants";
-import { VAULTS, WALLET_BALANCES } from "@/lib/data/wallet";
 import { STAKING_SUMMARY } from "@/lib/data/staking";
 import { TRADES } from "@/lib/data/trades";
 import { getCountry } from "@/lib/data/countries";
 import { formatCrypto, formatNumber, shortAddress } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { AddressOnchain } from "@/components/explorer/address-onchain";
 import { MerchantCell } from "@/components/merchant-cell";
 import { MetricStrip } from "@/components/metrics";
 import { Panel } from "@/components/panel";
@@ -55,7 +55,7 @@ export default async function AddressPage({ params }: { params: Promise<Params> 
           </div>
         </Panel>
       ) : merchant.id === CURRENT_USER.id ? (
-        <CurrentUserView />
+        <CurrentUserView address={address} />
       ) : (
         <MerchantView merchantId={merchant.id} />
       )}
@@ -146,7 +146,7 @@ function MerchantView({ merchantId }: { merchantId: string }) {
   );
 }
 
-function CurrentUserView() {
+function CurrentUserView({ address }: { address: string }) {
   return (
     <div className="mt-8 space-y-8">
       <div className="flex items-center gap-3">
@@ -164,56 +164,10 @@ function CurrentUserView() {
         ]}
       />
 
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Balances</h2>
-        <div className="mt-3">
-          <DataTable
-            head={
-              <tr>
-                <Th>Asset</Th>
-                <Th right>Balance</Th>
-                <Th right>Value (USD)</Th>
-              </tr>
-            }
-          >
-            {WALLET_BALANCES.map((b) => (
-              <Tr key={b.asset}>
-                <Td className="font-medium text-gray-200">{b.asset}</Td>
-                <Td right num className="text-gray-200">{formatNumber(b.balance, b.asset === "OPEN" ? 0 : 2)}</Td>
-                <Td right num className="text-gray-400">${formatNumber(b.fiatValue)}</Td>
-              </Tr>
-            ))}
-          </DataTable>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Liquidity vaults</h2>
-        <div className="mt-3">
-          <DataTable
-            minWidth={680}
-            head={
-              <tr>
-                <Th>Asset</Th>
-                <Th right>Total</Th>
-                <Th right>Available</Th>
-                <Th right>Reserved</Th>
-                <Th right>Settled</Th>
-              </tr>
-            }
-          >
-            {VAULTS.map((v) => (
-              <Tr key={v.asset}>
-                <Td className="font-medium text-gray-200">{v.asset}</Td>
-                <Td right num className="text-gray-200">{formatNumber(v.total)}</Td>
-                <Td right num className="text-emerald-300">{formatNumber(v.available)}</Td>
-                <Td right num className="text-amber-300">{formatNumber(v.reserved)}</Td>
-                <Td right num className="text-gray-400">{formatNumber(v.settled)}</Td>
-              </Tr>
-            ))}
-          </DataTable>
-        </div>
-      </div>
+      {/* Real, and specific to the address in the URL — see
+          `components/explorer/address-onchain.tsx` for what these two
+          sections used to show instead. */}
+      <AddressOnchain address={address} />
 
       <div>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Recent trades</h2>

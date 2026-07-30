@@ -1,125 +1,386 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import type { Asset } from "@/lib/types";
-import { WALLET_BALANCES } from "@/lib/data/wallet";
-import { formatNumber } from "@/lib/format";
-import { AssetIcon } from "@/components/asset-icon";
+import { useCallback, useEffect, useState } from "react";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import { Panel } from "@/components/panel";
+import { shortSig } from "@/lib/format";
+import {
+  WALLET_CHANGED_EVENT,
+  currentSigner,
+  readWalletConnection,
+  type WalletConnection,
+} from "@/lib/wallet-connection";
+import { getConnection, KNOWN_DEVNET_MINTS } from "@/lib/onchain-config";
+import {
+  fetchVaultsByMerchant,
+  formatBaseUnits,
+  parseBaseUnits,
+  shortMint,
+  type LiveVault,
+} from "@/lib/live-vaults";
+import { withdrawIx } from "@/lib/vault-instructions";
 
-const ASSETS: Asset[] = ["USDT", "USDC", "USD1", "SOL", "OPEN"];
-const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const inputCls =
+  "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
 
-/** Full-page withdraw flow (simulated — no real transaction). */
-export function WithdrawForm({ initialAsset }: { initialAsset?: string }) {
-  const [asset, setAsset] = useState<Asset>(
-    ASSETS.includes(initialAsset as Asset) ? (initialAsset as Asset) : "USDT",
-  );
-  const [address, setAddress] = useState("");
+type SubmitState =
+  | { phase: "idle" }
+  | { phase: "signing" }
+  | { phase: "confirming"; signature: string }
+  | { phase: "done"; signature: string; amount: string }
+  | { phase: "error"; message: string };
+
+function mintLabel(mint: PublicKey): string {
+  return KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58())?.label ?? "Unrecognised mint";
+}
+
+/**
+ * Takes tokens back out of a liquidity vault with a real, wallet-signed
+ * `withdraw_liquidity` transaction.
+ *
+ * # What this replaced
+ *
+ * A form that read `WALLET_BALANCES`, accepted any Solana address, and
+ * finished on a "Withdrawal submitted" screen having sent nothing.
+ *
+ * # It withdraws from vaults, not from the wallet
+ *
+ * The old form was a generic "send assets to any Solana address" screen,
+ * which is a wallet's job and not this app's. What this app can uniquely do
+ * is move balance out of the escrow program's custody and back under the
+ * merchant's — so that is what this does, and the choices offered are the
+ * vaults that actually exist rather than a list of asset tickers.
+ *
+ * The destination is deliberately not a free-text address.
+ * `withdraw_liquidity` requires a token account of the right mint, not a
+ * wallet address, so the old form's free-text field would have produced a
+ * transaction that fails every time. Sending elsewhere is a wallet transfer
+ * afterwards, and saying that plainly beats offering a field that cannot
+ * work.
+ */
+export function WithdrawForm({ initialMint }: { initialMint?: string }) {
+  const [wallet, setWallet] = useState<WalletConnection | null>(null);
+  const [vaults, setVaults] = useState<LiveVault[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialMint ?? null);
   const [amount, setAmount] = useState("");
-  const [done, setDone] = useState(false);
+  const [submit, setSubmit] = useState<SubmitState>({ phase: "idle" });
 
-  const balance = WALLET_BALANCES.find((b) => b.asset === asset)?.balance ?? 0;
-  const value = Number(amount) || 0;
-  const fee = Math.max(0.1, value * 0.0005);
-  const addressValid = BASE58_RE.test(address.trim());
-  const valid = addressValid && value > 0 && value <= balance;
+  useEffect(() => {
+    const update = () => setWallet(readWalletConnection());
+    update();
+    window.addEventListener(WALLET_CHANGED_EVENT, update);
+    return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
+  }, []);
 
-  if (done) {
+  const load = useCallback(async (address: string) => {
+    setError(null);
+    try {
+      setVaults(await fetchVaultsByMerchant(new PublicKey(address)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setVaults(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (wallet) void load(wallet.address);
+    else setVaults(null);
+  }, [wallet, load]);
+
+  const vault =
+    vaults?.find((v) => v.mint.toBase58() === selected) ?? (selected === null ? vaults?.[0] : undefined);
+
+  const raw = vault ? parseBaseUnits(amount, vault.decimals) : null;
+  const overAvailable = vault !== undefined && raw !== null && raw > vault.available;
+  const canSubmit =
+    wallet !== null &&
+    vault !== undefined &&
+    raw !== null &&
+    raw > 0n &&
+    !overAvailable &&
+    submit.phase !== "signing" &&
+    submit.phase !== "confirming";
+
+  async function handleWithdraw() {
+    if (!wallet || !vault || raw === null) return;
+    const provider = currentSigner(wallet);
+    if (!provider) {
+      setSubmit({
+        phase: "error",
+        message: "This wallet connection can't sign — reconnect with a real extension.",
+      });
+      return;
+    }
+
+    setSubmit({ phase: "signing" });
+    try {
+      const owner = new PublicKey(wallet.address);
+      const destination = getAssociatedTokenAddressSync(vault.mint, owner, false, vault.tokenProgram);
+
+      const connection = getConnection();
+      // Idempotent: a merchant who deposited their whole balance may have
+      // closed the account since, and a withdrawal that fails because the
+      // destination no longer exists is a dead end with no obvious fix.
+      const instructions = [
+        createAssociatedTokenAccountIdempotentInstruction(
+          owner,
+          destination,
+          owner,
+          vault.mint,
+          vault.tokenProgram,
+        ),
+        withdrawIx(owner, vault.mint, destination, raw, vault.tokenProgram),
+      ];
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const transaction = new Transaction({ feePayer: owner, blockhash, lastValidBlockHeight }).add(
+        ...instructions,
+      );
+
+      const { signature } = await provider.signAndSendTransaction(transaction);
+      setSubmit({ phase: "confirming", signature });
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+      setSubmit({ phase: "done", signature, amount: formatBaseUnits(raw, vault.decimals) });
+      void load(wallet.address);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Transaction failed or was rejected.";
+      // Distinct from the deposit path on purpose: `withdraw_liquidity` has
+      // no ban check at all, and its one precondition is the available
+      // balance. Sharing one message would misdescribe both.
+      const insufficient = /InsufficientAvailableLiquidity/i.test(message);
+      setSubmit({
+        phase: "error",
+        message: insufficient
+          ? "The program rejected this withdrawal: the vault's available balance is lower than the amount requested. Reserved and pending-settlement balances cannot be withdrawn until those trades close."
+          : message,
+      });
+    }
+  }
+
+  if (submit.phase === "done") {
     return (
       <Panel>
         <div className="px-4 py-14 text-center">
           <p className="text-2xl text-emerald-400">✓</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">Withdrawal submitted (simulated)</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">Withdrawal confirmed on devnet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {formatNumber(value)} {asset} to {address.slice(0, 6)}…{address.slice(-4)} broadcasts after the standard
-            security review. Network fee {formatNumber(fee, 4)} {asset}.
+            {submit.amount} left the vault and is in your wallet&apos;s token account. The vault&apos;s
+            Available balance fell by the same amount, so anything you advertise against it should come down
+            too.
           </p>
-          <Link
-            href="/wallet"
-            className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+          <a
+            href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block font-mono text-xs text-brand-teal hover:underline"
           >
-            Back to Wallet
+            {shortSig(submit.signature)}
+          </a>
+          <div className="mt-6 flex justify-center gap-2.5">
+            <Link
+              href="/wallet"
+              className="rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+            >
+              Back to Wallet
+            </Link>
+            <button
+              onClick={() => {
+                setAmount("");
+                setSubmit({ phase: "idle" });
+              }}
+              className="rounded-md border border-white/15 px-6 py-2 text-sm font-medium text-gray-200 hover:bg-white/5"
+            >
+              Withdraw again
+            </button>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+
+  if (!wallet) {
+    return (
+      <Panel>
+        <p className="px-4 py-8 text-sm text-gray-400">
+          Connect a wallet to withdraw from the liquidity vaults it owns.
+        </p>
+      </Panel>
+    );
+  }
+
+  if (error) {
+    return (
+      <Panel>
+        <div className="px-4 py-6">
+          <p className="text-sm font-medium text-red-300">Could not read your vaults from Solana devnet</p>
+          <p className="mt-1 text-sm text-gray-400">
+            The lookup failed, so this is not a statement that you have nothing to withdraw.
+          </p>
+          <p className="mt-2 font-mono text-xs text-red-400/80">{error}</p>
+          <button
+            onClick={() => void load(wallet.address)}
+            className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
+          >
+            Retry
+          </button>
+        </div>
+      </Panel>
+    );
+  }
+
+  if (vaults === null) {
+    return (
+      <Panel>
+        <p className="px-4 py-8 text-sm text-gray-500">Reading your vaults from devnet…</p>
+      </Panel>
+    );
+  }
+
+  if (vaults.length === 0) {
+    return (
+      <Panel>
+        <div className="px-4 py-8">
+          <p className="text-sm text-gray-300">
+            This wallet owns no liquidity vaults, so there is nothing to withdraw.
+          </p>
+          <p className="mt-1.5 text-sm text-gray-500">That is the chain&apos;s answer, not a failed lookup.</p>
+          <Link
+            href="/wallet/deposit"
+            className="mt-4 inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+          >
+            Deposit instead
           </Link>
         </div>
       </Panel>
     );
   }
 
-  const inputCls =
-    "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50";
-
   return (
-    <Panel title="Withdrawal details">
+    <Panel title="Withdraw from a liquidity vault">
       <div className="divide-y divide-white/5">
-        <div className="px-4 py-6">
-          <p className="text-xs text-gray-500">Asset</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ASSETS.map((a) => (
-              <button
-                key={a}
-                onClick={() => setAsset(a)}
-                className={`flex items-center gap-1.5 rounded-md border px-3.5 py-2 text-sm transition-colors ${
-                  asset === a ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
-                }`}
-              >
-                <AssetIcon asset={a} size={16} />
-                {a}
-              </button>
-            ))}
-          </div>
+        <div className="px-4 py-6 text-sm leading-relaxed text-gray-400">
+          <p>
+            This takes tokens back out of the escrow program&apos;s custody and returns them to your
+            wallet&apos;s own token account, in one transaction you sign.
+          </p>
+          <p className="mt-2.5">
+            You can only withdraw what is <span className="text-emerald-300">Available</span>. Balance
+            reserved against an open order, or already funded into a trade escrow, stays where it is until
+            that trade settles, is cancelled, or expires — the program rejects a withdrawal that reaches into
+            it.
+          </p>
         </div>
 
-        <div className="space-y-5 px-4 py-6">
-          <div>
+        <div className="px-4 py-6">
+          <label htmlFor="vault" className="mb-1 block text-xs text-gray-500">
+            Vault
+          </label>
+          <select
+            id="vault"
+            value={vault?.mint.toBase58() ?? ""}
+            onChange={(e) => {
+              setSelected(e.target.value);
+              setAmount("");
+            }}
+            className={inputCls}
+          >
+            {vaults.map((v) => (
+              <option key={v.address.toBase58()} value={v.mint.toBase58()}>
+                {mintLabel(v.mint)} ({shortMint(v.mint)}) — {formatBaseUnits(v.available, v.decimals)}{" "}
+                available
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {vault && (
+          <div className="px-4 py-6">
             <div className="flex items-center justify-between">
-              <label htmlFor="address" className="text-xs text-gray-500">Destination address (Solana)</label>
-              {address && !addressValid && <span className="text-xs text-amber-300">Invalid Solana address</span>}
-            </div>
-            <input
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="e.g. 7xKmVd8hN3pQrS4tUvWxYz2AbCdEfGhJkLmNoPqR9fQ2"
-              className={`mt-1.5 font-mono ${inputCls}`}
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="amount" className="text-xs text-gray-500">Amount</label>
+              <label htmlFor="amount" className="mb-1 block text-xs text-gray-500">
+                Amount
+              </label>
               <span className="text-xs tabular-nums text-gray-500">
-                Available {formatNumber(balance, asset === "OPEN" ? 0 : 2)} {asset}
-                <button onClick={() => setAmount(String(balance))} className="ml-2 text-brand hover:text-brand-hover">
-                  Max
-                </button>
+                Available: {formatBaseUnits(vault.available, vault.decimals)}
+                {vault.available > 0n && (
+                  <button
+                    onClick={() =>
+                      setAmount(formatBaseUnits(vault.available, vault.decimals).replace(/,/g, ""))
+                    }
+                    className="ml-2 text-brand hover:text-brand-hover"
+                  >
+                    Max
+                  </button>
+                )}
               </span>
             </div>
             <input
               id="amount"
-              type="number"
-              min="0"
+              inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className={`mt-1.5 tabular-nums ${inputCls}`}
+              placeholder="0.00"
+              className={`tabular-nums ${inputCls}`}
             />
-            {value > balance && <p className="mt-1 text-xs text-amber-300">Insufficient balance.</p>}
+
+            {vault.available === 0n && (
+              <p className="mt-2 text-xs text-amber-300">
+                This vault has nothing available.{" "}
+                {vault.reserved > 0n || vault.pendingSettlement > 0n
+                  ? "Its balance is committed to open trades."
+                  : "Everything it held has already settled away."}
+              </p>
+            )}
+            {amount.trim() !== "" && raw === null && vault.available > 0n && (
+              <p className="mt-2 text-xs text-amber-300">
+                Enter a number with no more than {vault.decimals} decimal places — this mint cannot represent
+                a smaller amount.
+              </p>
+            )}
+            {overAvailable && (
+              <p className="mt-2 text-xs text-amber-300">
+                More than this vault has available ({formatBaseUnits(vault.available, vault.decimals)}).
+                {vault.reserved > 0n && (
+                  <>
+                    {" "}
+                    A further {formatBaseUnits(vault.reserved, vault.decimals)} is reserved and cannot be
+                    withdrawn.
+                  </>
+                )}
+              </p>
+            )}
+
+            <p className="mt-4 text-xs text-gray-500">
+              Goes to your own associated token account for this mint, created in the same transaction if you
+              do not have one. To send it anywhere else, transfer from your wallet afterwards — the program
+              only pays out to a token account of this exact mint.
+            </p>
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Fee (network + 0.05% protocol)</span>
-            <span className="tabular-nums text-gray-300">{formatNumber(fee, 4)} {asset}</span>
-          </div>
-        </div>
+        )}
 
         <div className="px-4 py-6">
+          {submit.phase === "error" && (
+            <p className="mb-2 text-center text-xs text-red-300">{submit.message}</p>
+          )}
           <button
-            onClick={() => valid && setDone(true)}
-            disabled={!valid}
+            onClick={handleWithdraw}
+            disabled={!canSubmit}
             className="w-full rounded-md bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Submit Withdrawal
+            {submit.phase === "signing"
+              ? "Confirm in wallet…"
+              : submit.phase === "confirming"
+                ? "Confirming on devnet…"
+                : "Withdraw to my wallet"}
           </button>
-          <p className="mt-2 text-center text-[11px] text-gray-600">Simulated action — no transaction is signed.</p>
+          <p className="mt-2 text-center text-[11px] text-gray-600">
+            One transaction to the openfiat-escrow program on Solana devnet.
+          </p>
         </div>
       </div>
     </Panel>

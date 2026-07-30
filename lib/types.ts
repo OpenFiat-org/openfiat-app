@@ -422,28 +422,22 @@ export interface ReputationProfile {
   dimensions: ReputationDimension[];
 }
 
-export interface WalletBalance {
-  asset: Asset;
-  balance: number;
-  fiatValue: number; // USD equivalent
-}
-
-/** Per-merchant, per-stablecoin liquidity vault. */
-export interface Vault {
-  asset: StablecoinAsset;
-  total: number;
-  available: number;
-  reserved: number;
-  settled: number;
-}
-
-export interface VaultEvent {
-  time: string;
-  type: string; // protocol event name, e.g. "VaultBalanceReserved"
-  asset: StablecoinAsset;
-  amount: number;
-  summary: string;
-}
+/*
+ * `WalletBalance`, `Vault` and `VaultEvent` used to be declared here, as the
+ * shapes of `lib/data/wallet.ts`'s fixtures. All three are gone with it.
+ *
+ * They are not replaced by equivalents, because the real shapes are not
+ * equivalent and pretending otherwise is what let the fixture look
+ * plausible. A real vault is keyed by token MINT rather than by an asset
+ * ticker, carries five counters rather than four (`pending_settlement` was
+ * simply missing), and stores every one of them as a u64 of base units
+ * rather than a float — a `number` cannot hold a u64 without rounding, and
+ * a balance is the last place to accept that.
+ *
+ * The live shapes are `LiveVault` in `lib/live-vaults.ts` and `TokenBalance`
+ * in `lib/live-token-balances.ts`, each declared next to the code that reads
+ * it from chain.
+ */
 
 export type NodeRole =
   | "Full Node"

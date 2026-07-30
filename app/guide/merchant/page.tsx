@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
-import { formatNumber } from "@/lib/format";
 import { PageHero } from "@/components/page-hero";
 import { StepList } from "@/components/guide/step-list";
 
@@ -15,7 +13,7 @@ export const metadata: Metadata = {
 const STEPS: Array<[string, string]> = [
   [
     "Bond OPEN",
-    `A merchant stakes OPEN as accountability, not as a fee — it stays yours unless a protocol penalty applies. ${formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN buys one advertisement slot, and each further slot costs the same again. This is what replaces an application form: nobody approves you, but you have something at risk.`,
+    "A merchant stakes OPEN as accountability, not as a fee — it stays yours unless a protocol penalty applies. The staking page shows the minimum the deployed program enforces; this page deliberately does not restate a figure it has not read. This is what replaces an application form: nobody approves you, but you have something at risk.",
   ],
   [
     "Fund a liquidity vault",
@@ -52,8 +50,6 @@ const OBLIGATIONS = [
 ];
 
 export default function MerchantGuidePage() {
-  const shortfall = Math.max(0, OPEN_BOND_REQUIRED - OPEN_BALANCE);
-
   return (
     <section>
       <PageHero
@@ -63,37 +59,25 @@ export default function MerchantGuidePage() {
       />
 
       <div className="mt-10 max-w-3xl">
-        {/* Where the reader stands right now, rather than an abstract
-            requirement they have to go and check for themselves. */}
-        <div
-          className={`rounded-md border px-4 py-3 text-sm ${
-            shortfall > 0
-              ? "border-amber-400/40 bg-amber-400/[0.04] text-amber-100"
-              : "border-brand-teal/40 bg-brand-teal/[0.04] text-gray-200"
-          }`}
-        >
-          {shortfall > 0 ? (
-            <>
-              You hold {formatNumber(OPEN_BALANCE, 0)} OPEN and need{" "}
-              {formatNumber(OPEN_BOND_REQUIRED, 0)} to bond your first advertisement slot —{" "}
-              {formatNumber(shortfall, 0)} short.{" "}
-              <Link href="/open" className="underline decoration-amber-400/50 underline-offset-4">
-                Buy OPEN in the presale
-              </Link>
-              .
-            </>
-          ) : (
-            <>
-              You hold {formatNumber(OPEN_BALANCE, 0)} OPEN — enough to bond{" "}
-              {Math.floor(OPEN_BALANCE / OPEN_BOND_REQUIRED)} advertisement slot
-              {Math.floor(OPEN_BALANCE / OPEN_BOND_REQUIRED) === 1 ? "" : "s"} at{" "}
-              {formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN each.{" "}
-              <Link href="/staking" className="underline decoration-brand-teal/50 underline-offset-4">
-                Bond it on the staking page
-              </Link>
-              .
-            </>
-          )}
+        {/*
+          * This used to open with "You hold 12,500 OPEN — enough to bond 2
+          * advertisement slots", computed from two constants in
+          * `lib/data/wallet.ts`. It was addressed to the reader, personal,
+          * specific, and false for every reader: nothing had been read from
+          * any wallet, and on devnet the OPEN mint's authority is
+          * permanently unset, so the true holding is zero for everyone.
+          *
+          * A guide page is a server component with no wallet connection, so
+          * it cannot know where the reader stands. It states the
+          * requirement and points at the pages that do read the chain.
+          */}
+        <div className="rounded-md border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-gray-300">
+          Bonding is a real staking transaction, and this page does not read your wallet — so it cannot tell
+          you whether you already qualify.{" "}
+          <Link href="/staking" className="underline decoration-white/30 underline-offset-4">
+            The staking page
+          </Link>{" "}
+          shows the minimum bond the deployed program actually enforces and what you have bonded against it.
         </div>
 
         <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
