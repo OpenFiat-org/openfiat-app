@@ -53,10 +53,30 @@ export interface DecodedStakeAccount {
   slashedTotal: bigint;
   pendingRewards: bigint;
   bump: number;
+  /**
+   * When this account's current staked position began — the clock behind
+   * the arbitrator stake-age requirement (OFS-4100 §4).
+   *
+   * `null` for an account still on the pre-migration layout, which is 82
+   * bytes and simply does not carry the field. Distinct from `0n`, which
+   * is what a migrated account holding no stake stores. Both fail an age
+   * requirement, but only one of them is waiting on
+   * `migrate_stake_account` — so a caller showing an arbitrator why they
+   * are ineligible needs to be able to tell them apart.
+   */
+  firstStakedAt: bigint | null;
 }
 
+/** Pre-migration length, before `first_staked_at` was appended. */
+const STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE = 82;
+
 /** Layout: disc(8) owner(32) role(1) amount(8) unbonding_amount(8)
- *  unbonding_release_at(8) slashed_total(8) pending_rewards(8) bump(1). */
+ *  unbonding_release_at(8) slashed_total(8) pending_rewards(8) bump(1)
+ *  first_staked_at(8).
+ *
+ * `first_staked_at` is appended after `bump` rather than sitting in
+ * declaration order, which is what lets every offset above stay exactly
+ * where it was — see the field's own doc comment in the program. */
 export function decodeStakeAccount(data: Uint8Array): DecodedStakeAccount {
   checkDiscriminator(data, STAKE_ACCOUNT_DISCRIMINATOR, "StakeAccount");
   return {
@@ -68,6 +88,10 @@ export function decodeStakeAccount(data: Uint8Array): DecodedStakeAccount {
     slashedTotal: readU64(data, 65),
     pendingRewards: readU64(data, 73),
     bump: data[81]!,
+    firstStakedAt:
+      data.length > STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE
+        ? readI64(data, STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE)
+        : null,
   };
 }
 

@@ -36,6 +36,7 @@ describe("decodeStakeAccount", () => {
       ...u64le(0n), // slashed_total
       ...u64le(500n), // pending_rewards
       7, // bump
+      ...i64le(1_800_000_000n), // first_staked_at
     ]);
     const decoded = decodeStakeAccount(bytes);
     expect(decoded.owner.equals(owner)).toBe(true);
@@ -43,6 +44,35 @@ describe("decodeStakeAccount", () => {
     expect(decoded.amount).toBe(12_345n);
     expect(decoded.pendingRewards).toBe(500n);
     expect(decoded.bump).toBe(7);
+    expect(decoded.firstStakedAt).toBe(1_800_000_000n);
+  });
+
+  // The whole point of appending `first_staked_at` after `bump` rather than
+  // placing it in declaration order: an account that has not yet been
+  // through `migrate_stake_account` must still decode, with every other
+  // field reading exactly what it read before the field existed.
+  it("decodes a pre-migration account and reports an unknown stake age", () => {
+    const owner = PublicKey.unique();
+    const bytes = Buffer.from([
+      80, 158, 67, 124, 50, 189, 192, 255,
+      ...owner.toBytes(),
+      1,
+      ...u64le(12_345n),
+      ...u64le(0n),
+      ...i64le(0n),
+      ...u64le(0n),
+      ...u64le(500n),
+      7,
+    ]);
+    expect(bytes.length).toBe(82);
+    const decoded = decodeStakeAccount(bytes);
+    expect(decoded.owner.equals(owner)).toBe(true);
+    expect(decoded.amount).toBe(12_345n);
+    expect(decoded.bump).toBe(7);
+    // null, not 0n — an unmigrated account is a different situation from a
+    // migrated one holding no stake, and both callers and users need to be
+    // told which they are looking at.
+    expect(decoded.firstStakedAt).toBeNull();
   });
 
   it("rejects a mismatched discriminator", () => {
