@@ -1,10 +1,23 @@
 import { FAUCET_URL } from "@/lib/faucet-config";
 
-export type FaucetMintSymbol = "USDC" | "USDT";
+/**
+ * Everything the faucet dispenses.
+ *
+ * SOL and OPEN matter as much as the stablecoins and are not extras: without
+ * SOL a fresh wallet cannot pay transaction fees or the rent for its own
+ * token accounts and vaults (devnet airdrops are rate-limited, so the faucet
+ * is the reliable source), and without OPEN it cannot stake into any role.
+ * A tester handed only USDC and USDT has the two assets that are useless on
+ * their own, and finds out several steps later.
+ */
+export type FaucetAssetSymbol = "SOL" | "USDC" | "USDT" | "OPEN";
+
+/** @deprecated the faucet is not mint-only any more — use `FaucetAssetSymbol`. */
+export type FaucetMintSymbol = FaucetAssetSymbol;
 
 export interface FaucetDripResult {
   signature: string;
-  amounts: Partial<Record<FaucetMintSymbol, number>>;
+  amounts: Partial<Record<FaucetAssetSymbol, number>>;
 }
 
 /** Thrown by `requestFaucetDrip` — carries the faucet's own error message
@@ -35,16 +48,24 @@ function extractErrorMessage(status: number, body: unknown): string {
 }
 
 /**
- * Requests a drip of mock USDC and/or USDT to `address` from the deployed
- * faucet service. No amount is ever sent — the service enforces its own
- * fixed per-request cap, and there is deliberately no client-side way to
- * ask for more.
+ * Requests a drip of SOL, mock USDC, mock USDT and/or OPEN to `address` from
+ * the deployed faucet service. No amount is ever sent — the service enforces
+ * its own fixed per-request drip and daily cap, and there is deliberately no
+ * client-side way to ask for more.
+ *
+ * Omitting `assets` asks for the service's full default set, which is what a
+ * newcomer wants. The field is named `assets` because the faucet dispenses
+ * native SOL as well as tokens; it still accepts `mints` as a legacy alias,
+ * but new callers should not use it.
  */
-export async function requestFaucetDrip(address: string, mints?: FaucetMintSymbol[]): Promise<FaucetDripResult> {
+export async function requestFaucetDrip(
+  address: string,
+  assets?: FaucetAssetSymbol[],
+): Promise<FaucetDripResult> {
   const res = await fetch(`${FAUCET_URL}/faucet`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(mints ? { address, mints } : { address }),
+    body: JSON.stringify(assets ? { address, assets } : { address }),
   });
 
   let body: unknown = null;

@@ -3,7 +3,7 @@ import { FaucetForm } from "@/components/faucet/faucet-form";
 
 export const metadata: Metadata = {
   title: "Faucet",
-  description: "Get mock USDC and mock USDT on Solana devnet for testing.",
+  description: "Get devnet SOL, mock USDC, mock USDT and OPEN on Solana devnet for testing.",
 };
 
 export default function FaucetPage() {
@@ -11,7 +11,8 @@ export default function FaucetPage() {
     <section className="max-w-2xl">
       <h1 className="text-xl font-semibold text-white">Faucet</h1>
       <p className="mt-1 text-sm text-gray-400">
-        Mints mock USDC and mock USDT to any Solana devnet address, for testing this app.
+        Sends devnet SOL, mock USDC, mock USDT and OPEN to any Solana devnet address, for testing this
+        app. SOL covers transaction fees and account rent; OPEN is what a protocol role is staked with.
       </p>
       {/*
        * The top bar already carries a persistent devnet/no-value banner

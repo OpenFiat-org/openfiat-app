@@ -5,29 +5,39 @@ import { PublicKey } from "@solana/web3.js";
 import { Panel } from "@/components/panel";
 import { shortSig } from "@/lib/format";
 import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connection";
-import { requestFaucetDrip, FaucetRequestError, type FaucetMintSymbol } from "@/lib/faucet-client";
+import { requestFaucetDrip, FaucetRequestError, type FaucetAssetSymbol } from "@/lib/faucet-client";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 font-mono";
 const labelCls = "mb-1 block text-xs text-gray-500";
 
-const MINT_OPTIONS: Array<{ symbol: FaucetMintSymbol; label: string }> = [
-  { symbol: "USDC", label: "mock USDC" },
-  { symbol: "USDT", label: "mock USDT" },
+/**
+ * Every asset the faucet dispenses, each with what it is actually *for* —
+ * a tester who takes only the stablecoins gets stuck several steps later
+ * with no idea why, so the reason belongs next to the checkbox.
+ */
+const ASSET_OPTIONS: Array<{ symbol: FaucetAssetSymbol; label: string; why: string }> = [
+  { symbol: "SOL", label: "SOL", why: "transaction fees and account rent" },
+  { symbol: "USDC", label: "mock USDC", why: "trade and settle" },
+  { symbol: "USDT", label: "mock USDT", why: "trade and settle" },
+  { symbol: "OPEN", label: "OPEN", why: "stake into a role" },
 ];
 
 type RequestState =
   | { phase: "idle" }
   | { phase: "requesting" }
-  | { phase: "done"; signature: string; amounts: Partial<Record<FaucetMintSymbol, number>> }
+  | { phase: "done"; signature: string; amounts: Partial<Record<FaucetAssetSymbol, number>> }
   | { phase: "error"; message: string };
 
-/** Requests mock USDC/USDT from `openfiat-faucet` (a separate, non-protocol
- *  service — see NEXT_PUBLIC_FAUCET_URL in lib/faucet-config.ts) to any
- *  Solana address, defaulting to the connected wallet's own address. */
+/** Requests SOL, mock USDC, mock USDT and OPEN from `openfiat-faucet` (a
+ *  separate, non-protocol service — see NEXT_PUBLIC_FAUCET_URL in
+ *  lib/faucet-config.ts) to any Solana address, defaulting to the connected
+ *  wallet's own address. All four are selected by default: that is the set a
+ *  newcomer needs to complete onboarding, and deselecting SOL or OPEN is the
+ *  choice that strands them later. */
 export function FaucetForm() {
   const [address, setAddress] = useState("");
-  const [selected, setSelected] = useState<FaucetMintSymbol[]>(["USDC", "USDT"]);
+  const [selected, setSelected] = useState<FaucetAssetSymbol[]>(["SOL", "USDC", "USDT", "OPEN"]);
   const [state, setState] = useState<RequestState>({ phase: "idle" });
 
   useEffect(() => {
@@ -40,7 +50,7 @@ export function FaucetForm() {
     return () => window.removeEventListener(WALLET_CHANGED_EVENT, fillFromWallet);
   }, []);
 
-  function toggleMint(symbol: FaucetMintSymbol) {
+  function toggleAsset(symbol: FaucetAssetSymbol) {
     setSelected((current) =>
       current.includes(symbol) ? current.filter((s) => s !== symbol) : [...current, symbol],
     );
@@ -83,7 +93,7 @@ export function FaucetForm() {
             {Object.entries(state.amounts)
               .map(([symbol, amount]) => `${amount} ${symbol}`)
               .join(" and ")}{" "}
-            minted to your address on devnet.
+            sent to your address on devnet.
           </p>
           <a
             href={`https://explorer.solana.com/tx/${state.signature}?cluster=devnet`}
@@ -130,22 +140,28 @@ export function FaucetForm() {
         </div>
 
         <div className="px-4 py-6">
-          <p className={labelCls}>Tokens</p>
-          <div className="mt-2 flex gap-2">
-            {MINT_OPTIONS.map((opt) => (
+          <p className={labelCls}>Assets</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {ASSET_OPTIONS.map((opt) => (
               <button
                 key={opt.symbol}
-                onClick={() => toggleMint(opt.symbol)}
-                className={`rounded-md border px-3.5 py-2 text-sm transition-colors ${
+                onClick={() => toggleAsset(opt.symbol)}
+                className={`rounded-md border px-3.5 py-2 text-left text-sm transition-colors ${
                   selected.includes(opt.symbol)
                     ? "border-brand/50 bg-brand/10 text-white"
                     : "border-white/10 text-gray-400 hover:text-white"
                 }`}
               >
-                {opt.label}
+                <span className="block">{opt.label}</span>
+                <span className="block text-[11px] text-gray-500">{opt.why}</span>
               </button>
             ))}
           </div>
+          <p className="mt-2 text-[11px] text-gray-600">
+            SOL pays transaction fees and account rent, and OPEN is what a role is staked with — without
+            both, onboarding stops partway. OPEN comes from a finite stash rather than being minted, so it
+            can run out.
+          </p>
         </div>
 
         <div className="px-4 py-6">

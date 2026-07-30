@@ -25,7 +25,7 @@ const ECOSYSTEM_MENU: MenuSection[] = [
       { label: "Explorer", href: "/explorer", marker: "⌕", description: "Search addresses, trades & protocol events" },
       { label: "Network", href: "/network", marker: "⛁", description: "Nodes, peers & event stream" },
       { label: "Providers", href: "/providers", marker: "⚡", description: "Notifications, oracles & risk intelligence" },
-      { label: "Faucet", href: "/faucet", marker: "◍", description: "Get mock USDC/USDT for testing on devnet" },
+      { label: "Faucet", href: "/faucet", marker: "◍", description: "Get SOL, mock USDC/USDT and OPEN for testing on devnet" },
     ],
   },
 ];
