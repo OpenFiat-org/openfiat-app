@@ -1,78 +1,70 @@
-import { MARKETS, ORACLE_MID, PUBLIC_ADS } from "@/lib/data/ads";
 import { COUNTRIES } from "@/lib/data/countries";
 import type { StablecoinAsset } from "@/lib/types";
 
 /**
- * Asset/fiat pairs that get their own landing page.
+ * Asset/fiat pairs that get their own landing page — /usdt/kes, /usdc/ngn.
  *
- * People search "convert USDT to KES", not "P2P exchange", and a page titled for
- * the query is the only thing that answers it. So: one page per pair, at
- * /usdt/kes.
+ * People search "convert USDT to KES", not "peer-to-peer exchange", and a
+ * page titled for the query is the only thing that answers it.
  *
- * Restricted to pairs that actually have advertisements. Every asset against
- * every currency in the registry would be well over a thousand pages, most of
- * them empty — which dilutes the ones that matter and teaches a crawler the site
- * is mostly thin content. A pair earns a page by having a market behind it.
+ * # This module used to decide which pairs exist. It cannot.
+ *
+ * `PAIRS` was a constant, built at module load by crossing a `MARKETS`
+ * fixture with `ORACLE_MID` — a hand-written table of fifteen rates — and
+ * keeping the combinations that had entries in a PRNG-generated
+ * advertisement book. Every pair page's headline number came from that table,
+ * as did the converter beneath it, the `<meta name="description">`, and the
+ * rate printed on the OpenGraph card that went out with every shared link. It
+ * was fifteen invented exchange rates published as this network's prices.
+ *
+ * The live equivalent is one call away and now answers for these pairs, so
+ * the table is deleted rather than annotated. Which pairs are priced is a
+ * question only an oracle can answer, and the answer changes: devnet feeds
+ * carry a three-hour expiry, so a set fixed at build time would be wrong
+ * within a working day. See `lib/live-oracle.ts`.
+ *
+ * What is left here is the part that genuinely is static — which asset slugs
+ * are real, and which countries use a currency. Neither is a claim about the
+ * network's prices.
  */
 
-export interface Pair {
+/** The assets this app has pages for. A URL naming anything else is a 404. */
+export const PAIR_ASSETS: readonly StablecoinAsset[] = ["USDT", "USDC", "USD1", "SOL"];
+
+export interface PairSlug {
   asset: StablecoinAsset;
   currency: string;
-  /** Oracle mid: fiat per 1 unit of the asset. */
-  rate: number;
-  /** Live advertisement count on this pair. */
-  ads: number;
-  /** The market's local payment rails. */
-  methods: string[];
-  /** Countries where this currency is the primary one. */
-  countries: string[];
   slug: string;
 }
 
-/** Ads on a pair, both directions, online only. */
-function adsOn(asset: string, currency: string): number {
-  return PUBLIC_ADS.filter(
-    (a) => a.status === "Online" && a.asset === asset && a.fiatCurrency === currency,
-  ).length;
-}
-
-export const PAIRS: Pair[] = MARKETS.flatMap((market) =>
-  market.assets
-    .map((asset) => {
-      const rate = ORACLE_MID[`${asset}/${market.currency}`];
-      const ads = adsOn(asset, market.currency);
-      if (rate === undefined || ads === 0) return null;
-      return {
-        asset,
-        currency: market.currency,
-        rate,
-        ads,
-        methods: market.methods,
-        countries: COUNTRIES.filter((c) => c.currencyCode === market.currency).map((c) => c.name),
-        slug: `${asset.toLowerCase()}/${market.currency.toLowerCase()}`,
-      } satisfies Pair;
-    })
-    .filter((p): p is Pair => p !== null),
-);
-
-const BY_SLUG = new Map(PAIRS.map((p) => [p.slug, p]));
-
-export function findPair(asset: string, currency: string): Pair | undefined {
-  return BY_SLUG.get(`${asset.toLowerCase()}/${currency.toLowerCase()}`);
-}
-
-/** Other pairs on the same currency — the useful sideways link. */
-export function siblingsByCurrency(pair: Pair): Pair[] {
-  return PAIRS.filter((p) => p.currency === pair.currency && p.asset !== pair.asset);
-}
-
 /**
- * The same asset in nearby currencies. Ranked by advertisement count rather
- * than alphabetically, so the suggestions are markets someone can actually
- * trade in.
+ * `("usdt", "kes")` to a canonical pair, or `null` if the URL is not one.
+ *
+ * The asset is checked against a closed list and the currency only for shape.
+ * That asymmetry is deliberate: the asset set is ours and finite, while the
+ * currencies are whatever an oracle chooses to publish — validating those
+ * against a table here would 404 a pair the network genuinely prices the
+ * moment somebody adds a corridor this app has not heard of.
+ *
+ * The asset check is what keeps `/[asset]/[currency]` from swallowing junk:
+ * two arbitrary path segments fail it and 404 rather than rendering a pair
+ * page about nothing.
  */
-export function siblingsByAsset(pair: Pair, limit = 8): Pair[] {
-  return PAIRS.filter((p) => p.asset === pair.asset && p.currency !== pair.currency)
-    .sort((a, b) => b.ads - a.ads)
-    .slice(0, limit);
+export function normalisePair(asset: string, currency: string): PairSlug | null {
+  const upperAsset = asset.toUpperCase();
+  const upperCurrency = currency.toUpperCase();
+  if (!PAIR_ASSETS.includes(upperAsset as StablecoinAsset)) return null;
+  if (!/^[A-Z]{3,4}$/.test(upperCurrency)) return null;
+  return {
+    asset: upperAsset as StablecoinAsset,
+    currency: upperCurrency,
+    slug: `${upperAsset.toLowerCase()}/${upperCurrency.toLowerCase()}`,
+  };
+}
+
+/** Countries where this is the primary currency — a fact about the world. */
+export function countriesUsing(currency: string): string[] {
+  return COUNTRIES.filter((country) => country.currencyCode === currency).map(
+    (country) => country.name,
+  );
 }

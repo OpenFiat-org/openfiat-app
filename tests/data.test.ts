@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { ADS, ALL_ADS, GENERATED_ADS, MARKETS, MY_ADS, ORACLE_MID, adPrice, adPriceIn, fxPerUsd, paymentMethodsForCurrency } from "@/lib/data/ads";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ADS, ALL_ADS, GENERATED_ADS, MARKETS, MY_ADS, adPrice, adPriceIn, fxPerUsd, paymentMethodsForCurrency } from "@/lib/data/ads";
 import {
   COUNTRIES,
   COUNTRIES_BY_SLUG,
@@ -20,7 +20,7 @@ import qr from "qrcode-generator";
 import { pseudoAddress } from "@/lib/format";
 import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
 import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
-import { PAIRS, findPair } from "@/lib/pairs";
+import { normalisePair } from "@/lib/pairs";
 import { compositeScore } from "@/lib/reputation";
 import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
 
@@ -231,10 +231,13 @@ describe("advertisements", () => {
     }
   });
 
-  it("every floating pair has an oracle mid and a positive effective price", () => {
+  // `ORACLE_MID` is no longer exported — it is internal to this fixture's own
+  // pricing, and reading it from anywhere user-facing is what put fifteen
+  // invented rates on the pair landing pages. The property worth checking is
+  // the one that was ever visible: that every ad prices to something.
+  it("every floating pair has a positive effective price", () => {
     for (const ad of ALL_ADS) {
-      expect(ORACLE_MID[`${ad.asset}/${ad.fiatCurrency}`]).toBeDefined();
-      expect(adPrice(ad)).toBeGreaterThan(0);
+      expect(adPrice(ad), ad.id).toBeGreaterThan(0);
     }
   });
 
@@ -459,53 +462,73 @@ describe("protocol events", () => {
 });
 
 describe("pair landing pages", () => {
-  it("only generates pairs that have a market behind them", () => {
-    // Every asset against every currency would be a thousand-odd mostly-empty
-    // pages, which dilutes the ones that rank and teaches a crawler the site is
-    // thin. A pair earns a page by having advertisements.
-    expect(PAIRS.length).toBeGreaterThan(0);
-    for (const pair of PAIRS) {
-      expect(pair.ads, pair.slug).toBeGreaterThan(0);
-      expect(pair.rate, pair.slug).toBeGreaterThan(0);
-      expect(pair.methods.length, pair.slug).toBeGreaterThan(0);
-    }
-  });
-
-  it("covers the pairs people actually search for", () => {
-    for (const slug of ["usdt/kes", "usdc/kes", "usdt/ngn", "usdt/inr", "usdt/php"]) {
+  /*
+   * `PAIRS` — a constant crossing a markets fixture with fifteen hand-written
+   * exchange rates — used to decide which pairs existed, and the tests here
+   * asserted properties of it. Both are gone: which pairs are priced is a
+   * question only an oracle answers, and on devnet a publish lasts three
+   * hours, so nothing fixed at build time can be right about it. See
+   * `tests/live-oracle.test.ts` for the rate rules, and `lib/live-oracle.ts`
+   * for why the set is read rather than declared.
+   *
+   * What remains testable here is URL parsing, which genuinely is static.
+   */
+  it("accepts the pairs people actually search for", () => {
+    for (const slug of ["usdt/kes", "usdc/kes", "usdt/ngn", "usdc/ngn"]) {
       const [asset, currency] = slug.split("/");
-      expect(findPair(asset, currency), slug).toBeDefined();
+      expect(normalisePair(asset!, currency!)?.slug, slug).toBe(slug);
     }
   });
 
-  it("rejects a pair with no market rather than rendering an empty page", () => {
-    expect(findPair("usdt", "zzz")).toBeUndefined();
-    expect(findPair("nope", "kes")).toBeUndefined();
+  it("canonicalises case so one pair has one page", () => {
+    expect(normalisePair("USDT", "KES")?.slug).toBe("usdt/kes");
+    expect(normalisePair("Usdt", "Kes")?.slug).toBe("usdt/kes");
   });
 
-  it("has slugs that round-trip through the lookup", () => {
-    for (const pair of PAIRS) {
-      const [asset, currency] = pair.slug.split("/");
-      expect(findPair(asset, currency)?.slug, pair.slug).toBe(pair.slug);
-    }
+  /*
+   * `/[asset]/[currency]` sits at the root, so it would otherwise swallow any
+   * two-segment URL and render a pair page about nothing. The asset check is
+   * what stops that — and it is the asset that is checked against a closed
+   * list, not the currency, because the currencies are whatever an oracle
+   * chooses to publish.
+   */
+  it("rejects a URL that is not a pair rather than rendering an empty page", () => {
+    expect(normalisePair("nope", "kes")).toBeNull();
+    expect(normalisePair("some", "thing")).toBeNull();
+    expect(normalisePair("usdt", "toolongcode")).toBeNull();
   });
 
-  it("is listed in the sitemap", async () => {
-    const { default: sitemap } = await import("@/app/sitemap");
-    const listed = new Set(sitemap().map((e) => new URL(e.url).pathname));
-    for (const pair of PAIRS) {
-      expect(listed.has(`/${pair.slug}`), pair.slug).toBe(true);
-    }
+  /*
+   * A currency this app has never heard of must still resolve: an oracle can
+   * start publishing a corridor without anyone editing a table here, and
+   * 404ing it would make the app's own list the limit of the network.
+   */
+  it("accepts a currency it has no country data for", () => {
+    expect(normalisePair("usdt", "xaf")?.slug).toBe("usdt/xaf");
   });
 });
 
 describe("sitemap coverage", () => {
+  /*
+   * Pair routes are read from a node's oracle index now. Stubbing the call to
+   * fail keeps this suite offline and deterministic — `fetchPricedPairs`
+   * answers with an empty list rather than throwing, so the hand-written and
+   * country-derived halves of the sitemap, which is what these tests are
+   * about, are unaffected.
+   */
+  beforeEach(() => {
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("lists every static page route", async () => {
     // The hand-written half of the sitemap is the part that drifts: four routes
     // were live and unlisted before this test existed.
     const { default: sitemap } = await import("@/app/sitemap");
     const listed = new Set(
-      sitemap().map((e) => new URL(e.url).pathname.replace(/\/$/, "") || "/"),
+      (await sitemap()).map((e) => new URL(e.url).pathname.replace(/\/$/, "") || "/"),
     );
     const staticRoutes = [
       "/",
@@ -542,7 +565,7 @@ describe("sitemap coverage", () => {
 
   it("lists every country, and every extra currency it trades in", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
-    const listed = new Set(sitemap().map((e) => new URL(e.url).pathname));
+    const listed = new Set((await sitemap()).map((e) => new URL(e.url).pathname));
     for (const c of COUNTRIES) {
       expect(listed.has(`/country/${c.slug}`), c.slug).toBe(true);
       for (const alt of c.altCurrencies ?? []) {
@@ -553,7 +576,7 @@ describe("sitemap coverage", () => {
 
   it("has no duplicate entries", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
-    const urls = sitemap().map((e) => e.url);
+    const urls = (await sitemap()).map((e) => e.url);
     expect(new Set(urls).size).toBe(urls.length);
   });
 });

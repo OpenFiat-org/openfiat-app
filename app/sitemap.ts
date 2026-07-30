@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
 import { CURRENT_USER, MERCHANTS } from "@/lib/data/merchants";
-import { PAIRS } from "@/lib/pairs";
+import { fetchPricedPairs } from "@/lib/live-oracle";
 
 const BASE = "https://app.openfiat.network";
 const LAST_UPDATED = new Date("2026-07-28");
@@ -24,7 +24,7 @@ type Frequency = "daily" | "weekly" | "monthly";
  * they are empty without a connected wallet, so a searcher landing on one learns
  * nothing.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entry = (path: string, priority: number, changeFrequency: Frequency) => ({
     url: `${BASE}${path}`,
     lastModified: LAST_UPDATED,
@@ -84,8 +84,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * Pair pages, ranked with the country markets. "convert USDT to KES" and "buy
    * USDT in Kenya" are the same intent expressed two ways, and both deserve to
    * be found.
+   *
+   * Read from the oracle rather than from a list. These used to come from
+   * `PAIRS`, a constant crossing a markets fixture with fifteen hand-written
+   * rates, so this sitemap submitted markets to search engines on the strength
+   * of a table somebody typed — the same mistake the 19 invented provider
+   * routes below were removed for, and harder to notice because the pairs
+   * themselves sound plausible.
+   *
+   * Only pairs with a current median are listed. A lapsed pair keeps its page,
+   * which says the feed has lapsed, but pointing a crawler at it advertises a
+   * market that cannot presently be quoted. And a node that cannot be reached
+   * yields none: a sitemap missing a few routes recovers on the next build,
+   * whereas one asserting routes nobody verified does not.
    */
-  const pairRoutes = PAIRS.map((pair) => entry(`/${pair.slug}`, 0.9, "daily"));
+  const pairRoutes = (await fetchPricedPairs()).map((pair) =>
+    entry(`/${pair.slug}`, 0.9, "daily"),
+  );
 
   const merchantRoutes = [...MERCHANTS, CURRENT_USER].map((m) =>
     entry(`/merchants/${m.id}`, 0.6, "daily"),

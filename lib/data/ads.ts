@@ -11,8 +11,27 @@ import { MERCHANTS } from "@/lib/data/merchants";
 
 // ── Oracle mids ──────────────────────────────────────────────────────────────
 
-/** Static oracle mid prices per asset/fiat pair (simulated Oracle Provider feed). */
-export const ORACLE_MID: Partial<Record<string, number>> = {
+/**
+ * Hand-written mid prices, internal to this fixture's own pricing.
+ *
+ * # Not the oracle. Do not read this from a page.
+ *
+ * The name says "oracle" and the values look like rates, which is how it
+ * ended up as the headline number on every pair landing page, in their meta
+ * descriptions, and printed on the OpenGraph cards that carried it into other
+ * people's timelines. Fifteen numbers somebody typed, published as this
+ * network's prices.
+ *
+ * The real thing is `lib/live-oracle.ts`, which reads OFS-7000 records from a
+ * node and — unlike a table — can say that a feed has lapsed or that nobody
+ * prices a pair at all. Anything user-facing wants that.
+ *
+ * This survives only because `adPrice`/`adPriceIn` below need a mid to price
+ * the simulated floating ads that `/merchants/[id]` and `/country/*` still
+ * render. It goes when those fixtures go, and it should not acquire any new
+ * reader before then.
+ */
+const ORACLE_MID: Partial<Record<string, number>> = {
   "USDT/KES": 131.4,
   "USDC/KES": 131.1,
   "USD1/KES": 131.2,
