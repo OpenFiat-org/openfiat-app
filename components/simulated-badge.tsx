@@ -32,14 +32,35 @@ const LIVE_ROUTE_PREFIXES = ["/staking", "/governance", "/orders", "/disputes"];
  * `/` (the landing page) is the P2P exchange itself and nothing else — see
  * `app/page.tsx` — so it reads the real order book on every load too.
  */
-const LIVE_ROUTES = ["/ads", "/"];
+const LIVE_ROUTES = [
+  "/ads",
+  "/",
+  // Cut over in this pass: both read the real cluster and probe each node
+  // directly, replacing a fixture that reported 128 nodes and a fabricated
+  // block height.
+  "/explorer",
+  "/providers",
+  "/network",
+  // The merchant name here is a real signed identity claim; the rest of the
+  // page is genuinely local preference, which is not the same as simulated.
+  "/settings",
+  "/faucet",
+];
 
 /**
- * Routes that are live only once the user has selected a custom access node.
- * Matched exactly, not by prefix: only the index routes were cut over, so
- * `/providers/[id]` and `/explorer/address/[address]` still read fixtures.
+ * Routes that were live only once the user had selected a custom access
+ * node. Now empty, and kept as a named concept rather than deleted because
+ * the reason it emptied is worth stating: the built-in node list used to be
+ * a fixture of invented hosts, so only a hand-typed node could produce real
+ * data. The picker lists the real cluster now, so every selection is a real
+ * endpoint and the distinction has no meaning.
+ *
+ * Note these are still matched exactly, not by prefix: `/providers/[id]` and
+ * `/explorer/address/[address]` continue to read fixtures, so claiming the
+ * whole subtree is live would be the overstatement this badge exists to
+ * prevent.
  */
-const NODE_DEPENDENT_ROUTES = ["/explorer", "/providers"];
+const NODE_DEPENDENT_ROUTES: string[] = [];
 
 function isLive(pathname: string, customNode: boolean): boolean {
   if (LIVE_ROUTE_PREFIXES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {

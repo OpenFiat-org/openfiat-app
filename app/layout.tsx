@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/top-nav";
+import { AppWalletProvider } from "@/components/wallet/wallet-provider";
 import { Footer } from "@/components/footer";
 import { SimulatedBadge } from "@/components/simulated-badge";
 
@@ -49,10 +50,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen antialiased">
-        <TopNav />
-        <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
-        <Footer />
-        <SimulatedBadge />
+        {/* Wraps everything: the nav's connect button and every signing
+            surface below it read the same adapter state. */}
+        <AppWalletProvider>
+          <TopNav />
+          <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+          <Footer />
+          <SimulatedBadge />
+        </AppWalletProvider>
       </body>
     </html>
   );
