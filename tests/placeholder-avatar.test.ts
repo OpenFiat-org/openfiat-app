@@ -3,9 +3,23 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { BRAND_HEX, placeholderAvatarUri } from "@/lib/placeholder-avatar";
+import { BRAND_HEX, CHASSIS_HEX, placeholderAvatarUri } from "@/lib/placeholder-avatar";
 
 const WALLET = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+
+/** WCAG 2.1 relative luminance of a bare six-digit hex. */
+function luminance(hex: string): number {
+  const channel = (offset: number) => {
+    const srgb = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+}
+
+function contrast(a: string, b: string): number {
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter! + 0.05) / (darker! + 0.05);
+}
 
 describe("the placeholder avatar", () => {
   /*
@@ -69,6 +83,43 @@ describe("the placeholder avatar", () => {
     expect(BRAND_HEX.brand).toBe(declared("brand"));
     expect(BRAND_HEX.brandHover).toBe(declared("brand-hover"));
     expect(BRAND_HEX.brandTeal).toBe(declared("brand-teal"));
+  });
+
+  /*
+   * The defect behind #164, as an assertion.
+   *
+   * The chassis used to be `--color-brand-hover` painted onto a background
+   * starting at `--color-brand`. Both are brand blues and the pair came to
+   * 1.5:1, so the robot's silhouette had nothing to separate it from its own
+   * disc, and at the 20–32px a table row gives it there was nothing left to
+   * see. Every colour here is still the brand's, so the same mistake is easy
+   * to make again by "simplifying" the chassis back to a palette constant —
+   * which is why the floor is checked rather than the hex.
+   *
+   * 2.5 rather than a WCAG text threshold: this is a drawing, not type, and
+   * the failure being guarded against is a silhouette that vanishes, not one
+   * that is tiring to read.
+   */
+  it("draws the robot in a colour that separates it from its own background", () => {
+    expect(contrast(CHASSIS_HEX, BRAND_HEX.brand)).toBeGreaterThan(2.5);
+    expect(decodeURIComponent(placeholderAvatarUri(WALLET))).toContain(`#${CHASSIS_HEX}`);
+  });
+
+  /*
+   * The chassis is derived from the brand rather than picked, so a palette
+   * change carries into the avatar instead of leaving it behind. Checking the
+   * relationship rather than the value keeps `app/globals.css` the only place
+   * a brand colour is chosen — restating the mix here would just be a second
+   * copy of the implementation, and a second thing to update.
+   */
+  it("tints the chassis from the brand rather than introducing a colour", () => {
+    for (const offset of [0, 2, 4]) {
+      const source = Number.parseInt(BRAND_HEX.brandHover.slice(offset, offset + 2), 16);
+      const tinted = Number.parseInt(CHASSIS_HEX.slice(offset, offset + 2), 16);
+      expect(tinted).toBeGreaterThanOrEqual(source);
+      expect(tinted).toBeLessThanOrEqual(0xff);
+    }
+    expect(Object.values(BRAND_HEX)).not.toContain(CHASSIS_HEX);
   });
 
   /*

@@ -12,14 +12,24 @@ import { placeholderAvatarUri } from "@/lib/placeholder-avatar";
  * fetched. See `lib/placeholder-avatar.ts` for why it is generated locally
  * rather than requested from `api.dicebear.com`.
  *
- * # Why the placeholder is deliberately muted
+ * # Why the placeholder is marked, and how far that can go
  *
  * A generated robot at full strength reads as a chosen logo, and a merchant
  * who has published nothing would appear to have picked one. So a placeholder
- * is dimmed and ringed in a dashed border, both of which are absent on a real
- * avatar; the alt text and tooltip say the same thing for anyone not going by
- * appearance. The grey circle this replaces was honest about being empty, and
- * that honesty is the part worth keeping.
+ * is ringed in a dashed border and slightly dimmed, neither of which appears
+ * on a real avatar; the alt text and tooltip say the same thing for anyone
+ * not going by appearance. The grey circle this replaces was honest about
+ * being empty, and that honesty is the part worth keeping.
+ *
+ * The dimming used to be `opacity-60`, and that was too far. Composited over
+ * this app's near-black page it left the whole avatar at 2.3:1 — and it did
+ * that on top of a palette that had no contrast to spare (see `CHASSIS_HEX`
+ * in `lib/placeholder-avatar.ts`), so in a dense table row the robot was a
+ * smudge. An avatar nobody can read is worse than one that reads as chosen,
+ * and the dashed ring carries the "not a chosen picture" signal on its own —
+ * it is a shape that never appears around a published avatar, so it does not
+ * need the dimming's help to be noticed. What is left is enough to feel a
+ * difference when the two are side by side, and not enough to hide anything.
  */
 export function WalletAvatar({
   seed,
@@ -66,7 +76,7 @@ export function WalletAvatar({
       alt={`Generated placeholder for ${label} — no avatar published`}
       title={`${label} has not published an avatar. This robot is generated from the key and is not a picture they chose.`}
       {...dimensions}
-      className={`shrink-0 rounded-full border border-dashed border-white/20 opacity-60 ${className}`}
+      className={`shrink-0 rounded-full border border-dashed border-white/35 opacity-90 ${className}`}
     />
   );
 }
