@@ -625,6 +625,34 @@ describe("access nodes", () => {
     expect(selection.id).toBe(defaultNode().id);
     expect(selection.custom).toBe(false);
   });
+
+  /*
+   * Several consoles used to gate themselves on `selection.custom`, treating
+   * every non-custom selection as a simulated one that could not be queried —
+   * which hid the counterparties, earnings and arbitration pages behind "pick
+   * a real access node" for everyone who never opened the picker. The state
+   * they were testing for cannot occur: whatever is stored, resolution yields
+   * a selection whose `url` is somewhere a request can actually go.
+   *
+   * `id` is emphatically not that field. For a custom node it is
+   * `custom:<host>`, so the one path those consoles did allow built
+   * `http://custom:host` and could not have worked either.
+   */
+  it("resolves every stored value to a requestable url", () => {
+    const stored = [
+      null,
+      "",
+      "devnet-public",
+      "node-ke-full-01",
+      "custom:my.node.example:9000",
+      "custom:https://node.example",
+    ];
+    for (const raw of stored) {
+      const selection = resolveNodeSelection(raw);
+      expect(selection.url, String(raw)).toMatch(/^https?:\/\/[^/]+/);
+      expect(selection.url, String(raw)).not.toContain("custom:");
+    }
+  });
 });
 
 /*

@@ -59,7 +59,7 @@ type Busy = { what: string } | null;
  */
 export function ArbitrationConsole() {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
-  const [endpoint, setEndpoint] = useState<string | null>(null);
+  const [endpoint, setEndpoint] = useState<string>(() => readNodeSelection().url);
   const [disputes, setDisputes] = useState<LiveDispute[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -76,17 +76,16 @@ export function ArbitrationConsole() {
   }, []);
 
   useEffect(() => {
-    const update = () => {
-      const selection = readNodeSelection();
-      setEndpoint(selection.custom ? `http://${selection.id}` : null);
-    };
+    // Every selection is a real endpoint now, so there is no "not a real
+    // node" case to gate on — and `url` is the field to read, not `id`,
+    // which is `custom:<host>` for a hand-typed node.
+    const update = () => setEndpoint(readNodeSelection().url);
     update();
     window.addEventListener(NODE_CHANGED_EVENT, update);
     return () => window.removeEventListener(NODE_CHANGED_EVENT, update);
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!endpoint) return;
     try {
       setDisputes(await fetchDisputes(endpoint));
       setError(null);
@@ -121,7 +120,6 @@ export function ArbitrationConsole() {
     const provider = currentSigner(wallet);
     if (!provider) throw new Error("Reconnect your wallet with a real extension to sign.");
     if (!publicKey || !peerId) throw new Error("No wallet connected.");
-    if (!endpoint) throw new Error("Pick a real access node first.");
     if (!selected) throw new Error("Select a case first.");
     return { provider, who: { publicKey, peerId }, endpoint, dispute: selected };
   }
@@ -169,17 +167,6 @@ export function ArbitrationConsole() {
         <p className="px-4 py-6 text-sm text-gray-400">
           Connect a wallet to work a case. The same key signs your rulings and identifies you to
           the network.
-        </p>
-      </Panel>
-    );
-  }
-
-  if (!endpoint) {
-    return (
-      <Panel title="Arbitration">
-        <p className="px-4 py-6 text-sm text-gray-400">
-          Pick a real access node in the footer. Cases come from a live node&apos;s dispute index,
-          so the simulated selection has nothing to show.
         </p>
       </Panel>
     );

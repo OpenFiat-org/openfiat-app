@@ -34,17 +34,6 @@ export function CounterpartiesConsole() {
     );
   }
 
-  if (status === "no-node") {
-    return (
-      <Panel title="People you trade with">
-        <p className="px-4 py-6 text-sm text-gray-400">
-          Pick a real access node in the footer. Your trading history is counted from settlements a
-          live node has replicated, so the simulated selection has nothing to answer with.
-        </p>
-      </Panel>
-    );
-  }
-
   const regulars = suggested(summaries);
 
   return (

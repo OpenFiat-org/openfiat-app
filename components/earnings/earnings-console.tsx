@@ -54,7 +54,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
  */
 export function EarningsConsole() {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
-  const [endpoint, setEndpoint] = useState<string | null>(null);
+  const [endpoint, setEndpoint] = useState<string>(() => readNodeSelection().url);
   const [serviceId, setServiceId] = useState("");
   const [result, setResult] = useState<EarningsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,10 +73,10 @@ export function EarningsConsole() {
   }, []);
 
   useEffect(() => {
-    const update = () => {
-      const selection = readNodeSelection();
-      setEndpoint(selection.custom ? `http://${selection.id}` : null);
-    };
+    // Every selection is a real endpoint now, so there is no "not a real
+    // node" case to gate on — and `url` is the field to read, not `id`,
+    // which is `custom:<host>` for a hand-typed node.
+    const update = () => setEndpoint(readNodeSelection().url);
     update();
     window.addEventListener(NODE_CHANGED_EVENT, update);
     return () => window.removeEventListener(NODE_CHANGED_EVENT, update);
@@ -84,7 +84,7 @@ export function EarningsConsole() {
 
   const read = useCallback(async () => {
     const provider = currentSigner(wallet);
-    if (!provider || !endpoint || !serviceId.trim()) return;
+    if (!provider || !serviceId.trim()) return;
     setBusy(true);
     setError(null);
     setResult(null);
@@ -129,17 +129,6 @@ export function EarningsConsole() {
         <p className="px-4 py-6 text-sm text-gray-400">
           Connect the wallet your service was registered with. There is no provider account to log
           into — the key that registered the service is the only thing that can read its statement.
-        </p>
-      </Panel>
-    );
-  }
-
-  if (!endpoint) {
-    return (
-      <Panel title="Provider earnings">
-        <p className="px-4 py-6 text-sm text-gray-400">
-          Pick a real access node in the footer. A statement is read from a live node&apos;s service
-          registry, so the simulated selection has nothing to answer with.
         </p>
       </Panel>
     );
