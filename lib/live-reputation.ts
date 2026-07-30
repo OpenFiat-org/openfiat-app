@@ -1,5 +1,6 @@
 import { Client } from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { walletParam } from "@/lib/wallet-param";
 
 /**
  * Reputation as the protocol actually records it.
@@ -100,6 +101,8 @@ export function toLiveReputation(raw: RawReputation): LiveReputation {
 /** Reads a wallet's reputation from the selected node. */
 export async function fetchReputation(wallet: string): Promise<LiveReputation> {
   const client = new Client({ endpoint: nodeUrl(), timeoutMs: 8_000 });
-  const raw = await client.call<{ wallet: string }, RawReputation>("getReputation", { wallet });
+  const raw = await client.call<{ wallet: string }, RawReputation>("getReputation", {
+    wallet: walletParam(wallet),
+  });
   return toLiveReputation(raw);
 }
