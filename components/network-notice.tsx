@@ -64,7 +64,13 @@ const FIXTURE_ROUTES = [
   "/ads/new",
 ];
 
-function rendersFixtures(pathname: string): boolean {
+/**
+ * Exported for `tests/network-notice.test.ts`. The set of routes this warns
+ * on is the whole behaviour, and the previous version's stalest entry —
+ * `"/providers/[id]"`, a route pattern that `usePathname` never produces —
+ * went unnoticed for exactly as long as nothing asserted on the list.
+ */
+export function rendersFixtures(pathname: string): boolean {
   if (FIXTURE_ROUTES.includes(pathname)) return true;
   return FIXTURE_ROUTE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -72,28 +78,30 @@ function rendersFixtures(pathname: string): boolean {
 }
 
 /**
- * The persistent floating marker, bottom-left: which network you are on, and
- * whether this particular page is reading it.
+ * A floating warning, bottom-left, on the pages that still render fixtures.
  *
- * Distinct from `components/network-badge.tsx`, which is the compact pill in
- * the top bar. Both now read `NETWORK_LABEL`, so they cannot disagree; this
- * one is the one that also carries the per-page caveat.
+ * # It renders on those pages and nowhere else
  *
- * # Why the network is the headline
+ * An intermediate version of this named the network on every route. That was
+ * wrong in a quiet way: `components/network-badge.tsx` already carries a
+ * persistent "Devnet" pill in a sticky top bar, so the two said the same word
+ * on every page — and a warning a reader meets everywhere is furniture they
+ * stop seeing. That is not a hypothetical cost. It is precisely how
+ * `/providers/[id]` sat labelled "Sample data" while serving live registry
+ * records without anyone noticing.
  *
- * The label used to read "Sample data" and nothing else, which answered a
- * question almost nobody asks while leaving the one that matters unstated.
- * This interface is visually indistinguishable from a production exchange;
- * the thing a visitor most needs to know is that the balances, escrows and
- * stakes on screen are on a test cluster and represent no value. So the
- * badge names the network on every route, and adds the sample-data qualifier
- * only where it is true.
+ * So the division of labour is: the top bar answers "which network", always,
+ * because it is always true and always relevant. This answers "is this
+ * particular page real", and stays out of the way when the answer is yes —
+ * which is now most of the app. Something that appears rarely is something
+ * that gets read.
  *
- * `NETWORK_LABEL` is derived from the Solana RPC URL the app actually reads
- * from — see `lib/node-endpoint.ts`. It is not a constant that can be left
- * saying "Devnet" after a deployment has been pointed somewhere else, and a
- * cluster it cannot identify reads "Unknown network" rather than being
- * assumed harmless.
+ * It still names the network when it does appear, from the same
+ * `NETWORK_LABEL` the top bar uses, so the two cannot disagree. That constant
+ * is derived from the Solana RPC URL the app actually reads from — see
+ * `lib/node-endpoint.ts` — rather than being a string that can be left saying
+ * "Devnet" after a deployment has been pointed elsewhere, and a cluster it
+ * cannot identify reads "Unknown network" instead of being assumed harmless.
  */
 export function NetworkNotice() {
   const pathname = usePathname();
@@ -111,14 +119,14 @@ export function NetworkNotice() {
     return () => window.removeEventListener(NODE_CHANGED_EVENT, sync);
   }, []);
 
-  const fixtures = rendersFixtures(pathname);
+  // Nothing to warn about: the top bar is already saying which network this
+  // is, and repeating it here would only teach people to ignore this corner.
+  if (!rendersFixtures(pathname)) return null;
 
   const title = [
+    "This page renders built-in sample data rather than records read from a node or the chain.",
     `${NETWORK_LABEL} — on-chain reads from ${SOLANA_CLUSTER}${node ? `, protocol node ${node}` : ""}.`,
     TOKENS_ARE_WORTHLESS ? "Test tokens only; they have no value." : null,
-    fixtures
-      ? "This page renders built-in sample data rather than records read from a node or the chain."
-      : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -129,8 +137,8 @@ export function NetworkNotice() {
       className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 backdrop-blur"
     >
       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-      {NETWORK_LABEL}
-      {fixtures && <span className="text-amber-300/70">· sample data</span>}
+      Sample data
+      <span className="text-amber-300/70">· {NETWORK_LABEL}</span>
     </span>
   );
 }
