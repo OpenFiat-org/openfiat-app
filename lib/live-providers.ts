@@ -12,6 +12,13 @@ import type { ServiceType } from "@/lib/types";
 export interface DirectoryRow {
   id: string;
   name: string;
+  /**
+   * The provider's PeerId as lowercase hex — the only identity the registry
+   * has for whoever registered this service, and the seed the placeholder
+   * avatar is drawn from. Hex specifically, and always the same encoding,
+   * because a different spelling of the same key draws a different robot.
+   */
+  provider: string;
   type: ServiceType;
   region: string;
   capabilities: string[];
@@ -44,10 +51,17 @@ function serviceTypeLabel(type: LiveServiceType): ServiceType {
   return LIVE_TYPE_LABEL[`${category}:${variant}`] ?? "Public API Node";
 }
 
+/** A `PeerId` arrives as raw bytes over the wire; hex is what this app shows. */
+function hexPeer(peer: number[] | string): string {
+  if (typeof peer === "string") return peer.toLowerCase();
+  return peer.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 function toRow(record: ServiceRecord): DirectoryRow {
   return {
     id: record.service_id,
     name: record.service_id,
+    provider: hexPeer(record.provider),
     type: serviceTypeLabel(record.service_type),
     region: record.region ?? "—",
     capabilities: record.capabilities,

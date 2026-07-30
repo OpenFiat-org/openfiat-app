@@ -6,6 +6,7 @@ import type { ServiceRecord } from "@openfiat/sdk";
 
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
+import { WalletAvatar } from "@/components/wallet-avatar";
 import { TYPE_COLORS } from "@/lib/data/providers";
 import { formatPricing } from "@/lib/earnings";
 import { fetchProviderRecord, labelForServiceType } from "@/lib/live-providers";
@@ -150,7 +151,21 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
 
       <Panel title="Identity and health">
         <div className="divide-y divide-white/5 px-4">
-          <Row label="Provider" value={hexPeer(record.provider)} mono />
+          <Row
+            label="Provider"
+            value={
+              <span className="inline-flex items-center gap-2">
+                {/* Same seed as the directory row this page was reached from,
+                    so the operator looks the same in both places. */}
+                <WalletAvatar
+                  seed={hexPeer(record.provider)}
+                  label={record.service_id}
+                  size={24}
+                />
+                <span className="font-mono text-xs">{hexPeer(record.provider)}</span>
+              </span>
+            }
+          />
           <Row label="Registered" value={formatMoment(record.registered_at)} />
           <Row
             label="Last health update"

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
-import { peerIdBytesForAddress } from "@/lib/peer-id";
+import { hexForPeerId, peerIdBytesForAddress } from "@/lib/peer-id";
+import { PeerIdentity } from "@/components/peer-identity";
 import type { Dispute } from "@/lib/live-disputes";
 import { formatDateMs, shortSig } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
@@ -25,8 +26,6 @@ const RESOLUTION_LABEL: Record<NonNullable<Dispute["resolution"]>, string> = {
   Invalid: "Invalid dispute",
 };
 
-const toHex = (bytes: number[]) => bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
-const shortPeer = (bytes: number[]) => `…${toHex(bytes).slice(-6)}`;
 const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
@@ -61,7 +60,7 @@ export function DisputeCaseView({ dispute }: { dispute: Dispute }) {
     return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
   }, []);
 
-  const label = (peer: number[], meFlag: boolean) => (meFlag ? "You" : shortPeer(peer));
+  const label = (peer: number[], meFlag: boolean) => <PeerIdentity peer={peer} isYou={meFlag} />;
   const iAmBuyer = myPeerId ? sameBytes(dispute.buyer, myPeerId) : false;
   const iAmSeller = myPeerId ? sameBytes(dispute.seller, myPeerId) : false;
   const iAmOpener = myPeerId ? sameBytes(dispute.opener, myPeerId) : false;
@@ -107,12 +106,17 @@ export function DisputeCaseView({ dispute }: { dispute: Dispute }) {
         ) : (
           <ul className="divide-y divide-white/5">
             {dispute.arbitrators.map((a) => {
-              const hex = toHex(a);
+              const hex = hexForPeerId(a);
               const committed = dispute.commitments.some((c) => sameBytes(c.arbitrator, a));
               const reveal = dispute.reveals.find((r) => sameBytes(r.arbitrator, a));
               return (
                 <li key={hex} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <span className="font-mono text-xs text-gray-400">…{hex.slice(-6)}</span>
+                  {/* An arbitrator is only ever a PeerId — they are chosen by
+                      stake, not by identity, and nothing names them. A face
+                      derived from that id is still just the id. */}
+                  <span className="text-xs text-gray-400">
+                    <PeerIdentity peer={a} size={20} />
+                  </span>
                   <span className="ml-auto text-xs text-gray-500">
                     {reveal ? (
                       <span className="text-brand-teal">{reveal.vote}</span>
@@ -175,7 +179,7 @@ export function DisputeCaseView({ dispute }: { dispute: Dispute }) {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
       <span className="shrink-0 text-gray-500">{label}</span>

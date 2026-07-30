@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
-import { peerIdBytesForAddress } from "@/lib/peer-id";
+import { peerIdBytesForAddress, shortPeerHex } from "@/lib/peer-id";
+import { PeerIdentity } from "@/components/peer-identity";
 import { deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
 import type { LiveAd } from "@/lib/live-advertisements";
 import type { SettlementStatus } from "@/lib/types";
@@ -17,8 +18,6 @@ import { StatusPill } from "@/components/status-pill";
 
 const TERMINAL = new Set<SettlementStatus>(["Completed", "Cancelled", "Rejected", "Disputed"]);
 
-const toHex = (bytes: number[]) => bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
-const shortPeer = (bytes: number[]) => `…${toHex(bytes).slice(-6)}`;
 const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
@@ -76,7 +75,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
   // failing that this just picks a side for the stepper's copy to read.
   const buy = settlement ? iAmBuyer : ad ? ad.direction === "Sell" : true;
 
-  const label = (peer: number[], meFlag: boolean) => (meFlag ? "You" : shortPeer(peer));
+  const label = (peer: number[], meFlag: boolean) => <PeerIdentity peer={peer} isYou={meFlag} />;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
@@ -98,7 +97,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
               <SettlementSteps
                 status={settlement ? statusLabel : "Escrow Locked"}
                 counterpartyName={
-                  settlement ? shortPeer(iAmBuyer ? settlement.seller : settlement.buyer) : "the merchant"
+                  settlement ? shortPeerHex(iAmBuyer ? settlement.seller : settlement.buyer) : "the merchant"
                 }
                 buy={buy}
                 terminal={terminal}
@@ -193,7 +192,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
   );
 }
 
-function Row({ label, value, mono, copy }: { label: string; value: string; mono?: boolean; copy?: string }) {
+function Row({ label, value, mono, copy }: { label: string; value: React.ReactNode; mono?: boolean; copy?: string }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
       <span className="shrink-0 text-gray-500">{label}</span>

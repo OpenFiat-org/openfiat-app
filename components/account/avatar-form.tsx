@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import bs58 from "bs58";
 
 import { Panel } from "@/components/panel";
+import { WalletAvatar } from "@/components/wallet-avatar";
 import { fetchAvatar, publishAvatar, type AvatarClaim } from "@/lib/avatar";
 import { ACCEPTED_IMAGE_TYPES, MAX_AVATAR_BYTES } from "@/lib/ipfs/gateway";
 import {
@@ -138,7 +139,7 @@ export function AvatarForm() {
         </p>
 
         <div className="flex items-center gap-4">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/5">
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full">
             {previewUrl || current ? (
               /* A plain <img>, not next/image: next/image would route the
                  fetch through this app's own server to resize it, making
@@ -147,12 +148,17 @@ export function AvatarForm() {
               <img
                 src={previewUrl ?? current!.url}
                 alt={previewUrl ? "The image you selected" : "Your current avatar"}
-                className="h-full w-full object-cover"
+                className="h-full w-full rounded-full border border-white/10 object-cover"
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-gray-600">
-                {loading ? "…" : "none"}
+            ) : loading ? (
+              <div className="flex h-full w-full items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-gray-600">
+                …
               </div>
+            ) : (
+              /* The robot the rest of the app already shows for this key, so
+                 the "before" here is what a counterparty is actually seeing
+                 rather than a grey circle unique to this form. */
+              <WalletAvatar seed={wallet.address} label="your wallet" size={80} />
             )}
           </div>
 
@@ -168,6 +174,13 @@ export function AvatarForm() {
             <p className="mt-1.5 text-[11px] text-gray-600">
               PNG, JPEG or WebP, up to {Math.round(MAX_AVATAR_BYTES / 1024)} KB.
             </p>
+            {!current && !previewUrl && !loading && (
+              <p className="mt-1.5 text-[11px] text-gray-600">
+                Until you publish one, your wallet shows the robot on the left. It is drawn from
+                your key on each viewer&apos;s own device — nothing is uploaded and no request is
+                made for it — and it is drawn as a placeholder rather than as a picture you chose.
+              </p>
+            )}
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
 import { StatusPill } from "@/components/status-pill";
+import { WalletAvatar } from "@/components/wallet-avatar";
 
 const FILTERS: Array<{ key: ServiceType | "All"; label: string }> = [
   { key: "All", label: "All" },
@@ -166,6 +167,10 @@ export function ProvidersDirectory() {
             const color = TYPE_COLORS[p.type];
             const identity = (
               <span className="flex items-center gap-2.5">
+                {/* Seeded by the provider's PeerId, not the service id: one
+                    operator may register several services, and they should be
+                    recognisable as the same operator across all of them. */}
+                <WalletAvatar seed={p.provider} label={p.name} size={32} />
                 <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
                 <span>
                   <span className="block font-medium text-white">{p.name}</span>

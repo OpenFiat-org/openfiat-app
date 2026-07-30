@@ -19,6 +19,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.4.3",
+    "@dicebear/core": "^9.4.3",
     "@openfiat/sdk": "github:OpenFiat-org/openfiat-sdks#f0c4000014d92654c1ffb307fe88038f7b854585&path:typescript",
     "@solana/spl-token": "^0.4.15",
     "@solana/wallet-adapter-base": "^0.9.27",
@@ -29,7 +31,8 @@
     "next": "^16.2.12",
     "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

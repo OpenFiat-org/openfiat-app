@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StablecoinAsset, TradeDirection } from "@/lib/types";
 import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { WalletAvatar } from "@/components/wallet-avatar";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
@@ -365,8 +366,14 @@ function AdRow({
     <>
     <Tr>
       <Td py="py-6">
-        <span className="font-mono text-sm text-gray-300" title={ad.merchantPeerId}>
-          Merchant …{ad.merchantShort}
+        {/* A merchant is a PeerId and nothing else — `LiveAd` carries no
+            name, and there is none to show unless they published a
+            MerchantName claim. The robot is drawn from that same id, so it
+            adds no information the row did not already state, but it makes
+            the same counterparty recognisable across the book. */}
+        <span className="flex items-center gap-2.5" title={ad.merchantPeerId}>
+          <WalletAvatar seed={ad.merchantPeerId} label={`Merchant …${ad.merchantShort}`} size={32} />
+          <span className="font-mono text-sm text-gray-300">Merchant …{ad.merchantShort}</span>
         </span>
       </Td>
       <Td right num py="py-6">

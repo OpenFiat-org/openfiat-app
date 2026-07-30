@@ -20,3 +20,19 @@ export function peerIdHexForAddress(address: string): string {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
+
+/**
+ * A `PeerId`'s bytes as lowercase hex.
+ *
+ * One canonical spelling matters more than it looks: the placeholder avatar
+ * is seeded from this string, so a component that formatted the same peer
+ * differently would draw a different robot for the same counterparty.
+ */
+export function hexForPeerId(bytes: number[]): string {
+  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** The tail of a peer id — what a person actually recognises in a list. */
+export function shortPeerHex(bytes: number[]): string {
+  return `\u2026${hexForPeerId(bytes).slice(-6)}`;
+}
