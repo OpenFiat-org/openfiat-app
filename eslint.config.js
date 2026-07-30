@@ -29,6 +29,10 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/**", ".next/**", "node_modules/**", "next-env.d.ts"],
+    // `.next*` rather than `.next`: the README's own verification build
+    // uses `BUILD_DIST_DIR=.next-verify` so it can run beside a `next dev`
+    // server, and linting that output buried the app's real findings under
+    // 15,000 errors from generated code.
+    ignores: ["dist/**", ".next*/**", "node_modules/**", "next-env.d.ts"],
   },
 );
