@@ -86,12 +86,33 @@ interface ProviderSpec {
  * (snapshots), an oracle speaks OFS-1500 and OFS-2600. Filling these with a
  * uniform list would make the field decorative.
  */
+/*
+ * Endpoints are `localhost`, not a plausible-looking public hostname.
+ *
+ * These used to be `*.devnet.openfiat.test`. `.test` is reserved by
+ * RFC 2606 and resolves for nobody, ever — so running this against a
+ * shared node did not seed a demo, it published five services that do not
+ * exist into a real signed registry, which then replicated to every node
+ * and was served to users as live infrastructure with a button offering
+ * to connect to one. That is worse than a fixture: it is genuine signed
+ * data whose contents are invented, and it cannot be deleted, only
+ * withdrawn by the key that made it.
+ *
+ * The registry now refuses reserved names outright
+ * (`openfiat_registry::registration`), so this cannot recur. `localhost`
+ * is deliberately still allowed — RFC 6761 reserves it to *mean* loopback,
+ * so on the dev machine this script is meant for, these addresses are as
+ * real as any other.
+ *
+ * If you point this at a shared node, you are registering your own laptop
+ * as a public service. Don't.
+ */
 const PROVIDERS: ProviderSpec[] = [
   {
     label: "snapshot-eu",
     serviceId: "devnet-snapshot-eu",
     serviceType: { Infrastructure: "SnapshotProvider" },
-    endpoints: ["https://snapshots.eu.devnet.openfiat.test"],
+    endpoints: ["http://localhost:7080"],
     region: "eu-west",
     capabilities: ["zstd", "incremental", "full-archival"],
   },
@@ -99,7 +120,7 @@ const PROVIDERS: ProviderSpec[] = [
     label: "public-api-us",
     serviceId: "devnet-public-api-us",
     serviceType: { Infrastructure: "PublicApiNode" },
-    endpoints: ["https://rpc.us.devnet.openfiat.test"],
+    endpoints: ["http://localhost:7081"],
     region: "us-east",
     capabilities: ["json-rpc", "websocket"],
   },
@@ -107,7 +128,7 @@ const PROVIDERS: ProviderSpec[] = [
     label: "fx-oracle",
     serviceId: "devnet-fx-oracle",
     serviceType: { MarketData: "FxOracle" },
-    endpoints: ["https://fx.devnet.openfiat.test"],
+    endpoints: ["http://localhost:7082"],
     region: "global",
     capabilities: ["USDC/KES", "USDC/NGN", "USDC/GHS"],
   },
@@ -115,7 +136,7 @@ const PROVIDERS: ProviderSpec[] = [
     label: "risk-intel",
     serviceId: "devnet-risk-intel",
     serviceType: { Security: "RiskIntelligenceProvider" },
-    endpoints: ["https://risk.devnet.openfiat.test"],
+    endpoints: ["http://localhost:7083"],
     region: "global",
     capabilities: ["wallet-screening", "sanctions"],
   },
@@ -123,7 +144,7 @@ const PROVIDERS: ProviderSpec[] = [
     label: "notify-telegram",
     serviceId: "devnet-notify-telegram",
     serviceType: { Notifications: "Telegram" },
-    endpoints: ["https://notify.devnet.openfiat.test"],
+    endpoints: ["http://localhost:7084"],
     region: "global",
     capabilities: ["telegram"],
   },
