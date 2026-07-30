@@ -8,6 +8,7 @@ import type { Dispute } from "@/lib/live-disputes";
 import { formatDateMs, shortSig } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { Panel } from "@/components/panel";
+import { TradeAttachments } from "@/components/orders/trade-attachments";
 import { StatusPill } from "@/components/status-pill";
 
 const STATUS_LABEL: Record<Dispute["status"], string> = {
@@ -86,6 +87,17 @@ export function DisputeCaseView({ dispute }: { dispute: Dispute }) {
           <Row label="Arbitrators required" value={String(dispute.required_arbitrators)} />
           <Row label="Filed" value={formatDateMs(dispute.opened_at)} />
           <Row label="Updated" value={formatDateMs(dispute.updated_at)} />
+        </div>
+      </Panel>
+
+      {/* Evidence, above the arbitrator list because it is what an
+          arbitrator has come to read. The panel resolves the settlement's
+          own parties on the node, so only the buyer's and seller's
+          attachments appear — anyone can publish a record naming this
+          settlement. */}
+      <Panel title="Evidence">
+        <div className="px-4 py-4">
+          <TradeAttachments settlementId={dispute.settlement_id} />
         </div>
       </Panel>
 

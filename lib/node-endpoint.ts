@@ -1,3 +1,4 @@
+import { nodeUrlFor } from "@/lib/node-scheme";
 /**
  * Where this interface actually talks to the protocol.
  *
@@ -151,7 +152,7 @@ export function nodeUrl(): string {
     const rest = raw.slice("custom:".length);
     // Accept a bare host:port as well as a full URL, since the picker has
     // always accepted the former.
-    return /^https?:\/\//.test(rest) ? rest : `http://${rest}`;
+    return nodeUrlFor(rest);
   }
   return knownNodes().find((node) => node.id === raw)?.url ?? DEFAULT_NODE_URL;
 }

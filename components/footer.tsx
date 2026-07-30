@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Client } from "@openfiat/sdk";
 
 import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
+import { nodeUrlFor, unreachableReason } from "@/lib/node-scheme";
 import {
   NODE_CHANGED_EVENT,
   connectableNodes,
@@ -159,10 +160,11 @@ function AccessNodeModal({
     }
     setError("");
     setChecking(true);
-    const ms = await measure(`http://${value}`);
+    const ms = await measure(nodeUrlFor(value));
     setChecking(false);
     if (ms === null) {
-      setError(`Could not reach an OpenFiat node at ${value}`);
+      // Not always the node's fault — see `lib/node-scheme.ts`.
+      setError(unreachableReason(value));
       return;
     }
     setError(`✓ reachable — ${ms} ms`);

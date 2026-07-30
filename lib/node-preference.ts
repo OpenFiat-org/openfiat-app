@@ -1,3 +1,4 @@
+import { nodeUrlFor } from "@/lib/node-scheme";
 import {
   NODE_URL_STORAGE_KEY,
   knownNodes,
@@ -92,7 +93,7 @@ export function resolveNodeSelection(raw: string | null): NodeSelection {
       return {
         id: raw,
         label: host,
-        url: host.startsWith("http") ? host : `http://${host}`,
+        url: nodeUrlFor(host),
         chainMode: null,
         latencyMs: null,
         custom: true,

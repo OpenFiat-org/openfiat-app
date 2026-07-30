@@ -12,6 +12,7 @@ import { CopyButton } from "@/components/copy-button";
 import { ReservationSteps } from "@/components/orders/reservation-steps";
 import { SettlementSteps } from "@/components/orders/settlement-steps";
 import { Panel } from "@/components/panel";
+import { TradeAttachments } from "@/components/orders/trade-attachments";
 import { StatusPill } from "@/components/status-pill";
 
 const TERMINAL = new Set<SettlementStatus>(["Completed", "Cancelled", "Rejected", "Disputed"]);
@@ -171,6 +172,12 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
       </div>
 
       <div className="space-y-6">
+        <Panel title="Attachments">
+          <div className="px-4 py-4">
+            <TradeAttachments settlementId={trade.settlement?.id ?? null} />
+          </div>
+        </Panel>
+
         {ad && (
           <Panel title="Advertisement">
             <div className="divide-y divide-white/5 px-4">
