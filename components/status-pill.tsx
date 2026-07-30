@@ -10,10 +10,13 @@ function toneFor(status: string): string {
     case "Escrow Released":
     case "Live":
     case "Done":
+    case "Resolved":
       return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
     case "Escrow Locked":
     case "Passed":
     case "Investigation":
+    case "Case Locked":
+    case "Reveal Phase":
       return "border-brand/40 bg-brand/10 text-brand-hover";
     case "Awaiting Payment":
     case "Payment Submitted":
@@ -25,6 +28,7 @@ function toneFor(status: string): string {
     case "Busy":
     case "Syncing":
     case "Degraded":
+    case "Open":
       return "border-amber-400/30 bg-amber-400/10 text-amber-300";
     case "Disputed":
     case "Rejected":

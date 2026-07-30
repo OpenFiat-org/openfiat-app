@@ -10,7 +10,7 @@
  *     scales the USDC amount by the two mints' decimal difference and
  *     applies no other rate. A different price shown here would be a figure
  *     the chain refuses.
- *   - Maximum contribution per wallet is 1,000,000 USDC.
+ *   - Maximum contribution per wallet is 10,000,000 USDC.
  *   - The Community Presale bucket is the entire 20% of supply
  *     (200,000,000 OPEN, §2) — not sized to cap the raise. The presale has
  *     no hard cap distinct from that bucket: it sells at 1:1 toward a
@@ -65,7 +65,7 @@ export const PRESALE = {
    *  condition exists and contributions are not refundable on that ground. */
   softCap: null,
   minContribution: 50,
-  maxContribution: 1_000_000,
+  maxContribution: 10_000_000,
   bucketOpen: PRESALE_BUCKET_OPEN,
 };
 

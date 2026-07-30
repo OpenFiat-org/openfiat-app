@@ -53,10 +53,30 @@ export interface DecodedStakeAccount {
   slashedTotal: bigint;
   pendingRewards: bigint;
   bump: number;
+  /**
+   * When this account's current staked position began — the clock behind
+   * the arbitrator stake-age requirement (OFS-4100 §4).
+   *
+   * `null` for an account still on the pre-migration layout, which is 82
+   * bytes and simply does not carry the field. Distinct from `0n`, which
+   * is what a migrated account holding no stake stores. Both fail an age
+   * requirement, but only one of them is waiting on
+   * `migrate_stake_account` — so a caller showing an arbitrator why they
+   * are ineligible needs to be able to tell them apart.
+   */
+  firstStakedAt: bigint | null;
 }
 
+/** Pre-migration length, before `first_staked_at` was appended. */
+const STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE = 82;
+
 /** Layout: disc(8) owner(32) role(1) amount(8) unbonding_amount(8)
- *  unbonding_release_at(8) slashed_total(8) pending_rewards(8) bump(1). */
+ *  unbonding_release_at(8) slashed_total(8) pending_rewards(8) bump(1)
+ *  first_staked_at(8).
+ *
+ * `first_staked_at` is appended after `bump` rather than sitting in
+ * declaration order, which is what lets every offset above stay exactly
+ * where it was — see the field's own doc comment in the program. */
 export function decodeStakeAccount(data: Uint8Array): DecodedStakeAccount {
   checkDiscriminator(data, STAKE_ACCOUNT_DISCRIMINATOR, "StakeAccount");
   return {
@@ -68,6 +88,10 @@ export function decodeStakeAccount(data: Uint8Array): DecodedStakeAccount {
     slashedTotal: readU64(data, 65),
     pendingRewards: readU64(data, 73),
     bump: data[81]!,
+    firstStakedAt:
+      data.length > STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE
+        ? readI64(data, STAKE_ACCOUNT_LEN_BEFORE_STAKE_AGE)
+        : null,
   };
 }
 
@@ -98,6 +122,74 @@ export function decodeStakingConfig(data: Uint8Array): DecodedStakingConfig {
     minStakeByRole,
     unbondingPeriodSecs: readI64(data, tail),
     slashBps: readU16(data, tail + 8),
+  };
+}
+
+// --- openfiat-escrow ------------------------------------------------------
+
+const LIQUIDITY_VAULT_DISCRIMINATOR = [221, 166, 52, 46, 13, 174, 181, 99];
+
+/**
+ * The exact on-chain size of a `LiquidityVault`, and the only account size
+ * the escrow program allocates for one. Usable on its own as a
+ * `getProgramAccounts` `dataSize` filter.
+ */
+export const LIQUIDITY_VAULT_LEN = 114;
+
+export interface DecodedLiquidityVault {
+  merchant: PublicKey;
+  mint: PublicKey;
+  /**
+   * Deposits minus withdrawals, and nothing else.
+   *
+   * Settlement does NOT reduce it: tokens that leave through
+   * `fund_trade_escrow` and are released to a buyer are counted in
+   * `settled` while `total` stays where it was. So a vault that has settled
+   * everything it ever held still reports its full historical deposit here
+   * while its token account is empty. This is not a balance and must never
+   * be labelled as one.
+   */
+  total: bigint;
+  /** Held against open reservations that have not yet been funded. */
+  reserved: bigint;
+  /**
+   * The only number a new reservation or a withdrawal may draw against —
+   * the program checks this field and no other.
+   *
+   * Not derivable from the rest: `total - reserved` over-states it by
+   * everything already settled away. A caller must read this field rather
+   * than compute one. Presenting `total` where this belongs is how a
+   * merchant oversells.
+   */
+  available: bigint;
+  /** Cumulative amount that has completed settlement and left for good. */
+  settled: bigint;
+  /** Funded into open trade escrows; not yet released or cancelled back. */
+  pendingSettlement: bigint;
+  bump: number;
+  tokenVaultBump: number;
+}
+
+/** Layout: disc(8) merchant(32) mint(32) total(8) reserved(8) available(8)
+ *  settled(8) pending_settlement(8) bump(1) token_vault_bump(1) = 114 bytes.
+ *
+ * Note the declaration order: `reserved` precedes `available` on chain,
+ * while every sensible UI lists available first. Reading them in display
+ * order rather than layout order swaps two numbers that are both plausible
+ * balances, which is the kind of error nothing downstream can detect — hence
+ * the byte-level test over a hand-built account. */
+export function decodeLiquidityVault(data: Uint8Array): DecodedLiquidityVault {
+  checkDiscriminator(data, LIQUIDITY_VAULT_DISCRIMINATOR, "LiquidityVault");
+  return {
+    merchant: readPubkey(data, 8),
+    mint: readPubkey(data, 40),
+    total: readU64(data, 72),
+    reserved: readU64(data, 80),
+    available: readU64(data, 88),
+    settled: readU64(data, 96),
+    pendingSettlement: readU64(data, 104),
+    bump: data[112]!,
+    tokenVaultBump: data[113]!,
   };
 }
 

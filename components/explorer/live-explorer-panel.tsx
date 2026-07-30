@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Trade } from "@/lib/types";
+import { deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
 import { NETWORK_STATS, PROTOCOL_EVENTS } from "@/lib/data/network";
-import { formatCrypto, formatDate, formatFiat, formatNumber, shortSig } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
 import { fetchLiveNetworkStats, subscribeToLiveEvents, type LiveEvent } from "@/lib/live-explorer";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -71,7 +71,7 @@ function useLiveExplorer() {
   return { live, blockHeight, events };
 }
 
-export function ExplorerLive({ settlements }: { settlements: Trade[] }) {
+export function ExplorerLive({ settlements }: { settlements: Trade[] | null }) {
   const { live, blockHeight, events } = useLiveExplorer();
 
   const metrics = live
@@ -155,38 +155,48 @@ export function ExplorerLive({ settlements }: { settlements: Trade[] }) {
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest settlements</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest trades</h2>
           <div className="mt-3">
             <DataTable
-              minWidth={520}
+              minWidth={460}
               head={
                 <tr>
-                  <Th>Transaction</Th>
+                  <Th>Reservation</Th>
                   <Th right className="w-36">Amount</Th>
-                  <Th right className="w-32">Fiat</Th>
                   <Th right className="w-28">Status</Th>
                 </tr>
               }
             >
-              {settlements.map((t) => (
-                <Tr key={t.id}>
-                  <Td className="whitespace-nowrap">
-                    <Link href={`/orders/${t.id}`} className="font-mono text-xs text-brand hover:text-brand-hover">
-                      {shortSig(t.txSig)}
-                    </Link>
-                    <span className="ml-2 text-xs text-gray-500">{t.asset}/{t.fiatCurrency}</span>
-                  </Td>
-                  <Td right num className="w-36 text-gray-300">
-                    {formatCrypto(t.cryptoAmount, "").trim()}{" "}
-                    <span className="text-gray-500">{t.asset}</span>
-                  </Td>
-                  <Td right num className="w-32 text-gray-400">
-                    {formatFiat(t.fiatAmount, "").trim()}{" "}
-                    <span className="text-gray-600">{t.fiatCurrency}</span>
-                  </Td>
-                  <Td right className="w-28 whitespace-nowrap"><StatusPill status={t.status} /></Td>
-                </Tr>
-              ))}
+              {(settlements ?? []).map((t) => {
+                const amount = t.reservation.amount.base_units / 10 ** t.reservation.amount.decimals;
+                return (
+                  <Tr key={t.reservation.id}>
+                    <Td className="whitespace-nowrap">
+                      <Link href={`/orders/${t.reservation.id}`} className="font-mono text-xs text-brand hover:text-brand-hover">
+                        {t.reservation.id}
+                      </Link>
+                    </Td>
+                    <Td right num className="w-36 text-gray-300">
+                      {formatNumber(amount)}
+                    </Td>
+                    <Td right className="w-28 whitespace-nowrap"><StatusPill status={TRADE_STATUS_LABEL[deriveStatus(t)]} /></Td>
+                  </Tr>
+                );
+              })}
+              {settlements === null && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
+                    Could not read trades from the node.
+                  </td>
+                </tr>
+              )}
+              {settlements !== null && settlements.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
+                    No trades on this node yet.
+                  </td>
+                </tr>
+              )}
             </DataTable>
           </div>
         </div>

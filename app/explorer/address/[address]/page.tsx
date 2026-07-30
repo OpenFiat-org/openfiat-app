@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CURRENT_USER, MERCHANTS, reputationFor } from "@/lib/data/merchants";
-import { VAULTS, WALLET_BALANCES } from "@/lib/data/wallet";
 import { STAKING_SUMMARY } from "@/lib/data/staking";
-import { TRADES } from "@/lib/data/trades";
 import { getCountry } from "@/lib/data/countries";
-import { formatCrypto, formatNumber, shortAddress } from "@/lib/format";
+import { formatNumber, shortAddress } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
-import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { AddressOnchain } from "@/components/explorer/address-onchain";
 import { MerchantCell } from "@/components/merchant-cell";
 import { MetricStrip } from "@/components/metrics";
 import { Panel } from "@/components/panel";
-import { StatusPill } from "@/components/status-pill";
 import { TierBadge } from "@/components/tier-badge";
 
 export const metadata: Metadata = {
@@ -55,7 +52,7 @@ export default async function AddressPage({ params }: { params: Promise<Params> 
           </div>
         </Panel>
       ) : merchant.id === CURRENT_USER.id ? (
-        <CurrentUserView />
+        <CurrentUserView address={address} />
       ) : (
         <MerchantView merchantId={merchant.id} />
       )}
@@ -66,7 +63,6 @@ export default async function AddressPage({ params }: { params: Promise<Params> 
 function MerchantView({ merchantId }: { merchantId: string }) {
   const merchant = MERCHANTS.find((m) => m.id === merchantId)!;
   const country = getCountry(merchant.countryCode);
-  const trades = TRADES.filter((t) => t.counterpartyId === merchant.id);
   const reputation = reputationFor(merchant);
   const topDimensions = reputation.slice(0, 4);
 
@@ -108,45 +104,22 @@ function MerchantView({ merchantId }: { merchantId: string }) {
         </div>
       </div>
 
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Recent trades with you</h2>
-        <div className="mt-3">
-          <DataTable
-            minWidth={640}
-            head={
-              <tr>
-                <Th>Trade</Th>
-                <Th right>Amount</Th>
-                <Th right>Status</Th>
-              </tr>
-            }
-          >
-            {trades.map((t) => (
-              <Tr key={t.id}>
-                <Td>
-                  <Link href={`/orders/${t.id}`} className="font-medium text-brand hover:text-brand-hover">
-                    {t.id}
-                  </Link>
-                </Td>
-                <Td right num className="text-gray-300">{formatCrypto(t.cryptoAmount, t.asset)}</Td>
-                <Td right><StatusPill status={t.status} /></Td>
-              </Tr>
-            ))}
-            {trades.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500">
-                  No trades between you and this merchant in the simulated history.
-                </td>
-              </tr>
-            )}
-          </DataTable>
-        </div>
-      </div>
+      {/*
+        * A "recent trades with you" table used to live here, sourced from
+        * `TRADES` — a fixture keyed by this simulated merchant directory's
+        * own ids. There is no live equivalent: real trades are keyed by
+        * PeerId, and this directory's merchants have none, so there is
+        * nothing real to filter by. See `/orders` for actual trades.
+        */}
+      <p className="text-sm text-gray-500">
+        Real trades are keyed by PeerId, not by this simulated directory —{" "}
+        <Link href="/orders" className="text-brand hover:text-brand-hover">see your actual trades</Link>.
+      </p>
     </div>
   );
 }
 
-function CurrentUserView() {
+function CurrentUserView({ address }: { address: string }) {
   return (
     <div className="mt-8 space-y-8">
       <div className="flex items-center gap-3">
@@ -164,88 +137,14 @@ function CurrentUserView() {
         ]}
       />
 
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Balances</h2>
-        <div className="mt-3">
-          <DataTable
-            head={
-              <tr>
-                <Th>Asset</Th>
-                <Th right>Balance</Th>
-                <Th right>Value (USD)</Th>
-              </tr>
-            }
-          >
-            {WALLET_BALANCES.map((b) => (
-              <Tr key={b.asset}>
-                <Td className="font-medium text-gray-200">{b.asset}</Td>
-                <Td right num className="text-gray-200">{formatNumber(b.balance, b.asset === "OPEN" ? 0 : 2)}</Td>
-                <Td right num className="text-gray-400">${formatNumber(b.fiatValue)}</Td>
-              </Tr>
-            ))}
-          </DataTable>
-        </div>
-      </div>
+      {/* Real, and specific to the address in the URL — see
+          `components/explorer/address-onchain.tsx` for what these two
+          sections used to show instead. */}
+      <AddressOnchain address={address} />
 
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Liquidity vaults</h2>
-        <div className="mt-3">
-          <DataTable
-            minWidth={680}
-            head={
-              <tr>
-                <Th>Asset</Th>
-                <Th right>Total</Th>
-                <Th right>Available</Th>
-                <Th right>Reserved</Th>
-                <Th right>Settled</Th>
-              </tr>
-            }
-          >
-            {VAULTS.map((v) => (
-              <Tr key={v.asset}>
-                <Td className="font-medium text-gray-200">{v.asset}</Td>
-                <Td right num className="text-gray-200">{formatNumber(v.total)}</Td>
-                <Td right num className="text-emerald-300">{formatNumber(v.available)}</Td>
-                <Td right num className="text-amber-300">{formatNumber(v.reserved)}</Td>
-                <Td right num className="text-gray-400">{formatNumber(v.settled)}</Td>
-              </Tr>
-            ))}
-          </DataTable>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Recent trades</h2>
-        <div className="mt-3">
-          <DataTable
-            minWidth={640}
-            head={
-              <tr>
-                <Th>Trade</Th>
-                <Th>Direction</Th>
-                <Th right>Amount</Th>
-                <Th right>Status</Th>
-              </tr>
-            }
-          >
-            {TRADES.slice(0, 6).map((t) => (
-              <Tr key={t.id}>
-                <Td>
-                  <Link href={`/orders/${t.id}`} className="font-medium text-brand hover:text-brand-hover">
-                    {t.id}
-                  </Link>
-                </Td>
-                <Td className={t.direction === "Buy" ? "text-emerald-400" : "text-orange-400"}>
-                  {t.direction} {t.asset}
-                </Td>
-                <Td right num className="text-gray-300">{formatCrypto(t.cryptoAmount, t.asset)}</Td>
-                <Td right><StatusPill status={t.status} /></Td>
-              </Tr>
-            ))}
-          </DataTable>
-        </div>
-      </div>
+      <p className="text-sm text-gray-500">
+        <Link href="/orders" className="text-brand hover:text-brand-hover">See your actual trades →</Link>
+      </p>
     </div>
   );
 }

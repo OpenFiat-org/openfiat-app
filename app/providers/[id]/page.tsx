@@ -77,17 +77,31 @@ export default async function ProviderPage({ params }: { params: Promise<Params>
               ))}
             </ol>
             <p className="border-t border-white/10 px-4 py-2.5 text-[11px] leading-relaxed text-gray-500">
-              Connect using the peer ID below, not the hostname alone. The
-              endpoint says where to dial; the peer ID and public key are what
-              prove you reached this provider and not someone who advertised the
-              same address.
+              On a real registry entry, the peer ID and public key below the endpoint are what would let you confirm
+              you reached this provider and not an impostor advertising the same address — see the notice below.
             </p>
           </Panel>
 
-          {/* OFS-1500 §5. Without these a registry entry is just a URL, and a
-              node has no way to tell a real provider from an impostor. */}
-          <Panel title="Identity — verify before you connect">
-            <div className="divide-y divide-white/5 px-4">
+          {/*
+            * OFS-1500 §5 explains why a real entry needs these fields: a
+            * registry row with only a URL gives a node no way to tell a real
+            * provider from an impostor. But `PROVIDERS` is this app's
+            * built-in sample directory (`lib/data/providers.ts`), and every
+            * value below is a deterministic fake derived from the provider's
+            * id — not a key anyone holds, and not a signature anything ever
+            * checked. This used to be titled "Identity — verify before you
+            * connect" with no indication of that anywhere in the panel
+            * itself; someone who took the instruction literally would have
+            * "verified" nothing. Said plainly here instead, on a live node's
+            * registry entry (`lib/live-providers.ts`) these fields would be
+            * real and worth checking.
+            */}
+          <Panel title="Identity (sample data — not a real key or signature)">
+            <p className="px-4 pt-3 text-xs leading-relaxed text-amber-300">
+              Every value below is generated from this provider&apos;s id for this demo directory. None of it is a real
+              cryptographic key or signature, and copying it proves nothing about a real service.
+            </p>
+            <div className="mt-2 divide-y divide-white/5 px-4">
               <IdRow label="Peer ID" value={provider.peerId} />
               <IdRow label="Node identity" value={provider.nodeIdentity} />
               <IdRow label="Public key" value={provider.publicKey} />
@@ -117,12 +131,12 @@ export default async function ProviderPage({ params }: { params: Promise<Params>
         </div>
 
         <div className="space-y-6">
-          <Panel title="Registration (OFS-1500)">
+          <Panel title="Registration (OFS-1500, sample data)">
             <div className="divide-y divide-white/5 px-4">
               <Row label="Service ID" value={provider.id} mono />
-              <Row label="Provider wallet" value={shortAddress(provider.wallet)} copy={provider.wallet} />
+              <Row label="Provider wallet (not real)" value={shortAddress(provider.wallet)} copy={provider.wallet} />
               <Row label="Registered" value={formatDate(provider.registeredAt)} />
-              <Row label="Signature" value={sigTrunc} copy={provider.signature} />
+              <Row label="Signature (not real)" value={sigTrunc} copy={provider.signature} />
             </div>
           </Panel>
 

@@ -2,9 +2,11 @@ import { PublicKey } from "@solana/web3.js";
 import { describe, expect, it } from "vitest";
 import {
   decodeGovernanceConfig,
+  decodeLiquidityVault,
   decodeProposal,
   decodeStakeAccount,
   decodeStakingConfig,
+  LIQUIDITY_VAULT_LEN,
 } from "@/lib/onchain-decode";
 
 function u64le(value: bigint): number[] {
@@ -36,6 +38,7 @@ describe("decodeStakeAccount", () => {
       ...u64le(0n), // slashed_total
       ...u64le(500n), // pending_rewards
       7, // bump
+      ...i64le(1_800_000_000n), // first_staked_at
     ]);
     const decoded = decodeStakeAccount(bytes);
     expect(decoded.owner.equals(owner)).toBe(true);
@@ -43,6 +46,35 @@ describe("decodeStakeAccount", () => {
     expect(decoded.amount).toBe(12_345n);
     expect(decoded.pendingRewards).toBe(500n);
     expect(decoded.bump).toBe(7);
+    expect(decoded.firstStakedAt).toBe(1_800_000_000n);
+  });
+
+  // The whole point of appending `first_staked_at` after `bump` rather than
+  // placing it in declaration order: an account that has not yet been
+  // through `migrate_stake_account` must still decode, with every other
+  // field reading exactly what it read before the field existed.
+  it("decodes a pre-migration account and reports an unknown stake age", () => {
+    const owner = PublicKey.unique();
+    const bytes = Buffer.from([
+      80, 158, 67, 124, 50, 189, 192, 255,
+      ...owner.toBytes(),
+      1,
+      ...u64le(12_345n),
+      ...u64le(0n),
+      ...i64le(0n),
+      ...u64le(0n),
+      ...u64le(500n),
+      7,
+    ]);
+    expect(bytes.length).toBe(82);
+    const decoded = decodeStakeAccount(bytes);
+    expect(decoded.owner.equals(owner)).toBe(true);
+    expect(decoded.amount).toBe(12_345n);
+    expect(decoded.bump).toBe(7);
+    // null, not 0n — an unmigrated account is a different situation from a
+    // migrated one holding no stake, and both callers and users need to be
+    // told which they are looking at.
+    expect(decoded.firstStakedAt).toBeNull();
   });
 
   it("rejects a mismatched discriminator", () => {
@@ -157,5 +189,102 @@ describe("decodeProposal", () => {
     expect(decoded.quorumMet).toBe(true);
     expect(decoded.depositSettled).toBe(false);
     expect(decoded.executed).toBe(true);
+  });
+});
+
+describe("decodeLiquidityVault", () => {
+  const DISC = [221, 166, 52, 46, 13, 174, 181, 99];
+
+  function vaultBytes(
+    merchant: PublicKey,
+    mint: PublicKey,
+    counters: { total: bigint; reserved: bigint; available: bigint; settled: bigint; pending: bigint },
+  ): Buffer {
+    return Buffer.from([
+      ...DISC,
+      ...merchant.toBytes(),
+      ...mint.toBytes(),
+      ...u64le(counters.total),
+      ...u64le(counters.reserved),
+      ...u64le(counters.available),
+      ...u64le(counters.settled),
+      ...u64le(counters.pending),
+      254, // bump
+      253, // token_vault_bump
+    ]);
+  }
+
+  // Every counter is a different value, so an offset that is off by one
+  // field reads a number that belongs to a neighbour and the assertion
+  // fails. Five equal counters would pass a completely wrong decoder.
+  it("decodes a well-formed account exactly", () => {
+    const merchant = PublicKey.unique();
+    const mint = PublicKey.unique();
+    const bytes = vaultBytes(merchant, mint, {
+      total: 9_000_000n,
+      reserved: 700_000n,
+      available: 5_000_000n,
+      settled: 3_000_000n,
+      pending: 300_000n,
+    });
+    expect(bytes.length).toBe(LIQUIDITY_VAULT_LEN);
+
+    const decoded = decodeLiquidityVault(bytes);
+    expect(decoded.merchant.equals(merchant)).toBe(true);
+    expect(decoded.mint.equals(mint)).toBe(true);
+    expect(decoded.total).toBe(9_000_000n);
+    expect(decoded.reserved).toBe(700_000n);
+    expect(decoded.available).toBe(5_000_000n);
+    expect(decoded.settled).toBe(3_000_000n);
+    expect(decoded.pendingSettlement).toBe(300_000n);
+    expect(decoded.bump).toBe(254);
+    expect(decoded.tokenVaultBump).toBe(253);
+  });
+
+  // `reserved` sits BEFORE `available` on chain and after it in every
+  // sensible display order. This pins the on-chain order, so a decoder
+  // rewritten to match a table's column order fails here rather than
+  // quietly reporting a merchant's held funds as spendable.
+  it("reads reserved before available, matching the on-chain field order", () => {
+    const bytes = vaultBytes(PublicKey.unique(), PublicKey.unique(), {
+      total: 100n,
+      reserved: 40n,
+      available: 60n,
+      settled: 0n,
+      pending: 0n,
+    });
+    const decoded = decodeLiquidityVault(bytes);
+    expect(decoded.reserved).toBe(40n);
+    expect(decoded.available).toBe(60n);
+  });
+
+  // The shape of the real devnet vault (2 OPEN-scale units deposited, all
+  // of it settled away): `available` is zero while `total` is the full
+  // deposit. A UI that shows `total` as spendable is wrong by the entire
+  // balance here, so the decoder must keep them separate values.
+  it("keeps a fully-settled vault's available at zero while total stays high", () => {
+    const bytes = vaultBytes(PublicKey.unique(), PublicKey.unique(), {
+      total: 2_000_000_000n,
+      reserved: 0n,
+      available: 0n,
+      settled: 2_000_000_000n,
+      pending: 0n,
+    });
+    const decoded = decodeLiquidityVault(bytes);
+    expect(decoded.total).toBe(2_000_000_000n);
+    expect(decoded.available).toBe(0n);
+    expect(decoded.available).not.toBe(decoded.total);
+  });
+
+  it("rejects an account that is not a LiquidityVault", () => {
+    const bytes = vaultBytes(PublicKey.unique(), PublicKey.unique(), {
+      total: 1n,
+      reserved: 0n,
+      available: 1n,
+      settled: 0n,
+      pending: 0n,
+    });
+    bytes[0] = 0;
+    expect(() => decodeLiquidityVault(bytes)).toThrow(/discriminator mismatch/);
   });
 });

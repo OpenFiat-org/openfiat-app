@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { TRADES } from "@/lib/data/trades";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { PageHero } from "@/components/page-hero";
 
@@ -16,7 +15,7 @@ export default function OrdersPage() {
         description="Every trade runs the escrow lifecycle on Solana: locked → paid → verified → released."
       />
       <div className="mt-8">
-        <OrdersTable trades={TRADES} />
+        <OrdersTable />
       </div>
     </section>
   );

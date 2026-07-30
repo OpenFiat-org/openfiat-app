@@ -1,20 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { INTERNATIONAL_MARKET, type Advertisement, type Merchant, type StablecoinAsset, type TradeDirection } from "@/lib/types";
-import { PUBLIC_ADS, adPrice, adPriceIn, fxPerUsd } from "@/lib/data/ads";
-import { merchantById } from "@/lib/data/merchants";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { StablecoinAsset, TradeDirection } from "@/lib/types";
+import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
-import { MerchantCell } from "@/components/merchant-cell";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { HomeExplainer } from "@/components/home/explainer";
 import { OrderPanel } from "@/components/p2p/order-panel";
-import { compositeScore } from "@/lib/reputation";
+
+/**
+ * The P2P exchange book, read live from a node's `getAdvertisements`
+ * (OFS-2100) via `lib/live-advertisements.ts`.
+ *
+ * # What this replaced
+ *
+ * The book used to be computed once at module load from `PUBLIC_ADS` — a
+ * fixed-seed PRNG book against a static FX table (`lib/data/ads.ts`) — so
+ * every visitor saw the same "market" whether or not the protocol was
+ * reachable. It also offered an "International" view: borderless merchants
+ * flagged `international: true`, USD-priced, FX-converted into whatever
+ * currency the visitor picked. Nothing in the protocol has that concept — a
+ * real advertisement (OFS-2100 §6, see `LiveAd`'s own doc) carries a single
+ * `fiatCurrency` and no cross-currency conversion — so that view is gone
+ * rather than kept running on invented numbers. A currency filter over the
+ * one real book remains; the borderless/FX layer does not.
+ *
+ * Advertiser reputation, completion rate, and terms are gone for the same
+ * reason: a `LiveAd` carries a merchant PeerId and nothing else. The old
+ * "advertiser reputation floor" filter and "sort by completion rate" are
+ * gone with them, since there is no live reputation figure to sort or filter
+ * by yet.
+ */
 
 /**
  * Assets with an order book. OPEN is deliberately absent — it has no
@@ -23,12 +44,11 @@ import { compositeScore } from "@/lib/reputation";
  */
 const TRADED_ASSETS: StablecoinAsset[] = ["USDT", "USDC", "USD1", "SOL"];
 
-type SortKey = "price" | "limits" | "completion";
+type SortKey = "price" | "limits";
 
 const SORT_LABELS: Record<SortKey, string> = {
   price: "Best price",
   limits: "Highest limits",
-  completion: "Completion rate",
 };
 
 const selectCls =
@@ -36,37 +56,10 @@ const selectCls =
 
 const STORAGE_KEY = "openfiat:market";
 
-// Only online ads appear on the public exchange book.
-const BOOK = PUBLIC_ADS.filter((a) => a.status === "Online");
+const DEFAULT_FIAT = "USD";
 
-/** Currencies with at least one online local ad — floated to the top of the picker. */
-const LIQUID_CURRENCIES: ReadonlySet<string> = new Set(
-  BOOK.filter((a) => !a.international).map((a) => a.fiatCurrency),
-);
-
-/** One display row: an ad with price/limits expressed in the view currency. */
-interface ViewRow {
-  ad: Advertisement;
-  merchant: Merchant;
-  price: number;
-  minFiat: number;
-  maxFiat: number;
-  fiat: string; // display currency ("USD" in the International view)
-}
-
-/**
- * The P2P exchange book. The default view is International (borderless
- * merchants, USD-priced, any payment method); picking a country/currency
- * shows that market's local ads plus international ads FX-converted into it.
- *
- * Preference persistence (client-only, post-mount — server render is always
- * the deterministic initial view, so there is no hydration mismatch):
- * - `rememberPreference` (landing): on mount, apply localStorage["openfiat:market"].
- * - `savePreference` (country pages): on mount, write the country slug.
- * - Any combobox change writes the resolved country slug (or "international").
- */
 export function P2PExchange({
-  initialFiat = INTERNATIONAL_MARKET,
+  initialFiat = DEFAULT_FIAT,
   showHeading = true,
   showExplainer = false,
   rememberPreference = false,
@@ -85,22 +78,33 @@ export function P2PExchange({
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
   const [sort, setSort] = useState<SortKey>("price");
-  const [minRep, setMinRep] = useState(0);
-  /*
-   * Which advertisement's order form is open — one at a time.
-   *
-   * Held here rather than per row: with each row owning its own state you could
-   * expand several at once, which stacks two live countdowns and two amount
-   * forms and leaves it ambiguous which one the next click belongs to.
-   */
   const [openAd, setOpenAd] = useState<string | null>(null);
+
+  const [ads, setAds] = useState<LiveAd[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      setAds(await fetchAdvertisements());
+    } catch (err) {
+      // "No advertisements" and "could not reach a node" are different
+      // facts — see components/ads/merchant-console.tsx for the same call.
+      setError(err instanceof Error ? err.message : String(err));
+      setAds(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Apply the remembered market after mount (landing page only).
   useEffect(() => {
     if (!rememberPreference) return;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved || saved === "international") return;
+      if (!saved) return;
       const country = COUNTRIES_BY_SLUG.get(saved);
       if (country) setFiat(country.currencyCode);
     } catch {
@@ -122,74 +126,52 @@ export function P2PExchange({
     setFiat(code);
     setMethod("");
     try {
-      if (code === INTERNATIONAL_MARKET) {
-        localStorage.setItem(STORAGE_KEY, "international");
-      } else {
-        const users = countriesByCurrency(code);
-        const country = users.find((c) => c.isRecognized) ?? users[0];
-        if (country) localStorage.setItem(STORAGE_KEY, country.slug);
-      }
+      const users = countriesByCurrency(code);
+      const country = users.find((c) => c.isRecognized) ?? users[0];
+      if (country) localStorage.setItem(STORAGE_KEY, country.slug);
     } catch {
       /* localStorage unavailable */
     }
   }
 
-  const isInternational = fiat === INTERNATIONAL_MARKET;
-  const viewFiat = isInternational ? "USD" : fiat;
+  const BOOK = useMemo(() => (ads ?? []).filter((a) => a.status === "Active"), [ads]);
+
+  /** Currencies with at least one active ad — floated to the top of the picker. */
+  const LIQUID_CURRENCIES = useMemo(
+    () => new Set(BOOK.map((a) => a.fiatCurrency)),
+    [BOOK],
+  );
 
   const methodOptions = useMemo(() => {
     const set = new Set<string>();
     for (const ad of BOOK) {
-      if (!ad.international && ad.fiatCurrency === fiat) ad.paymentMethods.forEach((m) => set.add(m));
+      if (ad.fiatCurrency === fiat) ad.paymentMethods.forEach((m) => set.add(m));
     }
     return [...set];
-  }, [fiat]);
+  }, [BOOK, fiat]);
 
   const rows = useMemo(() => {
     const wantDirection = tab === "Buy" ? "Sell" : "Buy";
     const fiatAmount = Number(amount) || 0;
-    const out: ViewRow[] = [];
+    const out: LiveAd[] = [];
     for (const ad of BOOK) {
       if (ad.direction !== wantDirection || ad.asset !== asset) continue;
-      if (method !== "" && !ad.international && !ad.paymentMethods.includes(method)) continue;
-
-      let price: number | undefined;
-      let fx = 1;
-      if (isInternational) {
-        if (!ad.international) continue;
-        price = adPrice(ad);
-      } else if (ad.international) {
-        fx = fxPerUsd(fiat) ?? 0;
-        if (!fx) continue; // no FX rate for this currency
-        price = adPriceIn(ad, fiat);
-      } else {
-        if (ad.fiatCurrency !== fiat) continue;
-        price = adPrice(ad);
-      }
-      if (price === undefined) continue;
-
-      const minFiat = ad.minTrade * fx;
-      const maxFiat = ad.maxTrade * fx;
-      if (fiatAmount > 0 && (fiatAmount < minFiat || fiatAmount > maxFiat)) continue;
-      const merchant = merchantById(ad.merchantId);
-      // OFS-3000 §22 leaves marketplace ranking and filtering to the
-      // application and names reputation as a dimension to consider.
-      if (minRep > 0 && compositeScore(merchant) < minRep) continue;
-      out.push({ ad, merchant, price, minFiat, maxFiat, fiat: viewFiat });
+      if (ad.fiatCurrency !== fiat) continue;
+      if (ad.price === null) continue; // no oracle read yet — nothing to quote
+      if (method !== "" && !ad.paymentMethods.includes(method)) continue;
+      if (fiatAmount > 0 && (fiatAmount < ad.minTrade || fiatAmount > ad.maxTrade)) continue;
+      out.push(ad);
     }
     switch (sort) {
       case "price":
-        out.sort((a, b) => (tab === "Buy" ? a.price - b.price : b.price - a.price));
+        out.sort((a, b) => (tab === "Buy" ? a.price! - b.price! : b.price! - a.price!));
         break;
       case "limits":
-        out.sort((a, b) => b.maxFiat - a.maxFiat);
-        break;
-      case "completion":
-        out.sort((a, b) => b.merchant.completionRate - a.merchant.completionRate);
+        out.sort((a, b) => b.maxTrade - a.maxTrade);
         break;
     }
     return out;
-  }, [tab, asset, fiat, isInternational, viewFiat, amount, method, sort, minRep]);
+  }, [BOOK, tab, asset, fiat, amount, method, sort]);
 
   return (
     <div>
@@ -197,12 +179,8 @@ export function P2PExchange({
         <PageHero
           compact
           variant={tab === "Sell" ? "flow-rev" : "flow"}
-          title={isInternational ? `${tab} ${asset} with Any Currency via P2P` : `${tab} ${asset} with ${fiat} via P2P`}
-          description={
-            isInternational
-              ? "International merchants accept every currency and any payment method — prices shown in USD. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
-              : "Trade stablecoins peer-to-peer. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
-          }
+          title={`${tab} ${asset} with ${fiat} via P2P`}
+          description="Trade stablecoins peer-to-peer. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
         />
       )}
 
@@ -238,17 +216,6 @@ export function P2PExchange({
               {a}
             </button>
           ))}
-          {/*
-            * OPEN is a link, not a tab.
-            *
-            * As a tab it replaced the order book with a presale panel, which
-            * left you on a page with no market and no obvious way back — and
-            * clicking the nav link for the page you are already on does not
-            * remount the view, so "go home" did not clear it either. An earlier
-            * attempt bolted an exit onto that panel, which treated the symptom.
-            * OPEN has no order book, so it does not belong in a control whose
-            * job is choosing which order book to show.
-            */}
           <Link
             href="/open"
             className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
@@ -269,30 +236,21 @@ export function P2PExchange({
       </div>
 
       {/* Filter row */}
-      {(
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 rounded-md border border-white/10 px-3">
-          {/*
-           * Text with a decimal keypad, not type="number". The number input
-           * paints its own stepper, which the browser draws on a light
-           * background regardless of the field's colours — that was the white
-           * block beside the currency code. It also changes value on scroll,
-           * which is a hazard on a filter row. Non-numeric input is filtered
-           * on the way in instead.
-           */}
           <input
             type="text"
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
             placeholder="Amount"
-            aria-label={`Amount in ${viewFiat}`}
+            aria-label={`Amount in ${fiat}`}
             className="w-32 bg-transparent py-2 text-sm tabular-nums text-white outline-none placeholder:text-gray-600"
           />
-          <span className="text-xs text-gray-500">{viewFiat}</span>
+          <span className="text-xs text-gray-500">{fiat}</span>
         </div>
-        <CurrencyCombobox value={fiat} onChange={chooseFiat} priorityCodes={LIQUID_CURRENCIES} allowInternational />
-        {!isInternational && methodOptions.length > 0 && (
+        <CurrencyCombobox value={fiat} onChange={chooseFiat} priorityCodes={LIQUID_CURRENCIES} />
+        {methodOptions.length > 0 && (
           <select value={method} onChange={(e) => setMethod(e.target.value)} className={selectCls}>
             <option value="">All payment methods</option>
             {methodOptions.map((m) => (
@@ -300,169 +258,146 @@ export function P2PExchange({
             ))}
           </select>
         )}
-        {/* Advertiser reputation floor. The counterpart to a merchant's own
-            minimum: both sides get to decline. */}
-        <select
-          value={minRep}
-          onChange={(e) => setMinRep(Number(e.target.value))}
-          className={selectCls}
-          title="Hide advertisers below this reputation"
-        >
-          <option value={0}>Any reputation</option>
-          <option value={70}>70+ reputation</option>
-          <option value={80}>80+ reputation</option>
-          <option value={90}>90+ reputation</option>
-        </select>
         <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls}>
           {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
             <option key={k} value={k}>Sort: {SORT_LABELS[k]}</option>
           ))}
         </select>
         <span className="text-xs text-gray-600">
-          {rows.length} advertiser{rows.length === 1 ? "" : "s"}
+          {ads !== null && `${rows.length} advertiser${rows.length === 1 ? "" : "s"}`}
         </span>
       </div>
-      )}
 
-      {(
       <div className="mt-6">
-        <DataTable
-          minWidth={920}
-          head={
-            <tr>
-              <Th>Advertiser</Th>
-              <Th right>Price</Th>
-              <Th right>Available / Limits</Th>
-              <Th>Payment methods</Th>
-              <Th right>Trade</Th>
-            </tr>
-          }
-        >
-          {rows.map((row) => (
-            <AdRow
-              key={row.ad.id}
-              row={row}
-              userDirection={tab}
-              open={openAd === row.ad.id}
-              onToggle={() => setOpenAd((current) => (current === row.ad.id ? null : row.ad.id))}
-            />
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              {/*
-                * An empty book is the best moment to recruit a merchant: this
-                * visitor wanted to trade this pair and found nobody. Telling
-                * them to go elsewhere answers the wrong question — the market
-                * is empty because it needs someone, and it could be them.
-                */}
-              <td colSpan={5} className="px-4 py-12">
-                <div className="mx-auto max-w-xl text-center">
-                  <p className="text-sm text-gray-300">
-                    Nobody is advertising {asset}/{viewFiat} yet.
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                    This market is empty rather than closed. The first merchant in a corridor sets the price and takes
-                    every order in it — if you can settle {viewFiat}, that could be you.
-                  </p>
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                    <Link
-                      href="/guide/merchant"
-                      className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
-                    >
-                      Become a merchant
-                    </Link>
-                    <Link
-                      href="/ads/new"
-                      className="rounded-md border border-white/15 px-4 py-2.5 text-sm text-gray-200 hover:border-white/30"
-                    >
-                      Post the first advertisement
-                    </Link>
+        {error ? (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
+            <p className="text-sm font-medium text-red-300">Could not read the advertisement book from the node</p>
+            <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
+            <button
+              onClick={() => void load()}
+              className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
+            >
+              Retry
+            </button>
+          </div>
+        ) : ads === null ? (
+          <p className="p-6 text-sm text-gray-500">Reading the advertisement book…</p>
+        ) : (
+          <DataTable
+            minWidth={860}
+            head={
+              <tr>
+                <Th>Advertiser</Th>
+                <Th right>Price</Th>
+                <Th right>Available / Limits</Th>
+                <Th>Payment methods</Th>
+                <Th right>Trade</Th>
+              </tr>
+            }
+          >
+            {rows.map((ad) => (
+              <AdRow
+                key={ad.id}
+                ad={ad}
+                userDirection={tab}
+                open={openAd === ad.id}
+                onToggle={() => setOpenAd((current) => (current === ad.id ? null : ad.id))}
+              />
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-12">
+                  <div className="mx-auto max-w-xl text-center">
+                    <p className="text-sm text-gray-300">
+                      Nobody is advertising {asset}/{fiat} yet.
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                      This market is empty rather than closed. The first merchant in a corridor sets the price and takes
+                      every order in it — if you can settle {fiat}, that could be you.
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                      <Link
+                        href="/guide/merchant"
+                        className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
+                      >
+                        Become a merchant
+                      </Link>
+                      <Link
+                        href="/ads/new"
+                        className="rounded-md border border-white/15 px-4 py-2.5 text-sm text-gray-200 hover:border-white/30"
+                      >
+                        Post the first advertisement
+                      </Link>
+                    </div>
+                    <p className="mt-4 text-xs text-gray-600">
+                      Or trade a different pair — try another asset or currency above.
+                    </p>
                   </div>
-                  <p className="mt-4 text-xs text-gray-600">
-                    Or trade a different pair — try another asset above, or the 🌐 International market, where
-                    advertisers accept any currency.
-                  </p>
-                </div>
-              </td>
-            </tr>
-          )}
-        </DataTable>
+                </td>
+              </tr>
+            )}
+          </DataTable>
+        )}
       </div>
-      )}
 
-      {/* Only on the landing view. On a country page the copy above already
-          explains that market, and repeating it under every book would be
-          noise rather than help. */}
-      {showExplainer && <HomeExplainer asset={asset} fiat={viewFiat} buying={tab === "Buy"} />}
+      {showExplainer && <HomeExplainer asset={asset} fiat={fiat} buying={tab === "Buy"} />}
     </div>
   );
 }
 
 /**
  * One advertisement, which expands in place into the order form.
- *
- * Expanding beats navigating away: the price, limits and the advertiser you are
- * comparing against stay on screen while you decide the amount, which is the
- * whole reason the order book is a list.
  */
 function AdRow({
-  row,
+  ad,
   userDirection,
   open,
   onToggle,
 }: {
-  row: ViewRow;
+  ad: LiveAd;
   userDirection: TradeDirection;
   open: boolean;
   onToggle: () => void;
 }) {
-  const { ad, merchant, price, minFiat, maxFiat, fiat } = row;
   const buy = userDirection === "Buy";
 
   return (
     <>
     <Tr>
       <Td py="py-6">
-        <MerchantCell merchant={merchant} size="md" />
-        {ad.international && (
-          <p className="mt-1.5 pl-[52px] text-[11px] text-gray-500">🌐 International — trades in any currency</p>
-        )}
+        <span className="font-mono text-sm text-gray-300" title={ad.merchantPeerId}>
+          Merchant …{ad.merchantShort}
+        </span>
       </Td>
       <Td right num py="py-6">
         <p className="font-mono text-xl font-semibold tabular-nums text-white">
-          {formatNumber(price)} <span className="text-sm font-normal text-gray-400">{fiat}</span>
+          {formatNumber(ad.price!)} <span className="text-sm font-normal text-gray-400">{ad.fiatCurrency}</span>
         </p>
         <p className="mt-1 text-[11px] text-gray-600">
-          {ad.pricing.type === "Floating"
-            ? `Floating ${ad.pricing.premiumPct >= 0 ? "+" : ""}${ad.pricing.premiumPct}%`
+          {ad.pricingKind === "Floating"
+            ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}%`
             : "Fixed"}
         </p>
       </Td>
       <Td right num py="py-6">
         <p className="text-gray-200">{formatCrypto(ad.availableLiquidity, ad.asset)}</p>
         <p className="mt-1 text-xs text-gray-500">
-          {formatFiat(minFiat, fiat, 0)} – {formatFiat(maxFiat, fiat, 0)}
+          {formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – {formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}
         </p>
       </Td>
       <Td py="py-6">
-        {ad.international ? (
-          <span className="border-l-2 border-brand-teal pl-1.5 text-xs text-gray-300">🌐 Any payment method</span>
-        ) : (
-          <div className="flex max-w-60 flex-wrap gap-x-3 gap-y-1.5">
-            {ad.paymentMethods.map((m) => (
-              <span key={m} className="border-l-2 border-amber-400/60 pl-1.5 text-xs text-gray-400">
-                {m}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="flex max-w-60 flex-wrap gap-x-3 gap-y-1.5">
+          {ad.paymentMethods.map((m) => (
+            <span key={m} className="border-l-2 border-amber-400/60 pl-1.5 text-xs text-gray-400">
+              {m}
+            </span>
+          ))}
+        </div>
       </Td>
       <Td right py="py-6">
         <button
           type="button"
           onClick={onToggle}
-          /* Fixed floor and no wrapping, so "Sell USDT" and "Buy SOL" are the
-             same size and every row is the same height. */
           className={`inline-block min-w-[8rem] whitespace-nowrap rounded-md px-6 py-2.5 text-center text-sm font-semibold text-white transition-colors ${
             buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
           }`}
@@ -474,16 +409,7 @@ function AdRow({
     {open && (
       <tr>
         <td colSpan={5} className="p-0">
-          <OrderPanel
-            ad={ad}
-            merchant={merchant}
-            price={price}
-            fiat={fiat}
-            minFiat={minFiat}
-            maxFiat={maxFiat}
-            userDirection={userDirection}
-            onClose={onToggle}
-          />
+          <OrderPanel ad={ad} userDirection={userDirection} onClose={onToggle} />
         </td>
       </tr>
     )}

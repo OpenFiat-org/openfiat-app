@@ -71,3 +71,16 @@ export function formatDateShort(iso: string): string {
   const year = iso.slice(0, 4);
   return `${day} ${month} ${year}`;
 }
+
+/**
+ * `formatDate`/`formatDateShort` for a live `TimestampMs` (milliseconds
+ * since the Unix epoch — `openfiat_types::Timestamp`'s wire shape) rather
+ * than a fixture's already-ISO string.
+ */
+export function formatDateMs(ms: number): string {
+  return formatDate(new Date(ms).toISOString());
+}
+
+export function formatDateShortMs(ms: number): string {
+  return formatDateShort(new Date(ms).toISOString());
+}

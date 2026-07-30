@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
-import { DISPUTES } from "@/lib/data/disputes";
 import { CURRENT_USER, MERCHANTS } from "@/lib/data/merchants";
 import { PROVIDERS } from "@/lib/data/providers";
 import { PAIRS } from "@/lib/pairs";
@@ -95,9 +94,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const providerRoutes = PROVIDERS.map((p) => entry(`/providers/${p.id}`, 0.5, "weekly"));
 
-  // Dispute records are permanent for audit (OFS-2400 §7), which makes them
-  // exactly the kind of thing worth being able to find again.
-  const disputeRoutes = DISPUTES.map((d) => entry(`/disputes/${d.id}`, 0.4, "weekly"));
+  // Individual dispute case pages are not listed here: the docket is read
+  // from a live node (`lib/live-disputes.ts`), not a static fixture, so there
+  // is no build-time list of ids to enumerate. `/disputes` itself is listed
+  // above under `publicSurfaces`.
 
   return [
     ...primary,
@@ -107,7 +107,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...pairRoutes,
     ...merchantRoutes,
     ...providerRoutes,
-    ...disputeRoutes,
     ...account,
   ];
 }

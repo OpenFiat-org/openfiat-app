@@ -3,12 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MERCHANTS } from "@/lib/data/merchants";
-import { TRADES } from "@/lib/data/trades";
 
 /**
- * Simulated explorer search: resolves trade ids, merchant names/ids, and
- * wallet addresses, then routes to the right page. Unknown input routes to
- * the address page's graceful "not in simulated index" state.
+ * Explorer search: routes to a trade room, a merchant profile, or the
+ * address page, in that order.
+ *
+ * The trade-id branch used to also check a fixture (`TRADES`) for an exact
+ * match before falling back to the `/^TRD-/i` shape heuristic. Real trade
+ * ids are node-assigned reservation ids with no fixed prefix, so that exact
+ * lookup never had a live counterpart to replace it with — the query is
+ * routed to `/orders/<id>`, which reads the real trade (or reports it
+ * missing) itself.
  */
 export function ExplorerSearch() {
   const router = useRouter();
@@ -19,8 +24,7 @@ export function ExplorerSearch() {
     const q = query.trim();
     if (!q) return;
 
-    const trade = TRADES.find((t) => t.id.toLowerCase() === q.toLowerCase());
-    if (trade || /^TRD-/i.test(q)) {
+    if (/^TRD-/i.test(q)) {
       router.push(`/orders/${q.toUpperCase()}`);
       return;
     }

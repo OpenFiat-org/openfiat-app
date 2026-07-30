@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CURRENT_USER } from "@/lib/data/merchants";
 import { BAND_TEXT, COMPOSITE_NOTE, compositeScore, scoreBand } from "@/lib/reputation";
-import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
-import { formatNumber, shortAddress } from "@/lib/format";
+import { PublicKey } from "@solana/web3.js";
+import { DEVNET_OPEN_MINT } from "@/lib/onchain-config";
+import { fetchTokenBalance } from "@/lib/live-token-balances";
+import { formatBaseUnits } from "@/lib/live-vaults";
+import { shortAddress } from "@/lib/format";
 import { MerchantAvatar } from "@/components/merchant-avatar";
 import {
   injectedProvider,
@@ -33,11 +36,34 @@ export function WalletConnect() {
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [openBalance, setOpenBalance] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setConnection(readWalletConnection());
   }, []);
+
+  /* The real OPEN balance for whichever wallet is connected. Deliberately
+     not cached across connections: showing the previous wallet's balance
+     under a new address would be a fresh version of the bug this replaced. */
+  useEffect(() => {
+    if (!connection) {
+      setOpenBalance(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const held = await fetchTokenBalance(new PublicKey(connection.address), new PublicKey(DEVNET_OPEN_MINT));
+        if (!cancelled) setOpenBalance(held ? formatBaseUnits(held.amount, held.decimals) : "0");
+      } catch {
+        if (!cancelled) setOpenBalance(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [connection]);
 
   // Close the wallet dropdown on outside pointer-down.
   useEffect(() => {
@@ -77,7 +103,6 @@ export function WalletConnect() {
     writeWalletConnection(null);
   }
 
-  const shortOfBond = OPEN_BALANCE < OPEN_BOND_REQUIRED;
   const myScore = compositeScore(CURRENT_USER);
 
   if (connection) {
@@ -100,26 +125,28 @@ export function WalletConnect() {
         </Link>
 
         {/*
-         * OPEN balance — visible on every page and at every width, not just
-         * from `sm` up. It is the number that decides whether you can publish
-         * an advertisement at all, so hiding it on a phone hides the reason
-         * the ad wizard will refuse. Amber below the merchant bond, since at
-         * that point the balance is a blocker rather than a readout.
+         * The connected wallet's real OPEN balance, read from its token
+         * account on devnet.
+         *
+         * It used to render `OPEN_BALANCE`, a constant, so this badge told
+         * every visitor they held 12,500 OPEN. On devnet that is not merely
+         * unverified — the OPEN mint's authority is permanently unset, so no
+         * wallet can obtain any and the true figure is 0 for everyone.
+         *
+         * `null` while the read is in flight or after it failed, and the
+         * badge shows a dash rather than a zero: "we could not ask" must not
+         * render as "you have none".
          */}
         <Link
           href="/open"
-          className={`rounded-md border px-2.5 py-2 font-mono text-xs tabular-nums transition-colors sm:px-3 ${
-            shortOfBond
-              ? "border-amber-400/40 text-amber-200 hover:border-amber-400/70"
-              : "border-white/10 text-gray-300 hover:border-white/25"
-          }`}
+          className="rounded-md border border-white/10 px-2.5 py-2 font-mono text-xs tabular-nums text-gray-300 transition-colors hover:border-white/25 sm:px-3"
           title={
-            shortOfBond
-              ? `${formatNumber(OPEN_BALANCE, 0)} OPEN — below the ${formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN merchant bond. Buy more in the presale.`
-              : "Your OPEN balance — buy more in the presale"
+            openBalance === null
+              ? "Your OPEN balance could not be read from devnet"
+              : "Your OPEN balance on devnet"
           }
         >
-          {formatNumber(OPEN_BALANCE, 0)}
+          {openBalance ?? "—"}
           <span className="ml-1 text-gray-500">OPEN</span>
         </Link>
 
