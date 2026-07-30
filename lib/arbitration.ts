@@ -1,8 +1,16 @@
 import { peerIdFromPublicKey } from "@openfiat/sdk";
+import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
  * Working a dispute case as an arbitrator.
+ *
+ * Reading cases is `lib/live-disputes.ts`'s job and used to be duplicated
+ * here with a second raw-`fetch` client. It is one surface now, because it
+ * has become two reads that have to agree: the public docket says which cases
+ * exist and which have a seat free, and `getMyDisputes` — behind a wallet
+ * signature — says what is in the ones this arbitrator is seated on. What
+ * stays here is the signing and the two vote encodings.
  *
  * Two independent commit-reveal votes run side by side and this module keeps
  * them apart deliberately:
@@ -195,53 +203,39 @@ export function buildReveal(
   };
 }
 
-/** A dispute as a node reports it. Only the fields this app reads. */
-export interface LiveDispute {
-  id: string;
-  settlement_id: string;
-  reason: string;
-  status: "Open" | "CaseLocked" | "RevealPhase" | "Resolved";
-  required_arbitrators: number;
-  arbitrators: number[][];
-  commitments: { arbitrator: number[]; commitment: number[] }[];
-  reveals: { arbitrator: number[]; vote: string }[];
-}
-
-async function rpc<T>(endpoint: string, method: string, params: unknown): Promise<T> {
-  const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  const body = (await res.json()) as { result?: T; error?: { message: string } };
-  if (body.error) throw new Error(body.error.message);
-  return body.result as T;
-}
-
-export async function fetchDisputes(endpoint: string): Promise<LiveDispute[]> {
-  return rpc<LiveDispute[]>(endpoint, "getDisputes", {});
-}
-
-export async function fetchDispute(endpoint: string, id: string): Promise<LiveDispute | null> {
-  return rpc<LiveDispute | null>(endpoint, "getDispute", { id });
-}
-
 const sameBytes = (a: number[], b: number[]) =>
   a.length === b.length && a.every((x, i) => x === b[i]);
 
-export function hasJoined(dispute: LiveDispute, peerId: number[]): boolean {
+/**
+ * Where this arbitrator stands on a case they have joined.
+ *
+ * All three take the whole `Dispute`, which only `getMyDisputes` returns, and
+ * that is the point: an arbitrator's seat and their vote are exactly the
+ * pairing the public read now withholds, so "have I joined this?" is a
+ * question only the wallet that joined can be answered. There is no version
+ * of these that works on the public docket, and writing one would mean
+ * reconstructing the roster from somewhere else.
+ */
+export function hasJoined(dispute: Dispute, peerId: number[]): boolean {
   return dispute.arbitrators.some((a) => sameBytes(a, peerId));
 }
 
-export function hasCommitted(dispute: LiveDispute, peerId: number[]): boolean {
+export function hasCommitted(dispute: Dispute, peerId: number[]): boolean {
   return dispute.commitments.some((c) => sameBytes(c.arbitrator, peerId));
 }
 
-export function hasRevealed(dispute: LiveDispute, peerId: number[]): boolean {
+export function hasRevealed(dispute: Dispute, peerId: number[]): boolean {
   return dispute.reveals.some((r) => sameBytes(r.arbitrator, peerId));
 }
 
-/** Cases still short of their arbitrator quota, which is what you can join. */
-export function isJoinable(dispute: LiveDispute): boolean {
-  return dispute.status === "Open" && dispute.arbitrators.length < dispute.required_arbitrators;
+/**
+ * Cases still short of their arbitrator quota, which is what can be joined.
+ *
+ * Reads the public docket, and needs nothing more: how many seats are filled
+ * is a fact about the case, and survives redaction precisely so that a
+ * prospective arbitrator can see there is a seat free without being told who
+ * is in the others.
+ */
+export function isJoinable(dispute: PublicDispute): boolean {
+  return dispute.status === "Open" && dispute.arbitrators_seated < dispute.required_arbitrators;
 }

@@ -23,19 +23,26 @@ import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
  *  2. `getSettlements` — every wallet that has been the seller in one.
  *
  * (2) is arguably the truer definition of "merchant": someone who has actually
- * traded, not merely someone who has posted an offer. It is rejected anyway,
- * and the reason matters more than the choice. `getSettlements` returns every
+ * traded, not merely someone who has posted an offer. It was rejected anyway,
+ * and the reason matters more than the choice. `getSettlements` returned every
  * settlement on the network with both parties' PeerIds in it, so building a
- * directory on it means reconstructing the buyer-seller graph client-side and
+ * directory on it meant reconstructing the buyer-seller graph client-side and
  * putting it on a public page. `lib/counterparties.ts` explains why this
  * protocol gates exactly that: an enumerable "who trades with whom, how often"
  * map exposes which merchant a wallet always returns to and who a high-volume
  * merchant's regulars are, which in a P2P fiat market is a physical-safety
  * problem rather than a privacy nicety. `getCounterparties` demands a signature
- * from the wallet being asked about and refuses to answer for anyone else.
- * That `getSettlements` currently answers the same question unauthenticated is
- * a hole in the node (see this module's note in the task record), not a licence
- * to build a product surface on top of it.
+ * from the wallet being asked about and refuses to answer for anyone else, and
+ * that `getSettlements` answered the same question unauthenticated was a hole
+ * in the node rather than a licence to build a product surface on top of it.
+ *
+ * The node has since closed it: `getSettlements` is redacted and names neither
+ * party, so (2) is not merely a bad idea now but unavailable. That changes
+ * nothing here. This module never depended on the hole, and the reasoning
+ * above is why the directory was not built on settlements while it was still
+ * open — which is the only reason worth having, since a definition chosen
+ * because a leak happened to be convenient would have had to be rewritten the
+ * day it was plugged.
  *
  * (1) leaks nothing: an advertisement is a public offer, published precisely so
  * that strangers can find it, and the merchant's PeerId is already on every row

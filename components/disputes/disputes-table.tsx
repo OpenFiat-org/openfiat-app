@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
+import { useMyDisputes } from "@/components/disputes/use-my-disputes";
+import { fetchDisputes, type Dispute, type PublicDispute } from "@/lib/live-disputes";
 import { peerIdBytesForAddress } from "@/lib/peer-id";
-import { fetchDisputes, type Dispute } from "@/lib/live-disputes";
+import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connection";
 import { formatDateShortMs } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { StatusPill } from "@/components/status-pill";
 
-const STATUS_LABEL: Record<Dispute["status"], string> = {
+const STATUS_LABEL: Record<PublicDispute["status"], string> = {
   Open: "Open",
   CaseLocked: "Case Locked",
   RevealPhase: "Reveal Phase",
@@ -18,24 +19,46 @@ const STATUS_LABEL: Record<Dispute["status"], string> = {
 
 const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
+/** How this wallet is involved, from a case it is entitled to read. */
+function roleIn(dispute: Dispute, peerId: number[]): string {
+  if (sameBytes(dispute.buyer, peerId)) return "Buyer";
+  if (sameBytes(dispute.seller, peerId)) return "Seller";
+  if (dispute.arbitrators.some((a) => sameBytes(a, peerId))) return "Arbitrator";
+  // `getMyDisputes` answers for buyer, seller and seated arbitrators, so
+  // there is no fourth case — but a record that reaches here anyway is the
+  // node telling us something this app has not understood, and inventing a
+  // role for it would be the wrong response.
+  return "Party";
+}
+
 /**
- * Every dispute this node knows about (OFS-2400) — there is no per-wallet
- * `getDisputes` filter, so this is a global case list, the same shape
- * `getAdvertisements`/`getTrades` already are. A connected wallet gets its
- * own cases labelled "You"; nothing here requires connecting one.
+ * Every dispute this node knows about (OFS-2400), and which of them are
+ * yours.
  *
- * Replaces a table driven by `lib/data/disputes.ts` — four cases hand-written
- * to walk through the commit-reveal lifecycle, each with a fabricated buyer
- * and merchant Solana wallet address and a fabricated arbitrator roster
- * (reputation, stake, reward/slash figures, none of it real). `getDisputes`
- * returns `[]` on this cluster right now, which this renders as "no disputes
- * yet" — a true, current fact about the system — rather than inventing rows
- * to make the screen look busier.
+ * # Two reads, because a case says different things to different readers
+ *
+ * The docket is the public, redacted `getDisputes`: which cases exist, how
+ * far each has got, how many of its arbitrator seats are filled, and how it
+ * came out. That is a real public view of a public network and it is what
+ * this table is built from.
+ *
+ * What is no longer in it is *who*. The buyer and seller are the trade graph
+ * this protocol gates on physical-safety grounds (`lib/counterparties.ts`),
+ * the free-text reason describes a real disagreement and names people and
+ * banks as a matter of course, and which arbitrator is seated on which case
+ * is the pairing that makes pressuring one worthwhile.
+ *
+ * So the "Reason" column is gone — there is no truthful thing to put in it
+ * for a case you are not in — and the "You are" column appears only after the
+ * connected wallet has signed for `getMyDisputes`. Until then the honest
+ * answer is that this table does not know, and it says so instead of showing
+ * an empty column or a dash that reads like "not you".
  */
 export function DisputesTable() {
-  const [disputes, setDisputes] = useState<Dispute[] | null>(null);
+  const [disputes, setDisputes] = useState<PublicDispute[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [myPeerId, setMyPeerId] = useState<number[] | null>(null);
+  const mine = useMyDisputes();
 
   useEffect(() => {
     const update = () => {
@@ -89,26 +112,30 @@ export function DisputesTable() {
     );
   }
 
+  // Only ever consulted when the signed read has succeeded, so a row is
+  // labelled from a record this wallet was entitled to read — never from
+  // matching public rows against each other.
+  const roles = new Map<string, string>(
+    myPeerId && mine.data ? mine.data.map((d) => [d.id, roleIn(d, myPeerId)]) : [],
+  );
+  const showRole = mine.status === "loaded";
+
   return (
-    <DataTable
-      minWidth={780}
-      head={
-        <tr>
-          <Th>Case</Th>
-          <Th>Reason</Th>
-          <Th>You are</Th>
-          <Th>Filed</Th>
-          <Th right>Arbitrators</Th>
-          <Th right>Stage</Th>
-        </tr>
-      }
-    >
-      {disputes.map((d) => {
-        const iAmBuyer = myPeerId && sameBytes(d.buyer, myPeerId);
-        const iAmSeller = myPeerId && sameBytes(d.seller, myPeerId);
-        const iAmOpener = myPeerId && sameBytes(d.opener, myPeerId);
-        const role = iAmBuyer ? "Buyer" : iAmSeller ? "Seller" : iAmOpener ? "Opener" : "—";
-        return (
+    <div className="space-y-3">
+      <YourCases state={mine} />
+      <DataTable
+        minWidth={720}
+        head={
+          <tr>
+            <Th>Case</Th>
+            {showRole && <Th>You are</Th>}
+            <Th>Filed</Th>
+            <Th right>Arbitrators</Th>
+            <Th right>Stage</Th>
+          </tr>
+        }
+      >
+        {disputes.map((d) => (
           <Tr key={d.id}>
             <Td py="py-5">
               <Link href={`/disputes/${d.id}`} className="font-mono font-medium text-brand hover:text-brand-hover">
@@ -116,16 +143,51 @@ export function DisputesTable() {
               </Link>
               <span className="mt-0.5 block text-xs text-gray-500">settlement {d.settlement_id}</span>
             </Td>
-            <Td py="py-5" className="max-w-xs truncate text-xs text-gray-400">{d.reason}</Td>
-            <Td py="py-5" className="text-gray-400">{role}</Td>
+            {showRole && <Td py="py-5" className="text-gray-400">{roles.get(d.id) ?? "—"}</Td>}
             <Td py="py-5" className="tabular-nums text-gray-400">{formatDateShortMs(d.opened_at)}</Td>
             <Td py="py-5" right num className="text-gray-300">
-              {d.arbitrators.length} / {d.required_arbitrators}
+              {d.arbitrators_seated} / {d.required_arbitrators}
             </Td>
             <Td py="py-5" right><StatusPill status={STATUS_LABEL[d.status]} /></Td>
           </Tr>
-        );
-      })}
-    </DataTable>
+        ))}
+      </DataTable>
+    </div>
+  );
+}
+
+/** The one line above the table explaining what it does not know, and why. */
+function YourCases({ state }: { state: ReturnType<typeof useMyDisputes> }) {
+  if (state.status === "no-wallet") {
+    return (
+      <p className="text-xs text-gray-500">
+        Connect your wallet to see which of these cases are yours. A node will not say who is in a
+        case without a signature from someone who is.
+      </p>
+    );
+  }
+  if (state.status === "loaded") {
+    const count = state.data?.length ?? 0;
+    return (
+      <p className="text-xs text-gray-500">
+        {count === 0
+          ? "None of these cases involve the connected wallet."
+          : `${count === 1 ? "One case" : `${count} cases`} involve the connected wallet.`}
+      </p>
+    );
+  }
+  return (
+    <p className="text-xs text-gray-500">
+      {state.error && <span className="mr-2 text-amber-400">{state.error}</span>}
+      <button
+        type="button"
+        onClick={state.read}
+        disabled={state.status === "loading"}
+        className="text-gray-400 underline decoration-dotted underline-offset-4 hover:text-white disabled:opacity-50"
+      >
+        {state.status === "loading" ? "Signing…" : "Show which of these are yours"}
+      </button>{" "}
+      — signs a challenge with your wallet.
+    </p>
   );
 }
