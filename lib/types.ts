@@ -378,16 +378,21 @@ export function evidenceVisible(dispute: Dispute, joined: boolean): boolean {
 }
 
 export type IdentityLevel = "L0" | "L1" | "L2" | "L3";
-export type ClaimStatus = "Verified" | "Pending" | "Not started";
 
-export interface IdentityClaim {
-  level: IdentityLevel;
-  title: string;
-  description: string;
-  status: ClaimStatus;
-  details: string[];
-  expiry?: string;
-}
+/*
+ * `IdentityClaim` and `ClaimStatus` stood here, as the shape of
+ * `lib/data/identity.ts`'s fixture. Both are gone with it, and are
+ * deliberately not replaced by an equivalent.
+ *
+ * The real shape is not equivalent, and pretending it was is what let the
+ * fixture look plausible. A stored claim (`crates/identity`'s `Claim`) has no
+ * level, no title and no description — a level is a reader's conclusion from
+ * §8, not a field — and its status is `Verified | Unverified` set by the
+ * publisher rather than a three-state progress marker with "Pending" and
+ * "Not started" in it. Nothing is ever pending: a claim exists or it does
+ * not. `lib/live-identity.ts` carries the shape the registry actually
+ * returns.
+ */
 
 /**
  * A written review left by a counterparty after a trade.
@@ -415,12 +420,13 @@ export interface ReputationDimension {
   display: string; // human-readable value, e.g. "98.6%" or "4.2 h"
 }
 
-export interface ReputationProfile {
-  tier: MerchantTier;
-  nextTier: MerchantTier;
-  progressPct: number; // progress toward nextTier
-  dimensions: ReputationDimension[];
-}
+/*
+ * `ReputationProfile` — a tier, a next tier, a percentage toward it and eight
+ * 0-100 dimension scores — is gone with its only instance. The protocol has
+ * no tiers and no scores of any kind: `crates/reputation` records counters
+ * and derives rates from them, which is what `lib/live-reputation.ts` reads
+ * and `components/account/live-reputation.tsx` shows.
+ */
 
 /*
  * `WalletBalance`, `Vault` and `VaultEvent` used to be declared here, as the

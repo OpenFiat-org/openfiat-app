@@ -1,9 +1,9 @@
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { asCid } from "@/lib/ipfs/cid";
 import { MAX_AVATAR_BYTES, ipfsUrl } from "@/lib/ipfs/gateway";
+import { currentClaims, fetchIdentityClaims } from "@/lib/live-identity";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { uploadToIpfs } from "@/lib/ipfs/upload-client";
-import { walletParam } from "@/lib/wallet-param";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -37,15 +37,6 @@ import type { SolanaProvider } from "@/lib/wallet-connection";
 
 const AVATAR = "Avatar";
 
-interface RawClaim {
-  id: string;
-  claim_type: string | Record<string, string>;
-  value: string;
-  supersedes: string | null;
-  revoked: boolean;
-  created_at: number;
-}
-
 export interface AvatarClaim {
   claimId: string;
   cid: string;
@@ -53,24 +44,6 @@ export interface AvatarClaim {
   url: string;
   createdAt: number;
   supersedes: string | null;
-}
-
-/** `ClaimType` is externally tagged: unit variants arrive as bare strings. */
-function isAvatar(claimType: RawClaim["claim_type"]): boolean {
-  return typeof claimType === "string"
-    ? claimType === AVATAR
-    : Object.keys(claimType ?? {})[0] === AVATAR;
-}
-
-async function rpc<T>(method: string, params: unknown): Promise<T> {
-  const res = await fetch(`${nodeUrl().replace(/\/$/, "")}/rpc`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  const body = (await res.json()) as { result?: T; error?: { message: string } };
-  if (body.error) throw new Error(body.error.message);
-  return body.result as T;
 }
 
 /**
@@ -82,23 +55,22 @@ async function rpc<T>(method: string, params: unknown): Promise<T> {
  * `<img src>` must have been checked by the code that renders it.
  */
 export async function fetchAvatar(wallet: string): Promise<AvatarClaim | null> {
-  const claims = await rpc<RawClaim[]>("getIdentityClaimsByWallet", {
-    wallet: walletParam(wallet),
-  });
-  const current = (claims ?? [])
-    .filter((c) => isAvatar(c.claim_type) && !c.revoked)
-    .sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0))
-    .find((c) => asCid(c.value) !== null);
+  const claims = await fetchIdentityClaims(wallet);
+  // Newest first from `fetchIdentityClaims`, so the first still-in-force
+  // Avatar claim with a usable value is the current one.
+  const current = currentClaims(claims).find(
+    (claim) => !claim.custom && claim.type === AVATAR && asCid(claim.value) !== null,
+  );
   if (!current) return null;
 
   const url = ipfsUrl(current.value);
   if (!url) return null;
   return {
-    claimId: current.id,
+    claimId: current.claimId,
     cid: current.value,
     url,
-    createdAt: current.created_at,
-    supersedes: current.supersedes ?? null,
+    createdAt: current.createdAt,
+    supersedes: current.supersedes,
   };
 }
 
