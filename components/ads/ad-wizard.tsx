@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { StablecoinAsset } from "@/lib/types";
 import { fxPerUsd } from "@/lib/data/ads";
-import { OPEN_BALANCE, OPEN_BOND_REQUIRED, VAULTS } from "@/lib/data/wallet";
 import { formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
@@ -113,15 +112,28 @@ export function AdWizard() {
   const minNum = Number(min) || 0;
   const maxNum = Number(max) || 0;
   const liqNum = Number(liquidity) || 0;
-  const vault = VAULTS.find((v) => v.asset === asset);
-  const vaultAvailable = vault?.available ?? 0;
+  /*
+   * There is no vault-backing check here any more, and that is deliberate.
+   *
+   * It used to read a `VAULTS` fixture keyed by asset ticker and refuse any
+   * advertised liquidity above the figure it found. That gate looked like a
+   * safety check and enforced nothing: the numbers were invented, identical
+   * for every visitor, and unrelated to any vault on chain.
+   *
+   * A real check needs the merchant's `LiquidityVault` for the mint being
+   * advertised, and `lib/live-vaults.ts` can do exactly that — but this
+   * wizard picks an asset by ticker ("USDC"), and no devnet mint is mapped
+   * to any of these tickers anywhere in this deployment. So the lookup has
+   * no key. Rather than invent one, the step says plainly that it cannot
+   * verify backing. See `/wallet` for vault balances that are real.
+   */
 
   const stepValid: Record<number, boolean> = {
     1: true,
     2: pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0,
-    3: minNum > 0 && maxNum >= minNum && liqNum > 0 && liqNum <= vaultAvailable,
+    3: minNum > 0 && maxNum >= minNum && liqNum > 0,
     4: methods.length >= 1,
-    5: OPEN_BALANCE >= OPEN_BOND_REQUIRED,
+    5: true,
   };
   const stepErrors: Record<number, string[]> = {
     1: [],
@@ -134,7 +146,6 @@ export function AdWizard() {
       ...(minNum <= 0 ? ["Min trade must be greater than 0."] : []),
       ...(maxNum < minNum ? ["Max trade must be ≥ min trade."] : []),
       ...(liqNum <= 0 ? ["Liquidity must be greater than 0."] : []),
-      ...(liqNum > vaultAvailable ? [`Exceeds your ${asset} vault availability (${formatNumber(vaultAvailable)} ${asset}).`] : []),
     ],
     4: methods.length === 0 ? ["Select at least one payment method."] : [],
     5: [],
@@ -193,9 +204,9 @@ export function AdWizard() {
               </button>
             </span>
           )}
-          <span className="font-mono text-xs tabular-nums text-gray-400">
-            Your balance: {formatNumber(OPEN_BALANCE, 0)} OPEN
-          </span>
+          {/* The real OPEN balance is in the header badge, read from the
+              connected wallet's token account. This used to print a constant
+              and contradict it. */}
         </div>
       </div>
 
@@ -302,9 +313,18 @@ export function AdWizard() {
             <div>
               <div className="flex items-center justify-between">
                 <label className={labelCls}>Liquidity ({asset})</label>
-                <span className="text-xs tabular-nums text-gray-500">Vault available {formatNumber(vaultAvailable)} {asset}</span>
+                <span className="text-xs text-amber-300/80">Not checked against a vault — see below</span>
               </div>
               <input value={liquidity} onChange={(e) => patch({ liquidity: e.target.value })} type="number" className={inputCls} />
+              <p className="mt-1.5 text-[11px] text-gray-600">
+                Nothing here confirms you hold this much. A vault is keyed by token mint, and this step picks
+                an asset by ticker, so there is no mint to look up — an earlier version of this screen filled
+                that gap with invented balances and refused advertisements against them.{" "}
+                <Link href="/wallet" className="text-gray-400 underline hover:text-white">
+                  Your real vault balances
+                </Link>{" "}
+                are on the Wallet page.
+              </p>
             </div>
 
             {/* Counterparty floor. Advisory rather than enforced — see the
@@ -354,7 +374,7 @@ export function AdWizard() {
                 ["Limits", `${formatNumber(minNum, 0)} – ${formatNumber(maxNum, 0)} ${fiat}`],
                 ["Liquidity", `${formatNumber(liqNum, 0)} ${asset}`],
                 ["Payment methods", methods.join(" · ")],
-                ["Merchant bond", `${formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN (already bonded)`],
+                ["Merchant bond", "Not verified by this screen"],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
                   <dt className="text-gray-500">{label}</dt>
@@ -362,14 +382,25 @@ export function AdWizard() {
                 </div>
               ))}
             </dl>
-            {OPEN_BALANCE < OPEN_BOND_REQUIRED && (
-              <p className="mt-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-4 py-3 text-sm text-amber-200">
-                You need {formatNumber(OPEN_BOND_REQUIRED, 0)} OPEN to publish ads — you have {formatNumber(OPEN_BALANCE, 0)}.{" "}
-                <Link href="/open" className="font-medium text-amber-100 underline">
-                  Buy OPEN →
-                </Link>
-              </p>
-            )}
+            {/*
+              * This used to assert "5,000 OPEN (already bonded)" and warn
+              * against a hardcoded balance — two invented numbers that also
+              * disagreed with `lib/data/staking.ts`'s own merchant minimum.
+              * The bond is real and lives in the staking program; this
+              * screen does not read it, so it does not claim to.
+              */}
+            <p className="mt-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-4 py-3 text-sm text-amber-200">
+              This wizard does not check your merchant bond or your vault balance, so it cannot tell you
+              whether this advertisement would be publishable. Your bonded stake is on{" "}
+              <Link href="/staking" className="font-medium text-amber-100 underline">
+                Staking
+              </Link>
+              , and your real vault balances are on{" "}
+              <Link href="/wallet" className="font-medium text-amber-100 underline">
+                Wallet
+              </Link>
+              .
+            </p>
           </div>
         )}
 

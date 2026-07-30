@@ -19,9 +19,7 @@ import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/paymen
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
 import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
-import { OPEN_BALANCE, OPEN_BOND_REQUIRED } from "@/lib/data/wallet";
 import { TRADES } from "@/lib/data/trades";
-import { VAULTS } from "@/lib/data/wallet";
 import qr from "qrcode-generator";
 import { pseudoAddress, pseudoSignature } from "@/lib/format";
 import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
@@ -804,13 +802,19 @@ describe("access nodes", () => {
   });
 });
 
-describe("liquidity vaults", () => {
-  it("balances sum to the total", () => {
-    for (const v of VAULTS) {
-      expect(v.available + v.reserved + v.settled).toBe(v.total);
-    }
-  });
-});
+/*
+ * The "liquidity vaults" suite that stood here asserted
+ * `available + reserved + settled === total` over a fixture. That is not the
+ * escrow program's invariant — on chain, `settled` counts tokens that have
+ * already left the vault, so adding it back to a spendable balance
+ * double-counts money that is gone, and `total` is only ever moved by
+ * deposits and withdrawals. The test passed because the fixture had been
+ * written to satisfy it.
+ *
+ * Vault decoding is now covered by `tests/onchain-decode.test.ts` against
+ * hand-built account bytes, and the counters' real behaviour by
+ * `scripts/prove-devnet-vault-deposit-withdraw.ts` against devnet.
+ */
 
 describe("service registry", () => {
   it("carries the full OFS-1500 §5 identity", () => {
@@ -938,11 +942,6 @@ describe("payment methods registry", () => {
 });
 
 describe("OPEN token", () => {
-  it("balance covers the merchant bond constant", () => {
-    expect(OPEN_BOND_REQUIRED).toBe(5000);
-    expect(OPEN_BALANCE).toBeGreaterThanOrEqual(OPEN_BOND_REQUIRED);
-  });
-
   it("prices the presale at 1 OPEN = 1 USDC", () => {
     // [CONFIRMED] in OFS-4100 §3, and enforced on chain by
     // `open_entitlement_for`, which applies no rate beyond a decimal scale.

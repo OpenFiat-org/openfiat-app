@@ -125,6 +125,74 @@ export function decodeStakingConfig(data: Uint8Array): DecodedStakingConfig {
   };
 }
 
+// --- openfiat-escrow ------------------------------------------------------
+
+const LIQUIDITY_VAULT_DISCRIMINATOR = [221, 166, 52, 46, 13, 174, 181, 99];
+
+/**
+ * The exact on-chain size of a `LiquidityVault`, and the only account size
+ * the escrow program allocates for one. Usable on its own as a
+ * `getProgramAccounts` `dataSize` filter.
+ */
+export const LIQUIDITY_VAULT_LEN = 114;
+
+export interface DecodedLiquidityVault {
+  merchant: PublicKey;
+  mint: PublicKey;
+  /**
+   * Deposits minus withdrawals, and nothing else.
+   *
+   * Settlement does NOT reduce it: tokens that leave through
+   * `fund_trade_escrow` and are released to a buyer are counted in
+   * `settled` while `total` stays where it was. So a vault that has settled
+   * everything it ever held still reports its full historical deposit here
+   * while its token account is empty. This is not a balance and must never
+   * be labelled as one.
+   */
+  total: bigint;
+  /** Held against open reservations that have not yet been funded. */
+  reserved: bigint;
+  /**
+   * The only number a new reservation or a withdrawal may draw against —
+   * the program checks this field and no other.
+   *
+   * Not derivable from the rest: `total - reserved` over-states it by
+   * everything already settled away. A caller must read this field rather
+   * than compute one. Presenting `total` where this belongs is how a
+   * merchant oversells.
+   */
+  available: bigint;
+  /** Cumulative amount that has completed settlement and left for good. */
+  settled: bigint;
+  /** Funded into open trade escrows; not yet released or cancelled back. */
+  pendingSettlement: bigint;
+  bump: number;
+  tokenVaultBump: number;
+}
+
+/** Layout: disc(8) merchant(32) mint(32) total(8) reserved(8) available(8)
+ *  settled(8) pending_settlement(8) bump(1) token_vault_bump(1) = 114 bytes.
+ *
+ * Note the declaration order: `reserved` precedes `available` on chain,
+ * while every sensible UI lists available first. Reading them in display
+ * order rather than layout order swaps two numbers that are both plausible
+ * balances, which is the kind of error nothing downstream can detect — hence
+ * the byte-level test over a hand-built account. */
+export function decodeLiquidityVault(data: Uint8Array): DecodedLiquidityVault {
+  checkDiscriminator(data, LIQUIDITY_VAULT_DISCRIMINATOR, "LiquidityVault");
+  return {
+    merchant: readPubkey(data, 8),
+    mint: readPubkey(data, 40),
+    total: readU64(data, 72),
+    reserved: readU64(data, 80),
+    available: readU64(data, 88),
+    settled: readU64(data, 96),
+    pendingSettlement: readU64(data, 104),
+    bump: data[112]!,
+    tokenVaultBump: data[113]!,
+  };
+}
+
 // --- openfiat-governance --------------------------------------------------
 
 const GOVERNANCE_CONFIG_DISCRIMINATOR = [81, 63, 124, 107, 210, 100, 145, 70];
