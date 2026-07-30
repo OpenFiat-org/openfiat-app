@@ -32,14 +32,19 @@ export default async function ProviderPage({
   const { id } = await params;
 
   return (
-    <section className="max-w-3xl">
+    <>
+      {/* Outside the reading column: `PageHero` is a full-bleed band that
+          escapes its parent assuming the parent is the page's centred content
+          column, so nesting it in the `max-w-3xl` below dragged it off the
+          left edge and cut the service id out of view. Same defect as
+          `app/settings/page.tsx`, which is where it was found. */}
       <PageHero
         title={decodeURIComponent(id)}
         description="A Service Registry entry (OFS-1500), read live from your access node. Every field below is one the registry actually carries."
       />
-      <div className="mt-8">
+      <section className="mt-10 max-w-3xl">
         <ProviderDetail serviceId={decodeURIComponent(id)} />
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

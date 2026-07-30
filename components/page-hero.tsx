@@ -10,6 +10,18 @@ import { useEffect, useRef, type ReactNode } from "react";
  * rAF + cleanup, DPR-aware resize, capped particle counts, static single
  * frame under prefers-reduced-motion, client-only painting (no SSR/hydration
  * concerns).
+ *
+ * # Render this as a direct child of `main`, never inside a narrower column
+ *
+ * The band is full-bleed by escaping its parent: `w-screen` with `left-1/2
+ * -translate-x-1/2`. That arithmetic assumes the parent's centre is the
+ * viewport's centre, which is true of `app/layout.tsx`'s centred `main` and
+ * of nothing else. Put it inside a `max-w-3xl` reading column and it centres
+ * on that column instead — 240px off to the left at desktop width, taking the
+ * title off the edge of the screen with it. `body { overflow-x: clip }` keeps
+ * that from producing a scrollbar, so the only symptom is a missing heading,
+ * which is why it survived on two pages. A page wanting a narrow column puts
+ * the column *after* the hero rather than around it.
  */
 export type HeroVariant =
   | "mesh"
