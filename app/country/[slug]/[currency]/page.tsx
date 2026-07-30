@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: {
       absolute: `Buy & Sell USDT with ${code} in ${country.name} — P2P Exchange | OpenFiat`,
     },
-    description: `Buy and sell USDT, USDC, USD1, and SOL with ${code} in ${country.name}. Pay with ${methods}. Escrow enforced by audited Solana programs — OpenFiat never takes custody of your fiat.`,
+    description: `Buy and sell USDT, USDC, USD1, and SOL with ${code} in ${country.name}. Pay with ${methods}. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
     alternates: { canonical: `/country/${country.slug}/${code.toLowerCase()}` },
   };
 }

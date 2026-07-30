@@ -9,11 +9,27 @@ import { NetworkNotice } from "@/components/network-notice";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono", display: "swap" });
 
+/*
+ * Every description here said "escrow enforced by audited Solana programs".
+ * No external audit has been performed. OFS-4200 §Status puts one ahead of
+ * mainnet as a gate — "Mainnet deployment is a separate future phase gated on
+ * an external security audit" — so the programs are pre-audit by the
+ * specification's own account, and `components/top-nav.tsx` already tells
+ * visitors they are unaudited.
+ *
+ * The word is dropped rather than softened. "Audited" is the single strongest
+ * safety signal a protocol can put next to the word escrow, and this is
+ * metadata: it is what a search result shows and what an OpenGraph card
+ * carries into a timeline, read by people who will never see the banner that
+ * contradicts it. What is left is true — escrow is enforced on chain and
+ * OpenFiat takes custody of nothing — and that was always the load-bearing
+ * part of the sentence.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.openfiat.network"),
   title: { default: "OpenFiat — P2P Stablecoin Exchange", template: "%s · OpenFiat" },
   description:
-    "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by audited Solana programs.",
+    "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
   icons: {
     icon: [
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
@@ -36,13 +52,13 @@ export const metadata: Metadata = {
     url: "/",
     title: "OpenFiat — P2P Stablecoin Exchange",
     description:
-      "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by audited Solana programs.",
+      "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
   },
   twitter: {
     card: "summary_large_image",
     title: "OpenFiat — P2P Stablecoin Exchange",
     description:
-      "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by audited Solana programs; disputes decided by staked arbitrators.",
+      "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by Solana programs; disputes decided by staked arbitrators.",
   },
 };
 

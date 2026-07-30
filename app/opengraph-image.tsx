@@ -44,7 +44,7 @@ export default function Image() {
           Stablecoins for local currency, peer to peer
         </div>
         <div style={{ color: BRAND.muted, fontSize: 34, marginTop: 28, lineHeight: 1.35 }}>
-          No exchange operator. Escrow enforced by audited Solana programs; disputes decided by staked arbitrators.
+          No exchange operator. Escrow enforced by Solana programs; disputes decided by staked arbitrators.
         </div>
       </div>
     ),

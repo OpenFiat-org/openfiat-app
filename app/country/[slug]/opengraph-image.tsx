@@ -83,7 +83,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             {`Buy & sell USDT in ${name}`}
           </div>
           <div style={{ color: BRAND.muted, fontSize: 32, marginTop: 20, lineHeight: 1.35 }}>
-            Escrow enforced by audited Solana programs. OpenFiat never takes custody of your fiat.
+            Escrow enforced by Solana programs. OpenFiat never takes custody of your fiat.
           </div>
         </div>
 

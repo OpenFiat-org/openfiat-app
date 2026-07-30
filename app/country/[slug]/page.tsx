@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const methods = paymentMethodsForCurrency(country.currencyCode).slice(0, 3).join(", ");
   return {
     title: { absolute: `Buy & Sell USDT in ${country.name} — P2P Exchange | OpenFiat` },
-    description: `Buy and sell USDT, USDC, USD1, and SOL with ${country.currencyName} (${country.currencyCode}) in ${country.name}. Pay with ${methods}. Escrow enforced by audited Solana programs — OpenFiat never takes custody of your fiat.`,
+    description: `Buy and sell USDT, USDC, USD1, and SOL with ${country.currencyName} (${country.currencyCode}) in ${country.name}. Pay with ${methods}. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
     alternates: { canonical: `/country/${country.slug}` },
   };
 }
