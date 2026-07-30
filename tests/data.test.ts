@@ -11,8 +11,8 @@ import {
 import { PROPOSALS } from "@/lib/data/governance";
 import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
-import { NETWORK_NODES, PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
-import { connectableNodes, defaultNode } from "@/lib/node-preference";
+import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
+import { connectableNodes, defaultNode, resolveNodeSelection } from "@/lib/node-preference";
 import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
@@ -618,32 +618,49 @@ describe("QR encoding", () => {
 });
 
 describe("access nodes", () => {
-  it("only offers node roles an interface can attach to", () => {
-    // The picker used to offer any Online node, which let you select a
-    // notification gateway, an oracle, a snapshot host or a risk-intelligence
-    // provider as your access node. Those are services nodes consume, not
-    // endpoints a browser talks to.
-    for (const n of connectableNodes()) {
-      expect(["Full Node", "Public API Node"], n.id).toContain(n.role);
-      expect(n.status, n.id).toBe("Online");
+  // These used to assert over `NETWORK_NODES`, a fixture of ten invented
+  // nodes, and checked things like "the default has the lowest declared
+  // latency" — a property of the fixture's own made-up numbers, not of the
+  // network. The picker now lists the real cluster, so the properties worth
+  // holding are different ones.
+
+  it("offers only nodes with a usable endpoint", () => {
+    const nodes = connectableNodes();
+    expect(nodes.length).toBeGreaterThan(0);
+    for (const n of nodes) {
+      expect(n.url, n.id).toMatch(/^https?:\/\//);
+      expect(["RpcConnected", "GossipOnly"], n.id).toContain(n.chainMode);
     }
   });
 
-  it("excludes the service roles from the connectable set", () => {
-    const ids = new Set(connectableNodes().map((n) => n.id));
-    const services = NETWORK_NODES.filter(
-      (n) => !["Full Node", "Public API Node"].includes(n.role),
-    );
-    expect(services.length).toBeGreaterThan(0);
-    for (const s of services) expect(ids.has(s.id), s.id).toBe(false);
-  });
-
-  it("defaults to the lowest-latency connectable node", () => {
+  // An RpcConnected node reads Solana directly; a GossipOnly one learns
+  // on-chain facts second-hand and can lag. Defaulting to the connected one
+  // means the app's first answers are the current ones.
+  it("defaults to an RPC-connected node when the cluster has one", () => {
+    const nodes = connectableNodes();
     const node = defaultNode();
     expect(node).toBeDefined();
-    for (const other of connectableNodes()) {
-      expect(node.latencyMs).toBeLessThanOrEqual(other.latencyMs);
+    if (nodes.some((n) => n.chainMode === "RpcConnected")) {
+      expect(node.chainMode).toBe("RpcConnected");
     }
+  });
+
+  it("resolves a custom selection to the host the user typed", () => {
+    const selection = resolveNodeSelection("custom:my.node.example:9000");
+    expect(selection.custom).toBe(true);
+    expect(selection.url).toBe("http://my.node.example:9000");
+    // Null rather than a guess: the app cannot know whether someone else's
+    // node reads Solana directly, and claiming either way would misstate how
+    // current its on-chain answers are.
+    expect(selection.chainMode).toBeNull();
+  });
+
+  // A stale id left in localStorage by an earlier build must not leave the
+  // app unable to reach any node at all.
+  it("falls back to the default for an unrecognised stored id", () => {
+    const selection = resolveNodeSelection("node-ke-full-01");
+    expect(selection.id).toBe(defaultNode().id);
+    expect(selection.custom).toBe(false);
   });
 });
 

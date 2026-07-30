@@ -53,81 +53,29 @@ function loadTestWallet(): Keypair {
  * devnet. Nothing about the blockchain interaction is faked — only the
  * browser-extension UI layer is stood in for.
  */
-/** The minimal real-`Transaction`-instance shape this injected script
- *  actually calls — the object it receives at runtime is a genuine
- *  `@solana/web3.js` `Transaction` (built by the app's own bundle), this
- *  is just enough of its type for the injected script's own compile
- *  step (it can't import `@solana/web3.js` itself — see this file's own
- *  doc comment on why). */
-interface BrowserTransactionLike {
-  feePayer: unknown;
-  partialSign(signer: { publicKey: unknown; secretKey: Uint8Array }): void;
-  serialize(): Uint8Array;
-}
-
-function injectMockWallet(page: import("@playwright/test").Page, secretKey: number[], address: string) {
-  return page.addInitScript(
-    ({ secretKey, address, rpcUrl }) => {
-      async function signAndSendTransaction(transaction: BrowserTransactionLike) {
-        transaction.partialSign({
-          publicKey: transaction.feePayer,
-          secretKey: Uint8Array.from(secretKey),
-        });
-        const raw = transaction.serialize();
-        const body = {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "sendTransaction",
-          params: [Buffer.from(raw).toString("base64"), { encoding: "base64" }],
-        };
-        const res = await fetch(rpcUrl, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = await res.json();
-        if (json.error) throw new Error(json.error.message ?? "sendTransaction failed");
-        return { signature: json.result as string };
-      }
-
-      const provider = {
-        isPhantom: true,
-        connect: async () => ({ publicKey: { toString: () => address } }),
-        signAndSendTransaction,
-      };
-      (window as unknown as { phantom: unknown }).phantom = { solana: provider };
-      (window as unknown as { solana: unknown }).solana = provider;
-    },
-    { secretKey, address, rpcUrl: DEVNET_RPC },
-  );
-}
-
-test("the real wallet-connect UI connects to an injected provider and shows the real address", async ({ page }) => {
-  const wallet = loadTestWallet();
-
-  await injectMockWallet(page, Array.from(wallet.secretKey), wallet.publicKey.toBase58());
-  await page.goto("/staking");
-
-  // wallet-connect.tsx's own modal flow: open it, pick Phantom (which the
-  // injected mock makes "Detected"), and the app's own connect() logic
-  // calls provider.connect() for real — this proves the UI's connection
-  // wiring reaches a real (if mocked-at-the-extension-layer) provider,
-  // not that this test re-derives an address itself.
-  await page.getByRole("button", { name: "Connect Wallet" }).click();
-  // `WalletConnect`'s modal is a `fixed inset-0` backdrop rendered
-  // inside `<TopNav>`'s own `backdrop-blur` header — a pre-existing
-  // CSS quirk (a `backdrop-filter` ancestor creates a new containing
-  // block for `position: fixed` descendants), unrelated to this
-  // phase's changes, that makes the modal position relative to the
-  // header instead of the viewport and pushes its first row above the
-  // fold. `force: true` clicks its real DOM coordinates directly,
-  // sidestepping Playwright's visibility check rather than the app's
-  // real click handling.
-  await page.getByRole("button", { name: /Phantom/ }).evaluate((el: HTMLElement) => el.click());
-  await expect(page.getByText(wallet.publicKey.toBase58().slice(0, 4), { exact: false })).toBeVisible({
-    timeout: 15_000,
-  });
-});
+/*
+ * A test stood here driving the hand-rolled connect modal: it injected a
+ * legacy `window.solana` provider and clicked a hardcoded "Phantom" row.
+ *
+ * Both halves are gone. The modal is now the standard wallet-adapter one,
+ * and — the part worth recording — discovery happens through the Wallet
+ * Standard rather than by reading `window` globals by name. A provider that
+ * ONLY injects `window.solana`, with no Wallet Standard registration, is no
+ * longer detected. Every current wallet (Phantom, Solflare, Backpack,
+ * Coinbase) registers that way, so this does not affect real users, but it
+ * is a genuine change in what counts as an available wallet and not merely
+ * a change of appearance.
+ *
+ * Re-testing it faithfully means registering a Wallet Standard wallet in the
+ * page, not shimming a global, which is a different fixture from the one
+ * this file has. The connect surface is covered instead by
+ * `tests/e2e/wallet-modal.spec.ts`, which asserts the standard modal opens
+ * and — more importantly — that a browser with no wallet stays disconnected
+ * rather than falling back to a fixture address, which is what the previous
+ * implementation did on both "no wallet installed" and "user rejected".
+ *
+ * The on-chain proof below is unaffected: it never went through the UI.
+ */
 
 test("a direct initialize_stake_account instruction (no token transfer) is accepted by the real program", async () => {
   // This is the actual "first genuine end-to-end proof" for this

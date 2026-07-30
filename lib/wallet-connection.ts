@@ -79,14 +79,40 @@ const WALLET_NAME_TO_KEY: Record<string, InjectedWalletKey> = {
 /**
  * The live provider object for whatever wallet is currently connected, or
  * `undefined` if none is connected or it was a simulated connection (no
- * real extension detected at connect time — see `wallet-connect.tsx`).
- * Re-derived on every call rather than cached, since the extension itself
- * owns the actual connection lifecycle.
+ * real extension detected at connect time).
+ *
+ * # Where the signer comes from now
+ *
+ * The wallet adapter owns the connection, so the signer is whatever it
+ * handed `registerAdapterSigner` — not a `window` global looked up by
+ * name. The old path only worked for the four wallets this file happened
+ * to enumerate; a Wallet Standard wallet outside that list connected fine
+ * through the modal and then had no signer here, so signing failed after
+ * the connection appeared to succeed.
+ *
+ * The injected lookup remains as a fallback for a connection restored from
+ * storage before the adapter has mounted, and returns `undefined` rather
+ * than throwing so a caller can report "reconnect your wallet".
  */
 export function currentSigner(connection: WalletConnection | null): SolanaProvider | undefined {
   if (!connection) return undefined;
+  if (adapterSigner) return adapterSigner;
   const key = WALLET_NAME_TO_KEY[connection.wallet];
   return key ? injectedProvider(key) : undefined;
+}
+
+/**
+ * The adapter's signer for the currently connected wallet, or `null` when
+ * nothing is connected.
+ *
+ * A module-level reference rather than React state because `currentSigner`
+ * is called from plain functions all over the app, not only from
+ * components. `components/wallet/wallet-provider.tsx` is the only writer.
+ */
+let adapterSigner: SolanaProvider | null = null;
+
+export function registerAdapterSigner(provider: SolanaProvider | null): void {
+  adapterSigner = provider;
 }
 
 export function readWalletConnection(): WalletConnection | null {

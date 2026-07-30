@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Client } from "@openfiat/sdk";
 
+import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
 import {
   NODE_CHANGED_EVENT,
   connectableNodes,
@@ -24,12 +25,25 @@ const FOOTER_LINKS: Array<[string, string]> = [
   ["Governance", "/governance"],
 ];
 
+/**
+ * The old copy here read "Simulated data, not connected to a live node" on
+ * every page. It was wrong in both directions at once: false on the routes
+ * that read a real node and real Solana accounts, and an alibi for the ones
+ * that were still serving fixtures. A blanket disclaimer cannot describe a
+ * mixed app, and a reader cannot tell which half they are looking at.
+ *
+ * It now states the one thing true everywhere — this is devnet, so nothing
+ * here is worth anything — and leaves provenance to each route.
+ */
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-white/10">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-4 py-8">
         <div className="text-xs text-gray-500">
-          <p>© 2026 OpenFiat — decentralized P2P stablecoin protocol. Simulated data, not connected to a live node.</p>
+          <p>
+            © 2026 OpenFiat — decentralized P2P stablecoin protocol. Running on {NETWORK_LABEL} (
+            {SOLANA_CLUSTER}); tokens and balances here have no value.
+          </p>
           <nav className="mt-2 flex gap-5">
             {FOOTER_LINKS.map(([label, href]) => (
               <Link key={href} href={href} className="hover:text-gray-300">
@@ -57,8 +71,8 @@ function NodeChip() {
 
   // SSR/initial render shows a neutral placeholder; preference applies post-mount.
   const label = selection
-    ? `${selection.id} · ${selection.region}${selection.latencyMs !== null ? ` · ${selection.latencyMs} ms` : ""}`
-    : "Resolving closest node…";
+    ? `${selection.label}${selection.chainMode ? ` · ${selection.chainMode}` : ""}`
+    : "…";
 
   return (
     <>
@@ -75,7 +89,28 @@ function NodeChip() {
   );
 }
 
-/** User-requested modal: pick or configure the app's access node (simulated). */
+/** Round-trip time to a node's `getHealth`, or `null` if it did not answer. */
+async function measure(url: string): Promise<number | null> {
+  const started = performance.now();
+  try {
+    const client = new Client({ endpoint: url, timeoutMs: 4_000 });
+    await client.call<Record<string, never>, unknown>("getHealth", {});
+    return Math.round(performance.now() - started);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pick the node this interface talks to.
+ *
+ * Every entry is a node that actually exists and is actually contacted: the
+ * list is `knownNodes()` (the real devnet cluster), and each row's status
+ * comes from a live `getHealth` round trip rather than a declared constant.
+ * A node that does not answer is shown as unreachable instead of being
+ * hidden, because "the node I chose is down" is something the user needs to
+ * be able to see.
+ */
 function AccessNodeModal({
   selection,
   onClose,
@@ -85,26 +120,37 @@ function AccessNodeModal({
 }) {
   const [host, setHost] = useState("");
   const [error, setError] = useState("");
-  const [connected, setConnected] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [latency, setLatency] = useState<Record<string, number | null>>({});
+  const [probing, setProbing] = useState(true);
 
-  /* Only roles a client can attach to. Offering an oracle or a notification
-     gateway here let someone point their interface at a service that has no
-     API for it. */
-  const online = connectableNodes();
+  const nodes = connectableNodes();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        nodes.map(async (n) => [n.id, await measure(n.url)] as const),
+      );
+      if (!cancelled) {
+        setLatency(Object.fromEntries(entries));
+        setProbing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // `nodes` is derived from a pure function of build-time config, so it is
+    // stable across renders; probing once on open is intended.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function selectNode(id: string) {
     writeNodeSelection(id);
-    setConnected(id);
-    setTimeout(onClose, 600);
+    setTimeout(onClose, 400);
   }
 
-  /**
-   * A custom node is the one case in this footer that's a real host the
-   * user actually runs — so, unlike the picker list above (`NETWORK_NODES`,
-   * simulated), this is a genuine `getVersion` call via `@openfiat/sdk`
-   * before accepting the address, not just a format check.
-   */
+  /** A custom node gets the same real `getHealth` check as the listed ones. */
   async function connectCustom() {
     const value = host.trim();
     if (!/^[\w.-]+:\d{2,5}$/.test(value)) {
@@ -113,19 +159,14 @@ function AccessNodeModal({
     }
     setError("");
     setChecking(true);
-    try {
-      const client = new Client({ endpoint: `http://${value}`, timeoutMs: 5_000 });
-      const version = await client.call<Record<string, never>, { version: string }>(
-        "getVersion",
-        {},
-      );
-      setError(`✓ reachable — openfiat-node ${version.version}`);
-      selectNode(`custom:${value}`);
-    } catch {
+    const ms = await measure(`http://${value}`);
+    setChecking(false);
+    if (ms === null) {
       setError(`Could not reach an OpenFiat node at ${value}`);
-    } finally {
-      setChecking(false);
+      return;
     }
+    setError(`✓ reachable — ${ms} ms`);
+    selectNode(`custom:${value}`);
   }
 
   return (
@@ -138,36 +179,46 @@ function AccessNodeModal({
           <div>
             <h2 className="text-base font-semibold text-white">Access node</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              Connected: {selection?.id ?? "…"} — the node list below is simulated; a custom node is checked live.
+              The {NETWORK_LABEL} cluster. Each node is contacted directly — status and latency below
+              are measured, not declared.
             </p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
         </div>
 
         <ul className="max-h-72 divide-y divide-white/5 overflow-y-auto">
-          {online.map((n) => (
-            <li key={n.id} className="flex items-center gap-3 px-5 py-3 text-sm">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-              <div className="min-w-0 flex-1">
-                <p className="font-mono text-gray-200">{n.id}</p>
-                <p className="text-xs text-gray-500">
-                  {n.role} · {n.region} · {n.latencyMs} ms
-                </p>
-              </div>
-              {selection?.id === n.id ? (
-                <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
-                  Connected
-                </span>
-              ) : (
-                <button
-                  onClick={() => selectNode(n.id)}
-                  className="rounded-md border border-white/15 px-3 py-1 text-xs text-gray-300 hover:bg-white/5"
-                >
-                  {connected === n.id ? "✓" : "Use this node"}
-                </button>
-              )}
-            </li>
-          ))}
+          {nodes.map((n) => {
+            const ms = latency[n.id];
+            const reachable = ms !== null && ms !== undefined;
+            return (
+              <li key={n.id} className="flex items-center gap-3 px-5 py-3 text-sm">
+                <span
+                  className={`h-2 w-2 shrink-0 rounded-full ${
+                    probing ? "bg-gray-500" : reachable ? "bg-emerald-400" : "bg-red-400"
+                  }`}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-gray-200">{n.label}</p>
+                  <p className="text-xs text-gray-500">
+                    {n.chainMode} ·{" "}
+                    {probing ? "checking…" : reachable ? `${ms} ms` : "unreachable"}
+                  </p>
+                </div>
+                {selection?.id === n.id ? (
+                  <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
+                    Connected
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => selectNode(n.id)}
+                    className="rounded-md border border-white/15 px-3 py-1 text-xs text-gray-300 hover:bg-white/5"
+                  >
+                    Use this node
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
 
         <div className="border-t border-white/10 px-5 py-4">
@@ -189,7 +240,7 @@ function AccessNodeModal({
           </div>
           {error && <p className="mt-1.5 text-xs text-amber-300">{error}</p>}
           <p className="mt-2 text-[11px] text-gray-600">
-            Sends a real getVersion request to the address above over HTTP.
+            Sends a real getHealth request to the address above before switching.
           </p>
         </div>
       </div>

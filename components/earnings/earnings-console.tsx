@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchMyServices, type MyService } from "@/lib/my-services";
 import { Panel } from "@/components/panel";
 import {
   EarningsError,
@@ -58,6 +59,11 @@ export function EarningsConsole() {
   const [result, setResult] = useState<EarningsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Discovered from the registry rather than remembered by the user. `null`
+  // means "not looked yet"; an empty array means "looked, and this key has
+  // registered nothing" — two different things to show.
+  const [myServices, setMyServices] = useState<MyService[] | null>(null);
+  const [discovering, setDiscovering] = useState(false);
 
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
@@ -97,6 +103,26 @@ export function EarningsConsole() {
     }
   }, [wallet, endpoint, serviceId]);
 
+  // Listing services needs no signature: the registry is public and every
+  // entry already carries the key that signed it. Only reading what a
+  // service EARNED requires proving control of that key.
+  useEffect(() => {
+    const address = wallet?.address;
+    if (!address) {
+      setMyServices(null);
+      return;
+    }
+    let cancelled = false;
+    setDiscovering(true);
+    fetchMyServices(address)
+      .then((s) => !cancelled && setMyServices(s))
+      .catch(() => !cancelled && setMyServices(null))
+      .finally(() => !cancelled && setDiscovering(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [wallet]);
+
   if (!wallet) {
     return (
       <Panel title="Provider earnings">
@@ -127,10 +153,51 @@ export function EarningsConsole() {
       <Panel title="Prove you control the service">
         <div className="space-y-4 px-4 py-4">
           <p className="text-sm text-gray-400">
-            Enter the Service ID you registered. Your wallet will be asked to sign a one-time
-            challenge — that signature is what proves the service is yours. Nothing is submitted to
-            the network and no transaction is sent.
+            Pick one of your registered services, or enter a Service ID directly. Your wallet will
+            be asked to sign a one-time challenge — that signature is what proves the service is
+            yours. Nothing is submitted to the network and no transaction is sent.
           </p>
+
+          <div>
+            <p className="text-xs text-gray-500">Registered under your key</p>
+            {!wallet && (
+              <p className="mt-1.5 text-sm text-gray-500">
+                Connect a wallet to list the services registered under it.
+              </p>
+            )}
+            {wallet && discovering && (
+              <p className="mt-1.5 text-sm text-gray-500">Searching the service registry…</p>
+            )}
+            {wallet && !discovering && myServices?.length === 0 && (
+              <p className="mt-1.5 text-sm text-gray-500">
+                No services are registered under this key. Registering one is how it gets here — there
+                is no provider account to create.
+              </p>
+            )}
+            {wallet && !discovering && myServices && myServices.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {myServices.map((s) => (
+                  <li key={s.serviceId}>
+                    <button
+                      type="button"
+                      onClick={() => setServiceId(s.serviceId)}
+                      className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                        serviceId === s.serviceId
+                          ? "border-brand/50 bg-brand/10 text-white"
+                          : "border-white/10 text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      <span className="block font-mono text-xs">{s.serviceId}</span>
+                      <span className="block text-[11px] text-gray-500">
+                        {s.serviceType}
+                        {s.health ? ` · ${s.health}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
               className={inputCls}

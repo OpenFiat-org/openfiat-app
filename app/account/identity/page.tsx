@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { IDENTITY_CLAIMS, REPUTATION } from "@/lib/data/identity";
+import { IDENTITY_CLAIMS } from "@/lib/data/identity";
+import { LiveReputationPanel } from "@/components/account/live-reputation";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { PageHero } from "@/components/page-hero";
-import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
-import { TierBadge } from "@/components/tier-badge";
 
 export const metadata: Metadata = {
   title: "Identity & Reputation",
@@ -57,43 +56,7 @@ export default function IdentityPage() {
       </div>
 
       <div className="mt-10">
-        <Panel title="Reputation — wallet-bound, portable across OpenFiat apps">
-          <div className="border-b border-white/10 px-4 py-3">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Tier</span>
-                <span className="font-semibold text-white">{REPUTATION.tier}</span>
-                <TierBadge tier={REPUTATION.tier} />
-              </div>
-              <div className="flex min-w-56 flex-1 items-center gap-3">
-                <span className="h-1.5 flex-1 rounded-full bg-white/10">
-                  <span
-                    className="block h-1.5 rounded-full bg-gradient-to-r from-brand to-brand-teal"
-                    style={{ width: `${REPUTATION.progressPct}%` }}
-                  />
-                </span>
-                <span className="text-xs tabular-nums text-gray-500">
-                  {REPUTATION.progressPct}% to {REPUTATION.nextTier}
-                </span>
-              </div>
-            </div>
-          </div>
-          <ol className="divide-y divide-white/5">
-            {REPUTATION.dimensions.map((d) => (
-              <li key={d.label} className="flex items-center gap-4 px-4 py-2 text-sm">
-                <span className="w-40 shrink-0 text-gray-300">{d.label}</span>
-                <span className="h-1 flex-1 rounded-full bg-white/10">
-                  <span className="block h-1 rounded-full bg-brand" style={{ width: `${d.score}%` }} />
-                </span>
-                <span className="w-44 shrink-0 text-right text-xs tabular-nums text-gray-500">{d.display}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="border-t border-white/10 px-4 py-3 text-xs text-gray-500">
-            OpenFiat reputation has no star ratings — it is a set of objective, on-chain-verifiable dimensions,
-            bound to your wallet and portable across every OpenFiat application.
-          </p>
-        </Panel>
+        <LiveReputationPanel />
       </div>
     </section>
   );

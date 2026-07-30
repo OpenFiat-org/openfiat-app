@@ -1,64 +1,109 @@
-import type { NetworkNode, NodeRole } from "@/lib/types";
-import { NETWORK_NODES } from "@/lib/data/network";
+import {
+  NODE_URL_STORAGE_KEY,
+  knownNodes,
+  type KnownNode,
+} from "@/lib/node-endpoint";
 
 /**
- * Access-node preference, persisted to localStorage["openfiat:node"].
- * Values are either a known node id or `custom:<host:port>`. Default (nothing
- * saved) is the Online node with the lowest latency — the "closest" node.
- * Client-side only; all connection behavior is simulated.
+ * Which node this interface talks to, persisted to
+ * `localStorage["openfiat:node"]` as either a `KnownNode.id` or
+ * `custom:<host:port>`.
+ *
+ * # This used to describe a network that did not exist
+ *
+ * The picker was backed by `lib/data/network.ts`'s `NETWORK_NODES` — a
+ * fixture listing node-ke-full-01, node-bootstrap-02, node-oracle-02 and
+ * others, each with an invented region, latency and peer count. None of
+ * them were real, none could be connected to, and the app shipped a node
+ * chooser that could not choose a node.
+ *
+ * `lib/node-endpoint.ts` already knew the real cluster. Two parallel node
+ * systems existed side by side, sharing this very storage key, and the
+ * fabricated one was the one the footer rendered. This module is now a thin
+ * layer over the real one, so there is a single source of truth for what a
+ * node is.
+ *
+ * # Why region and peer count are gone
+ *
+ * They were fixture inventions. A node's region is not something this app
+ * can observe, and the peer count is not on any RPC method it calls. What
+ * IS knowable and does change what a node can answer is its chain mode
+ * (OFS-4300): an `RpcConnected` node reads Solana directly, a `GossipOnly`
+ * node learns on-chain facts second-hand and can lag. That is shown
+ * instead — a real property in place of two invented ones.
+ *
+ * Latency is measured, not declared: `null` until a round trip has actually
+ * happened. A number here always came from the wire.
  */
 
-export const NODE_STORAGE_KEY = "openfiat:node";
+export const NODE_STORAGE_KEY = NODE_URL_STORAGE_KEY;
 export const NODE_CHANGED_EVENT = "openfiat:node-changed";
 
 export interface NodeSelection {
   id: string;
-  role: string;
-  region: string;
+  /** Human label; for a custom node, the host the user typed. */
+  label: string;
+  /** The endpoint actually used for requests. */
+  url: string;
+  /**
+   * `null` for a custom node — the app cannot know whether someone else's
+   * node reads Solana directly, and guessing would misrepresent how current
+   * its on-chain answers are.
+   */
+  chainMode: KnownNode["chainMode"] | null;
+  /** Measured round trip in ms, or `null` if nothing has been measured. */
   latencyMs: number | null;
   custom: boolean;
 }
 
-/**
- * Node roles a user interface can actually attach to.
- *
- * The picker previously offered any Online node, which let you select a
- * notification gateway, an oracle, a snapshot host or a risk-intelligence
- * provider as your access node. None of those serve a client: they are services
- * that *nodes* consume, published in the service registry for discovery, and an
- * interface pointed at one has nothing to talk to.
- *
- * Bootstrap nodes are excluded for a different reason — their job is to hand
- * out peers so a joining node can find the network, not to answer marketplace
- * queries.
- */
-export const CONNECTABLE_ROLES: NodeRole[] = ["Full Node", "Public API Node"];
-
-export function connectableNodes(): NetworkNode[] {
-  return NETWORK_NODES.filter(
-    (n) => CONNECTABLE_ROLES.includes(n.role) && n.status === "Online",
-  );
+/** Every node this interface can attach to. */
+export function connectableNodes(): KnownNode[] {
+  return knownNodes();
 }
 
-export function defaultNode(): NetworkNode {
-  return [...connectableNodes()].sort((a, b) => a.latencyMs - b.latencyMs)[0];
+/**
+ * The node used when nothing is stored.
+ *
+ * The RPC-connected node is preferred over gossip-only peers because it is
+ * the one that can answer on-chain questions without lag — a better default
+ * than the old "lowest declared latency", which ranked nodes by a number
+ * from a fixture.
+ */
+export function defaultNode(): KnownNode {
+  const nodes = knownNodes();
+  return nodes.find((n) => n.chainMode === "RpcConnected") ?? nodes[0]!;
+}
+
+function fromKnown(node: KnownNode): NodeSelection {
+  return {
+    id: node.id,
+    label: node.label,
+    url: node.url,
+    chainMode: node.chainMode,
+    latencyMs: null,
+    custom: false,
+  };
 }
 
 export function resolveNodeSelection(raw: string | null): NodeSelection {
   if (raw) {
     if (raw.startsWith("custom:")) {
-      return { id: raw.slice(7), role: "Custom Node", region: "Self-hosted", latencyMs: null, custom: true };
+      const host = raw.slice("custom:".length);
+      return {
+        id: raw,
+        label: host,
+        url: host.startsWith("http") ? host : `http://${host}`,
+        chainMode: null,
+        latencyMs: null,
+        custom: true,
+      };
     }
-    // Also guards against a stale localStorage value naming a node that is no
-    // longer connectable — the role check has to happen on read, not only in
-    // the picker.
-    const node = connectableNodes().find((n) => n.id === raw);
-    if (node) {
-      return { id: node.id, role: node.role, region: node.region, latencyMs: node.latencyMs, custom: false };
-    }
+    const node = knownNodes().find((n) => n.id === raw);
+    if (node) return fromKnown(node);
+    // Falls through rather than throwing: a stale id from an earlier build
+    // must not leave the app unable to reach any node at all.
   }
-  const node = defaultNode();
-  return { id: node.id, role: node.role, region: node.region, latencyMs: node.latencyMs, custom: false };
+  return fromKnown(defaultNode());
 }
 
 export function readNodeSelection(): NodeSelection {
