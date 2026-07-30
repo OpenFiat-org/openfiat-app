@@ -10,7 +10,7 @@ import {
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import type { Transaction } from "@solana/web3.js";
 
-import { DEVNET_RPC_ENDPOINT } from "@/lib/onchain-config";
+import { SOLANA_RPC_ENDPOINT } from "@/lib/onchain-config";
 import {
   registerAdapterSigner,
   writeWalletConnection,
@@ -42,7 +42,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
  * experience becomes standard; nothing downstream has to know.
  */
 export function AppWalletProvider({ children }: { children: React.ReactNode }) {
-  const endpoint = useMemo(() => DEVNET_RPC_ENDPOINT, []);
+  const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

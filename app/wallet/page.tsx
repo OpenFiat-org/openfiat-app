@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
+import { NETWORK_LABEL, SOLANA_CLUSTER, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
 import { BalancesPanel } from "@/components/wallet/balances-panel";
 import { PageHero } from "@/components/page-hero";
 import { VaultsPanel } from "@/components/wallet/vaults-panel";
@@ -27,7 +27,9 @@ export default function WalletPage() {
       <PageHero
         variant="bloom"
         title="Wallet"
-        description={`Liquidity vaults and token balances read live from ${SOLANA_CLUSTER}. ${NETWORK_LABEL} only — these tokens have no value.`}
+        description={`Liquidity vaults and token balances read live from ${SOLANA_CLUSTER}.${
+          TOKENS_ARE_WORTHLESS ? ` ${NETWORK_LABEL} only — these tokens have no value.` : ""
+        }`}
       >
         <div className="flex gap-2.5">
           <Link

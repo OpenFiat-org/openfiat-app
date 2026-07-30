@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Client } from "@openfiat/sdk";
 
-import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
+import { NETWORK_LABEL, SOLANA_CLUSTER, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
 import { nodeUrlFor, unreachableReason } from "@/lib/node-scheme";
 import {
   NODE_CHANGED_EVENT,
@@ -43,7 +43,7 @@ export function Footer() {
         <div className="text-xs text-gray-500">
           <p>
             © 2026 OpenFiat — decentralized P2P stablecoin protocol. Running on {NETWORK_LABEL} (
-            {SOLANA_CLUSTER}); tokens and balances here have no value.
+            {SOLANA_CLUSTER}){TOKENS_ARE_WORTHLESS ? "; tokens and balances here have no value." : "."}
           </p>
           <nav className="mt-2 flex gap-5">
             {FOOTER_LINKS.map(([label, href]) => (

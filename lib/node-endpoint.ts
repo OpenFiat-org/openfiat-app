@@ -54,23 +54,75 @@ export function isLocalDefault(): boolean {
 }
 
 /**
- * Which network this build talks to, shown persistently in the interface.
+ * The Solana endpoint every on-chain read goes to.
  *
- * Everything here is devnet: the OpenFiat node cluster this app queries, and
- * the Solana cluster those nodes and `lib/onchain-config.ts` read
- * (`api.devnet.solana.com`). The escrow, staking, governance and presale
- * programs are deployed to devnet only — OFS-4200's own status banner keeps
- * mainnet out of scope, and there has been no external audit.
+ * It lives here, beside the OpenFiat node URL, rather than in
+ * `lib/onchain-config.ts` where it used to, because the two together are
+ * what "which network am I on" means and they must be configured in one
+ * place. `lib/onchain-config.ts` imports it back; nothing else in the app
+ * hardcodes a cluster URL.
+ */
+export const SOLANA_RPC_URL =
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
+
+/**
+ * Which Solana cluster `SOLANA_RPC_URL` actually points at.
+ *
+ * Derived, never declared. The label was previously the constant string
+ * `"Devnet"`, which is a promise this module had no way to keep: point the
+ * build at another cluster and the badge kept saying Devnet, in the one
+ * direction that costs a reader money — a mainnet balance read as play money
+ * is the mistake that ends with somebody moving real value on a screen that
+ * told them it was a test.
+ *
+ * A URL that matches no known cluster returns null rather than a guess. An
+ * unrecognised host genuinely might be a mainnet proxy, and "probably devnet"
+ * is exactly the assumption that must not be made here.
+ */
+export function solanaClusterOf(rpcUrl: string): "Devnet" | "Testnet" | "Mainnet" | null {
+  let host: string;
+  try {
+    host = new URL(rpcUrl).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (/(^|\.)devnet\./.test(host) || host === "localhost" || host === "127.0.0.1") {
+    // A local validator is `solana-test-validator`, which is not any public
+    // cluster — but it is unambiguously not mainnet, which is the fact the
+    // badge exists to convey.
+    return "Devnet";
+  }
+  if (/(^|\.)testnet\./.test(host)) return "Testnet";
+  if (/(^|\.)mainnet(-beta)?\./.test(host)) return "Mainnet";
+  return null;
+}
+
+/**
+ * Which network this build talks to, shown persistently in the interface.
  *
  * Stated rather than implied because the interface is indistinguishable from
  * a production one at a glance, and someone who mistakes a devnet balance for
  * a real one draws exactly the wrong conclusion about what they are holding.
  * Devnet OPEN has no value and cannot be bridged to any that does.
+ *
+ * "Unknown network" is a legitimate answer and is deliberately the loudest
+ * one: a build whose cluster cannot be identified is the case where a reader
+ * most needs to go and check, not the case for a reassuring default.
  */
-export const NETWORK_LABEL = "Devnet";
+export const NETWORK_LABEL: string = solanaClusterOf(SOLANA_RPC_URL) ?? "Unknown network";
 
-/** The Solana cluster behind the on-chain reads (`lib/onchain-config.ts`). */
-export const SOLANA_CLUSTER = "solana devnet";
+/** The Solana cluster behind the on-chain reads, for prose. */
+export const SOLANA_CLUSTER = `solana ${NETWORK_LABEL.toLowerCase()}`;
+
+/**
+ * Whether this build is on a cluster where tokens are worth nothing.
+ *
+ * Every "test tokens only; they have no value" line in the interface is
+ * gated on this. Left unqualified it would be a false reassurance on a
+ * mainnet build, and false reassurance about whether money is real is the
+ * worst sentence this app could print.
+ */
+export const TOKENS_ARE_WORTHLESS = NETWORK_LABEL === "Devnet" || NETWORK_LABEL === "Testnet";
 
 /** A node a user interface can actually attach to and query. */
 export interface KnownNode {

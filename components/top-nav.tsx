@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
 import { NetworkBadge } from "@/components/network-badge";
+import { NETWORK_LABEL, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
 
 const MAIN_LINKS: Array<[string, string]> = [
   ["P2P Exchange", "/"],
@@ -94,9 +95,12 @@ export function TopNav() {
         */}
       <div className="border-t border-amber-400/10 bg-amber-400/5">
         <p className="mx-auto max-w-7xl px-4 py-1.5 text-center text-xs text-amber-200/80">
-          Running on <strong className="font-semibold text-amber-200">devnet</strong> — a test
-          network. Tokens and balances here have no value, and the Solana programs are
-          unaudited. OpenFiat never takes custody of fiat; escrow is enforced on chain.
+          Running on{" "}
+          <strong className="font-semibold text-amber-200">{NETWORK_LABEL.toLowerCase()}</strong>
+          {TOKENS_ARE_WORTHLESS
+            ? " — a test network. Tokens and balances here have no value, and the Solana programs are unaudited."
+            : ". The Solana programs are unaudited."}{" "}
+          OpenFiat never takes custody of fiat; escrow is enforced on chain.
         </p>
       </div>
     </header>

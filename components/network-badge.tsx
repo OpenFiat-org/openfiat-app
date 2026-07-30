@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NETWORK_LABEL, SOLANA_CLUSTER, nodeUrl } from "@/lib/node-endpoint";
+import {
+  NETWORK_LABEL,
+  SOLANA_CLUSTER,
+  TOKENS_ARE_WORTHLESS,
+  nodeUrl,
+} from "@/lib/node-endpoint";
 import { NODE_CHANGED_EVENT } from "@/lib/node-preference";
 
 /**
@@ -33,11 +38,16 @@ export function NetworkBadge() {
 
   return (
     <span
-      title={
+      title={[
         endpoint
-          ? `${NETWORK_LABEL} — node ${endpoint}, on-chain reads from ${SOLANA_CLUSTER}. Test tokens only; they have no value.`
-          : `${NETWORK_LABEL} — test tokens only; they have no value.`
-      }
+          ? `${NETWORK_LABEL} — node ${endpoint}, on-chain reads from ${SOLANA_CLUSTER}.`
+          : `${NETWORK_LABEL}.`,
+        // Gated, not asserted: "they have no value" is the one sentence here
+        // that must never appear over a cluster where it is false.
+        TOKENS_ARE_WORTHLESS ? "Test tokens only; they have no value." : null,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       className="shrink-0 whitespace-nowrap rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300"
     >
       {NETWORK_LABEL}

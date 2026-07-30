@@ -4,7 +4,7 @@ import "./globals.css";
 import { TopNav } from "@/components/top-nav";
 import { AppWalletProvider } from "@/components/wallet/wallet-provider";
 import { Footer } from "@/components/footer";
-import { SimulatedBadge } from "@/components/simulated-badge";
+import { NetworkNotice } from "@/components/network-notice";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono", display: "swap" });
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <TopNav />
           <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
           <Footer />
-          <SimulatedBadge />
+          <NetworkNotice />
         </AppWalletProvider>
       </body>
     </html>
