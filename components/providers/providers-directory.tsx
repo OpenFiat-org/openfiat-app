@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
 import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/data/providers";
+import { sinceLabel } from "@/lib/format";
 import { fetchLiveProviders, type DirectoryRow } from "@/lib/live-providers";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -158,7 +159,7 @@ export function ProvidersDirectory() {
               <Th>Region</Th>
               <Th>Capabilities</Th>
               <Th>Pricing</Th>
-              <Th right>Uptime</Th>
+              <Th right>Last heard from</Th>
               <Th right>Status</Th>
             </tr>
           }
@@ -198,7 +199,14 @@ export function ProvidersDirectory() {
                   </span>
                 </Td>
                 <Td py="py-5" className="text-xs text-gray-400">{p.priceLabel}</Td>
-                <Td py="py-5" right num className="text-gray-300">{p.uptimeLabel}</Td>
+                {/* Not "Uptime". OFS-1500 records a health state and when it
+                    was refreshed, and no uptime figure exists anywhere in the
+                    protocol to put here — see provider-detail.tsx. */}
+                <Td py="py-5" right className="text-xs text-gray-400">
+                  <span title={new Date(p.lastHealthUpdate).toLocaleString()}>
+                    {sinceLabel(p.lastHealthUpdate)}
+                  </span>
+                </Td>
                 <Td py="py-5" right><StatusPill status={p.status} /></Td>
               </Tr>
             );

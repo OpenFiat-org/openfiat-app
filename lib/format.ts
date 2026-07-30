@@ -84,3 +84,23 @@ export function formatDateMs(ms: number): string {
 export function formatDateShortMs(ms: number): string {
   return formatDateShort(new Date(ms).toISOString());
 }
+
+/**
+ * "3 hours ago" — how long ago a millisecond timestamp was.
+ *
+ * Written for `last_health_update`, which is the only liveness signal OFS-1500
+ * carries. The registry records a health state and when it was last refreshed;
+ * it does not record an uptime percentage, and nothing in the protocol
+ * computes one. "Last heard from" is the honest answer to the question people
+ * reach for uptime to ask, and this lives here so the directory and the
+ * per-service page give that answer in one vocabulary rather than two.
+ */
+export function sinceLabel(millis: number): string {
+  const seconds = Math.max(0, Math.round((Date.now() - millis) / 1000));
+  if (seconds < 90) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 90) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 36) return `${hours} hours ago`;
+  return `${Math.round(hours / 24)} days ago`;
+}

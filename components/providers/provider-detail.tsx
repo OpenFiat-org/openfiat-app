@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/status-pill";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { TYPE_COLORS } from "@/lib/data/providers";
 import { formatPricing } from "@/lib/earnings";
+import { sinceLabel } from "@/lib/format";
 import { fetchProviderRecord, labelForServiceType } from "@/lib/live-providers";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 
@@ -194,17 +195,6 @@ function hexPeer(peer: number[] | string): string {
 
 function formatMoment(millis: number): string {
   return new Date(millis).toLocaleString();
-}
-
-/** "3 hours ago" — a real reading of `last_health_update`. */
-function sinceLabel(millis: number): string {
-  const seconds = Math.max(0, Math.round((Date.now() - millis) / 1000));
-  if (seconds < 90) return "just now";
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 90) return `${minutes} minutes ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 36) return `${hours} hours ago`;
-  return `${Math.round(hours / 24)} days ago`;
 }
 
 function Row({

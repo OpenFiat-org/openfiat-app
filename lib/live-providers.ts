@@ -23,7 +23,16 @@ export interface DirectoryRow {
   region: string;
   capabilities: string[];
   priceLabel: string;
-  uptimeLabel: string;
+  /**
+   * `last_health_update` in millis — when the provider was last heard from.
+   *
+   * This replaces an `uptimeLabel` that was unconditionally `"—"`. OFS-1500
+   * tracks a health state and the time it was refreshed; it does not track
+   * uptime, so a column headed Uptime told a reader the protocol measures
+   * something it does not and that this node merely happened not to know it.
+   * The timestamp is a real reading of the same question.
+   */
+  lastHealthUpdate: number;
   status: string;
   /** `/providers/<service id>`, which reads the same registry record. */
   href: string;
@@ -70,10 +79,7 @@ function toRow(record: ServiceRecord): DirectoryRow {
     // unpriced service says so rather than showing a placeholder dash that
     // reads as "unknown".
     priceLabel: formatPricing(record.pricing) ?? "Free",
-    // OFS-1500 tracks a Health state (Online/Maintenance/Degraded/Offline),
-    // not a rolling uptime percentage — showing a fabricated number here
-    // would be less honest than admitting this isn't tracked.
-    uptimeLabel: "—",
+    lastHealthUpdate: record.last_health_update,
     status: record.health,
     href: `/providers/${encodeURIComponent(record.service_id)}`,
   };
