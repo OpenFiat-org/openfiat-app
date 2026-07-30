@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
-import { CURRENT_USER } from "@/lib/data/merchants";
 import {
   type SavedPaymentAccount,
   accountsFor,
   isComplete,
   readAccounts,
 } from "@/lib/payment-accounts";
-import { compositeScore } from "@/lib/reputation";
-import type { Advertisement, Merchant, TradeDirection } from "@/lib/types";
+import type { LiveAd } from "@/lib/live-advertisements";
+import type { TradeDirection } from "@/lib/types";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 
 /** How long a quoted price stands before it refreshes. */
@@ -20,43 +19,31 @@ const QUOTE_SECONDS = 40;
 /**
  * The order form, opened in place under its advertisement.
  *
- * Modelled on the flow people already know from Bybit and Binance P2P, because
- * this is the one screen where unfamiliarity costs money. The properties that
- * matter, in order:
- *
- *  - Both amount fields are live and each drives the other, so you can think in
- *    the currency you actually hold rather than doing arithmetic.
- *  - The limits are the placeholder, not a footnote — the field tells you what
- *    it will accept before you type.
- *  - The price carries a countdown, so a quote is visibly a quote.
- *  - The button is disabled with a stated reason, never enabled into a failure.
- *  - The merchant's own terms are on screen before you commit, not discovered
- *    in chat after your money has moved.
+ * Reads a `LiveAd` now, not the old mock `Advertisement`/`Merchant` pair —
+ * see `lib/live-advertisements.ts` for why that type is narrower. Two things
+ * this panel used to show are gone because there is nothing live behind
+ * them: the advertiser's free-text `terms`, and a "requires reputation"
+ * floor gated on `compositeScore(CURRENT_USER)` — a real advertisement
+ * carries neither a terms field nor a reputation floor.
  */
 export function OrderPanel({
   ad,
-  merchant,
-  price,
-  fiat,
-  minFiat,
-  maxFiat,
   userDirection,
   onClose,
 }: {
-  ad: Advertisement;
-  merchant: Merchant;
-  price: number;
-  fiat: string;
-  minFiat: number;
-  maxFiat: number;
+  ad: LiveAd;
   userDirection: TradeDirection;
   onClose: () => void;
 }) {
   const buy = userDirection === "Buy";
+  const price = ad.price ?? 0;
+  const fiat = ad.fiatCurrency;
+  const minFiat = ad.minTrade;
+  const maxFiat = ad.maxTrade;
+
   const [payText, setPayText] = useState("");
   const [receiveText, setReceiveText] = useState("");
   const [method, setMethod] = useState(ad.paymentMethods[0] ?? "");
-  const [termsOpen, setTermsOpen] = useState(false);
   const [seconds, setSeconds] = useState(QUOTE_SECONDS);
   /* Selling means nominating an account for the buyer to pay. Read post-mount,
      so the server render is not guessing at localStorage. */
@@ -79,69 +66,43 @@ export function OrderPanel({
   const fiatAmount = Number(payText) || 0;
   const cryptoAmount = Number(receiveText) || 0;
 
-  /* The merchant's own floor on who they will trade with. Advisory — see the
-     field's note in lib/types.ts — so this client refuses and explains rather
-     than pretending something on chain stopped it. */
-  /* Limits are published in fiat, but a seller is typing crypto, so the same
-     bounds have to be expressed in the unit the field accepts. */
   const minCrypto = minFiat / price;
   const maxCrypto = Math.min(maxFiat / price, ad.availableLiquidity);
 
-  /*
-   * This panel no longer claims to know what the seller holds.
-   *
-   * It used to read `WALLET_BALANCES`, a fixture, and gate the sell side on
-   * it — blocking or allowing an order against a balance that was the same
-   * invented number for every visitor. A real check needs the seller's
-   * token account or liquidity vault for the mint being traded, and both are
-   * keyed by mint while this panel only knows an asset ticker
-   * (`ad.asset`), which no devnet mint is mapped to.
-   *
-   * So the balance gate is gone rather than faked. The remaining gates —
-   * limits, advertised liquidity, reputation floor, payment method — are all
-   * things the panel can actually check.
-   */
-
-  const usable = accountsFor(accounts, ad.paymentMethods, ad.international);
+  const usable = accountsFor(accounts, ad.paymentMethods, false);
   // Only relevant when selling: a buyer pays out of their own account and has
   // nothing to nominate.
   const needsAccount = !buy && usable.length === 0;
 
-  const myReputation = compositeScore(CURRENT_USER);
-  const belowFloor =
-    ad.minCounterpartyReputation !== undefined &&
-    myReputation < ad.minCounterpartyReputation;
-
   const tooLow = fiatAmount > 0 && fiatAmount < minFiat;
   const tooHigh = fiatAmount > maxFiat;
   const overLiquidity = cryptoAmount > ad.availableLiquidity;
+  const noPrice = ad.price === null;
   const ready =
+    !noPrice &&
     fiatAmount > 0 &&
     !tooLow &&
     !tooHigh &&
     !overLiquidity &&
-    !belowFloor &&
     !needsAccount &&
-    (ad.international || method !== "");
+    method !== "";
 
   const blocker = useMemo(() => {
+    if (noPrice) {
+      return "This advertiser prices against an oracle read that hasn't happened yet — there is nothing to quote.";
+    }
     if (needsAccount) {
       return accounts.length === 0
         ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
         : "None of your saved accounts uses a method this advertiser accepts. Add one that does in Settings.";
     }
-    if (belowFloor) {
-      return `This advertiser trades with counterparties at ${ad.minCounterpartyReputation}/100 or above. Yours is ${myReputation}/100 — complete more trades without disputes to raise it.`;
-    }
     if (fiatAmount <= 0) return `Enter an amount between ${formatFiat(minFiat, fiat, 0)} and ${formatFiat(maxFiat, fiat, 0)}`;
     if (tooLow) return `Below this advertiser's minimum of ${formatFiat(minFiat, fiat, 0)}`;
     if (tooHigh) return `Above this advertiser's maximum of ${formatFiat(maxFiat, fiat, 0)}`;
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
-    if (!ad.international && !method) return "Choose a payment method";
+    if (!method) return "Choose a payment method";
     return null;
-    // `buy` and `cryptoAmount` left the dependency list along with the two
-    // balance blockers that were the only things reading them here.
-  }, [fiatAmount, tooLow, tooHigh, overLiquidity, belowFloor, needsAccount, accounts.length, myReputation, ad, method, minFiat, maxFiat, fiat]);
+  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minFiat, maxFiat, fiat]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -149,7 +110,7 @@ export function OrderPanel({
     const clean = next.replace(/[^\d.]/g, "");
     setPayText(clean);
     const n = Number(clean);
-    setReceiveText(n > 0 ? (n / price).toFixed(Math.min(6, 4)) : "");
+    setReceiveText(n > 0 && price > 0 ? (n / price).toFixed(Math.min(6, 4)) : "");
   }
 
   function onReceive(next: string) {
@@ -159,15 +120,6 @@ export function OrderPanel({
     setPayText(n > 0 ? (n * price).toFixed(2) : "");
   }
 
-  /*
-   * The primary field is whichever amount the user actually decides.
-   *
-   * Buying, that is the fiat they are willing to spend. Selling, it is the
-   * crypto they hold — a seller thinks "sell 500 USDT", not "receive 35,330
-   * AFN", and asking for the receive amount first made them work the exchange
-   * rate backwards before they could enter anything. Both fields still drive
-   * each other; this is about which one leads.
-   */
   const cryptoField = (
     <Field
       label={buy ? "I will receive" : "I will sell"}
@@ -193,15 +145,11 @@ export function OrderPanel({
 
   return (
     <div className="border-t border-white/5 bg-white/[0.015]">
-      {/* minmax(0,…) on both tracks, and min-w-0 on the children. The panel
-          lives in a table cell, so a fixed second column plus a 1fr first one
-          cannot shrink and instead widens the whole table past the viewport,
-          which puts the order form behind a horizontal scroll. */}
       <div className="grid gap-8 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:px-6">
-        {/* Advertiser terms */}
+        {/* Advertisement facts */}
         <div className="min-w-0">
           <div className="flex items-baseline justify-between gap-4">
-            <h3 className="text-sm font-semibold text-gray-200">Advertiser terms</h3>
+            <h3 className="text-sm font-semibold text-gray-200">Advertisement</h3>
             <button
               type="button"
               onClick={onClose}
@@ -211,27 +159,8 @@ export function OrderPanel({
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setTermsOpen((o) => !o)}
-            className="mt-3 flex w-full items-center justify-between gap-3 rounded-md border border-white/10 px-3 py-2.5 text-left text-sm text-gray-300 hover:border-white/25"
-          >
-            <span className="truncate">
-              {ad.terms
-                ? termsOpen
-                  ? "Advertiser terms"
-                  : ad.terms
-                : "This advertiser has set no additional terms."}
-            </span>
-            <span aria-hidden className="shrink-0 text-gray-600">
-              {termsOpen ? "▴" : "▾"}
-            </span>
-          </button>
-          {termsOpen && ad.terms && (
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-400">{ad.terms}</p>
-          )}
-
-          <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+          <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+            <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
             <Fact label="Available" value={formatCrypto(ad.availableLiquidity, ad.asset)} />
             <Fact
               label="Limits"
@@ -240,24 +169,28 @@ export function OrderPanel({
             <Fact
               label="Pricing"
               value={
-                ad.pricing.type === "Floating"
-                  ? `Floating ${ad.pricing.premiumPct >= 0 ? "+" : ""}${ad.pricing.premiumPct}% of the oracle mid`
+                ad.pricingKind === "Floating"
+                  ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}% of the oracle mid`
                   : "Fixed"
               }
             />
-            <Fact label="Settles in" value={merchant.settlementSpeed} />
-            {ad.minCounterpartyReputation !== undefined && (
-              <Fact
-                label="Requires reputation"
-                value={`${ad.minCounterpartyReputation}/100 · you have ${myReputation}`}
-              />
-            )}
           </dl>
 
           <p className="mt-6 max-w-prose text-xs leading-relaxed text-gray-500">
             {buy
-              ? `Your ${ad.asset} is locked in escrow on Solana the moment you open this order — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides. Keep every message and receipt in the trade chat; it is the evidence a dispute is judged on.`
-              : `Your ${ad.asset} moves into escrow on Solana when you open this order and is released to the buyer only after you confirm their ${fiat} arrived. Do not release before you have checked your own account.`}
+              ? `Your ${ad.asset} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
+              : `Your ${ad.asset} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
+          </p>
+
+          {/*
+            * Placing an order isn't wired to the protocol yet — see
+            * app/orders/new/page.tsx. Saying so here, not just on the next
+            * page, means the limits below aren't read as a promise this
+            * button keeps.
+            */}
+          <p className="mt-4 border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200">
+            This interface can review an order against this advertisement, but does not yet submit a reservation to
+            the node — see the review page for what that means.
           </p>
         </div>
 
@@ -266,14 +199,16 @@ export function OrderPanel({
           <div className="flex items-baseline gap-2">
             <span className="text-sm text-gray-400">Price</span>
             <span className="font-mono text-lg font-semibold tabular-nums text-brand-teal">
-              {formatNumber(price)} {fiat}
+              {noPrice ? "—" : `${formatNumber(price)} ${fiat}`}
             </span>
-            <span
-              className="ml-auto text-xs tabular-nums text-gray-500"
-              title="The quote refreshes on this countdown; a floating ad reprices against the oracle mid."
-            >
-              {seconds}s
-            </span>
+            {!noPrice && (
+              <span
+                className="ml-auto text-xs tabular-nums text-gray-500"
+                title="The quote refreshes on this countdown; a floating ad reprices against the oracle mid."
+              >
+                {seconds}s
+              </span>
+            )}
           </div>
 
           {buy ? fiatField : cryptoField}
@@ -300,26 +235,20 @@ export function OrderPanel({
             </label>
           )}
 
-          {ad.international ? (
-            <p className="mt-3 border-l-2 border-brand-teal pl-2.5 text-xs text-gray-400">
-              Any payment method — this advertiser trades borderless.
-            </p>
-          ) : (
-            <label className="mt-3 block">
-              <span className="sr-only">Payment method</span>
-              <select
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
-              >
-                {ad.paymentMethods.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          <label className="mt-3 block">
+            <span className="sr-only">Payment method</span>
+            <select
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+              className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
+            >
+              {ad.paymentMethods.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {ready ? (
             <Link
@@ -328,7 +257,7 @@ export function OrderPanel({
                 buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
               }`}
             >
-              {userDirection} {ad.asset}
+              Review {userDirection.toLowerCase()} order
             </Link>
           ) : (
             <>
@@ -340,8 +269,6 @@ export function OrderPanel({
               >
                 {userDirection} {ad.asset}
               </span>
-              {/* The reason, always. A disabled button with no explanation is
-                  the single most common way these flows lose people. */}
               <p className="mt-2 text-xs text-amber-300">{blocker}</p>
             </>
           )}
@@ -351,25 +278,11 @@ export function OrderPanel({
   );
 }
 
-/*
- * `QuickAmounts` and `DepositPrompt` used to live here and are both gone.
- *
- * `QuickAmounts` offered 25/50/75/100% buttons off a fixture balance, so
- * every percentage was a share of a number nobody held.
- *
- * `DepositPrompt` was worse: it rendered a QR code and a copyable address
- * produced by `pseudoAddress()`, a deterministic fake derived from a
- * string, under the instruction "Send USDT on Solana to this address" and a
- * warning that sending it wrong is irreversible. Anyone who followed it
- * sent real tokens to an address with no private key. The real deposit
- * flow is /wallet/deposit, which builds an actual escrow instruction.
- */
-
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex justify-between gap-4 border-t border-white/5 pt-2">
       <dt className="text-gray-500">{label}</dt>
-      <dd className="text-right tabular-nums text-gray-200">{value}</dd>
+      <dd className={`text-right tabular-nums text-gray-200 ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );
 }

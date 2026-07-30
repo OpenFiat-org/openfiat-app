@@ -8,8 +8,6 @@ import {
   getCountry,
   searchCountries,
 } from "@/lib/data/countries";
-import { DISPUTES, DISPUTE_OUTCOMES } from "@/lib/data/disputes";
-import { DISPUTE_STAGES, disputeStageIndex, evidenceVisible, isDisputeParty } from "@/lib/types";
 import { PROPOSALS } from "@/lib/data/governance";
 import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
@@ -19,9 +17,8 @@ import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/paymen
 import { PROVIDERS, PROVIDER_TYPES, getProvider, providersByType } from "@/lib/data/providers";
 import { STAKING_ROLES } from "@/lib/data/staking";
 import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
-import { TRADES } from "@/lib/data/trades";
 import qr from "qrcode-generator";
-import { pseudoAddress, pseudoSignature } from "@/lib/format";
+import { pseudoAddress } from "@/lib/format";
 import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
 import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
 import { PAIRS, findPair } from "@/lib/pairs";
@@ -31,7 +28,6 @@ import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
 const merchantIds = new Set([...MERCHANTS.map((m) => m.id), CURRENT_USER.id]);
 const countryCodes = new Set(COUNTRIES.map((c) => c.code));
 const adIds = new Set(ALL_ADS.map((a) => a.id));
-const tradeIds = new Set(TRADES.map((t) => t.id));
 
 describe("countries registry", () => {
   it("has global coverage (~250 entries)", () => {
@@ -360,59 +356,6 @@ describe("international market", () => {
   });
 });
 
-describe("trades", () => {
-  it("every trade references an existing ad and merchant", () => {
-    for (const t of TRADES) {
-      expect(adIds.has(t.adId), `${t.id} -> ${t.adId}`).toBe(true);
-      expect(merchantIds.has(t.counterpartyId), `${t.id} -> ${t.counterpartyId}`).toBe(true);
-    }
-  });
-
-  it("fiat amount equals crypto amount times price (within rounding)", () => {
-    for (const t of TRADES) {
-      expect(Math.abs(t.fiatAmount - t.cryptoAmount * t.price)).toBeLessThan(0.01);
-    }
-  });
-
-  it("merchant lookup works for every counterparty", () => {
-    for (const t of TRADES) {
-      expect(() => merchantById(t.counterpartyId)).not.toThrow();
-    }
-  });
-
-  it("every trade has standardized, non-empty payment fields", () => {
-    for (const t of TRADES) {
-      expect(t.paymentFields.length, t.id).toBeGreaterThanOrEqual(3);
-      for (const f of t.paymentFields) {
-        expect(f.label.length).toBeGreaterThan(0);
-        expect(f.value.length).toBeGreaterThan(0);
-      }
-      expect(t.paymentFields.some((f) => f.label === "Reference" && f.value === t.id)).toBe(true);
-    }
-  });
-
-  it("international-bank methods carry full SWIFT fields", () => {
-    const sepa = TRADES.find((t) => t.paymentMethod === "SEPA")!;
-    const labels = sepa.paymentFields.map((f) => f.label);
-    for (const required of ["Account name", "IBAN / Account number", "SWIFT / BIC", "Bank name", "Bank address", "Reference"]) {
-      expect(labels, required).toContain(required);
-    }
-  });
-
-  it("every trade has a deterministic, unique 88-char base58 settlement sig", () => {
-    const sigs = new Set<string>();
-    for (const t of TRADES) {
-      for (const sig of [t.txSig, t.escrowSig]) {
-        expect(sig, `${t.id}`).toMatch(/^[1-9A-HJ-NP-Za-km-z]{87,88}$/);
-        expect(sigs.has(sig), `duplicate sig ${sig}`).toBe(false);
-        sigs.add(sig);
-      }
-    }
-    // deterministic: same trade id always yields the same sig
-    expect(TRADES[0].txSig).toBe(pseudoSignature(`settlement-${TRADES[0].id}`));
-  });
-});
-
 describe("merchant profiles", () => {
   it("ids and wallets are unique (profiles resolvable)", () => {
     expect(new Set(MERCHANTS.map((m) => m.id)).size).toBe(MERCHANTS.length);
@@ -486,104 +429,6 @@ describe("service providers (OFS-1500)", () => {
       expect(getProvider(p.id)?.id).toBe(p.id);
     }
     expect(PROVIDERS.length).toBeGreaterThanOrEqual(18);
-  });
-});
-
-describe("disputes", () => {
-  it("every dispute references an existing trade", () => {
-    for (const d of DISPUTES) {
-      expect(tradeIds.has(d.tradeId), `${d.id} -> ${d.tradeId}`).toBe(true);
-    }
-  });
-
-  it("closed disputes have an outcome and a settled escrow", () => {
-    for (const d of DISPUTES) {
-      if (d.stage !== "Closed") continue;
-      expect(d.outcome, d.id).toBeDefined();
-      expect(d.settlement, d.id).toBeDefined();
-      expect(d.tally, d.id).toBeDefined();
-    }
-  });
-
-  it("carries the full dispute record", () => {
-    // OFS-2400 §8 enumerates what a dispute contains; a record missing the
-    // reservation or advertisement cannot be audited against the trade.
-    for (const d of DISPUTES) {
-      for (const field of [d.id, d.tradeId, d.reservationId, d.adId, d.buyerWallet, d.merchantWallet]) {
-        expect(field, d.id).toBeTruthy();
-      }
-      expect(DISPUTE_STAGES, d.id).toContain(d.stage);
-    }
-  });
-
-  it("withholds the arbitrator threshold while a case is open", () => {
-    // Chapter 11 §11.9: publishing the required count would let anyone
-    // estimate the value at risk, so it is only knowable once locked.
-    for (const d of DISPUTES) {
-      if (d.stage === "Arbitrators Joining") expect(d.seatsRequired, d.id).toBeNull();
-      else expect(d.seatsRequired, d.id).toBeGreaterThan(0);
-    }
-  });
-
-  it("seals evidence from arbitrators who have not committed stake", () => {
-    // §11.8 information isolation — the property that makes bribery before
-    // participation pointless.
-    const joining = DISPUTES.find((d) => d.stage === "Arbitrators Joining");
-    expect(joining).toBeDefined();
-    if (!joining) return;
-    expect(joining.viewerRole).toBe("Prospective arbitrator");
-    expect(evidenceVisible(joining, false)).toBe(false);
-    expect(evidenceVisible(joining, true)).toBe(true);
-
-    // Reaching a later stage does not unseal it for a passer-by. Evidence goes
-    // to seated arbitrators; §13 distributes references, not contents.
-    const revealing = DISPUTES.find(
-      (d) => d.stage === "Reveal Phase" && !isDisputeParty(d),
-    );
-    expect(revealing).toBeDefined();
-    if (revealing) expect(evidenceVisible(revealing, false)).toBe(false);
-
-    // A party to the trade submitted the evidence, so sealing it from them
-    // would protect nothing.
-    const own = DISPUTES.find((d) => isDisputeParty(d));
-    expect(own).toBeDefined();
-    if (own) expect(evidenceVisible(own, false)).toBe(true);
-  });
-
-  it("decides by commit-and-reveal, never by a single named arbitrator", () => {
-    for (const d of DISPUTES) {
-      // More than one seat on any case that has reached voting.
-      if (disputeStageIndex(d.stage) >= disputeStageIndex("Commit Phase")) {
-        expect(d.arbitrators.length, d.id).toBeGreaterThan(1);
-      }
-      // A revealed vote always has a commitment behind it: only reveals
-      // matching an earlier commitment are counted (§11.12).
-      for (const a of d.arbitrators) {
-        if (a.revealed) expect(a.commitment, `${d.id}/${a.id}`).toBeTruthy();
-      }
-    }
-  });
-
-  it("slashes minority reveals partially and rewards consensus", () => {
-    const closed = DISPUTES.find((d) => d.stage === "Closed");
-    expect(closed).toBeDefined();
-    if (!closed) return;
-    const minority = closed.arbitrators.filter((a) => a.withConsensus === false);
-    const majority = closed.arbitrators.filter((a) => a.withConsensus === true);
-    expect(minority.length).toBeGreaterThan(0);
-    expect(majority.length).toBeGreaterThan(minority.length);
-    for (const a of minority) {
-      expect(a.slashed, a.id).toBeGreaterThan(0);
-      // §11.16: moderate and partial — honest arbitrators sometimes disagree.
-      expect(a.slashed!).toBeLessThan(a.stake);
-    }
-    for (const a of majority) expect(a.reward, a.id).toBeGreaterThan(0);
-  });
-
-  it("does not offer partial settlement, which the spec defers", () => {
-    // OFS-2400 §17 marks Partial Settlement as future work.
-    expect(DISPUTE_OUTCOMES).not.toContain("Partial Settlement");
-    expect(DISPUTE_OUTCOMES).toHaveLength(4);
   });
 });
 
