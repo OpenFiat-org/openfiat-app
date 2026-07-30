@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 import { Panel } from "@/components/panel";
 
@@ -45,13 +45,13 @@ export function NewTradeReview({
               <p className="flex justify-between text-sm">
                 <span className="text-gray-500">{buy ? "You would pay" : "You would sell"}</span>
                 <span className="tabular-nums font-medium text-white">
-                  {buy ? formatFiat(fiatAmount, ad.fiatCurrency) : formatCrypto(cryptoAmount, ad.asset, 4)}
+                  {buy ? formatFiat(fiatAmount, ad.fiatCurrency) : formatCrypto(cryptoAmount, assetLabel(ad), 4)}
                 </span>
               </p>
               <p className="mt-1.5 flex justify-between text-sm">
                 <span className="text-gray-500">{buy ? "You would receive" : "You would receive"}</span>
                 <span className="tabular-nums font-medium text-emerald-400">
-                  {buy ? formatCrypto(cryptoAmount, ad.asset, 4) : formatFiat(fiatAmount, ad.fiatCurrency)}
+                  {buy ? formatCrypto(cryptoAmount, assetLabel(ad), 4) : formatFiat(fiatAmount, ad.fiatCurrency)}
                 </span>
               </p>
             </div>
@@ -81,7 +81,7 @@ export function NewTradeReview({
           <SummaryRow label="Ad" value={ad.id} />
           <SummaryRow label="Merchant" value={`…${ad.merchantShort}`} />
           <SummaryRow label="Direction" value={`Merchant ${ad.direction}`} />
-          <SummaryRow label="Pair" value={`${ad.asset}/${ad.fiatCurrency}`} />
+          <SummaryRow label="Pair" value={`${assetLabel(ad)}/${ad.fiatCurrency}`} />
           <SummaryRow
             label="Price"
             value={
@@ -94,7 +94,7 @@ export function NewTradeReview({
                   })`
             }
           />
-          <SummaryRow label="Available" value={formatCrypto(ad.availableLiquidity, ad.asset)} />
+          <SummaryRow label="Available" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
           <SummaryRow
             label="Limits"
             value={`${formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – ${formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}`}

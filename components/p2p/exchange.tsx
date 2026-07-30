@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StablecoinAsset, TradeDirection } from "@/lib/types";
-import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
-import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
+import { formatFiat, formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
+import { AssetLabel } from "@/components/asset-label";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
@@ -156,7 +157,12 @@ export function P2PExchange({
     const fiatAmount = Number(amount) || 0;
     const out: LiveAd[] = [];
     for (const ad of BOOK) {
-      if (ad.direction !== wantDirection || ad.asset !== asset) continue;
+      // Matched against the symbol the NODE resolved for the ad's mint, not
+      // against a mint this app mapped `asset` to. The pill says "USDC", so
+      // the question is "which advertisements does the node call USDC" — and
+      // an ad naming a mint nothing has a name for belongs to no ticker
+      // market, because nothing names it. See `assetLabel`.
+      if (ad.direction !== wantDirection || ad.assetSymbol !== asset) continue;
       if (ad.fiatCurrency !== fiat) continue;
       if (ad.price === null) continue; // no oracle read yet — nothing to quote
       if (method !== "" && !ad.paymentMethods.includes(method)) continue;
@@ -387,7 +393,9 @@ function AdRow({
         </p>
       </Td>
       <Td right num py="py-6">
-        <p className="text-gray-200">{formatCrypto(ad.availableLiquidity, ad.asset)}</p>
+        <p className="inline-flex items-baseline gap-1.5 text-gray-200">
+          {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} />
+        </p>
         <p className="mt-1 text-xs text-gray-500">
           {formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – {formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}
         </p>
@@ -409,7 +417,7 @@ function AdRow({
             buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
           }`}
         >
-          {open ? "Hide" : `${userDirection} ${ad.asset}`}
+          {open ? "Hide" : `${userDirection} ${assetLabel(ad)}`}
         </button>
       </Td>
     </Tr>

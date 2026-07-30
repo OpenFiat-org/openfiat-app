@@ -1,4 +1,4 @@
-import { Client, advertisements, type Advertisement as ProtocolAd } from "@openfiat/sdk";
+import { Client, advertisements, type AdvertisementView as ProtocolAd } from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
 
 /**
@@ -30,7 +30,30 @@ export interface LiveAd {
   merchantPeerId: string;
   /** Short form for display; the full id remains available for linking. */
   merchantShort: string;
-  asset: string;
+  /**
+   * The mint the escrow will actually move — the token's identity.
+   *
+   * This was `asset: string`, free text the merchant wrote, and the two are
+   * not the same kind of thing. A ticker on a record is a label its author
+   * chose, tied to the token being escrowed by nothing: an advertisement
+   * could say "USDC" and settle in something else, and every layer would
+   * agree the trade completed, because each did what it was asked. A mint
+   * address is an identity, so it is what the record carries and what this
+   * interface treats as the answer to "which token".
+   */
+  assetMint: string;
+  /**
+   * The name the node resolved for `assetMint`, or `null` when this build of
+   * the node has no name for it.
+   *
+   * `null` is an ordinary answer, not an error, and not a reason to guess.
+   * The resolution happens on the node, from a table every node compiles in
+   * identically — never here. A mint-to-ticker table in this app would put
+   * back the merchant-independent labelling the protocol change removed, one
+   * layer further out, and would disagree with the node the first time
+   * governance allowlists a mint. See `assetLabel`.
+   */
+  assetSymbol: string | null;
   fiatCurrency: string;
   /** The MERCHANT's direction. A `Sell` ad is what a taker buys from. */
   direction: "Buy" | "Sell";
@@ -58,6 +81,25 @@ export interface LiveAd {
   status: "Active" | "Disabled" | "Vacation" | "Deleted";
   createdAt: number;
   updatedAt: number;
+}
+
+/**
+ * What to call an advertisement's token on screen: the node's name for the
+ * mint, or the mint itself when it has none.
+ *
+ * The fallback is the whole point, so it is one function rather than a `??`
+ * repeated at each call site where somebody could quietly substitute a dash,
+ * a placeholder, or a guess. A mint this build's node cannot name is an
+ * address with no nickname; showing the address is unhelpful and true, which
+ * beats helpful and false — and the alternative, a mint-to-ticker table in
+ * this repo, is the merchant-independent labelling the protocol just removed,
+ * rebuilt one layer out.
+ *
+ * Callers should put `assetMint` in a `title` even when a symbol came back.
+ * The symbol is a nickname the node applied; the address is the fact.
+ */
+export function assetLabel(ad: Pick<LiveAd, "assetMint" | "assetSymbol">): string {
+  return ad.assetSymbol ?? ad.assetMint;
 }
 
 /** An `Amount` is base units plus a decimal exponent, never a float. */
@@ -88,7 +130,8 @@ function toLiveAd(ad: ProtocolAd): LiveAd {
     // Last 6 hex characters. A PeerId has no human-readable name in the
     // protocol, and inventing one here is exactly what the mock did.
     merchantShort: peerId.slice(-6),
-    asset: ad.asset,
+    assetMint: ad.asset_mint,
+    assetSymbol: ad.asset_symbol,
     fiatCurrency: ad.fiat_currency,
     direction: ad.direction as "Buy" | "Sell",
     price: fixed ? toWhole(fixed.price) : null,
@@ -128,9 +171,17 @@ export async function fetchAdvertisement(id: string): Promise<LiveAd | null> {
  * buying, highest when selling. Floating-price ads sort last because their
  * price is not known without an oracle read; showing them interleaved at an
  * arbitrary position would misrepresent the ordering as authoritative.
+ *
+ * `symbol` is a ticker because that is what a market is asked for — "the
+ * USDC/KES book" — and it is matched against the name the NODE resolved,
+ * never against a ticker this app mapped to a mint. So the question this
+ * answers is precisely "advertisements whose mint the node calls USDC", and
+ * an advertisement naming a mint nothing has a name for belongs to no ticker
+ * market at all. That is not a gap to paper over: nothing names it, so
+ * nothing can ask for it by name.
  */
 export async function fetchBook(
-  asset: string,
+  symbol: string,
   fiatCurrency: string,
   side: "buy" | "sell",
 ): Promise<LiveAd[]> {
@@ -139,7 +190,7 @@ export async function fetchBook(
   const matching = all.filter(
     (ad) =>
       ad.status === "Active" &&
-      ad.asset === asset &&
+      ad.assetSymbol === symbol &&
       ad.fiatCurrency === fiatCurrency &&
       ad.direction === merchantDirection,
   );
@@ -151,17 +202,26 @@ export async function fetchBook(
   });
 }
 
-/** Every `asset`/`fiatCurrency` pair with at least one active ad. */
+/**
+ * Every token/currency pair with at least one active ad.
+ *
+ * `asset` is whatever the token is called on screen — the node's symbol, or
+ * the mint itself for one it cannot name (`assetLabel`). Both are included:
+ * a market is no less real for being denominated in a mint nobody has
+ * nicknamed, and dropping those pairs would make the list quietly disagree
+ * with the book it was derived from.
+ */
 export async function fetchTradablePairs(): Promise<{ asset: string; fiatCurrency: string }[]> {
   const all = await fetchAdvertisements();
   const seen = new Set<string>();
   const pairs: { asset: string; fiatCurrency: string }[] = [];
   for (const ad of all) {
     if (ad.status !== "Active") continue;
-    const key = `${ad.asset}/${ad.fiatCurrency}`;
+    const label = assetLabel(ad);
+    const key = `${label}/${ad.fiatCurrency}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    pairs.push({ asset: ad.asset, fiatCurrency: ad.fiatCurrency });
+    pairs.push({ asset: label, fiatCurrency: ad.fiatCurrency });
   }
   return pairs;
 }

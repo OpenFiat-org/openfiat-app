@@ -2,12 +2,30 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { StablecoinAsset } from "@/lib/types";
-import { fxPerUsd } from "@/lib/data/ads";
-import { formatNumber } from "@/lib/format";
-import { AssetIcon } from "@/components/asset-icon";
+import bs58 from "bs58";
+import { formatNumber, shortAddress } from "@/lib/format";
+import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { MethodPicker } from "@/components/ads/method-picker";
+
+/**
+ * Whether `value` could be a mint at all: base58 decoding to exactly 32
+ * bytes, which is the same thing the node checks before it will accept an
+ * advertisement.
+ *
+ * It deliberately does not check membership of any list. The settlement
+ * allowlist lives on chain and governance can change it, so a client
+ * refusing an address for being absent from a list compiled last month would
+ * block a trade the protocol allows. Enforcement belongs where the funds
+ * move; this only catches a typo before it becomes a signature.
+ */
+function isMintAddress(value: string): boolean {
+  try {
+    return bs58.decode(value.trim()).length === 32;
+  } catch {
+    return false;
+  }
+}
 
 const DRAFT_KEY = "openfiat:ad-draft";
 const STEPS = ["Market", "Pricing", "Limits", "Payment methods", "Review"] as const;
@@ -15,7 +33,17 @@ const STEPS = ["Market", "Pricing", "Limits", "Payment methods", "Review"] as co
 interface Draft {
   step: number;
   direction: "Buy" | "Sell";
-  asset: StablecoinAsset;
+  /**
+   * The mint the merchant will be paid in.
+   *
+   * This was a ticker off a fixed list, and an advertisement no longer has
+   * anywhere to put one: OFS-2100 carries `asset_mint` and no asset name,
+   * because a ticker on a record is a label its author chose and is tied to
+   * the token the escrow moves by nothing at all. What a buyer reads is
+   * resolved from this address by the node that serves them, so this screen
+   * chooses an identity and never a name.
+   */
+  mint: string;
   fiat: string;
   pricingType: "Fixed" | "Floating";
   price: string;
@@ -30,7 +58,7 @@ interface Draft {
 const DEFAULT_DRAFT: Draft = {
   step: 1,
   direction: "Sell",
-  asset: "USDT",
+  mint: DEVNET_SETTLEMENT_MINT,
   fiat: "KES",
   pricingType: "Floating",
   price: "132.00",
@@ -95,18 +123,25 @@ export function AdWizard() {
     }
   }
 
-  const { step, direction, asset, fiat, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
+  const { step, direction, mint, fiat, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
 
-  // Indicative price from the static FX table
-  const fx = fxPerUsd(fiat);
-  const base = fx ? (asset === "SOL" ? 144.2 * fx : fx) : null;
+  /*
+   * There is no indicative price on this screen any more.
+   *
+   * It was `fxPerUsd(fiat)` — the fiat's rate against the US dollar — shown
+   * as what the chosen asset would fetch. That only worked because the
+   * ticker was doing the arithmetic silently: "USDT" was read as a promise
+   * that one unit is one dollar. A mint address makes no such promise, and
+   * this app has no way to learn it from one. Every rate on this network is
+   * published by an oracle against a symbol the node resolves, which is a
+   * read this wizard does not make.
+   *
+   * So the number is gone rather than kept with an assumption attached. A
+   * merchant who wants a reference has the live oracle rates on /network and
+   * the real book on the exchange.
+   */
   const premiumNum = Number(premium) || 0;
-  const indicative =
-    base === null
-      ? null
-      : pricingType === "Fixed"
-        ? Number(price) || 0
-        : Math.round(base * (1 + premiumNum / 100) * 100) / 100;
+  const mintValid = isMintAddress(mint);
 
   // Per-step validation
   const minNum = Number(min) || 0;
@@ -121,26 +156,27 @@ export function AdWizard() {
    * for every visitor, and unrelated to any vault on chain.
    *
    * A real check needs the merchant's `LiquidityVault` for the mint being
-   * advertised, and `lib/live-vaults.ts` can do exactly that — but this
-   * wizard picks an asset by ticker ("USDC"), and no devnet mint is mapped
-   * to any of these tickers anywhere in this deployment. So the lookup has
-   * no key. Rather than invent one, the step says plainly that it cannot
-   * verify backing. See `/wallet` for vault balances that are real.
+   * advertised, and `lib/live-vaults.ts` can do exactly that. Until this
+   * screen picked a mint the lookup had no key to use — an asset ticker is
+   * not one, and no devnet mint is mapped to any of the tickers it used to
+   * offer. It has a key now, so what is missing is only the read: the
+   * connected wallet plus one call. That is a change worth making on its own
+   * rather than smuggling in here, and until it is made the step says
+   * plainly that it cannot verify backing rather than implying it did.
    */
 
   const stepValid: Record<number, boolean> = {
-    1: true,
+    1: mintValid,
     2: pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0,
     3: minNum > 0 && maxNum >= minNum && liqNum > 0,
     4: methods.length >= 1,
     5: true,
   };
   const stepErrors: Record<number, string[]> = {
-    1: [],
+    1: mintValid ? [] : ["Enter a mint address: base58, decoding to 32 bytes."],
     2: [
       ...(pricingType === "Floating" && (premiumNum < -5 || premiumNum > 5) ? ["Premium must be between -5% and +5%."] : []),
       ...(pricingType === "Fixed" && !(Number(price) > 0) ? ["Enter a fixed price greater than 0."] : []),
-      ...(base === null ? [`No oracle reference for ${asset}/${fiat} — pick another market.`] : []),
     ],
     3: [
       ...(minNum <= 0 ? ["Min trade must be greater than 0."] : []),
@@ -157,7 +193,7 @@ export function AdWizard() {
         <p className="text-2xl text-emerald-400">✓</p>
         <h2 className="mt-3 text-lg font-semibold text-white">Advertisement published (simulated)</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-          {direction} {asset} for {fiat} · {pricingType === "Fixed" ? `Fixed ${price}` : `Floating ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`} ·
+          {direction} <span className="font-mono">{shortAddress(mint)}</span> for {fiat} · {pricingType === "Fixed" ? `Fixed ${price}` : `Floating ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`} ·
           limits {formatNumber(minNum, 0)}–{formatNumber(maxNum, 0)} {fiat}. Draft cleared — on a live node this would
           emit an AdvertisementCreated event.
         </p>
@@ -234,21 +270,67 @@ export function AdWizard() {
               </div>
             </div>
             <div>
-              <p className={labelCls}>Asset</p>
-              <div className="flex flex-wrap gap-2">
-                {(["USDT", "USDC", "USD1", "SOL"] as const).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => patch({ asset: a })}
-                    className={`flex items-center gap-2 rounded-md border px-4 py-2 text-sm transition-colors ${
-                      asset === a ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    <AssetIcon asset={a} size={18} />
-                    {a}
-                  </button>
-                ))}
+              <label className={labelCls} htmlFor="asset-mint">
+                Token you will be paid in
+              </label>
+              {/*
+               * A mint address, typed, not a ticker chosen from a list.
+               *
+               * The list used to be USDT / USDC / USD1 / SOL, and an
+               * advertisement now has nowhere to put any of those words. It
+               * carries `asset_mint`, because the token a buyer receives has
+               * to be the token the escrow moves, and only an address ties
+               * the two together — a ticker is a label the merchant picked.
+               *
+               * Offering tickers here and mapping them to addresses behind
+               * the field would rebuild exactly that gap one screen earlier,
+               * with this app choosing the meaning of "USDC" on the
+               * merchant's behalf. So the field is the address, and the
+               * chips below only fill in mints this app already names
+               * elsewhere, each shown with the address it stands for.
+               */}
+              <input
+                id="asset-mint"
+                value={mint}
+                onChange={(e) => patch({ mint: e.target.value })}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="Base58 mint address"
+                className={`${inputCls} max-w-xl font-mono`}
+              />
+              {/*
+               * One quick-fill, not a menu of the mints this app knows.
+               *
+               * `KNOWN_DEVNET_MINTS` also contains OPEN, and OPEN is *not* on
+               * the escrow settlement allowlist — OFS-4100 holds it back
+               * until the public sale. That list exists for the vault screens,
+               * where opening a vault in OPEN is a reasonable thing to do.
+               * Offering it here would invite a merchant to advertise a token
+               * no escrow can pay a buyer in, which is a worse mistake for
+               * being made with the protocol's own familiar name.
+               */}
+              <div className="mt-2">
+              <button
+                onClick={() => patch({ mint: DEVNET_SETTLEMENT_MINT })}
+                className={`rounded-md border px-3 py-2 text-left text-xs transition-colors ${
+                  mint.trim() === DEVNET_SETTLEMENT_MINT
+                    ? "border-brand/50 bg-brand/10 text-white"
+                    : "border-white/10 text-gray-400 hover:text-white"
+                }`}
+              >
+                <span className="block font-medium">Use the devnet settlement stablecoin</span>
+                <span className="mt-0.5 block break-all font-mono text-[11px] text-gray-600">
+                  {DEVNET_SETTLEMENT_MINT}
+                </span>
+              </button>
               </div>
+              <p className="mt-2 max-w-xl text-[11px] leading-relaxed text-gray-600">
+                Any mint is accepted here. What can actually be escrowed is decided by the
+                escrow program on chain, which governance can change — so this screen does not
+                keep its own copy of that list and does not refuse an address for being absent
+                from one. The name a buyer reads is resolved from this address by the node
+                serving them; nothing you type here becomes that name.
+              </p>
             </div>
             <div>
               <p className={labelCls}>Fiat currency (country / currency)</p>
@@ -280,7 +362,9 @@ export function AdWizard() {
             </div>
             {pricingType === "Fixed" ? (
               <div>
-                <label className={labelCls}>Price ({fiat}/{asset})</label>
+                <label className={labelCls} title={mint}>
+                  Price ({fiat} per unit of {shortAddress(mint)})
+                </label>
                 <input value={price} onChange={(e) => patch({ price: e.target.value })} type="number" className={inputCls} />
               </div>
             ) : (
@@ -289,11 +373,17 @@ export function AdWizard() {
                 <input value={premium} onChange={(e) => patch({ premium: e.target.value })} type="number" step="0.1" className={inputCls} />
               </div>
             )}
-            <p className="rounded-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-gray-300">
-              Indicative price:{" "}
-              <span className="font-mono tabular-nums text-white">
-                {indicative ? `${formatNumber(indicative)} ${fiat}/${asset}` : "—"}
-              </span>
+            {/* No indicative price — see the note where it used to be
+                computed. A number here needed the ticker to stand in for "one
+                unit is one dollar", and a mint says nothing of the kind. */}
+            <p className="max-w-xl text-xs leading-relaxed text-gray-500">
+              There is no reference price on this screen. The one that used to be here read a
+              fiat/USD table and assumed the token you picked was worth a dollar, which the
+              ticker implied and a mint address does not. Live oracle rates are on{" "}
+              <Link href="/network" className="text-gray-400 underline hover:text-white">
+                Network
+              </Link>
+              , and what merchants are actually quoting is on the exchange.
             </p>
           </div>
         )}
@@ -312,14 +402,17 @@ export function AdWizard() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className={labelCls}>Liquidity ({asset})</label>
+                <label className={labelCls} title={mint}>
+                  Liquidity ({shortAddress(mint)})
+                </label>
                 <span className="text-xs text-amber-300/80">Not checked against a vault — see below</span>
               </div>
               <input value={liquidity} onChange={(e) => patch({ liquidity: e.target.value })} type="number" className={inputCls} />
               <p className="mt-1.5 text-[11px] text-gray-600">
-                Nothing here confirms you hold this much. A vault is keyed by token mint, and this step picks
-                an asset by ticker, so there is no mint to look up — an earlier version of this screen filled
-                that gap with invented balances and refused advertisements against them.{" "}
+                Nothing here confirms you hold this much. A vault is keyed by mint and by merchant,
+                so checking would mean reading the chain for the connected wallet — a call this
+                wizard does not make, rather than a lookup it cannot key. An earlier version filled
+                the gap with invented balances and refused advertisements against them.{" "}
                 <Link href="/wallet" className="text-gray-400 underline hover:text-white">
                   Your real vault balances
                 </Link>{" "}
@@ -367,18 +460,24 @@ export function AdWizard() {
           <div className="max-w-xl">
             <dl className="divide-y divide-white/5 border-y border-white/5">
               {[
-                ["Direction", direction === "Sell" ? `Sell ${asset} (you sell crypto)` : `Buy ${asset} (you buy crypto)`],
-                ["Market", `${asset}/${fiat}`],
+                ["Direction", direction === "Sell" ? "Sell (you sell crypto)" : "Buy (you buy crypto)"],
+                // In full, not shortened: this is the last screen before a
+                // merchant commits, and the address is the only thing that
+                // says which token they will actually be paid in.
+                ["Token (mint)", mint],
+                ["Fiat", fiat],
                 ["Pricing", pricingType === "Fixed" ? `Fixed ${price} ${fiat}` : `Floating oracle mid ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`],
-                ["Indicative price", indicative ? `${formatNumber(indicative)} ${fiat}/${asset}` : "—"],
                 ["Limits", `${formatNumber(minNum, 0)} – ${formatNumber(maxNum, 0)} ${fiat}`],
-                ["Liquidity", `${formatNumber(liqNum, 0)} ${asset}`],
+                ["Liquidity", formatNumber(liqNum, 0)],
                 ["Payment methods", methods.join(" · ")],
                 ["Merchant bond", "Not verified by this screen"],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
-                  <dt className="text-gray-500">{label}</dt>
-                  <dd className="text-right text-gray-200">{value}</dd>
+                  <dt className="shrink-0 text-gray-500">{label}</dt>
+                  {/* `break-all` because a base58 address has no break
+                      opportunity of its own and would otherwise push the row
+                      past the column rather than wrap inside it. */}
+                  <dd className="break-all text-right text-gray-200">{value}</dd>
                 </div>
               ))}
             </dl>

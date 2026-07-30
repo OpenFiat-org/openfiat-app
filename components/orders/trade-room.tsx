@@ -6,7 +6,7 @@ import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connect
 import { peerIdBytesForAddress, shortPeerHex } from "@/lib/peer-id";
 import { PeerIdentity } from "@/components/peer-identity";
 import { deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
-import type { LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import type { SettlementStatus } from "@/lib/types";
 import { formatCrypto, formatDateMs, shortSig } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
@@ -64,7 +64,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
   const escrowLocked = reservation.state === "EscrowLocked";
 
   const amount = reservation.amount.base_units / 10 ** reservation.amount.decimals;
-  const amountLabel = ad ? formatCrypto(amount, ad.asset) : String(amount);
+  const amountLabel = ad ? formatCrypto(amount, assetLabel(ad)) : String(amount);
 
   const iAmRequester = myPeerId ? sameBytes(reservation.requester, myPeerId) : false;
   const iAmBuyer = myPeerId && settlement ? sameBytes(settlement.buyer, myPeerId) : false;
@@ -180,7 +180,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
         {ad && (
           <Panel title="Advertisement">
             <div className="divide-y divide-white/5 px-4">
-              <Row label="Pair" value={`${ad.asset}/${ad.fiatCurrency}`} />
+              <Row label="Pair" value={`${assetLabel(ad)}/${ad.fiatCurrency}`} />
               <Row label="Merchant direction" value={ad.direction} />
               <Row label="Price" value={ad.price === null ? "Floating — no oracle read yet" : `${ad.price} ${ad.fiatCurrency}`} />
               <Row label="Payment methods" value={ad.paymentMethods.join(", ") || "—"} />

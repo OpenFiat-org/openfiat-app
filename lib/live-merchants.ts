@@ -1,4 +1,4 @@
-import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 
 /**
  * The set of wallets this app is willing to call merchants, and what it can
@@ -115,7 +115,11 @@ export interface MerchantRow {
   vacationAds: number;
   disabledAds: number;
   offering: MerchantOffering;
-  /** `ASSET/FIAT` for every pair they advertise, sorted. */
+  /**
+   * `TOKEN/FIAT` for every pair they advertise, sorted. The token half is the
+   * node's symbol for the advertisement's mint, or the mint address when it
+   * has no name — never a ticker this app inferred.
+   */
   pairs: string[];
   /** Every payment method named across their advertisements, sorted. */
   paymentMethods: string[];
@@ -187,7 +191,10 @@ export function merchantsFrom(ads: LiveAd[]): MerchantRow[] {
       vacationAds: sorted.filter((ad) => ad.status === "Vacation").length,
       disabledAds: sorted.filter((ad) => ad.status === "Disabled").length,
       offering: offeringFrom(sorted),
-      pairs: unique(sorted.map((ad) => `${ad.asset}/${ad.fiatCurrency}`)),
+      // The node's name for the mint, or the mint itself — see `assetLabel`.
+      // A merchant advertising a token nobody has nicknamed still trades a
+      // pair, and it is listed as the address rather than dropped.
+      pairs: unique(sorted.map((ad) => `${assetLabel(ad)}/${ad.fiatCurrency}`)),
       paymentMethods: unique(sorted.flatMap((ad) => ad.paymentMethods)),
       firstAdvertisedAt: Math.min(...sorted.map((ad) => ad.createdAt)),
       lastUpdatedAt: Math.max(...sorted.map((ad) => ad.updatedAt)),

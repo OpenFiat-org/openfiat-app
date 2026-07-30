@@ -43,6 +43,13 @@ import {
   type Registration,
   type ServiceType,
 } from "@openfiat/sdk";
+// The one mint this app already asserts is a settlement mint on this
+// deployment, imported rather than retyped so there is a single place the
+// address lives. This script deliberately ships no mint-to-ticker table of
+// its own: the names these advertisements read under are resolved by the
+// node from the address, which is the whole point of the change that made
+// `asset_mint` the field.
+import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
 
 const NODE_URL = process.env.OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080";
 
@@ -192,7 +199,18 @@ async function seedProviders(client: Client): Promise<number> {
 
 interface AdSpec {
   merchantLabel: string;
-  asset: string;
+  /**
+   * The mint the buyer is paid in. An advertisement names a mint and no
+   * ticker (OFS-2100, after `asset_mint` replaced `asset`), because a ticker
+   * on a record is a label its author chose and is connected to the token
+   * the escrow moves by nothing at all.
+   *
+   * That applies to a seed script as much as to a merchant: writing "USDC"
+   * here and settling something else is the exact failure the change closed.
+   * The name these render under comes back from the node, resolved from the
+   * address — this file states no symbol anywhere.
+   */
+  mint: string;
   fiat: string;
   direction: "Buy" | "Sell";
   /** Fiat price per unit of asset, in whole fiat units. */
@@ -211,11 +229,19 @@ interface AdSpec {
  * Prices are near the live oracle rate the cluster already publishes for
  * USDC/KES (~129.5) rather than invented, so a floating-vs-fixed comparison
  * in the UI reads sensibly against real oracle data.
+ *
+ * Every ad is denominated in the same mint, and that is a narrowing this
+ * accepts rather than works around. The alternative is a list of addresses
+ * transcribed here from the escrow program's allowlist, which is a copy of
+ * somebody else's table that goes stale the first time governance changes it
+ * — and getting one wrong would seed a book advertising a token nobody can
+ * be paid in. One address the app already knows is honest; several guessed
+ * ones would not be.
  */
 const ADS: AdSpec[] = [
   {
     merchantLabel: "merchant-nairobi",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Sell",
     price: 129.8,
@@ -226,7 +252,7 @@ const ADS: AdSpec[] = [
   },
   {
     merchantLabel: "merchant-nairobi",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Buy",
     price: 128.4,
@@ -237,7 +263,7 @@ const ADS: AdSpec[] = [
   },
   {
     merchantLabel: "merchant-mombasa",
-    asset: "USDT",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Sell",
     price: 130.2,
@@ -248,7 +274,7 @@ const ADS: AdSpec[] = [
   },
   {
     merchantLabel: "merchant-lagos",
-    asset: "USDT",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "NGN",
     direction: "Sell",
     price: 1_548,
@@ -259,7 +285,7 @@ const ADS: AdSpec[] = [
   },
   {
     merchantLabel: "merchant-lagos",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "NGN",
     direction: "Buy",
     price: 1_531,
@@ -282,12 +308,12 @@ async function seedAdvertisements(client: Client): Promise<number> {
     // Deterministic id so a re-run refreshes the same ad rather than growing
     // the book without bound — the exchange would otherwise fill with
     // duplicates across runs and stop resembling a real market.
-    const id = `devnet-${spec.merchantLabel}-${spec.asset}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
+    const id = `devnet-${spec.merchantLabel}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
     const create: AdvertisementCreate = {
       id,
       merchant: Array.from(peerId),
       merchant_public_key: Array.from(keypair.publicKey),
-      asset: spec.asset,
+      asset_mint: spec.mint,
       direction: spec.direction,
       fiat_currency: spec.fiat,
       min_trade: amount(spec.minTrade),
@@ -298,7 +324,7 @@ async function seedAdvertisements(client: Client): Promise<number> {
       timestamp: Date.now(),
     };
     await advertisements.sendAdvertisementCreate(client, create, keypair);
-    console.log(`  ${spec.direction.padEnd(4)} ${spec.asset}/${spec.fiat} @ ${spec.price} — ${id}`);
+    console.log(`  ${spec.direction.padEnd(4)} ${spec.mint}/${spec.fiat} @ ${spec.price} — ${id}`);
     created++;
   }
   return created;

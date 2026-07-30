@@ -9,7 +9,7 @@ import {
   isComplete,
   readAccounts,
 } from "@/lib/payment-accounts";
-import type { LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import type { TradeDirection } from "@/lib/types";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 
@@ -99,7 +99,7 @@ export function OrderPanel({
     if (fiatAmount <= 0) return `Enter an amount between ${formatFiat(minFiat, fiat, 0)} and ${formatFiat(maxFiat, fiat, 0)}`;
     if (tooLow) return `Below this advertiser's minimum of ${formatFiat(minFiat, fiat, 0)}`;
     if (tooHigh) return `Above this advertiser's maximum of ${formatFiat(maxFiat, fiat, 0)}`;
-    if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
+    if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, assetLabel(ad))} is available on this ad`;
     if (!method) return "Choose a payment method";
     return null;
   }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minFiat, maxFiat, fiat]);
@@ -126,8 +126,9 @@ export function OrderPanel({
       value={receiveText}
       onChange={onReceive}
       placeholder={buy ? "0.00" : `${formatNumber(minCrypto, 2)} ~ ${formatNumber(maxCrypto, 2)}`}
-      unit={ad.asset}
-      icon={<AssetIcon asset={ad.asset} size={18} />}
+      unit={assetLabel(ad)}
+      // No coin art for a mint the node has no name for; see AssetLabel.
+      icon={ad.assetSymbol ? <AssetIcon asset={ad.assetSymbol} size={18} /> : null}
       invalid={overLiquidity || (!buy && (tooLow || tooHigh))}
     />
   );
@@ -161,7 +162,7 @@ export function OrderPanel({
 
           <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
-            <Fact label="Available" value={formatCrypto(ad.availableLiquidity, ad.asset)} />
+            <Fact label="Available" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
             <Fact
               label="Limits"
               value={`${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)}`}
@@ -178,8 +179,8 @@ export function OrderPanel({
 
           <p className="mt-6 max-w-prose text-xs leading-relaxed text-gray-500">
             {buy
-              ? `Your ${ad.asset} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
-              : `Your ${ad.asset} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
+              ? `Your ${assetLabel(ad)} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
+              : `Your ${assetLabel(ad)} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
           </p>
 
           {/*
@@ -267,7 +268,7 @@ export function OrderPanel({
                   buy ? "bg-emerald-600/35" : "bg-orange-600/35"
                 }`}
               >
-                {userDirection} {ad.asset}
+                {userDirection} {assetLabel(ad)}
               </span>
               <p className="mt-2 text-xs text-amber-300">{blocker}</p>
             </>

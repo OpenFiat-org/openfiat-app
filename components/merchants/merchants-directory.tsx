@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { AssetLabel } from "@/components/asset-label";
 import { MetricStrip } from "@/components/metrics";
 import { WalletAvatar } from "@/components/wallet-avatar";
-import { formatCrypto, formatNumber, sinceLabel } from "@/lib/format";
+import { formatNumber, sinceLabel } from "@/lib/format";
 import type { LiveAd } from "@/lib/live-advertisements";
 import { fetchMerchants, type MerchantOffering, type MerchantRow } from "@/lib/live-merchants";
 import { fetchReputationForPeerId, type LiveReputation } from "@/lib/live-reputation";
@@ -225,7 +226,19 @@ function MerchantRows({
           <OfferingPill offering={row.offering} />
         </Td>
         <Td py="py-5" className="max-w-64">
-          <span className="line-clamp-2 text-xs text-gray-400">{row.pairs.join(" · ")}</span>
+          {/*
+            * `overflow-wrap: anywhere` because a pair can be named by a mint
+            * address, and base58 offers no break opportunity — the cell
+            * simply cut one mid-address, which reads as a shorter address
+            * rather than as a truncated one. The full list is in `title`,
+            * since two lines is still a clamp.
+            */}
+          <span
+            className="line-clamp-2 text-xs text-gray-400 [overflow-wrap:anywhere]"
+            title={row.pairs.join(" · ")}
+          >
+            {row.pairs.join(" · ")}
+          </span>
         </Td>
         <Td py="py-5" className="max-w-64">
           <span className="line-clamp-2 text-xs text-gray-400">
@@ -308,7 +321,8 @@ function AdLine({ ad }: { ad: LiveAd }) {
         {ad.direction}
       </span>
       <span className="text-gray-300">
-        {ad.asset}/{ad.fiatCurrency}
+        <AssetLabel ad={ad} />
+        /{ad.fiatCurrency}
       </span>
       <span className="font-mono tabular-nums text-gray-200">
         {/* A floating advertisement has no price on the record at all —
@@ -324,9 +338,11 @@ function AdLine({ ad }: { ad: LiveAd }) {
           : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
       </span>
       <span className="text-gray-500">
-        {formatNumber(ad.minTrade, 0)}–{formatNumber(ad.maxTrade, 0)} {ad.asset}
+        {formatNumber(ad.minTrade, 0)}–{formatNumber(ad.maxTrade, 0)} <AssetLabel ad={ad} />
       </span>
-      <span className="text-gray-500">{formatCrypto(ad.availableLiquidity, ad.asset)} free</span>
+      <span className="inline-flex items-baseline gap-1.5 text-gray-500">
+        {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} /> free
+      </span>
       <span className="ml-auto flex items-center gap-3">
         <span className={ad.status === "Active" ? "text-gray-400" : "text-gray-600"}>
           {ad.status}
