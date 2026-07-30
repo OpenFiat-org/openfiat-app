@@ -29,6 +29,9 @@ describe("where the sample-data notice appears", () => {
       "/account/identity",
       "/account/reputation",
       "/account/counterparties",
+      // The merchant directory reads the advertisement book. Its per-merchant
+      // children are still the fixture — see the split asserted below.
+      "/merchants",
     ]) {
       expect(rendersFixtures(route), route).toBe(false);
     }
@@ -54,7 +57,6 @@ describe("where the sample-data notice appears", () => {
 
   it("still warns on the routes that really are fixtures", () => {
     for (const route of [
-      "/merchants",
       "/merchants/m-kenyastar",
       "/explorer/address/9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
       "/countries",
@@ -74,5 +76,18 @@ describe("where the sample-data notice appears", () => {
   it("does not let a deep fixture prefix swallow its live parent", () => {
     expect(rendersFixtures("/explorer")).toBe(false);
     expect(rendersFixtures("/explorer/address/abc")).toBe(true);
+  });
+
+  /*
+   * `/merchants` is the awkward one: a live index whose children are still the
+   * fixture profile, with no distinguishing path segment between them the way
+   * `/explorer/address` has. Getting this backwards is the expensive
+   * direction — a live directory labelled "sample data" teaches readers to
+   * ignore the label everywhere else.
+   */
+  it("separates the live merchant directory from its fixture profiles", () => {
+    expect(rendersFixtures("/merchants")).toBe(false);
+    expect(rendersFixtures("/merchants/m-kenyastar")).toBe(true);
+    expect(rendersFixtures("/merchants/m-lagosnaira")).toBe(true);
   });
 });

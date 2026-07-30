@@ -36,13 +36,10 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  * forgotten entry now under-warns on a page someone deliberately built on a
  * fixture, instead of over-warning on every page somebody made real.
  *
- * Prefixes, because these are whole subtrees: `/merchants/<id>` and
- * `/explorer/address/<addr>` are the fixture, not just their index pages.
+ * Prefixes, because these are whole subtrees: `/explorer/address/<addr>` and
+ * `/country/<slug>` are the fixture, not just their index pages.
  */
 const FIXTURE_ROUTE_PREFIXES = [
-  // The merchant directory and profile: `lib/data/merchants.ts` reputations,
-  // `lib/data/reviews.ts` reviews, `lib/data/ads.ts` advertisements.
-  "/merchants",
   // Reads MERCHANTS and STAKING_SUMMARY for an address the chain would
   // answer for. The rest of `/explorer` is live, which is why this is a
   // deeper prefix rather than the whole subtree.
@@ -52,6 +49,23 @@ const FIXTURE_ROUTE_PREFIXES = [
   "/countries",
   "/country",
 ];
+
+/**
+ * Subtrees whose children are fixtures but whose index page is not.
+ *
+ * `/merchants` is a live directory read from the advertisement book
+ * (`lib/live-merchants.ts`), while `/merchants/<id>` is still the fixture
+ * profile — `lib/data/merchants.ts` reputations, `lib/data/reviews.ts`
+ * reviews, `lib/data/ads.ts` advertisements. A prefix cannot express that,
+ * because a prefix deliberately matches its own index too.
+ *
+ * `/explorer` gets the same shape for free by listing `/explorer/address`
+ * among the prefixes: its live parent simply is not on the list. That trick
+ * only works when the fixture children sit under a distinguishing path
+ * segment, and `/merchants/<id>` has none — the id is the segment. Hence a
+ * second list rather than a cleverer pattern.
+ */
+const FIXTURE_SUBTREES_ONLY = ["/merchants"];
 
 /** Fixture routes with no subtree of their own, matched exactly. */
 const FIXTURE_ROUTES = [
@@ -72,6 +86,7 @@ const FIXTURE_ROUTES = [
  */
 export function rendersFixtures(pathname: string): boolean {
   if (FIXTURE_ROUTES.includes(pathname)) return true;
+  if (FIXTURE_SUBTREES_ONLY.some((prefix) => pathname.startsWith(`${prefix}/`))) return true;
   return FIXTURE_ROUTE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
