@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { adById } from "@/lib/data/ads";
-import { merchantById } from "@/lib/data/merchants";
-import { NewTradeForm, NewTradeMissingAd } from "@/components/orders/new-trade-form";
+import { fetchAdvertisement } from "@/lib/live-advertisements";
+import { NewTradeReview, NewTradeMissingAd } from "@/components/orders/new-trade-form";
 
 export const metadata: Metadata = {
-  title: "New Order",
-  description: "Create an escrow-protected P2P reservation on OpenFiat.",
+  title: "Review Order",
+  description: "Review a real OpenFiat advertisement before an order against it.",
 };
 
 export default async function NewOrderPage({
@@ -15,20 +14,37 @@ export default async function NewOrderPage({
 }) {
   const query = await searchParams;
   const adParam = Array.isArray(query.ad) ? query.ad[0] : query.ad;
-  const ad = adParam ? adById(adParam) : undefined;
+  const amountParam = Array.isArray(query.amount) ? query.amount[0] : query.amount;
+  const methodParam = Array.isArray(query.method) ? query.method[0] : query.method;
+
+  let ad = null;
+  let fetchError: string | null = null;
+  if (adParam) {
+    try {
+      ad = await fetchAdvertisement(adParam);
+    } catch (err) {
+      fetchError = err instanceof Error ? err.message : String(err);
+    }
+  }
 
   return (
     <section>
-      <h1 className="text-xl font-semibold text-white">Confirm Order</h1>
+      <h1 className="text-xl font-semibold text-white">Review Order</h1>
       <p className="mt-1 text-sm text-gray-400">
-        Review the offer and place your order — the seller's crypto locks in escrow on Solana when the order is placed.
+        What placing this order against the live advertisement would mean.
       </p>
       <div className="mt-8">
-        {ad ? (
-          <NewTradeForm
+        {fetchError ? (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
+            <p className="text-sm font-medium text-red-300">Could not read this advertisement from the node</p>
+            <p className="mt-1 font-mono text-xs text-red-400/80">{fetchError}</p>
+          </div>
+        ) : ad ? (
+          <NewTradeReview
             ad={ad}
-            merchant={merchantById(ad.merchantId)}
             userDirection={ad.direction === "Sell" ? "Buy" : "Sell"}
+            amount={amountParam}
+            method={methodParam}
           />
         ) : (
           <NewTradeMissingAd />

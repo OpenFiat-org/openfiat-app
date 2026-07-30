@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TRADES } from "@/lib/data/trades";
+import { fetchTrades } from "@/lib/live-trades";
 import { ExplorerLive } from "@/components/explorer/live-explorer-panel";
 
 export const metadata: Metadata = {
@@ -7,10 +7,18 @@ export const metadata: Metadata = {
   description: "Explore the OpenFiat coordination layer — protocol events, settlements, addresses, and trades.",
 };
 
-export default function ExplorerPage() {
+export default async function ExplorerPage() {
+  let trades = null;
+  try {
+    trades = (await fetchTrades()).slice(0, 8);
+  } catch {
+    // ExplorerLive renders "could not read trades" for `null` — a real,
+    // distinct fact from an empty list.
+  }
+
   return (
     <section>
-      <ExplorerLive settlements={TRADES.slice(0, 8)} />
+      <ExplorerLive settlements={trades} />
     </section>
   );
 }

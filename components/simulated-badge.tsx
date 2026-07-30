@@ -9,8 +9,16 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  * `/governance` read `StakingConfig`/`StakeAccount`/`Proposal` straight from
  * Solana via `lib/onchain-config`, with no mock fallback, and their detail
  * and action routes (`/staking/stake`, `/governance/[id]`) do the same.
+ *
+ * `/orders` and `/disputes` joined this list once they were cut over to
+ * `getTrade(s)`/`getSettlement(s)`/`getDispute(s)` (OFS-2000/2300/2400) — see
+ * `lib/live-trades.ts`, `lib/live-settlements.ts`, `lib/live-disputes.ts`.
+ * `/orders/new` is included too: it reads the real advertisement via
+ * `lib/live-advertisements.ts` and says plainly, on the page itself, that
+ * submitting a reservation isn't wired yet — which is a different fact from
+ * "this page shows sample data" and is not this badge's job to state.
  */
-const LIVE_ROUTE_PREFIXES = ["/staking", "/governance"];
+const LIVE_ROUTE_PREFIXES = ["/staking", "/governance", "/orders", "/disputes"];
 
 /**
  * Routes reading the real node on every load, matched exactly.
@@ -20,8 +28,11 @@ const LIVE_ROUTE_PREFIXES = ["/staking", "/governance"];
  * method and country choices from fixtures, so it is matched exactly rather
  * than by prefix — claiming the whole subtree is live would be the same
  * overstatement this badge exists to prevent.
+ *
+ * `/` (the landing page) is the P2P exchange itself and nothing else — see
+ * `app/page.tsx` — so it reads the real order book on every load too.
  */
-const LIVE_ROUTES = ["/ads"];
+const LIVE_ROUTES = ["/ads", "/"];
 
 /**
  * Routes that are live only once the user has selected a custom access node.
