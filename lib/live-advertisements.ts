@@ -44,7 +44,18 @@ export interface LiveAd {
   maxTrade: number;
   availableLiquidity: number;
   paymentMethods: string[];
-  status: "Active" | "Disabled" | "Vacation";
+  /**
+   * `Deleted` is in this union because the node really can return it.
+   *
+   * `getAdvertisements` maps over `AdvertisementStore::all()` with no filter,
+   * and OFS-2100 §21's `Deleted` is a status on the record rather than a
+   * removal from it — a withdrawn advertisement stays in every node's replica
+   * forever. Leaving it out of the type did not stop it arriving; it only
+   * stopped callers from being able to name it, so a deleted advertisement
+   * type-checked as `Active | Disabled | Vacation` and any code branching on
+   * "is this one still on offer" had to get the answer by exclusion.
+   */
+  status: "Active" | "Disabled" | "Vacation" | "Deleted";
   createdAt: number;
   updatedAt: number;
 }

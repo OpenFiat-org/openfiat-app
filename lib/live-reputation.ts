@@ -62,6 +62,19 @@ export interface LiveReputation {
   medianSettlementMs: number | null;
   /** `null` when nothing has been responded to. */
   responseRate: number | null;
+  /**
+   * OFS-3000 §13: mean milliseconds from a buyer declaring payment to this
+   * wallet approving or rejecting it, averaged over responses actually made.
+   *
+   * This is the one "response time" the protocol genuinely measures, and it is
+   * measured rather than declared — both endpoints are timestamps on signed
+   * events that every node already replicates, which is why `crates/reputation`
+   * can compute it without a new event type. It is not a merchant's advertised
+   * turnaround, and it is `null` rather than optimistic when there is nothing
+   * to average: an unanswered declaration has no latency and is already counted
+   * against `responseRate`.
+   */
+  meanResponseMs: number | null;
   /** True when this wallet has done nothing the protocol records. */
   empty: boolean;
 }
@@ -90,6 +103,10 @@ export function toLiveReputation(raw: RawReputation): LiveReputation {
     medianSettlementMs:
       completed > 0 ? Math.round((raw.completed_duration_sum_ms ?? 0) / completed) : null,
     responseRate: ratio(raw.payment_responses_made ?? 0, raw.payment_responses_due ?? 0),
+    meanResponseMs:
+      (raw.payment_responses_made ?? 0) > 0
+        ? Math.round((raw.response_latency_sum_ms ?? 0) / (raw.payment_responses_made ?? 1))
+        : null,
     empty:
       started === 0 &&
       completed === 0 &&
@@ -98,11 +115,49 @@ export function toLiveReputation(raw: RawReputation): LiveReputation {
   };
 }
 
-/** Reads a wallet's reputation from the selected node. */
-export async function fetchReputation(wallet: string): Promise<LiveReputation> {
+async function read(walletArgument: string): Promise<LiveReputation> {
   const client = new Client({ endpoint: nodeUrl(), timeoutMs: 8_000 });
   const raw = await client.call<{ wallet: string }, RawReputation>("getReputation", {
-    wallet: walletParam(wallet),
+    wallet: walletArgument,
   });
   return toLiveReputation(raw);
+}
+
+/** Reads a wallet's reputation from the selected node, by base58 address. */
+export async function fetchReputation(wallet: string): Promise<LiveReputation> {
+  return read(walletParam(wallet));
+}
+
+/**
+ * The same read, for a wallet known only by its PeerId.
+ *
+ * Everything the protocol replicates about a counterparty names them by PeerId
+ * — an advertisement carries `merchant`, a settlement carries `buyer` and
+ * `seller` — and never by the base58 address a person types. `walletParam`
+ * derives one from the other and cannot be run backwards, so a caller holding a
+ * PeerId has no address to give it.
+ *
+ * The node's `decode_peer_id` is base64 straight into `PeerId::from_bytes`,
+ * which is what `walletParam` produces after deriving the id; skipping the
+ * derivation and encoding the bytes directly is the same argument by a shorter
+ * route. The hex spelling is the one `lib/live-advertisements.ts` puts on every
+ * row, so callers pass through what they already display.
+ *
+ * A malformed id throws rather than being sent: the node answers an
+ * unrecognised PeerId with an all-zero profile, indistinguishable from a real
+ * wallet that has never traded, which is the exact trap `lib/wallet-param.ts`
+ * exists to document.
+ */
+export async function fetchReputationForPeerId(peerIdHex: string): Promise<LiveReputation> {
+  return read(base64OfHex(peerIdHex));
+}
+
+function base64OfHex(hex: string): string {
+  if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(hex)) {
+    throw new Error(`Not a hex-encoded PeerId: ${hex}`);
+  }
+  const bytes = Uint8Array.from(hex.match(/../g)!.map((pair) => parseInt(pair, 16)));
+  return typeof Buffer !== "undefined"
+    ? Buffer.from(bytes).toString("base64")
+    : btoa(String.fromCharCode(...bytes));
 }

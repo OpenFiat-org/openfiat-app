@@ -22,6 +22,10 @@ const FOOTER_LINKS: Array<[string, string]> = [
   ["Become a merchant", "/guide/merchant"],
   ["Explorer", "/explorer"],
   ["Network", "/network"],
+  // Next to Providers, not next to the guides: both are directories of who is
+  // on the network, read from the same node, and someone looking for one is
+  // usually looking for the other.
+  ["Merchants", "/merchants"],
   ["Providers", "/providers"],
   ["Governance", "/governance"],
 ];

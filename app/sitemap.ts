@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
-import { CURRENT_USER, MERCHANTS } from "@/lib/data/merchants";
 import { fetchPricedPairs } from "@/lib/live-oracle";
 
 const BASE = "https://app.openfiat.network";
@@ -52,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/governance", 0.6, "daily"),
     entry("/network", 0.5, "daily"),
     entry("/explorer", 0.5, "daily"),
+    entry("/merchants", 0.6, "weekly"),
     entry("/providers", 0.6, "weekly"),
     entry("/providers/register", 0.7, "monthly"),
     entry("/staking", 0.5, "weekly"),
@@ -102,9 +102,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry(`/${pair.slug}`, 0.9, "daily"),
   );
 
-  const merchantRoutes = [...MERCHANTS, CURRENT_USER].map((m) =>
-    entry(`/merchants/${m.id}`, 0.6, "daily"),
-  );
+  /*
+   * No per-merchant routes, for the same reason there are no per-provider
+   * ones. This used to enumerate `lib/data/merchants.ts` and submit 68
+   * invented trading desks — with invented order counts, completion rates and
+   * reviews — to search engines as real, indexable profiles. `/merchants` is
+   * now a live directory read from the advertisement book, and a per-merchant
+   * page backed by anything real does not exist yet. Publishing the fabricated
+   * ones in the meantime is worse than publishing none: an absent page costs a
+   * reader nothing, and a fabricated one costs them their judgement about a
+   * stranger they are about to send money to.
+   */
+  const merchantRoutes: MetadataRoute.Sitemap = [];
 
   // No per-provider routes. They used to be generated from a fixture, so
   // this sitemap submitted 19 invented service providers to search engines
