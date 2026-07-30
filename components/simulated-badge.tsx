@@ -13,6 +13,17 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 const LIVE_ROUTE_PREFIXES = ["/staking", "/governance"];
 
 /**
+ * Routes reading the real node on every load, matched exactly.
+ *
+ * `/ads` reads this wallet's real advertisements from `getAdvertisements`.
+ * `/ads/new` is NOT included: the publishing wizard still builds its payment
+ * method and country choices from fixtures, so it is matched exactly rather
+ * than by prefix — claiming the whole subtree is live would be the same
+ * overstatement this badge exists to prevent.
+ */
+const LIVE_ROUTES = ["/ads"];
+
+/**
  * Routes that are live only once the user has selected a custom access node.
  * Matched exactly, not by prefix: only the index routes were cut over, so
  * `/providers/[id]` and `/explorer/address/[address]` still read fixtures.
@@ -23,6 +34,7 @@ function isLive(pathname: string, customNode: boolean): boolean {
   if (LIVE_ROUTE_PREFIXES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
     return true;
   }
+  if (LIVE_ROUTES.includes(pathname)) return true;
   return customNode && NODE_DEPENDENT_ROUTES.includes(pathname);
 }
 
@@ -59,11 +71,11 @@ export function SimulatedBadge() {
 
   return (
     <span
-      title="Demo data — not connected to a live node"
+      title="This page renders built-in sample data, not records read from a node. Separate from the devnet notice in the header: that says which NETWORK the app talks to, this says this PAGE is not talking to it."
       className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 backdrop-blur"
     >
       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-      Simulated data
+      Sample data
     </span>
   );
 }

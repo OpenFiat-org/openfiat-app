@@ -34,6 +34,25 @@
 export const DEFAULT_NODE_URL =
   process.env.NEXT_PUBLIC_OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080";
 
+/**
+ * Which network this build talks to, shown persistently in the interface.
+ *
+ * Everything here is devnet: the OpenFiat node cluster this app queries, and
+ * the Solana cluster those nodes and `lib/onchain-config.ts` read
+ * (`api.devnet.solana.com`). The escrow, staking, governance and presale
+ * programs are deployed to devnet only — OFS-4200's own status banner keeps
+ * mainnet out of scope, and there has been no external audit.
+ *
+ * Stated rather than implied because the interface is indistinguishable from
+ * a production one at a glance, and someone who mistakes a devnet balance for
+ * a real one draws exactly the wrong conclusion about what they are holding.
+ * Devnet OPEN has no value and cannot be bridged to any that does.
+ */
+export const NETWORK_LABEL = "Devnet";
+
+/** The Solana cluster behind the on-chain reads (`lib/onchain-config.ts`). */
+export const SOLANA_CLUSTER = "solana devnet";
+
 /** A node a user interface can actually attach to and query. */
 export interface KnownNode {
   id: string;
