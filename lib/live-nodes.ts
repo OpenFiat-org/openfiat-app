@@ -1,5 +1,6 @@
 import { Client, providers, type ServiceRecord } from "@openfiat/sdk";
 
+import { readCapabilities } from "@/lib/node-capabilities";
 import { knownNodes, type KnownNode } from "@/lib/node-endpoint";
 
 /**
@@ -81,10 +82,24 @@ export async function discoverNodes(): Promise<KnownNode[]> {
           url: endpoint,
           label: hostLabel(endpoint),
           role: "Public API Node",
-          // Not knowable from a registration: whether a node reads Solana
-          // directly is something it answers on `getChainStatus`, so the
-          // caller finds out by asking rather than by us assuming.
-          chainMode: "GossipOnly",
+          /*
+           * From the registration, which now says. This was hardcoded to
+           * `GossipOnly` with a comment that a registration "says nothing
+           * about whether it reads Solana" — true when it was written, and
+           * a node's own registration now carries `chain:rpc` or
+           * `chain:gossip` derived from its running configuration. So the
+           * assumption is gone, and with it a directory in which every
+           * discovered node was labelled second-hand regardless of what it
+           * ran.
+           *
+           * Still a claim, not a fact: it is signed by the node about
+           * itself. `null` when the registration declared neither, because
+           * "did not say" and "said gossip" are different answers and the
+           * caller probes either way — see `lib/node-capabilities.ts`.
+           */
+          chainMode: readCapabilities(record.capabilities ?? []).chainMode,
+          capabilities: record.capabilities ?? [],
+          region: record.region ?? null,
         });
       }
     }

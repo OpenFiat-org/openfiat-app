@@ -19,17 +19,27 @@ vi.mock("@/lib/node-endpoint", () => ({
       label: "openfiat.allenhark.com",
       role: "Public API Node",
       chainMode: "RpcConnected",
+      capabilities: [],
+      region: null,
     },
   ],
 }));
 
 const { discoverNodes } = await import("@/lib/live-nodes");
 
-function record(id: string, variant: string, endpoints: string[]) {
+function record(
+  id: string,
+  variant: string,
+  endpoints: string[],
+  capabilities: string[] = [],
+  region: string | null = null,
+) {
   return {
     service_id: id,
     service_type: { Infrastructure: variant },
     endpoints,
+    capabilities,
+    region,
   };
 }
 
@@ -98,16 +108,55 @@ describe("discoverNodes", () => {
     expect(nodes.map((n) => n.id)).toEqual(["devnet-public", "alpha", "zeta"]);
   });
 
-  it("labels a discovered node by host, and never claims it reads Solana", async () => {
-    // A registration says "this URL reaches me". It says nothing about
-    // chain connectivity, so assuming RpcConnected would be inventing.
+  it("labels a discovered node by host", async () => {
     getProviders.mockResolvedValue([
       record("node-x", "PublicApiNode", ["https://rpc.example.org:8443/"]),
     ]);
 
     const [, discovered] = await discoverNodes();
     expect(discovered.label).toBe("rpc.example.org:8443");
-    expect(discovered.chainMode).toBe("GossipOnly");
+  });
+
+  /*
+   * This used to be hardcoded to `GossipOnly` for every discovered node,
+   * with a comment that a registration says nothing about chain
+   * connectivity. That was true when it was written. A node now derives
+   * `chain:rpc`/`chain:gossip` from its running configuration and
+   * registers it, so the assumption is gone — and with it a directory in
+   * which every node a client could pick was labelled second-hand
+   * regardless of what it ran.
+   */
+  it("takes the chain mode from the registration, which now carries one", async () => {
+    getProviders.mockResolvedValue([
+      record("node-rpc", "PublicApiNode", ["https://rpc.example.org"], [
+        "chain:rpc",
+        "content:serving",
+        "retention:archival (everything)",
+      ], "eu-west"),
+    ]);
+
+    const [, discovered] = await discoverNodes();
+    expect(discovered.chainMode).toBe("RpcConnected");
+    // Carried through unfiltered, so the view can render capabilities this
+    // build has no reading for.
+    expect(discovered.capabilities).toEqual([
+      "chain:rpc",
+      "content:serving",
+      "retention:archival (everything)",
+    ]);
+    expect(discovered.region).toBe("eu-west");
+  });
+
+  it("leaves the chain mode null when the registration declared none", async () => {
+    // "Did not say" is not "said gossip-only", and the caller probes
+    // either way.
+    getProviders.mockResolvedValue([
+      record("node-quiet", "PublicApiNode", ["https://quiet.example.org"]),
+    ]);
+
+    const [, discovered] = await discoverNodes();
+    expect(discovered.chainMode).toBeNull();
+    expect(discovered.region).toBeNull();
   });
 
   it("skips a registration with no endpoint rather than producing a blank entry", async () => {

@@ -11,6 +11,7 @@ import { TYPE_COLORS } from "@/lib/data/providers";
 import { formatPricing } from "@/lib/earnings";
 import { sinceLabel } from "@/lib/format";
 import { fetchProviderRecord, labelForServiceType } from "@/lib/live-providers";
+import { chainModeClaim, readCapabilities } from "@/lib/node-capabilities";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 
 /**
@@ -77,6 +78,7 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
 
   const type = labelForServiceType(record.service_type);
   const color = TYPE_COLORS[type];
+  const claims = readCapabilities(record.capabilities);
 
   return (
     <div className="space-y-6">
@@ -95,12 +97,29 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
               </span>
             }
           />
-          <Row label="Region" value={record.region ?? "Not declared"} />
+          {/* Self-declared and unverified — nothing here observes where a
+              node is, and "not declared" is a better answer than a guess. */}
+          <Row
+            label="Region"
+            value={record.region ? `${record.region} (declared, unverified)` : "Not declared"}
+          />
           {/* Absent pricing means free (OFS-4100 §9.5) — not unknown. */}
           <Row label="Pricing" value={formatPricing(record.pricing) ?? "Free"} />
+          {/*
+            * The operator's own business, and this is their page rather
+            * than a directory row — the services list deliberately does
+            * not carry it.
+            *
+            * A node always has one now: it defaults to the node's own
+            * identity address, the key it signs every event with, because
+            * "this node has no wallet" was never true and registering it
+            * as absent left a node doing real work with nowhere for its
+            * share to go. An absent one here means a service that is not
+            * charging, which OFS-4100 §9.5 allows.
+            */}
           <Row
             label="Payout wallet"
-            value={record.payout_wallet ?? "None — this service is not charging"}
+            value={record.payout_wallet ?? "None declared — this service is not charging"}
             mono={Boolean(record.payout_wallet)}
           />
         </div>
@@ -125,27 +144,92 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
         </div>
       </Panel>
 
-      <Panel title="Capabilities">
+      <Panel title="What this service claims it can do">
         <div className="px-4 py-4">
           {record.capabilities.length === 0 ? (
             <p className="text-sm text-gray-500">None declared.</p>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {record.capabilities.map((capability) => (
-                <span
-                  key={capability}
-                  className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-xs text-gray-300"
-                >
-                  {capability}
-                </span>
-              ))}
-            </div>
+            <>
+              {/*
+                * Read into what each one means for someone deciding whether
+                * to use this node, then the raw strings underneath. A node
+                * derives these from its running configuration, so they are
+                * accurate about what it was told to be — and signed by the
+                * node itself, so they are not evidence of anything. Nothing
+                * here gets a checkmark; see lib/node-capabilities.ts.
+                */}
+              <dl className="space-y-2 text-sm">
+                <Claim label="Chain">
+                  {chainModeClaim(claims.chainMode)}
+                  {claims.chainMode === "GossipOnly" && (
+                    <span className="block text-xs text-gray-500">
+                      On-chain answers reach it second-hand over gossip, so they can lag.
+                    </span>
+                  )}
+                </Claim>
+                <Claim label="Content">
+                  {claims.servesContent
+                    ? "Claims to hold and serve protocol content — it can hand over an attachment or an avatar itself."
+                    : "Does not claim to serve content, so attachments have to come from somewhere else."}
+                </Claim>
+                <Claim label="Retention">
+                  {claims.retention
+                    ? `Claims to keep content ${claims.retention} — that is how far back it can answer for evidence.`
+                    : "No retention window declared."}
+                </Claim>
+                {claims.producesSnapshots && (
+                  <Claim label="Snapshots">Claims to produce snapshots other nodes can fetch.</Claim>
+                )}
+                {/* Anything this build has no reading for, shown as itself.
+                    The vocabulary grows, and a page that renders only the
+                    four it knows hides the fifth without saying so. */}
+                {claims.unrecognised.length > 0 && (
+                  <Claim label="Also declared">
+                    <span className="flex flex-wrap gap-1.5">
+                      {claims.unrecognised.map((capability) => (
+                        <span
+                          key={capability}
+                          className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-xs text-gray-300"
+                        >
+                          {capability}
+                        </span>
+                      ))}
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      Capabilities this build of the app has no reading for. Shown as the node
+                      wrote them rather than dropped.
+                    </span>
+                  </Claim>
+                )}
+              </dl>
+
+              <div className="mt-4 flex flex-wrap gap-1.5 border-t border-white/5 pt-3">
+                {record.capabilities.map((capability) => (
+                  <span
+                    key={capability}
+                    className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[11px] text-gray-500"
+                  >
+                    {capability}
+                  </span>
+                ))}
+              </div>
+            </>
           )}
-          <p className="mt-4 text-xs text-gray-500">
+          <p className="mt-4 text-xs leading-relaxed text-gray-500">
             Speaks OFS{" "}
             {record.supported_ofs.length > 0
               ? record.supported_ofs.join(", ")
               : "— none declared"}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            All of the above is a claim. A registration is signed by the provider&apos;s own key and
+            says what its operator configured; nothing on this page verifies it. A chain claim is
+            cheap to check — a node that is not reading Solana cannot answer{" "}
+            <code className="font-mono">getChainStatus</code> with a slot — and{" "}
+            <Link href="/network" className="text-brand-hover hover:underline">
+              Nodes &amp; peers
+            </Link>{" "}
+            asks every node it lists and shows the answer beside the claim.
           </p>
         </div>
       </Panel>
@@ -212,6 +296,16 @@ function Row({
       <span className={`min-w-0 text-right break-all text-gray-200 ${mono ? "font-mono text-xs" : ""}`}>
         {value}
       </span>
+    </div>
+  );
+}
+
+/** One reading of a capability claim, phrased as a claim. */
+function Claim({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
+      <dt className="shrink-0 text-gray-500 sm:w-28">{label}</dt>
+      <dd className="min-w-0 text-gray-300">{children}</dd>
     </div>
   );
 }
