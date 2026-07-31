@@ -18,7 +18,7 @@ import {
 } from "@/lib/arbitration";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 
-const who = { publicKey: new Uint8Array(32).fill(7), peerId: [1, 2, 3] };
+const who = { publicKey: new Uint8Array(32).fill(7), peerId: "peer-alice" };
 
 describe("outcome byte tables", () => {
   // The bug this guards against is real: committing the off-chain byte to the
@@ -129,17 +129,17 @@ describe("case state", () => {
   const dispute: Dispute = {
     id: "d1",
     settlement_id: "s1",
-    buyer: [4, 4, 4],
-    buyer_public_key: [],
-    seller: [5, 5, 5],
-    seller_public_key: [],
-    opener: [4, 4, 4],
+    buyer: "peer-buyer",
+    buyer_public_key: "key-buyer",
+    seller: "peer-seller",
+    seller_public_key: "key-seller",
+    opener: "peer-buyer",
     reason: "no payment",
     status: "Open",
     required_arbitrators: 3,
-    arbitrators: [[1, 2, 3]],
+    arbitrators: ["peer-alice"],
     arbitrator_keys: [],
-    commitments: [{ arbitrator: [1, 2, 3], commitment: [] }],
+    commitments: [{ arbitrator: "peer-alice", commitment: [] }],
     reveals: [],
     resolution: null,
     buyer_agreed_mutual_settlement: false,
@@ -150,10 +150,10 @@ describe("case state", () => {
   };
 
   it("reads this arbitrator's progress by peer id", () => {
-    expect(hasJoined(dispute, [1, 2, 3])).toBe(true);
-    expect(hasJoined(dispute, [9, 9, 9])).toBe(false);
-    expect(hasCommitted(dispute, [1, 2, 3])).toBe(true);
-    expect(hasRevealed(dispute, [1, 2, 3])).toBe(false);
+    expect(hasJoined(dispute, "peer-alice")).toBe(true);
+    expect(hasJoined(dispute, "peer-mallory")).toBe(false);
+    expect(hasCommitted(dispute, "peer-alice")).toBe(true);
+    expect(hasRevealed(dispute, "peer-alice")).toBe(false);
   });
 
   /**

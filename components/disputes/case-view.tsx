@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
-import { hexForPeerId, peerIdBytesForAddress } from "@/lib/peer-id";
+import { peerIdForAddress } from "@/lib/peer-id";
 import { PeerIdentity } from "@/components/peer-identity";
 import { useMyDisputes } from "@/components/disputes/use-my-disputes";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
@@ -27,7 +27,6 @@ const RESOLUTION_LABEL: Record<NonNullable<PublicDispute["resolution"]>, string>
   Invalid: "Invalid dispute",
 };
 
-const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
  * One real dispute, read from `getDispute` (OFS-2400) — and, if the connected
@@ -70,14 +69,14 @@ const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every
  * write flow.
  */
 export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
-  const [myPeerId, setMyPeerId] = useState<number[] | null>(null);
+  const [myPeerId, setMyPeerId] = useState<string | null>(null);
   const mine = useMyDisputes();
   const full = mine.data?.find((d) => d.id === dispute.id) ?? null;
 
   useEffect(() => {
     const update = () => {
       const wallet = readWalletConnection();
-      setMyPeerId(wallet ? peerIdBytesForAddress(wallet.address) : null);
+      setMyPeerId(wallet ? peerIdForAddress(wallet.address) : null);
     };
     update();
     window.addEventListener(WALLET_CHANGED_EVENT, update);
@@ -184,9 +183,9 @@ export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
   );
 }
 
-function Parties({ dispute, myPeerId }: { dispute: Dispute; myPeerId: number[] | null }) {
-  const label = (peer: number[]) => (
-    <PeerIdentity peer={peer} isYou={myPeerId ? sameBytes(peer, myPeerId) : false} />
+function Parties({ dispute, myPeerId }: { dispute: Dispute; myPeerId: string | null }) {
+  const label = (peer: string) => (
+    <PeerIdentity peer={peer} isYou={myPeerId ? peer === myPeerId : false} />
   );
   return (
     <>
@@ -205,11 +204,10 @@ function ArbitratorRoster({ dispute }: { dispute: Dispute }) {
   return (
     <ul className="divide-y divide-white/5">
       {dispute.arbitrators.map((a) => {
-        const hex = hexForPeerId(a);
-        const committed = dispute.commitments.some((c) => sameBytes(c.arbitrator, a));
-        const reveal = dispute.reveals.find((r) => sameBytes(r.arbitrator, a));
+        const committed = dispute.commitments.some((c) => c.arbitrator === a);
+        const reveal = dispute.reveals.find((r) => r.arbitrator === a);
         return (
-          <li key={hex} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+          <li key={a} className="flex items-center gap-3 px-4 py-2.5 text-sm">
             {/* An arbitrator is only ever a PeerId — they are chosen by
                 stake, not by identity, and nothing names them. A face
                 derived from that id is still just the id. */}

@@ -2,7 +2,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
 import bs58 from "bs58";
 import { describe, expect, it } from "vitest";
-import { addressForPeerIdHex, peerIdHexForAddress } from "@/lib/peer-id";
+import { addressForPeerId, peerIdForAddress } from "@/lib/peer-id";
 import { vaultCovers } from "@/components/wallet/use-vault-backing";
 import type { LiveVault } from "@/lib/live-vaults";
 
@@ -18,29 +18,34 @@ import type { LiveVault } from "@/lib/live-vaults";
  * against money that has already left.
  */
 
-describe("addressForPeerIdHex", () => {
+describe("addressForPeerId", () => {
   it("recovers the wallet from a PeerId the SDK produced, for many keys", () => {
     for (let i = 0; i < 100; i++) {
       const address = Keypair.generate().publicKey.toBase58();
-      expect(addressForPeerIdHex(peerIdHexForAddress(address))).toBe(address);
+      expect(addressForPeerId(peerIdForAddress(address)!)).toBe(address);
     }
   });
 
   it("agrees with the SDK's forward direction rather than reimplementing it", () => {
     const address = Keypair.generate().publicKey.toBase58();
     const fromSdk = peerIdFromPublicKey(bs58.decode(address));
-    const hex = Buffer.from(fromSdk).toString("hex");
 
     expect(fromSdk).toHaveLength(38);
-    expect(addressForPeerIdHex(hex)).toBe(address);
+    expect(addressForPeerId(bs58.encode(fromSdk))).toBe(address);
   });
 
-  it("is case-insensitive and tolerates surrounding whitespace", () => {
+  it("tolerates surrounding whitespace but not a change of case", () => {
     const address = Keypair.generate().publicKey.toBase58();
-    const hex = peerIdHexForAddress(address);
+    const peerId = peerIdForAddress(address)!;
 
-    expect(addressForPeerIdHex(hex.toUpperCase())).toBe(address);
-    expect(addressForPeerIdHex(`  ${hex}\n`)).toBe(address);
+    expect(addressForPeerId(`  ${peerId}\n`)).toBe(address);
+
+    // Case is significant in base58 — `a` and `A` are different digits — so
+    // an upper-cased peer id is a different value, not the same one written
+    // differently. Accepting it would resolve to some other wallet. This
+    // encoding was hex until the node moved to base58, and hex *was*
+    // case-insensitive, so the old behaviour is now a bug.
+    expect(addressForPeerId(peerId.toUpperCase())).not.toBe(address);
   });
 
   /*
@@ -51,34 +56,38 @@ describe("addressForPeerIdHex", () => {
    */
   it("rejects a PeerId whose multicodec prefix is not Ed25519", () => {
     const address = Keypair.generate().publicKey.toBase58();
-    const bytes = Buffer.from(peerIdHexForAddress(address), "hex");
+    const bytes = Buffer.from(bs58.decode(peerIdForAddress(address)!));
     // 0x08 0x01 is protobuf field 1 = Ed25519. 0x02 would be Secp256k1,
     // whose key is not a Solana address at all.
     bytes[3] = 0x02;
 
-    expect(addressForPeerIdHex(bytes.toString("hex"))).toBeNull();
+    expect(addressForPeerId(bs58.encode(bytes))).toBeNull();
   });
 
   it("rejects a hashed (non-identity) multihash", () => {
     const address = Keypair.generate().publicKey.toBase58();
-    const bytes = Buffer.from(peerIdHexForAddress(address), "hex");
+    const bytes = Buffer.from(bs58.decode(peerIdForAddress(address)!));
     // 0x12 = sha2-256 rather than 0x00 = identity. The 32 bytes that follow
     // are a digest, not a public key.
     bytes[0] = 0x12;
 
-    expect(addressForPeerIdHex(bytes.toString("hex"))).toBeNull();
+    expect(addressForPeerId(bs58.encode(bytes))).toBeNull();
   });
 
-  it("rejects wrong lengths and non-hex input", () => {
-    const hex = peerIdHexForAddress(Keypair.generate().publicKey.toBase58());
+  it("rejects wrong lengths and non-base58 input", () => {
+    const peerId = peerIdForAddress(Keypair.generate().publicKey.toBase58())!;
 
-    expect(addressForPeerIdHex(hex.slice(0, -2)), "truncated").toBeNull();
-    expect(addressForPeerIdHex(`${hex}00`), "over-long").toBeNull();
-    expect(addressForPeerIdHex(""), "empty").toBeNull();
-    expect(addressForPeerIdHex("zz".repeat(38)), "non-hex").toBeNull();
+    expect(addressForPeerId(peerId.slice(0, -2)), "truncated").toBeNull();
+    expect(addressForPeerId(`${peerId}11`), "over-long").toBeNull();
+    expect(addressForPeerId(""), "empty").toBeNull();
+    // 0, O, I and l are the four characters base58 omits.
+    expect(addressForPeerId("0OIl".repeat(10)), "non-base58").toBeNull();
     // A bare 32-byte key with no PeerId header is not a PeerId, and must not
     // be quietly accepted as one.
-    expect(addressForPeerIdHex("ab".repeat(32)), "unprefixed key").toBeNull();
+    expect(
+      addressForPeerId(Keypair.generate().publicKey.toBase58()),
+      "unprefixed key",
+    ).toBeNull();
   });
 });
 

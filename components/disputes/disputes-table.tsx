@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useMyDisputes } from "@/components/disputes/use-my-disputes";
 import { fetchDisputes, type Dispute, type PublicDispute } from "@/lib/live-disputes";
-import { peerIdBytesForAddress } from "@/lib/peer-id";
+import { peerIdForAddress } from "@/lib/peer-id";
 import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connection";
 import { formatDateShortMs } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -17,13 +17,12 @@ const STATUS_LABEL: Record<PublicDispute["status"], string> = {
   Resolved: "Resolved",
 };
 
-const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /** How this wallet is involved, from a case it is entitled to read. */
-function roleIn(dispute: Dispute, peerId: number[]): string {
-  if (sameBytes(dispute.buyer, peerId)) return "Buyer";
-  if (sameBytes(dispute.seller, peerId)) return "Seller";
-  if (dispute.arbitrators.some((a) => sameBytes(a, peerId))) return "Arbitrator";
+function roleIn(dispute: Dispute, peerId: string): string {
+  if (dispute.buyer === peerId) return "Buyer";
+  if (dispute.seller === peerId) return "Seller";
+  if (dispute.arbitrators.some((a) => a === peerId)) return "Arbitrator";
   // `getMyDisputes` answers for buyer, seller and seated arbitrators, so
   // there is no fourth case — but a record that reaches here anyway is the
   // node telling us something this app has not understood, and inventing a
@@ -57,13 +56,13 @@ function roleIn(dispute: Dispute, peerId: number[]): string {
 export function DisputesTable() {
   const [disputes, setDisputes] = useState<PublicDispute[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [myPeerId, setMyPeerId] = useState<number[] | null>(null);
+  const [myPeerId, setMyPeerId] = useState<string | null>(null);
   const mine = useMyDisputes();
 
   useEffect(() => {
     const update = () => {
       const wallet = readWalletConnection();
-      setMyPeerId(wallet ? peerIdBytesForAddress(wallet.address) : null);
+      setMyPeerId(wallet ? peerIdForAddress(wallet.address) : null);
     };
     update();
     window.addEventListener(WALLET_CHANGED_EVENT, update);

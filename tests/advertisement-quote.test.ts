@@ -29,8 +29,8 @@ function ad(
 ): AdvertisementView {
   return {
     id: "ad-1",
-    merchant: [1, 2, 3],
-    merchant_public_key: [4, 5, 6],
+    merchant: "12D3KooWK9hQ7TwbfvFiaAxUbRFCkdhS7iEpAJDnewNL1anyREQ1",
+    merchant_public_key: "ALLENLMtV1zEAHT3xpVryqcbdPCB8c9JhM1Jdbe5XHg5",
     asset_mint: "2bHPi5hA4zrmPAfrvLmEexg3KJjpTjNkUcxWnzUPeRRU",
     asset_symbol: "USDC",
     fiat_currency: "KES",

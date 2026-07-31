@@ -116,7 +116,6 @@ export async function fetchTrades(): Promise<Trade[]> {
   return client().call<Record<string, never>, Trade[]>("getTrades", {});
 }
 
-const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
  * Trades where the given PeerId is a party — the requester on the
@@ -131,10 +130,10 @@ const sameBytes = (a: number[], b: number[]) => a.length === b.length && a.every
  * privacy fix on its own, because the node answers the unscoped read to
  * anyone either way.
  */
-export function tradesForPeer(trades: Trade[], peerId: number[]): Trade[] {
+export function tradesForPeer(trades: Trade[], peerId: string): Trade[] {
   return trades.filter((t) => {
-    if (sameBytes(t.reservation.requester, peerId)) return true;
+    if (t.reservation.requester === peerId) return true;
     const s = t.settlement;
-    return s ? sameBytes(s.buyer, peerId) || sameBytes(s.seller, peerId) : false;
+    return s ? s.buyer === peerId || s.seller === peerId : false;
   });
 }

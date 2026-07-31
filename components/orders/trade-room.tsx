@@ -6,7 +6,7 @@ import {
   WALLET_CHANGED_EVENT,
   readWalletConnection,
 } from "@/lib/wallet-connection";
-import { peerIdBytesForAddress, shortPeerHex } from "@/lib/peer-id";
+import { peerIdForAddress, shortPeerId } from "@/lib/peer-id";
 import { PeerIdentity } from "@/components/peer-identity";
 import {
   deriveStatus,
@@ -34,8 +34,6 @@ const TERMINAL = new Set<SettlementStatus>([
   "Disputed",
 ]);
 
-const sameBytes = (a: number[], b: number[]) =>
-  a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
  * Trade room, reading one real trade (a `getTrade`-joined reservation +
@@ -62,12 +60,12 @@ const sameBytes = (a: number[], b: number[]) =>
  * that isn't wired yet, and the notice below says so instead of faking it.
  */
 export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
-  const [myPeerId, setMyPeerId] = useState<number[] | null>(null);
+  const [myPeerId, setMyPeerId] = useState<string | null>(null);
 
   useEffect(() => {
     const update = () => {
       const wallet = readWalletConnection();
-      setMyPeerId(wallet ? peerIdBytesForAddress(wallet.address) : null);
+      setMyPeerId(wallet ? peerIdForAddress(wallet.address) : null);
     };
     update();
     window.addEventListener(WALLET_CHANGED_EVENT, update);
@@ -87,19 +85,19 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
     : String(amount);
 
   const iAmRequester = myPeerId
-    ? sameBytes(reservation.requester, myPeerId)
+    ? reservation.requester === myPeerId
     : false;
   const iAmBuyer =
-    myPeerId && settlement ? sameBytes(settlement.buyer, myPeerId) : false;
+    myPeerId && settlement ? settlement.buyer === myPeerId : false;
   const iAmSeller =
-    myPeerId && settlement ? sameBytes(settlement.seller, myPeerId) : false;
+    myPeerId && settlement ? settlement.seller === myPeerId : false;
 
   // Best-effort only: a settlement's own buyer/seller is authoritative; before
   // one exists, the advertisement's direction is the next best signal, and
   // failing that this just picks a side for the stepper's copy to read.
   const buy = settlement ? iAmBuyer : ad ? ad.direction === "Sell" : true;
 
-  const label = (peer: number[], meFlag: boolean) => (
+  const label = (peer: string, meFlag: boolean) => (
     <PeerIdentity peer={peer} isYou={meFlag} />
   );
 
@@ -126,7 +124,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
                 status={settlement ? statusLabel : "Escrow Locked"}
                 counterpartyName={
                   settlement
-                    ? shortPeerHex(
+                    ? shortPeerId(
                         iAmBuyer ? settlement.seller : settlement.buyer,
                       )
                     : "the merchant"

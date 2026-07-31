@@ -51,12 +51,12 @@ export type Resolution = "BuyerWins" | "MerchantWins" | "MutualSettlement" | "In
 export type Vote = "BuyerWins" | "MerchantWins" | "Invalid";
 
 export interface ArbitratorCommitment {
-  arbitrator: number[];
+  arbitrator: string;
   commitment: number[];
 }
 
 export interface ArbitratorReveal {
-  arbitrator: number[];
+  arbitrator: string;
   vote: Vote;
 }
 
@@ -95,15 +95,15 @@ export interface PublicDispute {
 export interface Dispute {
   id: string;
   settlement_id: string;
-  buyer: number[];
-  buyer_public_key: number[];
-  seller: number[];
-  seller_public_key: number[];
-  opener: number[];
+  buyer: string;
+  buyer_public_key: string;
+  seller: string;
+  seller_public_key: string;
+  opener: string;
   reason: string;
   status: DisputeStatus;
   required_arbitrators: number;
-  arbitrators: number[][];
+  arbitrators: string[];
   arbitrator_keys: [number[], number[]][];
   commitments: ArbitratorCommitment[];
   reveals: ArbitratorReveal[];

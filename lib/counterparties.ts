@@ -1,4 +1,3 @@
-import bs58 from "bs58";
 import {
   cachedRead,
   signedRead,
@@ -45,7 +44,7 @@ import type { SolanaProvider } from "@/lib/wallet-connection";
 /** A counterparty summary exactly as `getCounterparties` returns it. */
 export interface CounterpartySummary {
   /** Raw `PeerId` bytes — the only identifier the protocol has for them. */
-  counterparty: number[];
+  counterparty: string;
   /** Settlements that reached `Approved` or `Completed`. */
   trades: number;
   /** Awaiting payment, or awaiting the merchant's decision. */
@@ -91,7 +90,8 @@ export const COUNTERPARTIES: GatedSurface = {
   messages: FAILURE_MESSAGE,
 };
 
-export { classifyFailure, peerIdForAddress } from "@/lib/wallet-proof";
+export { classifyFailure } from "@/lib/wallet-proof";
+export { peerIdForAddress } from "@/lib/peer-id";
 
 /**
  * A `PeerId` in its canonical base58btc form (`12D3Koo…`), abbreviated.
@@ -101,21 +101,16 @@ export { classifyFailure, peerIdForAddress } from "@/lib/wallet-proof";
  * fiction. Shown abbreviated because the full string is 52 characters and
  * the first and last few are what a person actually recognises.
  */
-export function formatPeerId(peerId: number[]): string {
-  const encoded = bs58.encode(Uint8Array.from(peerId));
-  return encoded.length > 16 ? `${encoded.slice(0, 8)}…${encoded.slice(-6)}` : encoded;
-}
-
-export function sameBytes(a: number[], b: number[]): boolean {
-  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+export function formatPeerId(peerId: string): string {
+  return peerId.length > 16 ? `${peerId.slice(0, 8)}…${peerId.slice(-6)}` : peerId;
 }
 
 /** This pair's summary, or null if the two have never started a settlement. */
 export function summaryFor(
   summaries: CounterpartySummary[],
-  counterparty: number[],
+  counterparty: string,
 ): CounterpartySummary | null {
-  return summaries.find((s) => sameBytes(s.counterparty, counterparty)) ?? null;
+  return summaries.find((s) => s.counterparty === counterparty) ?? null;
 }
 
 /**

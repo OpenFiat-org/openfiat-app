@@ -96,10 +96,10 @@ export interface PublicSettlement {
  * settlements — see `lib/live-trades.ts`.
  */
 export interface Settlement extends PublicSettlement {
-  buyer: number[];
-  buyer_public_key: number[];
-  seller: number[];
-  seller_public_key: number[];
+  buyer: string;
+  buyer_public_key: string;
+  seller: string;
+  seller_public_key: string;
   payment_reference: string | null;
 }
 

@@ -1,4 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
 import { Client } from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
 
@@ -27,7 +26,7 @@ import { nodeUrl } from "@/lib/node-endpoint";
 interface RawProvider {
   service_id: string;
   service_type: unknown;
-  provider_public_key: number[];
+  provider_public_key: string;
   endpoints?: string[];
   capabilities?: string[];
   region?: string;
@@ -62,18 +61,6 @@ function describeServiceType(value: unknown): string {
   return "Unknown";
 }
 
-function keyToBase58(bytes: number[]): string | null {
-  // Registry entries have carried a 33-byte multicodec-prefixed form as well
-  // as a bare 32-byte key; a wrong length must not throw and abort the whole
-  // listing, so it is skipped instead.
-  try {
-    const raw = bytes.length === 32 ? bytes : bytes.slice(-32);
-    return new PublicKey(Uint8Array.from(raw)).toBase58();
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Services registered under `wallet`, newest first.
  *
@@ -89,7 +76,7 @@ export async function fetchMyServices(wallet: string): Promise<MyService[]> {
   const list = Array.isArray(providers) ? providers : (providers?.providers ?? []);
 
   return list
-    .filter((p) => keyToBase58(p.provider_public_key ?? []) === wallet)
+    .filter((p) => p.provider_public_key === wallet)
     .map((p) => ({
       serviceId: p.service_id,
       serviceType: describeServiceType(p.service_type),

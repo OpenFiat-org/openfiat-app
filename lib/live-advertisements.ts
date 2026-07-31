@@ -30,7 +30,7 @@ import { nodeUrl } from "@/lib/node-endpoint";
  */
 export interface LiveAd {
   id: string;
-  /** Merchant PeerId, hex — the only merchant identity the protocol carries. */
+  /** Merchant PeerId, base58 — the only merchant identity the protocol carries. */
   merchantPeerId: string;
   /** Short form for display; the full id remains available for linking. */
   merchantShort: string;
@@ -180,10 +180,6 @@ function toWhole(amount: { base_units: number; decimals: number }): number {
   return amount.base_units / 10 ** amount.decimals;
 }
 
-function toHex(bytes: number[]): string {
-  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 function client(): Client {
   return new Client({ endpoint: nodeUrl(), timeoutMs: 15_000 });
 }
@@ -196,7 +192,7 @@ function client(): Client {
  * "no price".
  */
 export function toLiveAd(ad: ProtocolAd): LiveAd {
-  const peerId = toHex(ad.merchant as unknown as number[]);
+  const peerId = ad.merchant;
   const pricing = ad.pricing as
     | { Fixed: { price: { base_units: number; decimals: number } } }
     | { Floating: { oracle_provider: string; premium_bps: number } };
@@ -214,7 +210,7 @@ export function toLiveAd(ad: ProtocolAd): LiveAd {
   return {
     id: ad.id,
     merchantPeerId: peerId,
-    // Last 6 hex characters. A PeerId has no human-readable name in the
+    // Last 6 base58 characters. A PeerId has no human-readable name in the
     // protocol, and inventing one here is exactly what the mock did.
     merchantShort: peerId.slice(-6),
     assetMint: ad.asset_mint,

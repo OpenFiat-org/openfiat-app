@@ -126,7 +126,16 @@ function challengeBytes(domain: string, challenge: Challenge): Uint8Array {
  * identify a wallet should render nothing rather than break the page around
  * it.
  */
-export function peerIdForAddress(address: string): number[] | null {
+/**
+ * The PeerId bytes for a wallet, for this surface's *base64* wire encoding.
+ *
+ * Deliberately not `lib/peer-id`'s `peerIdForAddress`, which produces the
+ * base58 string the node's records carry. The wallet-proof methods take a
+ * `String` the node base64-decodes, so these two spellings are both correct
+ * and are not interchangeable — reaching for the wrong one produces a
+ * well-formed request that identifies nobody.
+ */
+export function peerIdBytesForAddress(address: string): number[] | null {
   try {
     const decoded = bs58.decode(address);
     if (decoded.length !== 32) return null;
@@ -182,7 +191,7 @@ export async function signedRead<T>(
   if (!signer.signMessage) {
     throw new WalletProofError("wallet-cannot-sign", surface.messages["wallet-cannot-sign"]);
   }
-  const peerId = peerIdForAddress(address);
+  const peerId = peerIdBytesForAddress(address);
   if (!peerId) {
     throw new WalletProofError("not-your-wallet", surface.messages["not-your-wallet"]);
   }

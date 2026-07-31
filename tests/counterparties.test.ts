@@ -3,7 +3,6 @@ import {
   classifyFailure,
   formatPeerId,
   peerIdForAddress,
-  sameBytes,
   suggested,
   summaryFor,
   tradedLabel,
@@ -12,7 +11,7 @@ import {
 
 function summary(partial: Partial<CounterpartySummary> = {}): CounterpartySummary {
   return {
-    counterparty: [1, 2, 3],
+    counterparty: "12D3KooWK9hQ7TwbfvFiaAxUbRFCkdhS7iEpAJDnewNL1anyREQ1",
     trades: 0,
     in_progress: 0,
     abandoned: 0,
@@ -41,30 +40,32 @@ describe("the badge sentence", () => {
 
 describe("suggestions", () => {
   it("only suggests wallets an actual trade completed with", () => {
-    const traded = summary({ counterparty: [1], trades: 3 });
-    const onlyCancelled = summary({ counterparty: [2], abandoned: 9 });
-    const onlyPending = summary({ counterparty: [3], in_progress: 2 });
+    const traded = summary({ counterparty: "peer-1", trades: 3 });
+    const onlyCancelled = summary({ counterparty: "peer-2", abandoned: 9 });
+    const onlyPending = summary({ counterparty: "peer-3", in_progress: 2 });
 
     expect(suggested([traded, onlyCancelled, onlyPending])).toEqual([traded]);
   });
 
   it("keeps the order the node ranked them in", () => {
-    const first = summary({ counterparty: [1], trades: 9 });
-    const second = summary({ counterparty: [2], trades: 2 });
+    const first = summary({ counterparty: "peer-1", trades: 9 });
+    const second = summary({ counterparty: "peer-2", trades: 2 });
     expect(suggested([first, second]).map((s) => s.trades)).toEqual([9, 2]);
   });
 });
 
 describe("finding one pair in the list", () => {
   it("matches on the full peer id, not a prefix", () => {
-    const a = summary({ counterparty: [1, 2, 3], trades: 4 });
-    const b = summary({ counterparty: [1, 2, 3, 4], trades: 7 });
-    expect(summaryFor([a, b], [1, 2, 3, 4])?.trades).toBe(7);
-    expect(summaryFor([a, b], [1, 2])).toBeNull();
+    // One peer id is a strict prefix of the other, so a match that compared
+    // less than the whole string would return the wrong counterparty's history.
+    const a = summary({ counterparty: "12D3KooWabc", trades: 4 });
+    const b = summary({ counterparty: "12D3KooWabcd", trades: 7 });
+    expect(summaryFor([a, b], "12D3KooWabcd")?.trades).toBe(7);
+    expect(summaryFor([a, b], "12D3KooWab")).toBeNull();
   });
 
   it("reports no history as null rather than a fabricated zero row", () => {
-    expect(summaryFor([summary({ counterparty: [1] })], [9, 9])).toBeNull();
+    expect(summaryFor([summary({ counterparty: "peer-1" })], "peer-9")).toBeNull();
   });
 });
 
@@ -107,18 +108,9 @@ describe("failure classification", () => {
 
 describe("peer id display", () => {
   it("abbreviates the middle and keeps both recognisable ends", () => {
-    const peerId = Array.from({ length: 38 }, (_, i) => i + 1);
-    const shown = formatPeerId(peerId);
+    const shown = formatPeerId("12D3KooWK9hQ7TwbfvFiaAxUbRFCkdhS7iEpAJDnewNL1anyREQ1");
     expect(shown).toContain("…");
     expect(shown.length).toBeLessThan(20);
-  });
-});
-
-describe("byte comparison", () => {
-  it("is length-sensitive", () => {
-    expect(sameBytes([1, 2], [1, 2])).toBe(true);
-    expect(sameBytes([1, 2], [1, 2, 3])).toBe(false);
-    expect(sameBytes([1, 2], [1, 3])).toBe(false);
   });
 });
 

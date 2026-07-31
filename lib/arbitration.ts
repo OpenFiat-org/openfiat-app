@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 import type { SolanaProvider } from "@/lib/wallet-connection";
@@ -126,9 +127,9 @@ export function clearSalt(disputeId: string): void {
   localStorage.removeItem(saltKey(disputeId));
 }
 
-/** The PeerId this wallet's public key derives to. */
-export function peerIdForPublicKey(publicKey: Uint8Array): number[] {
-  return Array.from(peerIdFromPublicKey(publicKey));
+/** The PeerId this wallet's public key derives to, base58 as the node writes it. */
+export function peerIdForPublicKey(publicKey: Uint8Array): string {
+  return bs58.encode(peerIdFromPublicKey(publicKey));
 }
 
 /**
@@ -139,13 +140,13 @@ export function peerIdForPublicKey(publicKey: Uint8Array): number[] {
 export async function signPayload(
   provider: SolanaProvider,
   payload: unknown,
-): Promise<number[]> {
+): Promise<string> {
   if (!provider.signMessage) {
     throw new Error("This wallet does not support message signing, which arbitration requires.");
   }
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   const { signature } = await provider.signMessage(bytes);
-  return Array.from(signature);
+  return bs58.encode(signature);
 }
 
 /** Submit an already-signed event as an OFS-8200 `sendX` call. */
@@ -167,14 +168,14 @@ export async function sendSignedEvent(
 
 export interface ArbitratorIdentity {
   publicKey: Uint8Array;
-  peerId: number[];
+  peerId: string;
 }
 
 export function buildJoin(disputeId: string, who: ArbitratorIdentity) {
   return {
     dispute_id: disputeId,
     arbitrator: who.peerId,
-    arbitrator_public_key: Array.from(who.publicKey),
+    arbitrator_public_key: bs58.encode(who.publicKey),
     timestamp: Date.now(),
   };
 }
@@ -203,8 +204,6 @@ export function buildReveal(
   };
 }
 
-const sameBytes = (a: number[], b: number[]) =>
-  a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
  * Where this arbitrator stands on a case they have joined.
@@ -216,16 +215,16 @@ const sameBytes = (a: number[], b: number[]) =>
  * of these that works on the public docket, and writing one would mean
  * reconstructing the roster from somewhere else.
  */
-export function hasJoined(dispute: Dispute, peerId: number[]): boolean {
-  return dispute.arbitrators.some((a) => sameBytes(a, peerId));
+export function hasJoined(dispute: Dispute, peerId: string): boolean {
+  return dispute.arbitrators.some((a) => a === peerId);
 }
 
-export function hasCommitted(dispute: Dispute, peerId: number[]): boolean {
-  return dispute.commitments.some((c) => sameBytes(c.arbitrator, peerId));
+export function hasCommitted(dispute: Dispute, peerId: string): boolean {
+  return dispute.commitments.some((c) => c.arbitrator === peerId);
 }
 
-export function hasRevealed(dispute: Dispute, peerId: number[]): boolean {
-  return dispute.reveals.some((r) => sameBytes(r.arbitrator, peerId));
+export function hasRevealed(dispute: Dispute, peerId: string): boolean {
+  return dispute.reveals.some((r) => r.arbitrator === peerId);
 }
 
 /**

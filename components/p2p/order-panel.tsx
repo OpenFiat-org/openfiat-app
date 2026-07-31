@@ -12,7 +12,7 @@ import {
 } from "@/lib/payment-accounts";
 import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import type { TradeDirection } from "@/lib/types";
-import { addressForPeerIdHex } from "@/lib/peer-id";
+import { addressForPeerId } from "@/lib/peer-id";
 import { formatBaseUnits } from "@/lib/live-vaults";
 import { useVaultBacking, vaultCovers } from "@/components/wallet/use-vault-backing";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
@@ -105,7 +105,7 @@ export function OrderPanel({
    * `LiquidityVault` for (merchant, mint), both halves taken straight off
    * the record. The merchant's wallet is not looked up anywhere; a PeerId is
    * a prefix plus the raw Ed25519 key, so it is already in the record (see
-   * `addressForPeerIdHex`), and the mint is `ad.assetMint`. No ticker is
+   * `addressForPeerId`), and the mint is `ad.assetMint`. No ticker is
    * involved in either half, which is what makes this checkable at all —
    * the previous version was keyed on a symbol and could verify nothing.
    *
@@ -113,7 +113,7 @@ export function OrderPanel({
    * offering more than it holds, and that is exactly the thing a taker
    * needs to see rather than have averaged away.
    */
-  const merchantWallet = useMemo(() => addressForPeerIdHex(ad.merchantPeerId), [ad.merchantPeerId]);
+  const merchantWallet = useMemo(() => addressForPeerId(ad.merchantPeerId), [ad.merchantPeerId]);
   const backing = useVaultBacking(merchantWallet, ad.assetMint);
   const cover = backing.kind === "found" ? vaultCovers(backing.vault, receiveText) : null;
 

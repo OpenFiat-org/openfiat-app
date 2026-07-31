@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 /**
  * Puts real, signed protocol state on the devnet cluster so every route in
  * this app has something genuine to render.
@@ -178,8 +179,8 @@ async function seedProviders(client: Client): Promise<number> {
     const registration: Registration = {
       service_id: spec.serviceId,
       service_type: spec.serviceType,
-      provider: Array.from(peerId),
-      provider_public_key: Array.from(keypair.publicKey),
+      provider: bs58.encode(peerId),
+      provider_public_key: bs58.encode(keypair.publicKey),
       endpoints: spec.endpoints,
       supported_ofs: OFS_BY_TYPE[variantName(spec.serviceType)] ?? [1500],
       region: spec.region,
@@ -326,8 +327,8 @@ async function seedAdvertisements(client: Client): Promise<number> {
       `devnet-${spec.merchantLabel}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
     const create: AdvertisementCreate = {
       id,
-      merchant: Array.from(peerId),
-      merchant_public_key: Array.from(keypair.publicKey),
+      merchant: bs58.encode(peerId),
+      merchant_public_key: bs58.encode(keypair.publicKey),
       asset_mint: spec.mint,
       direction: spec.direction,
       fiat_currency: spec.fiat,
