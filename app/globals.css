@@ -12,8 +12,42 @@
 body {
   background: #0a0e14;
   color: #e5e7eb;
-  /* Full-bleed hero bands (w-screen) must not create horizontal overflow. */
+}
+
+/*
+ * `overflow-x: clip` used to sit on `body`, and it is now on this wrapper
+ * instead — see `app/layout.tsx`.
+ *
+ * What it is for: `PageHero` is full-bleed by escaping its centred parent
+ * with `w-screen` (100vw). On a platform with classic, space-taking
+ * scrollbars, 100vw is *wider* than the document by the scrollbar's width,
+ * so the band overhangs the right edge by ~15px. The wrapper is
+ * full-width, so clipping there trims exactly that overhang and nothing
+ * else.
+ *
+ * Why it is not on `body` any more: on `body` it clips the whole document,
+ * which means any element too wide for the viewport is silently truncated
+ * instead of producing a scrollbar. This repo shipped two bugs that way —
+ * a hero centred on the wrong column (see `components/page-hero.tsx`), and
+ * a top bar 1046px wide on a 390px phone that put the wallet connect
+ * button off-screen on every route. Both looked fine and neither could be
+ * seen. Scoped here, the header and footer are outside the clip, so a row
+ * that does not fit produces a scrollbar and says so.
+ */
+.full-bleed-clip {
   overflow-x: clip;
+}
+
+/* The mobile nav sheet, dropping from the bar it belongs to. */
+@keyframes nav-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Native disclosure widgets used for collapsible panels. */

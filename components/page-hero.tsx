@@ -18,10 +18,15 @@ import { useEffect, useRef, type ReactNode } from "react";
  * viewport's centre, which is true of `app/layout.tsx`'s centred `main` and
  * of nothing else. Put it inside a `max-w-3xl` reading column and it centres
  * on that column instead — 240px off to the left at desktop width, taking the
- * title off the edge of the screen with it. `body { overflow-x: clip }` keeps
- * that from producing a scrollbar, so the only symptom is a missing heading,
- * which is why it survived on two pages. A page wanting a narrow column puts
- * the column *after* the hero rather than around it.
+ * title off the edge of the screen with it. The `.full-bleed-clip` wrapper in
+ * `app/layout.tsx` keeps that from producing a scrollbar, so the only symptom
+ * is a missing heading, which is why it survived on two pages. A page wanting
+ * a narrow column puts the column *after* the hero rather than around it.
+ *
+ * That wrapper is also the only reason `w-screen` is safe: 100vw is wider
+ * than the document by the scrollbar's width wherever scrollbars take space,
+ * and the wrapper trims that overhang. It used to be `body { overflow-x:
+ * clip }`, which trimmed everything else too.
  */
 export type HeroVariant =
   | "mesh"
