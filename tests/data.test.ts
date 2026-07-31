@@ -13,7 +13,7 @@ import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
 import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
 import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
 import { connectableNodes, defaultNode, resolveNodeSelection } from "@/lib/node-preference";
-import { PAYMENT_METHOD_REGISTRY, searchPaymentMethods } from "@/lib/data/payment-methods";
+import { PAYMENT_METHOD_REGISTRY } from "@/lib/data/payment-methods";
 import { STAKING_ROLES } from "@/lib/data/staking";
 import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
 import qr from "qrcode-generator";
@@ -789,7 +789,20 @@ describe("staking roles", () => {
   });
 });
 
-describe("payment methods registry", () => {
+/**
+ * What is left of these after the picker moved to the node.
+ *
+ * `searchPaymentMethods` and the alias rules it enforced are tested in
+ * `tests/reference.test.ts` now, against the shape the node sends, and the
+ * table itself is asserted where it lives — `crates/rpc/src/methods/
+ * reference.rs` checks the FPS/Faster Payments distinction and the rest.
+ * Testing a stale copy for those properties would keep passing long after
+ * the copy stopped being what anybody sees.
+ *
+ * These remain because the copy still has one reader: `selectableMethods`
+ * on the settings screen. When that moves, this block goes with it.
+ */
+describe("payment methods registry (unmigrated, settings screen only)", () => {
   it("names are unique and categories are valid", () => {
     const names = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
     expect(new Set(names).size).toBe(names.length);
@@ -797,15 +810,6 @@ describe("payment methods registry", () => {
       expect(["Mobile Money", "Bank Transfer", "Fintech", "Cash"]).toContain(m.category);
       expect(Array.isArray(m.aliases)).toBe(true);
     }
-  });
-
-  it("does not confuse Hong Kong's FPS with the UK's Faster Payments", () => {
-    // Different rails, different central banks, same abbreviation. "fps" used
-    // to resolve to the UK entry, which would have a Hong Kong merchant
-    // advertising a system they cannot receive on.
-    expect(searchPaymentMethods("fps")).toContain("FPS (Faster Payment System)");
-    expect(searchPaymentMethods("fps")).not.toContain("Faster Payments (UK)");
-    expect(searchPaymentMethods("faster payments uk")).toContain("Faster Payments (UK)");
   });
 
   it("keeps Hong Kong wallets distinct from their mainland namesakes", () => {
@@ -843,14 +847,6 @@ describe("payment methods registry", () => {
     }
   });
 
-  it("type-ahead search finds methods by name and alias", () => {
-    expect(searchPaymentMethods("mp")).toContain("M-Pesa Kenya (Safaricom)");
-    expect(searchPaymentMethods("mp")).toContain("Mpesa Pochi la Biashara");
-    expect(searchPaymentMethods("upi")).toContain("UPI");
-    expect(searchPaymentMethods("").length).toBeGreaterThan(0);
-    // community-added methods surface in suggestions
-    expect(searchPaymentMethods("zapcash", ["ZapCash"])).toContain("ZapCash");
-  });
 });
 
 describe("OPEN token", () => {

@@ -2,63 +2,34 @@
 
 import { useMemo, useRef, useState } from "react";
 import { INTERNATIONAL_MARKET } from "@/lib/types";
-import { COUNTRIES, POPULAR_CURRENCY_CODES, flagForCurrency } from "@/lib/data/countries";
+import { currencyOptions, useReferenceData } from "@/lib/reference";
 
-export interface CurrencyOption {
-  code: string;
-  name: string;
-  symbol: string;
-  flag: string;
-  countries: string[];
-}
+export type { CurrencyOption } from "@/lib/reference";
 
 /**
- * Unique currency options derived from the global countries registry.
+ * Searchable country/currency combobox (a filter control, not a data
+ * modal). Typing filters by currency code, currency name, or country name.
  *
- * A country contributes every currency it trades in, not only its primary one
- * — otherwise a dollarised economy's USD book, which is often the larger of
- * the two, never appears under that country's name in search.
- */
-export const CURRENCY_OPTIONS: CurrencyOption[] = (() => {
-  const byCode = new Map<string, CurrencyOption>();
-  const add = (code: string, name: string, symbol: string, countryName: string) => {
-    const existing = byCode.get(code);
-    if (existing) {
-      if (existing.countries.length < 3 && !existing.countries.includes(countryName)) {
-        existing.countries.push(countryName);
-      }
-      return;
-    }
-    byCode.set(code, {
-      code,
-      name,
-      symbol,
-      flag: flagForCurrency(code),
-      countries: [countryName],
-    });
-  };
-
-  for (const c of COUNTRIES) {
-    add(c.currencyCode, c.currencyName, c.currencySymbol, c.name);
-    for (const alt of c.altCurrencies ?? []) {
-      // The alternate's own name comes from whichever country issues it; if it
-      // is not in the registry as a primary anywhere, fall back to the code.
-      const issuer = COUNTRIES.find((o) => o.currencyCode === alt);
-      add(alt, issuer?.currencyName ?? alt, issuer?.currencySymbol ?? alt, c.name);
-    }
-  }
-  const popular = POPULAR_CURRENCY_CODES as readonly string[];
-  return [...byCode.values()].sort((a, b) => {
-    const pa = popular.indexOf(a.code);
-    const pb = popular.indexOf(b.code);
-    if (pa !== -1 || pb !== -1) return (pa === -1 ? 999 : pa) - (pb === -1 ? 999 : pb);
-    return a.code.localeCompare(b.code);
-  });
-})();
-
-/**
- * Searchable country/currency combobox (a filter control, not a data modal).
- * Typing filters by currency code, currency name, or country name.
+ * # The list comes from the node
+ *
+ * It was built at module load from a 441-line country table in this
+ * bundle, so which currencies this network traded in was a fact about
+ * which build of this app you had open. `getReferenceData` answers it
+ * now, which also means a currency added to the network appears here
+ * without a release.
+ *
+ * That table also shipped the Somaliland shilling as `SLSH`. Four
+ * letters, which the protocol's currency type rejects outright — a
+ * merchant could pick it out of this very dropdown and have their
+ * advertisement refused by the node with an error naming a field they
+ * never filled in. Codes now come from the node, which cannot offer one
+ * it could not itself accept.
+ *
+ * # An unreachable node is not an empty world
+ *
+ * There is no built-in list to fall back on, and the panel says so
+ * rather than rendering an empty scroller — "no currencies" is a claim
+ * about the network, and a failed request is not grounds for it.
  */
 export function CurrencyCombobox({
   value,
@@ -76,9 +47,17 @@ export function CurrencyCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const state = useReferenceData();
+
+  // Rebuilt only when a new answer arrives, not on every keystroke: this
+  // walks 253 countries to fold them into ~160 currency rows.
+  const all = useMemo(
+    () => (state.status === "ready" ? currencyOptions(state.data) : []),
+    [state],
+  );
 
   const options = useMemo(() => {
-    let list = CURRENCY_OPTIONS;
+    let list = all;
     if (priorityCodes && priorityCodes.size > 0) {
       list = [...list].sort((a, b) => {
         const aa = priorityCodes.has(a.code) ? 0 : 1;
@@ -94,9 +73,9 @@ export function CurrencyCombobox({
         o.name.toLowerCase().includes(q) ||
         o.countries.some((c) => c.toLowerCase().includes(q)),
     );
-  }, [query, priorityCodes]);
+  }, [all, query, priorityCodes]);
 
-  const selected = CURRENCY_OPTIONS.find((o) => o.code === value);
+  const selected = all.find((o) => o.code === value);
   const isInternational = value === INTERNATIONAL_MARKET;
   const q = query.trim().toLowerCase();
   const showInternational = allowInternational && (!q || "international".includes(q));
@@ -123,7 +102,14 @@ export function CurrencyCombobox({
           </>
         ) : (
           <>
-            <span>{selected?.flag ?? flagForCurrency(value)}</span>
+            {/*
+              * A neutral flag until the node has named this currency,
+              * rather than one guessed from the first two letters of the
+              * code. That guess is right often enough to be trusted and
+              * wrong often enough to matter, and the code beside it
+              * already says everything the flag would.
+              */}
+            <span>{selected?.flag ?? "🏳️"}</span>
             <span className="font-medium">{value}</span>
             <span className="text-xs text-gray-500">{selected?.name ?? ""}</span>
           </>
@@ -195,7 +181,34 @@ export function CurrencyCombobox({
                   </button>
                 </li>
               ))}
-              {options.length === 0 && !showInternational && (
+              {/*
+                * Three different reasons this list can be short, and they
+                * must not look alike. "No matches" is a statement about
+                * the query and is only true once a node has answered;
+                * before that the honest word is "loading", and after a
+                * failure it is "could not load". The version this
+                * replaced could only ever say "No matches", because the
+                * list was a constant and could not fail to exist.
+                */}
+              {state.status === "loading" && (
+                <li className="px-3 py-4 text-center text-sm text-gray-500">
+                  Asking the node for currencies…
+                </li>
+              )}
+              {state.status === "error" && (
+                <li className="px-3 py-4 text-center text-sm">
+                  <span className="block text-amber-400">Could not load currencies.</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">{state.message}</span>
+                  <button
+                    type="button"
+                    onClick={state.retry}
+                    className="mt-2 text-sm text-brand underline underline-offset-2 hover:text-white"
+                  >
+                    Try again
+                  </button>
+                </li>
+              )}
+              {state.status === "ready" && options.length === 0 && !showInternational && (
                 <li className="px-3 py-4 text-center text-sm text-gray-500">No matches.</li>
               )}
             </ul>

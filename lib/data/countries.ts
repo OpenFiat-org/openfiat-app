@@ -1,12 +1,47 @@
 /**
- * Global country & currency registry.
+ * The country table this app builds its own URLs from.
  *
- * Covers all ISO 3166-1 countries and territories plus partially-recognized
+ * # It is no longer what the network supports
+ *
+ * The node answers that, through `getReferenceData` — see
+ * `lib/reference.ts`. The currency combobox and the payment-method picker
+ * read the node, so adding a currency or a rail to the network no longer
+ * needs a release of this app, and two interfaces can no longer offer
+ * different lists.
+ *
+ * This table's remaining job is narrower and genuinely local: it maps
+ * countries to the slugs `/country/[slug]` is built from, which
+ * `app/sitemap.ts` and `generateStaticParams` need at build time, when
+ * there is no node to ask and a URL scheme is this app's own affair
+ * anyway.
+ *
+ * Two readers are not routing and have simply not been moved yet — the
+ * country dropdown in `components/settings/payment-accounts.tsx`, and
+ * `components/p2p/country-index.tsx`. They should be, and until they are
+ * this table is what those screens show.
+ *
+ * The two lists must not be allowed to drift silently. Nothing checks
+ * them against each other yet; the node's is the one to change first, and
+ * this one follows only when a route needs to exist.
+ *
+ * # What it covers
+ *
+ * All ISO 3166-1 countries and territories plus partially-recognized
  * states and non-ISO territories with their own currencies in actual use
- * (e.g. Transnistrian ruble PRB, Somaliland shilling SLSH, Zimbabwe Gold ZWG).
- * `isRecognized: false` marks non-UN-member states and dependent territories —
- * they are never hidden from the UI. Flag emojis are derived from the ISO code
- * (regional indicators), with overrides for territories without their own flag.
+ * (e.g. Transnistrian ruble PRB, Zimbabwe Gold ZWG). `isRecognized: false`
+ * marks non-UN-member states and dependent territories — they are never
+ * hidden from the UI. Flag emojis are derived from the ISO code (regional
+ * indicators), with overrides for territories without their own flag.
+ *
+ * # One currency code here is not one the protocol can carry
+ *
+ * `SLSH`, the Somaliland shilling, is four letters, and
+ * `openfiat_types::FiatCurrency` takes three. While this table fed the
+ * currency picker, a merchant could select it and have the node refuse
+ * their advertisement with a deserialization error naming a field they
+ * never filled in. It stays here because a country page is only a page;
+ * the node's table spells it `SLS`, and the picker takes its codes from
+ * there now, so nothing offers a code the protocol would reject.
  */
 
 export interface Country {
@@ -414,28 +449,10 @@ export function searchCountries(query: string): Country[] {
   );
 }
 
-/** Flag overrides for shared/supranational currencies (EU flag emoji exists). */
-const CURRENCY_FLAG: Record<string, string> = {
-  EUR: flagEmoji("EU"),
-  USD: flagEmoji("US"),
-  GBP: flagEmoji("GB"),
-  XOF: flagEmoji("SN"),
-  XAF: flagEmoji("CM"),
-  XCD: flagEmoji("AG"),
-  XPF: flagEmoji("PF"),
-  AUD: flagEmoji("AU"),
-  NZD: flagEmoji("NZ"),
-};
-
-/** Representative flag emoji for a currency code. */
-export function flagForCurrency(currencyCode: string): string {
-  const code = currencyCode.toUpperCase();
-  if (CURRENCY_FLAG[code]) return CURRENCY_FLAG[code];
-  const users = countriesByCurrency(code);
-  return (users.find((c) => c.isRecognized) ?? users[0])?.flag ?? "🏳️";
-}
-
-/** Currencies with the deepest simulated liquidity, listed first in pickers. */
-export const POPULAR_CURRENCY_CODES = [
-  "KES", "NGN", "USD", "EUR", "GBP", "INR", "BRL", "ZAR", "PHP", "IDR",
-] as const;
+/*
+ * `flagForCurrency` and `POPULAR_CURRENCY_CODES` used to live here. Both
+ * only ever served the currency picker, which now works off the node's
+ * lists, so they moved to `lib/reference.ts` beside the data they
+ * decorate. Leaving them behind would have left this table looking like
+ * the picker's source when it is not.
+ */

@@ -1,7 +1,27 @@
 /**
- * Canonical payment-method registry: names, categories, and aliases used for
- * type-ahead suggestions. Community-added methods (localStorage
- * "openfiat:custom-methods") merge with this registry in the picker.
+ * The payment-method table this app used to be the authority for, and no
+ * longer is.
+ *
+ * # Read `lib/reference.ts` instead
+ *
+ * The node answers this question now, through `getReferenceData`, and the
+ * ad-creation picker asks it. That is what makes a new payment method a
+ * node update rather than a release of this app, and what stops two
+ * interfaces disagreeing about what the network supports.
+ *
+ * # Why this table is still here
+ *
+ * One caller has not been moved: `lib/payment-accounts.ts`'s
+ * `selectableMethods()`, which the settings screen uses to populate the
+ * "which rail is this account on" dropdown, and which is synchronous. Its
+ * migration needs that module and `components/settings/payment-accounts.tsx`
+ * to learn the loading and could-not-load states the other pickers now
+ * have — a change to two files outside the one that introduced this
+ * split, and worth doing on its own rather than smuggled in here.
+ *
+ * So this is a stale snapshot with exactly one reader, not a fallback.
+ * Nothing that reads the node falls back to it: `MethodPicker` fails
+ * visibly instead, which is the whole point. Do not add a reader.
  */
 
 /** OFS-2100 §13 lists Cash Deposit alongside the electronic rails. */
@@ -126,23 +146,10 @@ export const PAYMENT_METHOD_REGISTRY: PaymentMethodInfo[] = [
   { name: "Papara", category: "Fintech", aliases: [] },
 ];
 
-/**
- * Substring match over name + aliases (case-insensitive), merging
- * community-added methods. Returns method names, registry-first, capped.
+/*
+ * `searchPaymentMethods` and `isRegistryMethod` used to live here. They
+ * now take the method list as an argument and live in `lib/reference.ts`,
+ * beside the call that fetches it — deliberately, so that a component
+ * reaching for type-ahead has to hold the node's answer to get it and
+ * cannot silently search this snapshot instead.
  */
-export function searchPaymentMethods(query: string, custom: string[] = [], cap = 8): string[] {
-  const registryNames = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
-  const all = [...registryNames, ...custom.filter((c) => !registryNames.includes(c))];
-  const q = query.trim().toLowerCase();
-  if (!q) return all.slice(0, cap);
-  const aliasHit = new Set(
-    PAYMENT_METHOD_REGISTRY.filter(
-      (m) => m.name.toLowerCase().includes(q) || m.aliases.some((a) => a.toLowerCase().includes(q)),
-    ).map((m) => m.name),
-  );
-  return all.filter((name) => aliasHit.has(name) || name.toLowerCase().includes(q)).slice(0, cap);
-}
-
-export function isRegistryMethod(name: string): boolean {
-  return PAYMENT_METHOD_REGISTRY.some((m) => m.name === name);
-}

@@ -15,8 +15,8 @@ importers:
         specifier: ^9.4.3
         version: 9.4.3
       '@openfiat/sdk':
-        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#1bff279887ffc1d41fd797fb26fe1bb454e206e6&path:typescript
-        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
+        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#b69a61ec77a366412a91bb0c20b90227a6eae66b&path:typescript
+        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/b69a61ec77a366412a91bb0c20b90227a6eae66b#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       '@solana/spl-token':
         specifier: ^0.4.15
         version: 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)(utf-8-validate@6.0.6)
@@ -863,8 +863,8 @@ packages:
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
     engines: {node: '>= 20.19.0'}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript':
-    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6}
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/b69a61ec77a366412a91bb0c20b90227a6eae66b#path:typescript':
+    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/b69a61ec77a366412a91bb0c20b90227a6eae66b}
     version: 0.1.0
     engines: {node: '>=20'}
 
@@ -4070,7 +4070,7 @@ snapshots:
 
   '@noble/hashes@2.2.0': {}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/b69a61ec77a366412a91bb0c20b90227a6eae66b#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
     dependencies:
       '@noble/ciphers': 2.2.0
       '@noble/curves': 2.2.0
