@@ -35,6 +35,8 @@ function ad(overrides: Partial<LiveAd> = {}): LiveAd {
     price: 129.5,
     pricingKind: "Fixed",
     premiumBps: null,
+    unpriceableReason: null,
+    quoteExpiresAt: null,
     minTrade: 50,
     maxTrade: 2_000,
     availableLiquidity: 4_000,

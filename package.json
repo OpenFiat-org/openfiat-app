@@ -21,7 +21,7 @@
   "dependencies": {
     "@dicebear/collection": "^9.4.3",
     "@dicebear/core": "^9.4.3",
-    "@openfiat/sdk": "git+https://github.com/OpenFiat-org/openfiat-sdks.git#97ede0b8f5dc567fc376157eb44ffd9b3c73a72c&path:typescript",
+    "@openfiat/sdk": "git+https://github.com/OpenFiat-org/openfiat-sdks.git#f457afc874f2e440f6b9c7a11de1ac3505e4acd8&path:typescript",
     "@solana/spl-token": "^0.4.15",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",

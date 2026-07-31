@@ -62,7 +62,9 @@ const NODE_URL = process.env.OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080";
  * These are devnet test identities with no value attached; the seed material
  * is intentionally non-secret and in the clear.
  */
-async function identityFor(label: string): Promise<{ keypair: Keypair; peerId: Uint8Array }> {
+async function identityFor(
+  label: string,
+): Promise<{ keypair: Keypair; peerId: Uint8Array }> {
   const seed = new Uint8Array(32);
   const labelBytes = new TextEncoder().encode(`openfiat-devnet-seed:${label}`);
   // A plain fold rather than a hash: the only requirement is that distinct
@@ -191,7 +193,9 @@ async function seedProviders(client: Client): Promise<number> {
       timestamp: Date.now(),
     };
     await providers.sendProviderRegister(client, registration, keypair);
-    console.log(`  registered ${spec.serviceId} (${variantName(spec.serviceType)})`);
+    console.log(
+      `  registered ${spec.serviceId} (${variantName(spec.serviceType)})`,
+    );
     registered++;
   }
   return registered;
@@ -318,7 +322,8 @@ async function seedAdvertisements(client: Client): Promise<number> {
     // Deterministic id so a re-run refreshes the same ad rather than growing
     // the book without bound — the exchange would otherwise fill with
     // duplicates across runs and stop resembling a real market.
-    const id = `devnet-${spec.merchantLabel}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
+    const id =
+      `devnet-${spec.merchantLabel}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
     const create: AdvertisementCreate = {
       id,
       merchant: Array.from(peerId),
@@ -334,7 +339,9 @@ async function seedAdvertisements(client: Client): Promise<number> {
       timestamp: Date.now(),
     };
     await advertisements.sendAdvertisementCreate(client, create, keypair);
-    console.log(`  ${spec.direction.padEnd(4)} ${spec.mint}/${spec.fiat} @ ${spec.price} — ${id}`);
+    console.log(
+      `  ${spec.direction.padEnd(4)} ${spec.mint}/${spec.fiat} @ ${spec.price} — ${id}`,
+    );
     created++;
   }
   return created;
@@ -343,7 +350,10 @@ async function seedAdvertisements(client: Client): Promise<number> {
 async function main() {
   const client = new Client({ endpoint: NODE_URL, timeoutMs: 30_000 });
 
-  const version = await client.call<Record<string, never>, { version: string }>("getVersion", {});
+  const version = await client.call<Record<string, never>, { version: string }>(
+    "getVersion",
+    {},
+  );
   console.log(`node ${NODE_URL} — version ${version.version}\n`);
 
   console.log("service registry (OFS-1500):");
@@ -366,11 +376,18 @@ async function main() {
 
   console.log("\nadvertisement book (OFS-2100):");
   const created = await seedAdvertisements(client);
-  const book = await advertisements.getAdvertisements(client);
-  console.log(`\n  getAdvertisements now returns ${book.length} ad(s)`);
-  if (book.length < created) {
+  // One page, and the seed writes fewer ads than a page holds — but count
+  // the whole book rather than the first page, so this check keeps meaning
+  // what it says if the seed ever grows past the node's page size.
+  let readable = 0;
+  for await (const row of advertisements.eachAdvertisement(client)) {
+    void row;
+    readable += 1;
+  }
+  console.log(`\n  getAdvertisements now returns ${readable} ad(s)`);
+  if (readable < created) {
     throw new Error(
-      `created ${created} advertisements but only ${book.length} are readable — ` +
+      `created ${created} advertisements but only ${readable} are readable — ` +
         "the node accepted fewer than were sent",
     );
   }

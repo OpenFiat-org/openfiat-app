@@ -8,9 +8,16 @@ import { AssetLabel, TradeLimits } from "@/components/asset-label";
 import { MetricStrip } from "@/components/metrics";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { formatNumber, sinceLabel } from "@/lib/format";
-import type { LiveAd } from "@/lib/live-advertisements";
-import { fetchMerchants, type MerchantOffering, type MerchantRow } from "@/lib/live-merchants";
-import { fetchReputationForPeerId, type LiveReputation } from "@/lib/live-reputation";
+import { unpriceableLabel, type LiveAd } from "@/lib/live-advertisements";
+import {
+  fetchMerchants,
+  type MerchantOffering,
+  type MerchantRow,
+} from "@/lib/live-merchants";
+import {
+  fetchReputationForPeerId,
+  type LiveReputation,
+} from "@/lib/live-reputation";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 
 /**
@@ -49,7 +56,11 @@ interface DirectoryState {
 }
 
 export function MerchantsDirectory() {
-  const [state, setState] = useState<DirectoryState>({ rows: [], loading: true, error: null });
+  const [state, setState] = useState<DirectoryState>({
+    rows: [],
+    loading: true,
+    error: null,
+  });
   const [currency, setCurrency] = useState("All");
   const [open, setOpen] = useState<string | null>(null);
 
@@ -82,11 +93,15 @@ export function MerchantsDirectory() {
   }, []);
 
   const { rows, loading, error } = state;
-  const currencies = [...new Set(rows.flatMap((row) => row.ads.map((ad) => ad.fiatCurrency)))].sort();
+  const currencies = [
+    ...new Set(rows.flatMap((row) => row.ads.map((ad) => ad.fiatCurrency))),
+  ].sort();
   const visible =
     currency === "All"
       ? rows
-      : rows.filter((row) => row.ads.some((ad) => ad.fiatCurrency === currency));
+      : rows.filter((row) =>
+          row.ads.some((ad) => ad.fiatCurrency === currency),
+        );
 
   return (
     <div>
@@ -95,16 +110,25 @@ export function MerchantsDirectory() {
           { label: "Merchants", value: loading ? "…" : String(rows.length) },
           {
             label: "Currently advertising",
-            value: loading ? "…" : String(rows.filter((r) => r.offering === "Advertising").length),
+            value: loading
+              ? "…"
+              : String(rows.filter((r) => r.offering === "Advertising").length),
           },
           {
             label: "Paused",
-            value: loading ? "…" : String(rows.filter((r) => r.offering === "On vacation").length),
+            value: loading
+              ? "…"
+              : String(rows.filter((r) => r.offering === "On vacation").length),
           },
-          { label: "Currencies", value: loading ? "…" : String(currencies.length) },
+          {
+            label: "Currencies",
+            value: loading ? "…" : String(currencies.length),
+          },
           {
             label: "Advertisements",
-            value: loading ? "…" : String(rows.reduce((sum, r) => sum + r.ads.length, 0)),
+            value: loading
+              ? "…"
+              : String(rows.reduce((sum, r) => sum + r.ads.length, 0)),
           },
         ]}
       />
@@ -129,7 +153,9 @@ export function MerchantsDirectory() {
           <span className="text-xs text-amber-300">{error}</span>
         ) : (
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
-            <span className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`} />
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`}
+            />
             {loading ? "Reading the book…" : "Live from your access node"}
           </span>
         )}
@@ -159,7 +185,10 @@ export function MerchantsDirectory() {
           ))}
           {visible.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+              <td
+                colSpan={6}
+                className="px-4 py-10 text-center text-sm text-gray-500"
+              >
                 {loading
                   ? "Reading the book…"
                   : error
@@ -213,9 +242,15 @@ function MerchantRows({
           >
             {/* Seeded by the PeerId in the same hex spelling the order book
                 uses, so one merchant is the same robot on every screen. */}
-            <WalletAvatar seed={row.peerId} label={`Merchant …${row.short}`} size={32} />
+            <WalletAvatar
+              seed={row.peerId}
+              label={`Merchant …${row.short}`}
+              size={32}
+            />
             <span>
-              <span className="block font-mono text-sm text-white">…{row.short}</span>
+              <span className="block font-mono text-sm text-white">
+                …{row.short}
+              </span>
               <span className="block text-xs text-gray-600">
                 {open ? "Hide" : "Trading record and ads"}
               </span>
@@ -227,12 +262,12 @@ function MerchantRows({
         </Td>
         <Td py="py-5" className="max-w-64">
           {/*
-            * `overflow-wrap: anywhere` because a pair can be named by a mint
-            * address, and base58 offers no break opportunity — the cell
-            * simply cut one mid-address, which reads as a shorter address
-            * rather than as a truncated one. The full list is in `title`,
-            * since two lines is still a clamp.
-            */}
+           * `overflow-wrap: anywhere` because a pair can be named by a mint
+           * address, and base58 offers no break opportunity — the cell
+           * simply cut one mid-address, which reads as a shorter address
+           * rather than as a truncated one. The full list is in `title`,
+           * since two lines is still a clamp.
+           */}
           <span
             className="line-clamp-2 text-xs text-gray-400 [overflow-wrap:anywhere]"
             title={row.pairs.join(" · ")}
@@ -242,7 +277,9 @@ function MerchantRows({
         </Td>
         <Td py="py-5" className="max-w-64">
           <span className="line-clamp-2 text-xs text-gray-400">
-            {row.paymentMethods.length > 0 ? row.paymentMethods.join(" · ") : "None named"}
+            {row.paymentMethods.length > 0
+              ? row.paymentMethods.join(" · ")
+              : "None named"}
           </span>
         </Td>
         <Td py="py-5" right num className="text-gray-300">
@@ -317,23 +354,27 @@ function MerchantDetail({ row }: { row: MerchantRow }) {
 function AdLine({ ad }: { ad: LiveAd }) {
   return (
     <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-md border border-white/10 px-3 py-2 text-xs">
-      <span className={ad.direction === "Sell" ? "text-emerald-400" : "text-orange-400"}>
+      <span
+        className={
+          ad.direction === "Sell" ? "text-emerald-400" : "text-orange-400"
+        }
+      >
         {ad.direction}
       </span>
       <span className="text-gray-300">
-        <AssetLabel ad={ad} />
-        /{ad.fiatCurrency}
+        <AssetLabel ad={ad} />/{ad.fiatCurrency}
       </span>
       <span className="font-mono tabular-nums text-gray-200">
-        {/* A floating advertisement has no price on the record at all —
-            OFS-2100 §11 stores the premium, and the number is resolved
-            against an oracle read that may not exist. Saying so beats
-            printing a dash that reads as zero. */}
+        {/* A price of null means the NODE could not resolve one, and it
+            says why. This used to read "no oracle price" for every case,
+            which described the app failing to read the node's quote rather
+            than anything about the advertisement. The premium still shows,
+            so the terms stay legible with no number attached. */}
         {ad.price === null
           ? ad.pricingKind === "Floating"
             ? `Floating ${ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : ""}${
                 ad.premiumBps !== null ? ad.premiumBps / 100 : 0
-              }% — no oracle price`
+              }% — ${unpriceableLabel(ad.unpriceableReason ?? "NoOracleData").toLowerCase()}`
             : "Unpriced"
           : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
       </span>
@@ -347,11 +388,16 @@ function AdLine({ ad }: { ad: LiveAd }) {
         {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} /> free
       </span>
       <span className="ml-auto flex items-center gap-3">
-        <span className={ad.status === "Active" ? "text-gray-400" : "text-gray-600"}>
+        <span
+          className={ad.status === "Active" ? "text-gray-400" : "text-gray-600"}
+        >
           {ad.status}
         </span>
         {ad.status === "Active" && (
-          <Link href={`/orders/new?ad=${ad.id}`} className="text-brand-hover hover:underline">
+          <Link
+            href={`/orders/new?ad=${ad.id}`}
+            className="text-brand-hover hover:underline"
+          >
             Trade →
           </Link>
         )}
@@ -411,7 +457,9 @@ function TradingRecord({ peerId }: { peerId: string }) {
           <Fact label="Completed" value={String(data.tradesCompleted)} />
           <Fact
             label="Completion rate"
-            value={data.completionRate === null ? "—" : percent(data.completionRate)}
+            value={
+              data.completionRate === null ? "—" : percent(data.completionRate)
+            }
             hint="Completed settlements ÷ started settlements (OFS-3000 §8). Not a rating."
           />
           <Fact label="Cancelled" value={String(data.tradesCancelled)} />
@@ -421,17 +469,27 @@ function TradingRecord({ peerId }: { peerId: string }) {
           />
           <Fact
             label="Answered payment claims"
-            value={data.responseRate === null ? "Never asked" : percent(data.responseRate)}
+            value={
+              data.responseRate === null
+                ? "Never asked"
+                : percent(data.responseRate)
+            }
             hint="How often this wallet, as merchant, approved or rejected a buyer's payment declaration at all (OFS-3000 §13)."
           />
           <Fact
             label="Mean time to answer"
-            value={data.meanResponseMs === null ? "—" : duration(data.meanResponseMs)}
+            value={
+              data.meanResponseMs === null ? "—" : duration(data.meanResponseMs)
+            }
             hint="Measured between two signed events: the buyer declaring payment and the merchant ruling on it. Not an advertised turnaround."
           />
           <Fact
             label="Mean settlement"
-            value={data.medianSettlementMs === null ? "—" : duration(data.medianSettlementMs)}
+            value={
+              data.medianSettlementMs === null
+                ? "—"
+                : duration(data.medianSettlementMs)
+            }
           />
           <Fact
             label="Missed reservations"
@@ -450,14 +508,22 @@ function TradingRecord({ peerId }: { peerId: string }) {
       )}
       <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
         Computed by your access node from settlements, disputes and reservations
-        it has replicated — nothing here is asserted by the merchant. A node that
-        has seen less of the network will report less.
+        it has replicated — nothing here is asserted by the merchant. A node
+        that has seen less of the network will report less.
       </p>
     </div>
   );
 }
 
-function Fact({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Fact({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5">
       <dt className={`text-gray-500 ${hint ? "cursor-help" : ""}`} title={hint}>

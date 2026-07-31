@@ -15,8 +15,8 @@ importers:
         specifier: ^9.4.3
         version: 9.4.3
       '@openfiat/sdk':
-        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#97ede0b8f5dc567fc376157eb44ffd9b3c73a72c&path:typescript
-        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/97ede0b8f5dc567fc376157eb44ffd9b3c73a72c#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
+        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#f457afc874f2e440f6b9c7a11de1ac3505e4acd8&path:typescript
+        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/f457afc874f2e440f6b9c7a11de1ac3505e4acd8#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       '@solana/spl-token':
         specifier: ^0.4.15
         version: 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)(utf-8-validate@6.0.6)
@@ -814,9 +814,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@noble/ciphers@2.2.0':
+    resolution: {integrity: sha512-Z6pjIZ/8IJcCGzb2S/0Px5J81yij85xASuk1teLNeg75bfT07MV3a/O2Mtn1I2se43k3lkVEcFaR10N4cgQcZA==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/curves@1.9.7':
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/curves@2.2.0':
+    resolution: {integrity: sha512-T/BoHgFXirb0ENSPBquzX0rcjXeM6Lo892a2jlYJkqk83LqZx0l1Of7DzlKJ6jkpvMrkHSnAcgb5JegL8SeIkQ==}
+    engines: {node: '>= 20.19.0'}
 
   '@noble/ed25519@2.3.0':
     resolution: {integrity: sha512-M7dvXL2B92/M7dw9+gzuydL8qn/jiqNHaoR3Q+cb1q1GHV7uwE17WCyFMG+Y+TZb5izcaXk5TdJRrDUxHXL78A==}
@@ -825,8 +833,12 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/97ede0b8f5dc567fc376157eb44ffd9b3c73a72c#path:typescript':
-    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/97ede0b8f5dc567fc376157eb44ffd9b3c73a72c}
+  '@noble/hashes@2.2.0':
+    resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
+    engines: {node: '>= 20.19.0'}
+
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/f457afc874f2e440f6b9c7a11de1ac3505e4acd8#path:typescript':
+    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/f457afc874f2e440f6b9c7a11de1ac3505e4acd8}
     version: 0.1.0
     engines: {node: '>=20'}
 
@@ -4081,17 +4093,28 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.2.12':
     optional: true
 
+  '@noble/ciphers@2.2.0': {}
+
   '@noble/curves@1.9.7':
     dependencies:
       '@noble/hashes': 1.8.0
+
+  '@noble/curves@2.2.0':
+    dependencies:
+      '@noble/hashes': 2.2.0
 
   '@noble/ed25519@2.3.0': {}
 
   '@noble/hashes@1.8.0': {}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/97ede0b8f5dc567fc376157eb44ffd9b3c73a72c#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
+  '@noble/hashes@2.2.0': {}
+
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/f457afc874f2e440f6b9c7a11de1ac3505e4acd8#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
     dependencies:
+      '@noble/ciphers': 2.2.0
+      '@noble/curves': 2.2.0
       '@noble/ed25519': 2.3.0
+      '@noble/hashes': 2.2.0
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil

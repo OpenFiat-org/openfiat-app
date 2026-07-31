@@ -1,4 +1,8 @@
-import { Client, advertisements, type AdvertisementView as ProtocolAd } from "@openfiat/sdk";
+import {
+  Client,
+  advertisements,
+  type AdvertisementView as ProtocolAd,
+} from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
 
 /**
@@ -57,8 +61,33 @@ export interface LiveAd {
   fiatCurrency: string;
   /** The MERCHANT's direction. A `Sell` ad is what a taker buys from. */
   direction: "Buy" | "Sell";
-  /** Fiat per unit of asset. `null` for a floating price with no oracle read yet. */
+  /**
+   * Fiat per unit of asset, as the node resolved it when it answered.
+   *
+   * `null` only when the node reports the advertisement as unpriceable —
+   * see `unpriceableReason`. A floating advertisement whose oracle read
+   * succeeded has a price here like any other, which is the thing this
+   * field got wrong for as long as it was derived from `pricing` instead
+   * of from the node's `quote`.
+   */
   price: number | null;
+  /**
+   * Why there is no price, when there is none. Three distinct situations
+   * that must not be shown with one message: nobody prices this pair
+   * (`NoOracleData`), the feed existed and lapsed (`StaleOracleData`), or
+   * the merchant's own premium puts the result out of range
+   * (`PriceOutOfRange`). Only the middle one is likely to fix itself.
+   */
+  unpriceableReason:
+    "NoOracleData" | "StaleOracleData" | "PriceOutOfRange" | null;
+  /**
+   * When the oracle mid behind `price` lapses, for a floating quote.
+   * `null` for a fixed one, which does not expire.
+   *
+   * This is what makes a floating price safe to display and unsafe to
+   * hold: past it, re-read rather than re-use.
+   */
+  quoteExpiresAt: number | null;
   /** How the price is set, for a UI that should not present the two as equivalent. */
   pricingKind: "Fixed" | "Floating";
   /** Basis points over the oracle mid; `null` unless `pricingKind` is Floating. */
@@ -114,8 +143,36 @@ export interface LiveAd {
  * Callers should put `assetMint` in a `title` even when a symbol came back.
  * The symbol is a nickname the node applied; the address is the fact.
  */
-export function assetLabel(ad: Pick<LiveAd, "assetMint" | "assetSymbol">): string {
+export function assetLabel(
+  ad: Pick<LiveAd, "assetMint" | "assetSymbol">,
+): string {
   return ad.assetSymbol ?? ad.assetMint;
+}
+
+/**
+ * Why an advertisement currently has no price, in words a trader can act
+ * on.
+ *
+ * One function rather than a string at each call site, because the three
+ * reasons imply different things about whether waiting helps and screens
+ * that each invent their own wording drift into saying the same thing about
+ * all three. Every one of these used to read "no oracle read yet", which
+ * was true of none of them: it described the app's own failure to read the
+ * node's quote, not anything about the advertisement.
+ */
+export function unpriceableLabel(
+  reason: NonNullable<LiveAd["unpriceableReason"]>,
+): string {
+  switch (reason) {
+    case "NoOracleData":
+      return "No oracle prices this pair";
+    case "StaleOracleData":
+      // The only one that plausibly resolves on its own.
+      return "Oracle feed has lapsed";
+    case "PriceOutOfRange":
+      // The merchant's own premium, so nothing external will fix it.
+      return "Premium puts the price out of range";
+  }
 }
 
 /** An `Amount` is base units plus a decimal exponent, never a float. */
@@ -131,7 +188,14 @@ function client(): Client {
   return new Client({ endpoint: nodeUrl(), timeoutMs: 15_000 });
 }
 
-function toLiveAd(ad: ProtocolAd): LiveAd {
+/**
+ * Exported for `tests/advertisement-quote.test.ts`, which is the only place
+ * that can check the quote mapping: the three variants differ only in what
+ * the node sends, so nothing short of feeding all three through this
+ * function distinguishes a correct mapping from one that always reports
+ * "no price".
+ */
+export function toLiveAd(ad: ProtocolAd): LiveAd {
   const peerId = toHex(ad.merchant as unknown as number[]);
   const pricing = ad.pricing as
     | { Fixed: { price: { base_units: number; decimals: number } } }
@@ -139,6 +203,13 @@ function toLiveAd(ad: ProtocolAd): LiveAd {
 
   const fixed = "Fixed" in pricing ? pricing.Fixed : null;
   const floating = "Floating" in pricing ? pricing.Floating : null;
+
+  // `pricing` is the merchant's standing instruction; `quote` is what that
+  // instruction produced against the oracle reading the node held when it
+  // answered. Reading the price out of `pricing` alone means every floating
+  // advertisement shows as unpriced even when the node resolved one — which
+  // is what this app did until the SDK started typing `quote`.
+  const quote = ad.quote;
 
   return {
     id: ad.id,
@@ -150,9 +221,21 @@ function toLiveAd(ad: ProtocolAd): LiveAd {
     assetSymbol: ad.asset_symbol,
     fiatCurrency: ad.fiat_currency,
     direction: ad.direction as "Buy" | "Sell",
-    price: fixed ? toWhole(fixed.price) : null,
+    price: quote.kind === "Unpriceable" ? null : toWhole(quote.price),
+    unpriceableReason: quote.kind === "Unpriceable" ? quote.reason : null,
+    // Only a floating quote expires. A fixed one moves when the merchant
+    // signs a new price and not before, so giving it an expiry would invite
+    // a caller to re-read something that cannot have changed.
+    quoteExpiresAt: quote.kind === "Floating" ? quote.mid_expires_at : null,
     pricingKind: fixed ? "Fixed" : "Floating",
-    premiumBps: floating ? floating.premium_bps : null,
+    // From the quote when there is one, since an unpriceable quote still
+    // carries the premium so the ad's terms stay displayable.
+    premiumBps:
+      quote.kind === "Floating" || quote.kind === "Unpriceable"
+        ? quote.premium_bps
+        : floating
+          ? floating.premium_bps
+          : null,
     minTrade: toWhole(ad.min_trade),
     maxTrade: toWhole(ad.max_trade),
     availableLiquidity: toWhole(ad.available_liquidity),
@@ -164,60 +247,34 @@ function toLiveAd(ad: ProtocolAd): LiveAd {
 }
 
 /**
- * One page of `getAdvertisements`, as a node running the paged method
- * answers it. Older nodes answer with a bare array instead.
- */
-interface AdvertisementsPage {
-  advertisements: ProtocolAd[];
-  /** Hand straight back as `page.after`. `null` was the last page. */
-  next_cursor: string | null;
-}
-
-/**
  * Every advertisement the queried node currently knows about.
  *
- * # Two response shapes, and every page of the newer one
+ * `getAdvertisements` answers with one page plus a cursor, because a
+ * response returning every advertisement on the network cannot survive real
+ * volume. This walks to the end rather than stopping at the first page: a
+ * book silently truncated at whatever the node's page size happens to be is
+ * a market with rows missing and nothing on screen to say so.
  *
- * `getAdvertisements` used to answer with the whole book as a bare array.
- * It now answers with one page plus a cursor, because a response that
- * returns every advertisement on the network cannot survive real volume.
- * The SDK this app is pinned to predates that change and types the result
- * as an array, so against a current node `.map` was being called on a page
- * object and every screen that reads the book — the exchange, the
- * merchants directory, the ad console — failed with a type error dressed
- * up as "could not reach a node".
+ * The SDK's `eachAdvertisement` owns the walk, so the cursor is passed back
+ * exactly as received. Deriving a resume point here would mean
+ * reimplementing the node's ordering, and two orderings that disagree hand
+ * some rows over twice and others never.
  *
- * So the call goes through `client.call` and accepts either shape. The
- * cursor is followed to the end rather than stopping at the first page: a
- * book silently truncated at whatever the node's page size happens to be
- * is a market with rows missing and nothing on screen to say so, which is
- * worse than the error it replaces. The cursor is passed back exactly as
- * received — deriving a resume point here would mean reimplementing the
- * node's ordering, and two orderings that disagree skip rows.
- *
- * `MAX_PAGES` bounds the walk. A node that keeps handing back a cursor
- * forever would otherwise hang the page it is rendering into.
+ * `MAX_PAGES` bounds it. A node that keeps handing back a cursor forever
+ * would otherwise hang the page rendering into it.
  */
 const MAX_PAGES = 50;
+const PAGE_SIZE = 100;
 
 export async function fetchAdvertisements(): Promise<LiveAd[]> {
-  const c = client();
-  const rows: ProtocolAd[] = [];
-  let after: string | null = null;
-
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const answer: ProtocolAd[] | AdvertisementsPage = await c.call<
-      { page?: { after: string } },
-      ProtocolAd[] | AdvertisementsPage
-    >("getAdvertisements", after === null ? {} : { page: { after } });
-
-    if (Array.isArray(answer)) return answer.map(toLiveAd);
-    rows.push(...answer.advertisements);
-    after = answer.next_cursor;
-    if (after === null || after === undefined) break;
+  const rows: LiveAd[] = [];
+  for await (const ad of advertisements.eachAdvertisement(client(), {
+    page: { limit: PAGE_SIZE },
+  })) {
+    rows.push(toLiveAd(ad));
+    if (rows.length >= MAX_PAGES * PAGE_SIZE) break;
   }
-
-  return rows.map(toLiveAd);
+  return rows;
 }
 
 /** One advertisement, or `null` if this node has never seen that id. */
@@ -278,7 +335,9 @@ export async function fetchBook(
  * nicknamed, and dropping those pairs would make the list quietly disagree
  * with the book it was derived from.
  */
-export async function fetchTradablePairs(): Promise<{ asset: string; fiatCurrency: string }[]> {
+export async function fetchTradablePairs(): Promise<
+  { asset: string; fiatCurrency: string }[]
+> {
   const all = await fetchAdvertisements();
   const seen = new Set<string>();
   const pairs: { asset: string; fiatCurrency: string }[] = [];
@@ -300,7 +359,9 @@ export async function fetchTradablePairs(): Promise<{ asset: string; fiatCurrenc
  * mock console did: it read a `MY_ADS` constant, so it showed the same rows
  * to everyone including a visitor with no wallet connected at all.
  */
-export async function fetchAdsByMerchant(merchantPeerIdHex: string): Promise<LiveAd[]> {
+export async function fetchAdsByMerchant(
+  merchantPeerIdHex: string,
+): Promise<LiveAd[]> {
   const all = await fetchAdvertisements();
   return all.filter((ad) => ad.merchantPeerId === merchantPeerIdHex);
 }
