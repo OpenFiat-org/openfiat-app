@@ -63,8 +63,24 @@ export interface LiveAd {
   pricingKind: "Fixed" | "Floating";
   /** Basis points over the oracle mid; `null` unless `pricingKind` is Floating. */
   premiumBps: number | null;
+  /**
+   * The smallest and largest trade this advertisement will take,
+   * **denominated in the asset** — never in `fiatCurrency`.
+   *
+   * `availableLiquidity` below is in the asset too. All three come from
+   * `Amount`s on the record, and `openfiat-core`'s `Advertisement` says so
+   * on the fields themselves (21986fe). It previously said it once, in
+   * passing, under `PricingModel::Floating::price_decimals` as the reason
+   * that field exists — and two screens in this app read the same record
+   * and reached opposite conclusions, one rendering these as fiat and one
+   * as the asset. At a KES/USDC rate near 129 a limit of "50" reads as
+   * plausible either way, so nothing on screen catches the wrong one:
+   * only the contract does. Render them through `assetLabel`/`AssetLabel`,
+   * never through `formatFiat`.
+   */
   minTrade: number;
   maxTrade: number;
+  /** In the asset, like `minTrade`/`maxTrade` above. */
   availableLiquidity: number;
   paymentMethods: string[];
   /**
@@ -147,10 +163,61 @@ function toLiveAd(ad: ProtocolAd): LiveAd {
   };
 }
 
-/** Every advertisement the queried node currently knows about. */
+/**
+ * One page of `getAdvertisements`, as a node running the paged method
+ * answers it. Older nodes answer with a bare array instead.
+ */
+interface AdvertisementsPage {
+  advertisements: ProtocolAd[];
+  /** Hand straight back as `page.after`. `null` was the last page. */
+  next_cursor: string | null;
+}
+
+/**
+ * Every advertisement the queried node currently knows about.
+ *
+ * # Two response shapes, and every page of the newer one
+ *
+ * `getAdvertisements` used to answer with the whole book as a bare array.
+ * It now answers with one page plus a cursor, because a response that
+ * returns every advertisement on the network cannot survive real volume.
+ * The SDK this app is pinned to predates that change and types the result
+ * as an array, so against a current node `.map` was being called on a page
+ * object and every screen that reads the book — the exchange, the
+ * merchants directory, the ad console — failed with a type error dressed
+ * up as "could not reach a node".
+ *
+ * So the call goes through `client.call` and accepts either shape. The
+ * cursor is followed to the end rather than stopping at the first page: a
+ * book silently truncated at whatever the node's page size happens to be
+ * is a market with rows missing and nothing on screen to say so, which is
+ * worse than the error it replaces. The cursor is passed back exactly as
+ * received — deriving a resume point here would mean reimplementing the
+ * node's ordering, and two orderings that disagree skip rows.
+ *
+ * `MAX_PAGES` bounds the walk. A node that keeps handing back a cursor
+ * forever would otherwise hang the page it is rendering into.
+ */
+const MAX_PAGES = 50;
+
 export async function fetchAdvertisements(): Promise<LiveAd[]> {
-  const ads = await advertisements.getAdvertisements(client());
-  return ads.map(toLiveAd);
+  const c = client();
+  const rows: ProtocolAd[] = [];
+  let after: string | null = null;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const answer: ProtocolAd[] | AdvertisementsPage = await c.call<
+      { page?: { after: string } },
+      ProtocolAd[] | AdvertisementsPage
+    >("getAdvertisements", after === null ? {} : { page: { after } });
+
+    if (Array.isArray(answer)) return answer.map(toLiveAd);
+    rows.push(...answer.advertisements);
+    after = answer.next_cursor;
+    if (after === null || after === undefined) break;
+  }
+
+  return rows.map(toLiveAd);
 }
 
 /** One advertisement, or `null` if this node has never seen that id. */

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
+import { TradeLimits } from "@/components/asset-label";
 import {
   type SavedPaymentAccount,
   accountsFor,
@@ -38,8 +39,15 @@ export function OrderPanel({
   const buy = userDirection === "Buy";
   const price = ad.price ?? 0;
   const fiat = ad.fiatCurrency;
-  const minFiat = ad.minTrade;
-  const maxFiat = ad.maxTrade;
+  /*
+   * In the ASSET, not in `fiat` — see `LiveAd.minTrade`. These were named
+   * `minFiat`/`maxFiat` and used as fiat throughout: shown with the
+   * currency code, compared against the fiat box, and divided by the price
+   * to get a crypto bound that was already one. On a KES pair every one of
+   * those was out by the exchange rate.
+   */
+  const minAsset = ad.minTrade;
+  const maxAsset = ad.maxTrade;
 
   const [payText, setPayText] = useState("");
   const [receiveText, setReceiveText] = useState("");
@@ -66,16 +74,23 @@ export function OrderPanel({
   const fiatAmount = Number(payText) || 0;
   const cryptoAmount = Number(receiveText) || 0;
 
-  const minCrypto = minFiat / price;
-  const maxCrypto = Math.min(maxFiat / price, ad.availableLiquidity);
+  const minCrypto = minAsset;
+  const maxCrypto = Math.min(maxAsset, ad.availableLiquidity);
+  // The fiat side of the same band, at this advertisement's own price —
+  // derived, because the record states the bounds in the asset.
+  const minFiat = minAsset * price;
+  const maxFiat = maxAsset * price;
 
   const usable = accountsFor(accounts, ad.paymentMethods, false);
   // Only relevant when selling: a buyer pays out of their own account and has
   // nothing to nominate.
   const needsAccount = !buy && usable.length === 0;
 
-  const tooLow = fiatAmount > 0 && fiatAmount < minFiat;
-  const tooHigh = fiatAmount > maxFiat;
+  // Tested on the asset side, which is the side the bounds are stated on.
+  // `cryptoAmount` tracks `fiatAmount` through `onPay`/`onReceive`, so a
+  // taker typing into either box is measured against the same band.
+  const tooLow = cryptoAmount > 0 && cryptoAmount < minAsset;
+  const tooHigh = cryptoAmount > maxAsset;
   const overLiquidity = cryptoAmount > ad.availableLiquidity;
   const noPrice = ad.price === null;
   const ready =
@@ -96,13 +111,20 @@ export function OrderPanel({
         ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
         : "None of your saved accounts uses a method this advertiser accepts. Add one that does in Settings.";
     }
-    if (fiatAmount <= 0) return `Enter an amount between ${formatFiat(minFiat, fiat, 0)} and ${formatFiat(maxFiat, fiat, 0)}`;
-    if (tooLow) return `Below this advertiser's minimum of ${formatFiat(minFiat, fiat, 0)}`;
-    if (tooHigh) return `Above this advertiser's maximum of ${formatFiat(maxFiat, fiat, 0)}`;
+    // Quoted in the asset, because that is the unit the merchant set the
+    // bound in. The fiat equivalent follows in brackets so a taker filling
+    // in the fiat box still knows what to type — a conversion this app
+    // performed, not a figure on the record.
+    const band = `${formatCrypto(minAsset, assetLabel(ad))} and ${formatCrypto(maxAsset, assetLabel(ad))}`;
+    if (fiatAmount <= 0) {
+      return `Enter an amount between ${band} (about ${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)})`;
+    }
+    if (tooLow) return `Below this advertiser's minimum of ${formatCrypto(minAsset, assetLabel(ad))}`;
+    if (tooHigh) return `Above this advertiser's maximum of ${formatCrypto(maxAsset, assetLabel(ad))}`;
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, assetLabel(ad))} is available on this ad`;
     if (!method) return "Choose a payment method";
     return null;
-  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minFiat, maxFiat, fiat]);
+  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -163,10 +185,7 @@ export function OrderPanel({
           <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
             <Fact label="Available" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
-            <Fact
-              label="Limits"
-              value={`${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)}`}
-            />
+            <Fact label="Limits" value={<TradeLimits ad={ad} />} />
             <Fact
               label="Pricing"
               value={
@@ -279,7 +298,7 @@ export function OrderPanel({
   );
 }
 
-function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Fact({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex justify-between gap-4 border-t border-white/5 pt-2">
       <dt className="text-gray-500">{label}</dt>

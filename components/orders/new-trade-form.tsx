@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
+import { TradeLimits } from "@/components/asset-label";
 import { Panel } from "@/components/panel";
 
 /**
@@ -95,10 +96,10 @@ export function NewTradeReview({
             }
           />
           <SummaryRow label="Available" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
-          <SummaryRow
-            label="Limits"
-            value={`${formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – ${formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}`}
-          />
+          {/* In the asset — see `LiveAd.minTrade`. This row showed the same
+              two numbers with the fiat currency code beside them, which on a
+              KES pair overstated the band by the exchange rate. */}
+          <SummaryRow label="Limits" value={<TradeLimits ad={ad} />} />
           <SummaryRow label="Payment methods" value={ad.paymentMethods.join(", ") || "—"} />
           <SummaryRow label="Status" value={ad.status} />
         </div>
@@ -107,7 +108,7 @@ export function NewTradeReview({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
       <span className="text-gray-500">{label}</span>

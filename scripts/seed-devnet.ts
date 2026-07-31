@@ -215,6 +215,16 @@ interface AdSpec {
   direction: "Buy" | "Sell";
   /** Fiat price per unit of asset, in whole fiat units. */
   price: number;
+  /**
+   * Trade bounds in the ASSET, like `liquidity` — not in `fiat`.
+   *
+   * OFS-2100's `min_trade`/`max_trade` are `Amount`s denominated in the
+   * token being escrowed. These were fiat-scale (500 – 200,000 against a
+   * 4,000-unit vault), so this script was seeding a real, signed book
+   * whose advertised maximum was fifty times the liquidity behind it —
+   * and the app was then reading those records back as evidence its
+   * screens were right.
+   */
   minTrade: number;
   maxTrade: number;
   liquidity: number;
@@ -245,8 +255,8 @@ const ADS: AdSpec[] = [
     fiat: "KES",
     direction: "Sell",
     price: 129.8,
-    minTrade: 500,
-    maxTrade: 200_000,
+    minTrade: 5,
+    maxTrade: 3_500,
     liquidity: 4_000,
     paymentMethods: ["M-Pesa Kenya (Safaricom)", "Equity Bank"],
   },
@@ -256,8 +266,8 @@ const ADS: AdSpec[] = [
     fiat: "KES",
     direction: "Buy",
     price: 128.4,
-    minTrade: 500,
-    maxTrade: 150_000,
+    minTrade: 5,
+    maxTrade: 2_500,
     liquidity: 3_000,
     paymentMethods: ["M-Pesa Kenya (Safaricom)"],
   },
@@ -267,8 +277,8 @@ const ADS: AdSpec[] = [
     fiat: "KES",
     direction: "Sell",
     price: 130.2,
-    minTrade: 1_000,
-    maxTrade: 80_000,
+    minTrade: 10,
+    maxTrade: 2_000,
     liquidity: 2_500,
     paymentMethods: ["Mpesa Pochi la Biashara", "I&M Bank"],
   },
@@ -278,8 +288,8 @@ const ADS: AdSpec[] = [
     fiat: "NGN",
     direction: "Sell",
     price: 1_548,
-    minTrade: 10_000,
-    maxTrade: 2_000_000,
+    minTrade: 20,
+    maxTrade: 5_000,
     liquidity: 6_000,
     paymentMethods: ["Bank Transfer (Nigeria)", "Opay"],
   },
@@ -289,8 +299,8 @@ const ADS: AdSpec[] = [
     fiat: "NGN",
     direction: "Buy",
     price: 1_531,
-    minTrade: 10_000,
-    maxTrade: 1_000_000,
+    minTrade: 20,
+    maxTrade: 4_000,
     liquidity: 5_000,
     paymentMethods: ["Bank Transfer (Nigeria)"],
   },

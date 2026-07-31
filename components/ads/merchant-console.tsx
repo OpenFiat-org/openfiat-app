@@ -6,8 +6,8 @@ import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
 import { fetchAdsByMerchant, type LiveAd } from "@/lib/live-advertisements";
-import { formatFiat, formatNumber } from "@/lib/format";
-import { AssetLabel } from "@/components/asset-label";
+import { formatNumber } from "@/lib/format";
+import { AssetLabel, TradeLimits } from "@/components/asset-label";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
 
@@ -98,7 +98,14 @@ export function MerchantConsole() {
   }
 
   const activeCount = ads.filter((a) => a.status === "Active").length;
-  const totalLiquidity = ads.reduce((sum, a) => sum + a.availableLiquidity, 0);
+  /*
+   * Counted, not summed. `availableLiquidity` is denominated in the ad's
+   * own asset, so adding it across ads produced a figure that put SOL and
+   * USDC in the same total — the "sum across assets" the sub-label used to
+   * admit to. A number that has to apologise for itself is not a number.
+   * The per-asset figures are in the table below, where they belong.
+   */
+  const mints = new Set(ads.map((a) => a.assetMint));
 
   return (
     <div>
@@ -113,9 +120,9 @@ export function MerchantConsole() {
         items={[
           { label: "Active ads", value: String(activeCount), sub: `${ads.length} published` },
           {
-            label: "Advertised liquidity",
-            value: formatNumber(totalLiquidity, 0),
-            sub: "sum across assets",
+            label: "Tokens advertised",
+            value: String(mints.size),
+            sub: "liquidity is per asset — see the table",
           },
           {
             label: "Merchant",
@@ -184,8 +191,9 @@ export function MerchantConsole() {
                     : "Fixed"}
                 </span>
               </Td>
+              {/* In the asset, not in `fiatCurrency` — see `LiveAd.minTrade`. */}
               <Td right num className="text-gray-400">
-                {formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – {formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}
+                <TradeLimits ad={ad} />
               </Td>
               <Td right num className="text-gray-300">
                 <span className="inline-flex items-baseline gap-1.5">

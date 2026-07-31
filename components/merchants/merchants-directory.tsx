@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
-import { AssetLabel } from "@/components/asset-label";
+import { AssetLabel, TradeLimits } from "@/components/asset-label";
 import { MetricStrip } from "@/components/metrics";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { formatNumber, sinceLabel } from "@/lib/format";
@@ -337,8 +337,11 @@ function AdLine({ ad }: { ad: LiveAd }) {
             : "Unpriced"
           : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
       </span>
+      {/* This screen already had the denomination right; what it had wrong
+          was the precision. Rounded to whole units, a 0.5 SOL minimum read
+          as "1" — a band the merchant never offered. */}
       <span className="text-gray-500">
-        {formatNumber(ad.minTrade, 0)}–{formatNumber(ad.maxTrade, 0)} <AssetLabel ad={ad} />
+        <TradeLimits ad={ad} />
       </span>
       <span className="inline-flex items-baseline gap-1.5 text-gray-500">
         {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} /> free

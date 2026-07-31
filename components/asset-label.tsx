@@ -1,4 +1,5 @@
 import { AssetIcon } from "@/components/asset-icon";
+import { formatNumber } from "@/lib/format";
 import { assetLabel } from "@/lib/live-advertisements";
 import type { LiveAd } from "@/lib/live-advertisements";
 
@@ -43,6 +44,38 @@ export function AssetLabel({
       <span className={symbol ? undefined : "font-mono text-[0.9em] [overflow-wrap:anywhere]"}>
         {assetLabel(ad)}
       </span>
+    </span>
+  );
+}
+
+/**
+ * An advertisement's `minTrade`–`maxTrade` band, in the token it is in.
+ *
+ * These bounds are denominated in the ASSET, not in the advertisement's
+ * fiat currency — see `LiveAd.minTrade`. That was got wrong in opposite
+ * directions on two screens because both renderings look equally sane: at
+ * a KES/USDC rate near 129, "50" is a believable minimum in either unit,
+ * and only the record's contract says which one is a lie. So the band is
+ * rendered in one place, through `AssetLabel`, and nowhere reaches for
+ * `formatFiat` with these numbers.
+ *
+ * Two decimals rather than none. A minimum of 0.5 SOL is a real
+ * advertisement, and rounding it to "1" on the way to the screen shows a
+ * band the merchant never offered.
+ */
+export function TradeLimits({
+  ad,
+  className = "",
+}: {
+  ad: Pick<LiveAd, "assetMint" | "assetSymbol" | "minTrade" | "maxTrade">;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-baseline gap-1.5 tabular-nums ${className}`}>
+      <span>
+        {formatNumber(ad.minTrade)} – {formatNumber(ad.maxTrade)}
+      </span>
+      <AssetLabel ad={ad} />
     </span>
   );
 }

@@ -6,9 +6,9 @@ import type { StablecoinAsset, TradeDirection } from "@/lib/types";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
-import { formatFiat, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
-import { AssetLabel } from "@/components/asset-label";
+import { AssetLabel, TradeLimits } from "@/components/asset-label";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { PageHero } from "@/components/page-hero";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
@@ -166,7 +166,16 @@ export function P2PExchange({
       if (ad.fiatCurrency !== fiat) continue;
       if (ad.price === null) continue; // no oracle read yet — nothing to quote
       if (method !== "" && !ad.paymentMethods.includes(method)) continue;
-      if (fiatAmount > 0 && (fiatAmount < ad.minTrade || fiatAmount > ad.maxTrade)) continue;
+      // The box asks for a fiat amount; the bounds are in the asset (see
+      // `LiveAd.minTrade`), so the comparison needs a conversion and it has
+      // to happen per advertisement, at that advertisement's own price.
+      // Comparing the typed figure directly, as this did, filtered the book
+      // by a number roughly 129x off on a KES pair — hiding every ad that
+      // would take the trade and keeping ones that would not.
+      if (fiatAmount > 0) {
+        const assetAmount = fiatAmount / ad.price;
+        if (assetAmount < ad.minTrade || assetAmount > ad.maxTrade) continue;
+      }
       out.push(ad);
     }
     switch (sort) {
@@ -210,7 +219,10 @@ export function P2PExchange({
             </button>
           ))}
         </div>
-        <div className="flex gap-1">
+        {/* Wraps. Five asset buttons do not fit across 390px, and without
+            this the row pushed the whole page into a horizontal scroll —
+            on the landing page, at the width most visitors arrive at. */}
+        <div className="flex flex-wrap gap-1">
           {TRADED_ASSETS.map((a) => (
             <button
               key={a}
@@ -397,7 +409,7 @@ function AdRow({
           {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} />
         </p>
         <p className="mt-1 text-xs text-gray-500">
-          {formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – {formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}
+          <TradeLimits ad={ad} />
         </p>
       </Td>
       <Td py="py-6">

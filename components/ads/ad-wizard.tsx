@@ -63,8 +63,11 @@ const DEFAULT_DRAFT: Draft = {
   pricingType: "Floating",
   price: "132.00",
   premium: "0.8",
-  min: "5000",
-  max: "250000",
+  // In the token, like `liquidity` — these were 5,000 and 250,000, which
+  // are KES figures against a 10,000-unit vault: a starting draft that
+  // offered to sell twenty-five times what it held.
+  min: "10",
+  max: "5000",
   minRep: "",
   liquidity: "10000",
   methods: ["M-Pesa Kenya (Safaricom)"],
@@ -194,7 +197,7 @@ export function AdWizard() {
         <h2 className="mt-3 text-lg font-semibold text-white">Advertisement published (simulated)</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
           {direction} <span className="font-mono">{shortAddress(mint)}</span> for {fiat} · {pricingType === "Fixed" ? `Fixed ${price}` : `Floating ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`} ·
-          limits {formatNumber(minNum, 0)}–{formatNumber(maxNum, 0)} {fiat}. Draft cleared — on a live node this would
+          limits {formatNumber(minNum)}–{formatNumber(maxNum)} <span className="font-mono">{shortAddress(mint)}</span>. Draft cleared — on a live node this would
           emit an AdvertisementCreated event.
         </p>
         <Link href="/ads" className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
@@ -391,12 +394,17 @@ export function AdWizard() {
         {step === 3 && (
           <div className="max-w-xl space-y-6">
             <div className="grid grid-cols-2 gap-4">
+              {/* In the token, not in the fiat currency. OFS-2100's
+                  `min_trade`/`max_trade` are `Amount`s denominated in the
+                  asset, the same unit as the liquidity field below — these
+                  labels said `({fiat})` and would have had a merchant type
+                  a KES figure into a field the protocol reads as USDC. */}
               <div>
-                <label className={labelCls}>Min trade ({fiat})</label>
+                <label className={labelCls} title={mint}>Min trade ({shortAddress(mint)})</label>
                 <input value={min} onChange={(e) => patch({ min: e.target.value })} type="number" className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Max trade ({fiat})</label>
+                <label className={labelCls} title={mint}>Max trade ({shortAddress(mint)})</label>
                 <input value={max} onChange={(e) => patch({ max: e.target.value })} type="number" className={inputCls} />
               </div>
             </div>
@@ -467,8 +475,10 @@ export function AdWizard() {
                 ["Token (mint)", mint],
                 ["Fiat", fiat],
                 ["Pricing", pricingType === "Fixed" ? `Fixed ${price} ${fiat}` : `Floating oracle mid ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`],
-                ["Limits", `${formatNumber(minNum, 0)} – ${formatNumber(maxNum, 0)} ${fiat}`],
-                ["Liquidity", formatNumber(liqNum, 0)],
+                // In the token being advertised, like the liquidity below —
+                // not in the fiat currency two rows up.
+                ["Limits", `${formatNumber(minNum)} – ${formatNumber(maxNum)} ${mint}`],
+                ["Liquidity", `${formatNumber(liqNum)} ${mint}`],
                 ["Payment methods", methods.join(" · ")],
                 ["Merchant bond", "Not verified by this screen"],
               ].map(([label, value]) => (
