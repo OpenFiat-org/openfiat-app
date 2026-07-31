@@ -166,10 +166,15 @@ describe("POST /api/ipfs/upload", () => {
     spy.mockRestore();
   });
 
-  it("says uploads are unavailable rather than picking a provider itself", async () => {
+  it("declines rather than picking a public provider itself", async () => {
+    // And says only what is true: this route pins to public IPFS, and
+    // there is nothing configured to pin to. It must not claim uploads
+    // are unavailable — the browser stores files on the OpenFiat node
+    // and reaches this route only as a fallback.
     pinConfigured = false;
     const { status, body } = await post(upload(pngBytes(), "image/png"));
     expect(status).toBe(503);
-    expect(body.error).toMatch(/no IPFS provider configured/);
+    expect(body.error).toMatch(/no public IPFS provider/);
+    expect(body.error).not.toMatch(/unavailable/);
   });
 });

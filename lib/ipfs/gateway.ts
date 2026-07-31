@@ -1,44 +1,77 @@
 import { isCid } from "@/lib/ipfs/cid";
+import { nodeUrl } from "@/lib/node-endpoint";
 
 /**
  * Turning a CID into something a browser can fetch.
  *
- * # Why the gateway is configurable but the CID is not trusted
+ * # Content comes from the node now, not from a public gateway
  *
- * A gateway is an ordinary HTTP server that claims to serve IPFS content.
- * It can serve the wrong bytes, no bytes, or log who asked for what. What
- * it cannot do is change which content a CID names, because the CID is a
- * hash — so the honest position is that the gateway is untrusted
- * transport, and swapping it changes performance and privacy, never
- * meaning.
+ * It used to come from `ipfs.filebase.io`, which worked because every
+ * OpenFiat node published provider records to the public IPFS DHT. That
+ * is no longer true and was never right: it disclosed to the whole IPFS
+ * network which peer holds which trade attachment. The DHT is private —
+ * `/openfiat/kad/1.0.0`, no public bootstrappers — so a public gateway
+ * cannot resolve an OpenFiat CID at all any more, and every avatar and
+ * attachment in this app would be a broken image.
  *
- * That is also why `ipfsUrl` refuses a value that is not a CID rather than
- * building a URL and hoping. The whole risk of this module is that an
- * attacker-supplied string reaches the path position and turns a fetch of
- * our gateway into a fetch of theirs.
+ * A node serves them itself, at `GET /ipfs/{cid}` on the same host this
+ * app already calls for JSON-RPC. Same path shape a gateway uses, so the
+ * only thing that changes here is which host.
+ *
+ * # What is and is not trusted
+ *
+ * A gateway — ours or anyone's — is an ordinary HTTP server that claims
+ * to serve IPFS content. It can serve the wrong bytes, no bytes, or log
+ * who asked for what. What it cannot do is change which content a CID
+ * names, because the CID is a hash. A browser checks none of that; it
+ * never did, through any gateway. What changed is that the party who
+ * gets to see and answer the request is the node the user selected
+ * rather than a stranger who also learns what they are looking at.
+ *
+ * That is also why `ipfsUrl` refuses a value that is not a CID rather
+ * than building a URL and hoping. The whole risk of this module is that
+ * an attacker-supplied string reaches the path position and turns a
+ * fetch of our node into a fetch of theirs.
  */
 
 /**
- * Where this build reads IPFS content from.
+ * A gateway host to read content from instead of the selected node.
  *
- * Public by design and safe to inline into the client bundle: it is a URL
- * anyone can already see in the network tab. Nothing secret is ever a
- * `NEXT_PUBLIC_*` value — a pinning credential in one would be handed to
- * every visitor, which is why uploads go through `/api/ipfs/upload` and
- * this module only reads.
+ * Unset by default, and a deployment should usually leave it unset:
+ * content published by this network is only resolvable by this network.
+ * It exists for a deployment that genuinely does mirror its content to
+ * public IPFS and would rather serve the images from there.
+ *
+ * The host only — `https://ipfs.example.com`, not `.../ipfs`. The
+ * `/ipfs/{cid}` suffix is appended below, exactly as it is for a node,
+ * because one rule for both is one rule to get wrong. (The old default
+ * carried the suffix while `.env.example` documented it without: a
+ * deployment that followed the documentation produced `/{cid}` and
+ * fetched nothing.)
+ *
+ * Public by design and safe to inline into the client bundle: it is a
+ * URL anyone can already see in the network tab. Nothing secret is ever
+ * a `NEXT_PUBLIC_*` value — a pinning credential in one would be handed
+ * to every visitor.
  */
-export const IPFS_GATEWAY =
-  process.env.NEXT_PUBLIC_IPFS_GATEWAY?.replace(/\/+$/, "") ?? "https://ipfs.filebase.io/ipfs";
+export const IPFS_GATEWAY: string | null =
+  process.env.NEXT_PUBLIC_IPFS_GATEWAY?.replace(/\/+$/, "") ?? null;
 
 /**
  * A fetchable URL for `cid`, or `null` if it is not a CID.
+ *
+ * Resolved per call rather than once at module load, because the node
+ * the user has selected can change while the app is running and their
+ * images should follow it.
  *
  * Returning `null` rather than throwing because the caller is usually
  * rendering someone else's record: one malformed value should leave a
  * broken thumbnail, not an exception that takes out the page around it.
  */
 export function ipfsUrl(cid: unknown): string | null {
-  return isCid(cid) ? `${IPFS_GATEWAY}/${cid}` : null;
+  if (!isCid(cid)) return null;
+  const host = IPFS_GATEWAY ?? nodeUrl().replace(/\/+$/, "");
+  return `${host}/ipfs/${cid}`;
 }
 
 /** The formats the protocol accepts, mirroring `openfiat_content::MediaType`. */

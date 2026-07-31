@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { asCid, isCid } from "@/lib/ipfs/cid";
 import { ipfsUrl } from "@/lib/ipfs/gateway";
+import { DEFAULT_NODE_URL } from "@/lib/node-endpoint";
 import { looksLike } from "@/lib/ipfs/sniff";
 
 /**
@@ -77,8 +78,11 @@ describe("asCid", () => {
 });
 
 describe("ipfsUrl", () => {
-  it("builds a gateway URL for a real CID", () => {
-    expect(ipfsUrl(RAW_CID)).toBe(`https://ipfs.filebase.io/ipfs/${RAW_CID}`);
+  it("reads content from the node, not from a public gateway", () => {
+    // The node's own HTTP surface. A public gateway cannot resolve an
+    // OpenFiat CID at all now that the content DHT is private, so a URL
+    // pointing at one would be a broken image on every page.
+    expect(ipfsUrl(RAW_CID)).toBe(`${DEFAULT_NODE_URL}/ipfs/${RAW_CID}`);
   });
 
   it("returns null rather than a URL pointing somewhere else", () => {

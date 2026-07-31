@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 import { isCid } from "@/lib/ipfs/cid";
 import {
-  IPFS_GATEWAY,
   MAX_AVATAR_BYTES,
   MAX_UPLOAD_BYTES,
+  ipfsUrl,
   isAcceptedMediaType,
 } from "@/lib/ipfs/gateway";
 import { pinProvider } from "@/lib/ipfs/providers";
@@ -57,9 +57,12 @@ function bad(status: number, error: string) {
 export async function POST(request: Request) {
   const provider = pinProvider();
   if (!provider) {
-    // Explicitly not falling back to some public endpoint: a file pushed
-    // to a service nobody chose is a file nobody will keep pinned.
-    return bad(503, "This deployment has no IPFS provider configured, so uploads are unavailable.");
+    // Not "uploads are unavailable" any more, and the difference matters:
+    // the browser stores files on the OpenFiat node itself and only falls
+    // back here (see `lib/ipfs/upload-client.ts`). This route answering
+    // 503 means no *public-IPFS* mirror is configured, which is an
+    // ordinary state and not a broken deployment.
+    return bad(503, "This deployment pins to no public IPFS provider.");
   }
 
   let form: FormData;
@@ -124,10 +127,12 @@ export async function POST(request: Request) {
   return NextResponse.json({ cid, mediaType: file.type, sizeBytes: bytes.byteLength });
 }
 
-/** Fetches `cid` from the gateway and compares it byte for byte. */
+/** Fetches `cid` back and compares it byte for byte. */
 async function servesTheSameBytes(cid: string, expected: Uint8Array): Promise<boolean> {
+  const url = ipfsUrl(cid);
+  if (!url) return false;
   try {
-    const response = await fetch(`${IPFS_GATEWAY}/${cid}`, {
+    const response = await fetch(url, {
       signal: AbortSignal.timeout(READBACK_TIMEOUT_MS),
       cache: "no-store",
     });
