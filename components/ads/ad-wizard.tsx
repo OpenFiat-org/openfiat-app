@@ -8,6 +8,8 @@ import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
 import { formatBaseUnits } from "@/lib/live-vaults";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
 import { useVaultBacking, vaultCovers, type VaultBacking } from "@/components/wallet/use-vault-backing";
+import { currentSigner } from "@/lib/wallet-connection";
+import { explainRefusal, publishAdvertisement, toWireAmount } from "@/lib/merchant-ads";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { MethodPicker } from "@/components/ads/method-picker";
 
@@ -48,6 +50,17 @@ interface Draft {
    */
   mint: string;
   fiat: string;
+  /**
+   * The precision a floating price is quoted in — the fiat currency's, so
+   * 2 for KES/NGN/USD and 0 for JPY.
+   *
+   * Declared by the merchant because nothing else on the record carries
+   * it: the limits are in the asset, and a floating advertisement has no
+   * fixed price to borrow the precision from. Inferring it from the
+   * currency code would mean shipping a currency table that silently
+   * mis-rounds every currency missing from it.
+   */
+  priceDecimals: string;
   pricingType: "Fixed" | "Floating";
   price: string;
   premium: string;
@@ -63,6 +76,7 @@ const DEFAULT_DRAFT: Draft = {
   direction: "Sell",
   mint: DEVNET_SETTLEMENT_MINT,
   fiat: "KES",
+  priceDecimals: "2",
   pricingType: "Floating",
   price: "132.00",
   premium: "0.8",
@@ -83,13 +97,22 @@ const labelCls = "mb-1 block text-xs text-gray-500";
 /**
  * Binance-style multi-step post-advertisement wizard. Flat (no boxed panel),
  * per-step validation, OPEN-bond gating, and draft persistence to
- * localStorage["openfiat:ad-draft"]. Publishing is simulated.
+ * localStorage["openfiat:ad-draft"].
+ *
+ * Publishing is real. It used to end at a green tick reading
+ * "Advertisement published (simulated)" — the draft was cleared and
+ * nothing was ever sent, so the first step of the merchant journey was
+ * the one thing in it that could not fail. It now signs an
+ * `AdvertisementCreate` with the connected wallet and submits it to the
+ * selected node; the id in the confirmation is the id the network has.
  */
 export function AdWizard() {
   const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
   const [loaded, setLoaded] = useState(false);
   const [resumed, setResumed] = useState(false);
-  const [published, setPublished] = useState(false);
+  const [published, setPublished] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
 
   // The merchant half of the vault key. Read post-mount and kept in sync,
@@ -139,7 +162,7 @@ export function AdWizard() {
     }
   }
 
-  const { step, direction, mint, fiat, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
+  const { step, direction, mint, fiat, priceDecimals, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
 
   /*
    * There is no indicative price on this screen any more.
@@ -194,7 +217,11 @@ export function AdWizard() {
 
   const stepValid: Record<number, boolean> = {
     1: mintValid,
-    2: pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0,
+    2:
+      (pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0) &&
+      Number.isInteger(Number(priceDecimals)) &&
+      Number(priceDecimals) >= 0 &&
+      Number(priceDecimals) <= 12,
     3: minNum > 0 && maxNum >= minNum && liqNum > 0 && !backingShortfall,
     4: methods.length >= 1,
     5: true,
@@ -204,6 +231,11 @@ export function AdWizard() {
     2: [
       ...(pricingType === "Floating" && (premiumNum < -5 || premiumNum > 5) ? ["Premium must be between -5% and +5%."] : []),
       ...(pricingType === "Fixed" && !(Number(price) > 0) ? ["Enter a fixed price greater than 0."] : []),
+      ...(Number.isInteger(Number(priceDecimals)) &&
+      Number(priceDecimals) >= 0 &&
+      Number(priceDecimals) <= 12
+        ? []
+        : ["Price decimals must be a whole number between 0 and 12."]),
     ],
     3: [
       ...(minNum <= 0 ? ["Min trade must be greater than 0."] : []),
@@ -222,15 +254,81 @@ export function AdWizard() {
     5: [],
   };
 
+  /**
+   * Signs the advertisement and submits it.
+   *
+   * The asset's precision comes from the merchant's own vault for this
+   * mint, read from the chain — never a default. Every amount on the
+   * record is base units plus decimals, so guessing six for a token that
+   * uses nine would publish limits a thousand times smaller than the ones
+   * on screen, and nothing downstream would notice.
+   */
+  async function publish() {
+    const signer = currentSigner(wallet);
+    if (!wallet || !signer) {
+      setPublishError("Connect a wallet before publishing — it is what signs the advertisement.");
+      return;
+    }
+    if (backing.kind !== "found") {
+      setPublishError(
+        "The token's precision comes from your vault for this mint, and that lookup has not answered. Open the vault first.",
+      );
+      return;
+    }
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const id = await publishAdvertisement(
+        { provider: signer, publicKey: bs58.decode(wallet.address) },
+        {
+          assetMint: mint.trim(),
+          direction,
+          fiatCurrency: fiat,
+          minTrade: minNum,
+          maxTrade: maxNum,
+          initialLiquidity: liqNum,
+          decimals: backing.vault.decimals,
+          pricing:
+            pricingType === "Fixed"
+              ? { Fixed: { price: toWireAmount(Number(price), Number(priceDecimals) || 2) } }
+              : {
+                  Floating: {
+                    // "any", like every record the protocol crate itself
+                    // builds. The field is a merchant's declared
+                    // preference and the resolver does not read it — it
+                    // takes the median of every current record for the
+                    // pair. A provider picker here would be a control
+                    // that changes nothing.
+                    oracle_provider: "any",
+                    premium_bps: Math.round(premiumNum * 100),
+                    price_decimals: Number(priceDecimals) || 2,
+                  },
+                },
+          paymentMethods: methods,
+        },
+      );
+      localStorage.removeItem(DRAFT_KEY);
+      setPublished(id);
+    } catch (err) {
+      setPublishError(explainRefusal(err instanceof Error ? err.message : String(err)));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   if (published) {
     return (
       <div className="border-y border-white/5 py-14 text-center">
         <p className="text-2xl text-emerald-400">✓</p>
-        <h2 className="mt-3 text-lg font-semibold text-white">Advertisement published (simulated)</h2>
+        <h2 className="mt-3 text-lg font-semibold text-white">Advertisement published</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
           {direction} <span className="font-mono">{shortAddress(mint)}</span> for {fiat} · {pricingType === "Fixed" ? `Fixed ${price}` : `Floating ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`} ·
-          limits {formatNumber(minNum)}–{formatNumber(maxNum)} <span className="font-mono">{shortAddress(mint)}</span>. Draft cleared — on a live node this would
-          emit an AdvertisementCreated event.
+          limits {formatNumber(minNum)}–{formatNumber(maxNum)} <span className="font-mono">{shortAddress(mint)}</span>.
+        </p>
+        <p className="mx-auto mt-3 max-w-md font-mono text-xs text-gray-500">{published}</p>
+        <p className="mx-auto mt-2 max-w-md text-xs text-gray-500">
+          Signed by your wallet and accepted by the node, which gossips it to the rest of the
+          network. Pause, edit or take it down from My Ads.
         </p>
         <Link href="/ads" className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
           Back to My Ads
@@ -408,6 +506,29 @@ export function AdWizard() {
                 <input value={premium} onChange={(e) => patch({ premium: e.target.value })} type="number" step="0.1" className={inputCls} />
               </div>
             )}
+            {/*
+              * Asked, not inferred. A floating advertisement carries no
+              * fixed price to borrow a precision from, and the limits are
+              * in the asset rather than in the fiat — so the record has a
+              * field for this and the merchant is the one who fills it.
+              * A currency-to-decimals table here would round every
+              * currency it had not heard of to whatever the default was.
+              */}
+            <div>
+              <label className={labelCls}>Price decimals for {fiat}</label>
+              <input
+                value={priceDecimals}
+                onChange={(e) => patch({ priceDecimals: e.target.value })}
+                type="number"
+                min={0}
+                max={12}
+                className={inputCls}
+              />
+              <p className="mt-1.5 text-[11px] text-gray-600">
+                How many decimal places the resolved price is quoted to. 2 for most currencies,
+                0 for ones with no subunit in daily use.
+              </p>
+            </div>
             {/* No indicative price — see the note where it used to be
                 computed. A number here needed the ticker to stand in for "one
                 unit is one dollar", and a mint says nothing of the kind. */}
@@ -578,14 +699,20 @@ export function AdWizard() {
           </button>
         ) : (
           <button
-            onClick={() => stepValid[5] && setPublished(true)}
-            disabled={!stepValid[5]}
+            onClick={() => void publish()}
+            disabled={!stepValid[5] || publishing}
             className="rounded-md bg-emerald-600 px-6 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Publish Advertisement
+            {publishing ? "Signing…" : "Publish Advertisement"}
           </button>
         )}
-        <p className="text-[11px] text-gray-600">Simulated — nothing is persisted beyond your local draft.</p>
+        {publishError ? (
+          <p className="text-[11px] text-red-300">{publishError}</p>
+        ) : (
+          <p className="text-[11px] text-gray-600">
+            Publishing costs one wallet signature. The draft above is local until then.
+          </p>
+        )}
       </div>
     </div>
   );

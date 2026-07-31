@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
-import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
+import {
+  WALLET_CHANGED_EVENT,
+  currentSigner,
+  readWalletConnection,
+  type WalletConnection,
+} from "@/lib/wallet-connection";
+import { AdStatusControl, AdTermsDialog } from "@/components/ads/ad-controls";
+import type { MerchantIdentity } from "@/lib/merchant-ads";
 import { fetchAdsByMerchant, type LiveAd } from "@/lib/live-advertisements";
 import { formatNumber } from "@/lib/format";
 import { AssetLabel, TradeLimits } from "@/components/asset-label";
@@ -33,11 +40,19 @@ import { MetricStrip } from "@/components/metrics";
  * public key — which is what a Solana address is. So a connected wallet
  * maps to exactly one merchant identity with no registration step and no
  * lookup table.
+ *
+ * # It can change things now
+ *
+ * The table was read-only, and the status cell said why: pausing an
+ * advertisement is a signed event the node did not expose. It does, so the
+ * status control and the terms editor here are real — one wallet signature
+ * each, straight to the selected node. See `lib/merchant-ads.ts`.
  */
 export function MerchantConsole() {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [ads, setAds] = useState<LiveAd[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<LiveAd | null>(null);
 
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
@@ -49,11 +64,15 @@ export function MerchantConsole() {
   const load = useCallback(async (address: string) => {
     setError(null);
     try {
-      const peerId = peerIdFromPublicKey(bs58.decode(address));
-      const hex = Array.from(peerId)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      setAds(await fetchAdsByMerchant(hex));
+      // base58, because that is what `LiveAd.merchantPeerId` is.
+      //
+      // This hex-encoded the peer id and compared it against a base58
+      // field, so the filter matched nothing — for every wallet, always.
+      // The console had been reporting "no advertisements published" to
+      // merchants who had published plenty, and the empty state is
+      // indistinguishable from the true one, so nothing on screen said
+      // otherwise.
+      setAds(await fetchAdsByMerchant(bs58.encode(peerIdFromPublicKey(bs58.decode(address)))));
     } catch (err) {
       // Surfaced rather than swallowed into an empty table: "no ads" and
       // "could not reach a node" are different facts, and a merchant
@@ -68,6 +87,16 @@ export function MerchantConsole() {
     if (wallet) void load(wallet.address);
     else setAds(null);
   }, [wallet, load]);
+
+  /*
+   * Null whenever anything needed to sign is missing — no wallet, or a
+   * wallet whose provider has gone away. The controls disable themselves
+   * on null rather than failing at the click, so nothing offers an action
+   * it cannot carry out.
+   */
+  const signer = currentSigner(wallet);
+  const who: MerchantIdentity | null =
+    wallet && signer ? { provider: signer, publicKey: bs58.decode(wallet.address) } : null;
 
   if (!wallet) {
     return (
@@ -151,7 +180,7 @@ export function MerchantConsole() {
         </p>
       ) : (
         <DataTable
-          minWidth={960}
+          minWidth={1120}
           head={
             <tr>
               <Th>Ad</Th>
@@ -162,6 +191,7 @@ export function MerchantConsole() {
               <Th right>Liquidity</Th>
               <Th>Payment methods</Th>
               <Th right>Status</Th>
+              <Th right>Terms</Th>
             </tr>
           }
         >
@@ -211,27 +241,40 @@ export function MerchantConsole() {
                   )}
                 </span>
               </Td>
-              {/*
-                * Read-only. The old control flipped local state and admitted
-                * as much in its tooltip. Pausing an advertisement for real is
-                * a signed `AdvertisementUpdated` event, which the node's RPC
-                * surface does not yet expose — so this shows the node's
-                * status and does not pretend to change it.
-                */}
               <Td right>
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                    ad.status === "Active"
-                      ? "bg-emerald-500/10 text-emerald-300"
-                      : "bg-gray-500/10 text-gray-400"
-                  }`}
+                {/*
+                  * Reloaded from the node after every change rather than
+                  * patched locally. The node is what other people read, and
+                  * a row that shows "Paused" because this tab believes it
+                  * is exactly the fiction the old simulated control was.
+                  */}
+                <AdStatusControl ad={ad} who={who} onDone={() => void load(wallet.address)} />
+              </Td>
+              <Td right>
+                <button
+                  type="button"
+                  disabled={!who || ad.status === "Deleted"}
+                  onClick={() => setEditing(ad)}
+                  className="rounded border border-white/15 px-2 py-0.5 text-[11px] font-medium text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-40"
                 >
-                  {ad.status}
-                </span>
+                  Edit terms
+                </button>
               </Td>
             </Tr>
           ))}
         </DataTable>
+      )}
+
+      {editing && (
+        <AdTermsDialog
+          ad={editing}
+          who={who}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            void load(wallet.address);
+          }}
+        />
       )}
     </div>
   );

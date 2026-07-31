@@ -111,6 +111,16 @@ export interface LiveAd {
   maxTrade: number;
   /** In the asset, like `minTrade`/`maxTrade` above. */
   availableLiquidity: number;
+  /**
+   * The precision the three amounts above were published at.
+   *
+   * Carried because editing an advertisement's limits has to publish them
+   * at the *same* precision: `Amount` is base units plus decimals, the
+   * node refuses a min and max that disagree, and quietly picking a
+   * different precision would rescale a merchant's limits by a power of
+   * ten with nothing on screen to show it. See `lib/merchant-ads.ts`.
+   */
+  assetDecimals: number;
   paymentMethods: string[];
   /**
    * `Deleted` is in this union because the node really can return it.
@@ -235,6 +245,7 @@ export function toLiveAd(ad: ProtocolAd): LiveAd {
     minTrade: toWhole(ad.min_trade),
     maxTrade: toWhole(ad.max_trade),
     availableLiquidity: toWhole(ad.available_liquidity),
+    assetDecimals: ad.min_trade.decimals,
     paymentMethods: ad.payment_methods,
     status: ad.status as LiveAd["status"],
     createdAt: ad.created_at,
@@ -262,9 +273,12 @@ export function toLiveAd(ad: ProtocolAd): LiveAd {
 const MAX_PAGES = 50;
 const PAGE_SIZE = 100;
 
-export async function fetchAdvertisements(): Promise<LiveAd[]> {
+export async function fetchAdvertisements(
+  filter: { status?: LiveAd["status"] } = {},
+): Promise<LiveAd[]> {
   const rows: LiveAd[] = [];
   for await (const ad of advertisements.eachAdvertisement(client(), {
+    filter,
     page: { limit: PAGE_SIZE },
   })) {
     rows.push(toLiveAd(ad));
@@ -355,9 +369,25 @@ export async function fetchTradablePairs(): Promise<
  * mock console did: it read a `MY_ADS` constant, so it showed the same rows
  * to everyone including a visitor with no wallet connected at all.
  */
-export async function fetchAdsByMerchant(
-  merchantPeerIdHex: string,
-): Promise<LiveAd[]> {
-  const all = await fetchAdvertisements();
-  return all.filter((ad) => ad.merchantPeerId === merchantPeerIdHex);
+/**
+ * Every advertisement this wallet has published, whatever state it is in.
+ *
+ * Four queries, because `getAdvertisements` filters to `Active` by
+ * default and its `status` filter takes one value. That default is right
+ * for the order book — an advertisement that is paused is not on offer,
+ * and listing it would be offering something that is not — and wrong for
+ * the merchant's own console, where it meant a paused advertisement
+ * vanished from the only screen that could put it back. The merchant
+ * could pause an ad and then had no way to reach it again.
+ *
+ * The merchant filter is still applied here rather than by the node,
+ * which is a real limit: this reads the whole book to find one wallet's
+ * rows. It is fine for a devnet and is not fine for a market, and the fix
+ * is a `merchant` filter on `AdvertisementFilter` rather than anything
+ * this file can do.
+ */
+export async function fetchAdsByMerchant(merchantPeerId: string): Promise<LiveAd[]> {
+  const statuses: LiveAd["status"][] = ["Active", "Vacation", "Disabled", "Deleted"];
+  const pages = await Promise.all(statuses.map((status) => fetchAdvertisements({ status })));
+  return pages.flat().filter((ad) => ad.merchantPeerId === merchantPeerId);
 }

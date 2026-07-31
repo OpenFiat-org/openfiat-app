@@ -30,6 +30,7 @@ function ad(overrides: Partial<LiveAd> = {}): LiveAd {
     minTrade: 10,
     maxTrade: 1000,
     availableLiquidity: 5000,
+    assetDecimals: 6,
     paymentMethods: ["M-Pesa"],
     status: "Active",
     createdAt: 1_000,

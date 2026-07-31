@@ -40,6 +40,7 @@ function ad(overrides: Partial<LiveAd> = {}): LiveAd {
     minTrade: 50,
     maxTrade: 2_000,
     availableLiquidity: 4_000,
+    assetDecimals: 6,
     paymentMethods: ["M-Pesa Kenya (Safaricom)"],
     status: "Active",
     createdAt: 1_000,
