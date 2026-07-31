@@ -11,11 +11,22 @@ import {
   readWalletConnection,
   type WalletConnection,
 } from "@/lib/wallet-connection";
-import { KNOWN_DEVNET_MINTS } from "@/lib/onchain-config";
 import { getConnection } from "@/lib/onchain-config";
 import { fetchTokenBalance, type TokenBalance } from "@/lib/live-token-balances";
-import { fetchVault, formatBaseUnits, parseBaseUnits, type LiveVault } from "@/lib/live-vaults";
-import { createVaultIx, depositIx, tokenProgramForMint } from "@/lib/vault-instructions";
+import {
+  DEPOSITABLE_MINTS,
+  fetchVault,
+  formatBaseUnits,
+  parseBaseUnits,
+  type LiveVault,
+} from "@/lib/live-vaults";
+import {
+  depositInstructions,
+  fetchWrapCapacity,
+  isWrappedSol,
+  tokenProgramForMint,
+  type WrapCapacity,
+} from "@/lib/vault-instructions";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
@@ -25,17 +36,28 @@ interface Resolved {
   mint: PublicKey;
   decimals: number;
   tokenProgram: PublicKey;
-  /** The wallet's own holding. `null` means no token account at all. */
+  /**
+   * The wallet's own token holding. `null` means no token account at all —
+   * and for SOL it is always `null`, because a SOL balance is not a token
+   * account and `wrap` is what says how much there is.
+   */
   held: TokenBalance | null;
   /** `null` means the vault does not exist and will be created by this deposit. */
   vault: LiveVault | null;
+  /** SOL only: lamports, rent and fees resolved into a depositable amount. */
+  wrap: WrapCapacity | null;
+}
+
+/** What the amount field is checked against, whichever kind of asset it is. */
+function spendable(r: Resolved): bigint {
+  return r.wrap ? r.wrap.depositable : (r.held?.amount ?? 0n);
 }
 
 type SubmitState =
   | { phase: "idle" }
   | { phase: "signing" }
   | { phase: "confirming"; signature: string }
-  | { phase: "done"; signature: string; amount: string; created: boolean }
+  | { phase: "done"; signature: string; amount: string; created: boolean; wrapped: boolean }
   | { phase: "error"; message: string };
 
 /**
@@ -56,10 +78,20 @@ type SubmitState =
  * that will later move them to buyers without asking again, and that is the
  * single fact a merchant must understand before signing. It is stated in
  * the flow rather than in a help page.
+ *
+ * # SOL is offered as SOL
+ *
+ * The escrow program can only hold a token account, so a SOL vault is
+ * really a wrapped-SOL vault. That is an implementation fact and not
+ * something a merchant should have to act on, so this form takes SOL,
+ * wraps it inside the deposit transaction, and closes the wrapped account
+ * again in the same transaction. See `lib/vault-instructions.ts` for why
+ * that has to be one transaction rather than two, and for what the amount
+ * offered as Max leaves behind.
  */
 export function DepositForm({ initialMint }: { initialMint?: string }) {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
-  const [mintInput, setMintInput] = useState(initialMint ?? KNOWN_DEVNET_MINTS[0]!.address);
+  const [mintInput, setMintInput] = useState(initialMint ?? DEPOSITABLE_MINTS[0]!.address);
   const [amount, setAmount] = useState("");
   const [resolved, setResolved] = useState<Resolved | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -85,19 +117,29 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     try {
       const owner = new PublicKey(address);
       const tokenProgram = await tokenProgramForMint(mint);
+      const native = isWrappedSol(mint);
+      // Skipped for SOL: the wallet's SOL is not a token account, and the
+      // wrapped one is transient by design. `fetchWrapCapacity` reads what
+      // this form actually needs, including the wrapped balance a deposit
+      // spends before it wraps anything new.
       const [held, vault] = await Promise.all([
-        fetchTokenBalance(owner, mint),
+        native ? Promise.resolve(null) : fetchTokenBalance(owner, mint),
         fetchVault(owner, mint),
       ]);
       const decimals =
         vault?.decimals ??
         held?.decimals ??
-        KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58())?.decimals;
+        DEPOSITABLE_MINTS.find((m) => m.address === mint.toBase58())?.decimals;
       if (decimals === undefined) {
         setLookupError("Could not read this mint's decimals.");
         return;
       }
-      setResolved({ mint, decimals, tokenProgram, held, vault });
+      // Read after the vault, because whether the vault has to be created
+      // decides how much rent this transaction has to keep back.
+      const wrap = native
+        ? await fetchWrapCapacity(owner, { createVault: vault === null, tokenProgram })
+        : null;
+      setResolved({ mint, decimals, tokenProgram, held, vault, wrap });
     } catch (err) {
       // A failed lookup is not "you hold nothing" — say which it is.
       setLookupError(err instanceof Error ? err.message : String(err));
@@ -109,12 +151,14 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
   }, [wallet, mintInput, resolve]);
 
   const raw = resolved ? parseBaseUnits(amount, resolved.decimals) : null;
-  const heldAmount = resolved?.held?.amount ?? 0n;
+  const heldAmount = resolved ? spendable(resolved) : 0n;
   const overBalance = raw !== null && raw > heldAmount;
   const canSubmit =
     wallet !== null &&
     resolved !== null &&
-    resolved.held !== null &&
+    // A SOL deposit needs no pre-existing token account — it opens one. For
+    // every other mint, no account means no balance and nothing to send.
+    (resolved.wrap !== null || resolved.held !== null) &&
     raw !== null &&
     raw > 0n &&
     !overBalance &&
@@ -122,7 +166,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     submit.phase !== "confirming";
 
   async function handleDeposit() {
-    if (!wallet || !resolved || !resolved.held || raw === null) return;
+    if (!wallet || !resolved || raw === null) return;
     const provider = currentSigner(wallet);
     if (!provider) {
       setSubmit({
@@ -136,10 +180,15 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     try {
       const owner = new PublicKey(wallet.address);
       const creating = resolved.vault === null;
-      const instructions = [
-        ...(creating ? [createVaultIx(owner, resolved.mint, resolved.tokenProgram)] : []),
-        depositIx(owner, resolved.mint, resolved.held.address, raw, resolved.tokenProgram),
-      ];
+      const { instructions, wrapping } = depositInstructions({
+        merchant: owner,
+        mint: resolved.mint,
+        tokenProgram: resolved.tokenProgram,
+        amount: raw,
+        from: resolved.held?.address ?? null,
+        wrappedBalance: resolved.wrap?.wrapped,
+        createVault: creating,
+      });
 
       const connection = getConnection();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -155,6 +204,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
         signature,
         amount: formatBaseUnits(raw, resolved.decimals),
         created: creating,
+        wrapped: wrapping > 0n,
       });
       void resolve(wallet.address, mintInput);
     } catch (err) {
@@ -180,8 +230,9 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
           <h2 className="mt-3 text-lg font-semibold text-white">Deposit confirmed on devnet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
             {submit.amount} moved from your wallet into your liquidity vault
-            {submit.created ? ", and the vault was created in the same transaction" : ""}. Your Available
-            balance rose by the full amount and can back a sell advertisement now.
+            {submit.created ? ", and the vault was created in the same transaction" : ""}
+            {submit.wrapped ? ", wrapped and unwrapped along the way so nothing was left behind" : ""}. Your
+            Available balance rose by the full amount and can back a sell advertisement now.
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -213,7 +264,8 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     );
   }
 
-  const known = KNOWN_DEVNET_MINTS.find((m) => m.address === mintInput.trim());
+  const known = DEPOSITABLE_MINTS.find((m) => m.address === mintInput.trim());
+  const native = resolved !== null && resolved.wrap !== null;
 
   return (
     <Panel title="Deposit into a liquidity vault">
@@ -237,14 +289,14 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
           </label>
           <select
             id="mint"
-            value={KNOWN_DEVNET_MINTS.some((m) => m.address === mintInput) ? mintInput : "custom"}
+            value={DEPOSITABLE_MINTS.some((m) => m.address === mintInput) ? mintInput : "custom"}
             onChange={(e) => {
               if (e.target.value !== "custom") setMintInput(e.target.value);
               else setMintInput("");
             }}
             className={inputCls}
           >
-            {KNOWN_DEVNET_MINTS.map((m) => (
+            {DEPOSITABLE_MINTS.map((m) => (
               <option key={m.address} value={m.address}>
                 {m.label}
               </option>
@@ -265,8 +317,8 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
             * because two labels looked alike loses the tokens.
             */}
           <p className="mt-1.5 text-[11px] text-gray-600">
-            Names are this build&apos;s labels — neither devnet mint publishes on-chain metadata. Check the
-            address.
+            Names are this build&apos;s labels — no devnet mint here publishes on-chain metadata. Check the
+            address. SOL&apos;s address is wrapped SOL&apos;s, which is what the vault actually holds.
           </p>
           {known && <p className="mt-1.5 text-xs text-gray-500">{known.note}</p>}
           {known && !known.obtainable && (
@@ -299,8 +351,9 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
                 Amount
               </label>
               <span className="text-xs tabular-nums text-gray-500">
-                In your wallet: {formatBaseUnits(heldAmount, resolved.decimals)}
-                {resolved.held && heldAmount > 0n && (
+                {native ? "You can deposit" : "In your wallet"}:{" "}
+                {formatBaseUnits(heldAmount, resolved.decimals)}
+                {heldAmount > 0n && (
                   <button
                     onClick={() => setAmount(formatBaseUnits(heldAmount, resolved.decimals).replace(/,/g, ""))}
                     className="ml-2 text-brand hover:text-brand-hover"
@@ -319,10 +372,36 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
               className={`tabular-nums ${inputCls}`}
             />
 
-            {resolved.held === null && (
+            {resolved.held === null && !native && (
               <p className="mt-2 text-xs text-amber-300">
                 This wallet has no token account for this mint, so it holds none of it and there is nothing
                 to deposit.
+              </p>
+            )}
+            {/*
+              * Stated as a number, not as "some SOL is kept for fees".
+              * The gap between a wallet's SOL balance and what it can
+              * deposit is otherwise unexplained, and a merchant who cannot
+              * see why Max is short of their balance will type the balance
+              * in by hand and get a transaction that fails on rent.
+              */}
+            {resolved.wrap && (
+              <p className="mt-2 text-xs text-gray-500">
+                Your wallet holds {formatBaseUnits(resolved.wrap.lamports, resolved.decimals)} SOL.{" "}
+                {formatBaseUnits(resolved.wrap.reserved, resolved.decimals)} of it is held back for the
+                transaction fee
+                {resolved.vault === null ? " and the rent for the two accounts your vault is made of" : ""}
+                {resolved.wrap.refunded > 0n
+                  ? `, of which ${formatBaseUnits(resolved.wrap.refunded, resolved.decimals)} is rent for the wrapped-SOL account and comes straight back when it is closed in the same transaction`
+                  : ""}
+                .
+                {resolved.wrap.wrapped > 0n && (
+                  <>
+                    {" "}
+                    You also already hold {formatBaseUnits(resolved.wrap.wrapped, resolved.decimals)} wrapped
+                    SOL, which this deposit spends before wrapping anything new.
+                  </>
+                )}
               </p>
             )}
             {amount.trim() !== "" && raw === null && (
@@ -360,6 +439,14 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
                 <p>
                   You have no vault for this mint yet. One will be created in the same transaction, which
                   costs a small amount of SOL in rent, and the deposit will land in it.
+                </p>
+              )}
+              {native && (
+                <p className="mt-2 border-t border-white/10 pt-2 text-gray-500">
+                  The escrow program can only hold a token account, so this transaction wraps your SOL, makes
+                  the deposit, and closes the wrapped account again — in that order, in one transaction. You
+                  never hold wrapped SOL, and a failure at any step leaves nothing behind, because either the
+                  whole transaction lands or none of it does.
                 </p>
               )}
             </div>

@@ -4,8 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
-import { fetchVaultsByMerchant, formatBaseUnits, shortMint, type LiveVault } from "@/lib/live-vaults";
-import { KNOWN_DEVNET_MINTS } from "@/lib/onchain-config";
+import {
+  fetchVaultsByMerchant,
+  formatBaseUnits,
+  mintLabel,
+  shortMint,
+  type LiveVault,
+} from "@/lib/live-vaults";
+import { isWrappedSol } from "@/lib/vault-instructions";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
 
@@ -26,11 +32,6 @@ import { MetricStrip } from "@/components/metrics";
  * entire balance on the only real data there is. Available leads here, and
  * Total is labelled as the lifetime figure it is.
  */
-function label(mint: PublicKey): { name: string; known: boolean } {
-  const known = KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58());
-  return { name: known?.label ?? "Unrecognised mint", known: Boolean(known) };
-}
-
 export function VaultsPanel() {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [vaults, setVaults] = useState<LiveVault[] | null>(null);
@@ -149,7 +150,7 @@ export function VaultsPanel() {
           }
         >
           {vaults.map((v) => {
-            const { name, known } = label(v.mint);
+            const { name, known } = mintLabel(v.mint);
             return (
               <Tr key={v.address.toBase58()}>
                 <Td py="py-5">
@@ -163,6 +164,18 @@ export function VaultsPanel() {
                   >
                     {shortMint(v.mint)}
                   </a>
+                  {/*
+                    * The vault genuinely holds wrapped SOL, and the mint
+                    * address above is wSOL's. Saying so beside a row
+                    * labelled "SOL" is the honest version of hiding the
+                    * wrapping: the user never has to act on it, but the
+                    * address they can see still means what it says.
+                    */}
+                  {isWrappedSol(v.mint) && (
+                    <span className="mt-0.5 block text-[11px] text-gray-600">
+                      Held as wrapped SOL; deposits and withdrawals convert in the same transaction.
+                    </span>
+                  )}
                   {!known && (
                     <span className="mt-0.5 block text-[11px] text-amber-300/80">
                       Not a mint this build knows by name — check the address.

@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  getAssociatedTokenAddressSync,
-} from "@solana/spl-token";
 import { Panel } from "@/components/panel";
 import { shortSig } from "@/lib/format";
 import {
@@ -15,15 +11,20 @@ import {
   readWalletConnection,
   type WalletConnection,
 } from "@/lib/wallet-connection";
-import { getConnection, KNOWN_DEVNET_MINTS } from "@/lib/onchain-config";
+import { getConnection } from "@/lib/onchain-config";
 import {
   fetchVaultsByMerchant,
   formatBaseUnits,
+  mintLabel,
   parseBaseUnits,
   shortMint,
   type LiveVault,
 } from "@/lib/live-vaults";
-import { withdrawIx } from "@/lib/vault-instructions";
+import {
+  fetchWrappedSolBalance,
+  isWrappedSol,
+  withdrawInstructions,
+} from "@/lib/vault-instructions";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
@@ -32,12 +33,8 @@ type SubmitState =
   | { phase: "idle" }
   | { phase: "signing" }
   | { phase: "confirming"; signature: string }
-  | { phase: "done"; signature: string; amount: string }
+  | { phase: "done"; signature: string; amount: string; asSol: boolean }
   | { phase: "error"; message: string };
-
-function mintLabel(mint: PublicKey): string {
-  return KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58())?.label ?? "Unrecognised mint";
-}
 
 /**
  * Takes tokens back out of a liquidity vault with a real, wallet-signed
@@ -62,6 +59,13 @@ function mintLabel(mint: PublicKey): string {
  * transaction that fails every time. Sending elsewhere is a wallet transfer
  * afterwards, and saying that plainly beats offering a field that cannot
  * work.
+ *
+ * # A SOL vault pays out in SOL
+ *
+ * The one exception to "the destination is a token account" is wrapped SOL,
+ * where the token account is closed in the same transaction and the wallet
+ * receives plain SOL. See `lib/vault-instructions.ts` for why that is one
+ * transaction and not two.
  */
 export function WithdrawForm({ initialMint }: { initialMint?: string }) {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
@@ -70,6 +74,13 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
   const [selected, setSelected] = useState<string | null>(initialMint ?? null);
   const [amount, setAmount] = useState("");
   const [submit, setSubmit] = useState<SubmitState>({ phase: "idle" });
+  /**
+   * wSOL the wallet already holds, which unwrapping will return as SOL
+   * alongside the withdrawal. `null` until read — and it stays `null` if
+   * the read fails, which is why the disclosure below is only rendered for
+   * a number that came back rather than defaulted to zero.
+   */
+  const [existingWrapped, setExistingWrapped] = useState<bigint | null>(null);
 
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
@@ -95,6 +106,28 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
 
   const vault =
     vaults?.find((v) => v.mint.toBase58() === selected) ?? (selected === null ? vaults?.[0] : undefined);
+  const unwraps = vault !== undefined && isWrappedSol(vault.mint);
+
+  useEffect(() => {
+    if (!wallet || !unwraps || !vault) {
+      setExistingWrapped(null);
+      return;
+    }
+    let cancelled = false;
+    fetchWrappedSolBalance(new PublicKey(wallet.address), vault.tokenProgram)
+      .then((held) => {
+        if (!cancelled) setExistingWrapped(held);
+      })
+      // Swallowed on purpose. This read only feeds an extra sentence; a
+      // failed lookup must not block a withdrawal or, worse, be rendered as
+      // "you hold no wrapped SOL" when nobody asked the chain successfully.
+      .catch(() => {
+        if (!cancelled) setExistingWrapped(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [wallet, unwraps, vault]);
 
   const raw = vault ? parseBaseUnits(amount, vault.decimals) : null;
   const overAvailable = vault !== undefined && raw !== null && raw > vault.available;
@@ -121,22 +154,13 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
     setSubmit({ phase: "signing" });
     try {
       const owner = new PublicKey(wallet.address);
-      const destination = getAssociatedTokenAddressSync(vault.mint, owner, false, vault.tokenProgram);
-
       const connection = getConnection();
-      // Idempotent: a merchant who deposited their whole balance may have
-      // closed the account since, and a withdrawal that fails because the
-      // destination no longer exists is a dead end with no obvious fix.
-      const instructions = [
-        createAssociatedTokenAccountIdempotentInstruction(
-          owner,
-          destination,
-          owner,
-          vault.mint,
-          vault.tokenProgram,
-        ),
-        withdrawIx(owner, vault.mint, destination, raw, vault.tokenProgram),
-      ];
+      const { instructions } = withdrawInstructions({
+        merchant: owner,
+        mint: vault.mint,
+        tokenProgram: vault.tokenProgram,
+        amount: raw,
+      });
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       const transaction = new Transaction({ feePayer: owner, blockhash, lastValidBlockHeight }).add(
@@ -146,7 +170,12 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
       const { signature } = await provider.signAndSendTransaction(transaction);
       setSubmit({ phase: "confirming", signature });
       await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-      setSubmit({ phase: "done", signature, amount: formatBaseUnits(raw, vault.decimals) });
+      setSubmit({
+        phase: "done",
+        signature,
+        amount: formatBaseUnits(raw, vault.decimals),
+        asSol: unwraps,
+      });
       void load(wallet.address);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Transaction failed or was rejected.";
@@ -170,9 +199,12 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
           <p className="text-2xl text-emerald-400">✓</p>
           <h2 className="mt-3 text-lg font-semibold text-white">Withdrawal confirmed on devnet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {submit.amount} left the vault and is in your wallet&apos;s token account. The vault&apos;s
-            Available balance fell by the same amount, so anything you advertise against it should come down
-            too.
+            {submit.amount} left the vault and is{" "}
+            {submit.asSol
+              ? "in your wallet as SOL — the wrapped-SOL account it passed through was closed in the same transaction"
+              : "in your wallet's token account"}
+            . The vault&apos;s Available balance fell by the same amount, so anything you advertise against it
+            should come down too.
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -266,8 +298,9 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6 text-sm leading-relaxed text-gray-400">
           <p>
-            This takes tokens back out of the escrow program&apos;s custody and returns them to your
-            wallet&apos;s own token account, in one transaction you sign.
+            This takes tokens back out of the escrow program&apos;s custody and returns them to your wallet,
+            in one transaction you sign — into your own token account, or as plain SOL if the vault holds
+            SOL.
           </p>
           <p className="mt-2.5">
             You can only withdraw what is <span className="text-emerald-300">Available</span>. Balance
@@ -292,8 +325,8 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
           >
             {vaults.map((v) => (
               <option key={v.address.toBase58()} value={v.mint.toBase58()}>
-                {mintLabel(v.mint)} ({shortMint(v.mint)}) — {formatBaseUnits(v.available, v.decimals)}{" "}
-                available
+                {mintLabel(v.mint).name} ({shortMint(v.mint)}) —{" "}
+                {formatBaseUnits(v.available, v.decimals)} available
               </option>
             ))}
           </select>
@@ -355,11 +388,33 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
               </p>
             )}
 
-            <p className="mt-4 text-xs text-gray-500">
-              Goes to your own associated token account for this mint, created in the same transaction if you
-              do not have one. To send it anywhere else, transfer from your wallet afterwards — the program
-              only pays out to a token account of this exact mint.
-            </p>
+            {unwraps ? (
+              <div className="mt-4 space-y-2 text-xs text-gray-500">
+                <p>
+                  Arrives as <span className="text-gray-300">SOL</span>, spendable straight away. The program
+                  can only pay into a wrapped-SOL token account, so this transaction opens one, takes the
+                  withdrawal into it, and closes it again — all before you see the result. You never hold
+                  wrapped SOL, and nothing is left behind if any step fails, because all of it is one
+                  transaction.
+                </p>
+                {existingWrapped !== null && existingWrapped > 0n && (
+                  <p className="text-amber-300">
+                    You are already holding {formatBaseUnits(existingWrapped, vault.decimals)} wrapped SOL.
+                    Closing the account returns that to you as SOL as well, so expect{" "}
+                    {raw !== null && raw > 0n
+                      ? formatBaseUnits(existingWrapped + raw, vault.decimals)
+                      : `${formatBaseUnits(existingWrapped, vault.decimals)} plus the amount withdrawn`}{" "}
+                    SOL in total.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-4 text-xs text-gray-500">
+                Goes to your own associated token account for this mint, created in the same transaction if
+                you do not have one. To send it anywhere else, transfer from your wallet afterwards — the
+                program only pays out to a token account of this exact mint.
+              </p>
+            )}
           </div>
         )}
 

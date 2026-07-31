@@ -1,10 +1,17 @@
 import { PublicKey } from "@solana/web3.js";
-import { ESCROW_PROGRAM_ID, escrow, getConnection } from "@/lib/onchain-config";
+import {
+  ESCROW_PROGRAM_ID,
+  escrow,
+  getConnection,
+  KNOWN_DEVNET_MINTS,
+  type KnownMint,
+} from "@/lib/onchain-config";
 import {
   decodeLiquidityVault,
   LIQUIDITY_VAULT_LEN,
   type DecodedLiquidityVault,
 } from "@/lib/onchain-decode";
+import { isWrappedSol, WRAPPED_SOL_DECIMALS, WRAPPED_SOL_MINT } from "@/lib/vault-instructions";
 
 /**
  * Real `LiquidityVault` accounts, read from the escrow program on Solana
@@ -197,4 +204,46 @@ export function parseBaseUnits(input: string, decimals: number): bigint | null {
 export function shortMint(mint: PublicKey): string {
   const s = mint.toBase58();
   return `${s.slice(0, 4)}…${s.slice(-4)}`;
+}
+
+/**
+ * Wrapped SOL as an option in the mint pickers.
+ *
+ * It is not in `KNOWN_DEVNET_MINTS` because that list is a set of addresses
+ * this deployment recognises on devnet, and wSOL is not one of those: its
+ * address is the same on every cluster and the escrow program ships it on
+ * `DEFAULT_SETTLEMENT_MINTS` for that reason. Declaring it here also keeps
+ * it beside the wrap/unwrap code that is the whole reason it is offerable
+ * at all — a vault denominated in a token nobody holds would be no use
+ * without it.
+ *
+ * `obtainable` is true and means what it says: SOL is the one asset a
+ * devnet wallet can always get, by airdrop.
+ */
+export const NATIVE_SOL_MINT_OPTION: KnownMint = {
+  address: WRAPPED_SOL_MINT.toBase58(),
+  label: "SOL",
+  decimals: WRAPPED_SOL_DECIMALS,
+  note: "Deposited and withdrawn as plain SOL. Wrapping and unwrapping happen inside the same transaction, so no wrapped-SOL account is left behind.",
+  obtainable: true,
+};
+
+/** Every mint the deposit picker offers, with SOL first — it is the only
+ *  one every wallet already holds. */
+export const DEPOSITABLE_MINTS: KnownMint[] = [NATIVE_SOL_MINT_OPTION, ...KNOWN_DEVNET_MINTS];
+
+/**
+ * A mint's display name, and whether this build recognises the address at
+ * all.
+ *
+ * Shared by all three wallet screens so a wSOL vault does not read as
+ * "Unrecognised mint" on one of them and as "SOL" on the next. `known` is
+ * false for anything not on the list, and the caller is expected to say so
+ * — a name this app invented for an address it does not know is how a
+ * merchant deposits into the wrong token.
+ */
+export function mintLabel(mint: PublicKey): { name: string; known: boolean } {
+  if (isWrappedSol(mint)) return { name: NATIVE_SOL_MINT_OPTION.label, known: true };
+  const known = KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58());
+  return { name: known?.label ?? "Unrecognised mint", known: Boolean(known) };
 }
