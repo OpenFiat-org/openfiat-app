@@ -33,7 +33,7 @@ export default async function Image({
   params: Promise<{ asset: string; currency: string }>;
 }) {
   const { asset, currency } = await params;
-  const pair = normalisePair(asset, currency);
+  const pair = await normalisePair(asset, currency);
 
   const heading = pair
     ? `${pair.asset} → ${pair.currency}`

@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { asset, currency } = await params;
-  const pair = normalisePair(asset, currency);
+  const pair = await normalisePair(asset, currency);
   if (!pair) return {};
 
   const { rate, advertisers, methods } = await loadPairData(pair);
@@ -81,15 +81,25 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function PairPage({ params }: { params: Promise<Params> }) {
   const { asset, currency } = await params;
-  const pair = normalisePair(asset, currency);
+  const pair = await normalisePair(asset, currency);
   if (!pair) notFound();
 
   const { rate, advertisers, methods, countries, priced, unreachable } = await loadPairData(pair);
 
   const countryList = countries.slice(0, 4).join(", ");
   const more = countries.length - 4;
-  const otherAssets = priced.filter((p) => p.quote === pair.currency && p.base !== pair.asset);
-  const otherCurrencies = priced.filter((p) => p.base === pair.asset && p.quote !== pair.currency);
+  /*
+   * Sideways links, to pairs an oracle is currently pricing.
+   *
+   * `pricedPairs` upper-cases every base it returns, because an oracle's
+   * `base` is a free string on a record rather than a name the node
+   * resolved. `pair.asset` is the node's own spelling — `wSOL`, not `WSOL` —
+   * so these two comparisons have to fold case or a page would offer itself
+   * as one of its own "other assets".
+   */
+  const sameAsset = (base: string) => base.toUpperCase() === pair.asset.toUpperCase();
+  const otherAssets = priced.filter((p) => p.quote === pair.currency && !sameAsset(p.base));
+  const otherCurrencies = priced.filter((p) => sameAsset(p.base) && p.quote !== pair.currency);
 
   return (
     <section>

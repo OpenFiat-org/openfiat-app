@@ -69,10 +69,16 @@ export const loadPairData = cache(async (pair: PairSlug): Promise<PairData> => {
     // against a mint this app decided the ticker means. An advertisement in a
     // mint the node cannot name therefore counts towards no ticker page,
     // which is right: nothing names it, so no ticker URL is about it.
+    //
+    // Compared exactly, not case-folded. `normalisePair` already resolved the
+    // URL segment to the node's own spelling of the symbol, so both sides of
+    // this now come from the same table. Folding case here is what let
+    // /sol/kes look plausible while matching nothing: the node calls that
+    // mint wSOL, and `"WSOL" === "SOL"` was never going to be true either.
     const ads = (await fetchAdvertisements()).filter(
       (ad) =>
         ad.status === "Active" &&
-        ad.assetSymbol?.toUpperCase() === pair.asset &&
+        ad.assetSymbol === pair.asset &&
         ad.fiatCurrency.toUpperCase() === pair.currency,
     );
     advertisers = new Set(ads.map((ad) => ad.merchantPeerId)).size;

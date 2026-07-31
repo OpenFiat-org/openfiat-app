@@ -471,31 +471,77 @@ describe("pair landing pages", () => {
    * `tests/live-oracle.test.ts` for the rate rules, and `lib/live-oracle.ts`
    * for why the set is read rather than declared.
    *
-   * What remains testable here is URL parsing, which genuinely is static.
+   * A `PAIR_ASSETS` constant outlived that clean-up and has now gone the same
+   * way, for the same reason one layer down: it decided which *tokens*
+   * existed. So these no longer assert against a list in the repo. They stub
+   * the node's `getReferenceData` and assert that the app takes its answer —
+   * including the two spellings that made the old constant wrong, `wSOL` for
+   * the mint it called `SOL` and `tUSDC` for one it had never heard of.
    */
-  it("accepts the pairs people actually search for", () => {
+  const NAMED = ["wSOL", "USDC", "USDT", "tUSDC"];
+
+  /** A node that answers `getReferenceData` with `mints`, as the real one does. */
+  function nodeNaming(symbols: string[] | undefined) {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            result: { mints: symbols?.map((symbol) => ({ mint: `mint-${symbol}`, symbol })) },
+          }),
+      }),
+    );
+  }
+
+  beforeEach(() => nodeNaming(NAMED));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("accepts the pairs people actually search for", async () => {
     for (const slug of ["usdt/kes", "usdc/kes", "usdt/ngn", "usdc/ngn"]) {
       const [asset, currency] = slug.split("/");
-      expect(normalisePair(asset!, currency!)?.slug, slug).toBe(slug);
+      expect((await normalisePair(asset!, currency!))?.slug, slug).toBe(slug);
     }
   });
 
-  it("canonicalises case so one pair has one page", () => {
-    expect(normalisePair("USDT", "KES")?.slug).toBe("usdt/kes");
-    expect(normalisePair("Usdt", "Kes")?.slug).toBe("usdt/kes");
+  it("canonicalises case so one pair has one page", async () => {
+    expect((await normalisePair("USDT", "KES"))?.slug).toBe("usdt/kes");
+    expect((await normalisePair("Usdt", "Kes"))?.slug).toBe("usdt/kes");
+  });
+
+  /*
+   * The defect this rewrite exists for. The node names the wrapped-SOL mint
+   * `wSOL`, and the pair page matches advertisements on the symbol the node
+   * resolved — so the old `"SOL"` entry produced a page that could never
+   * match one, and `/wsol/kes` 404'd instead. The URL is still spelled
+   * however the visitor typed it; the *pair* carries the node's spelling, so
+   * the heading and the book filter both use the name the network uses.
+   */
+  it("resolves a ticker to the node's own spelling of it", async () => {
+    expect(await normalisePair("wsol", "kes")).toMatchObject({ asset: "wSOL", slug: "wsol/kes" });
+    expect(await normalisePair("WSOL", "kes")).toMatchObject({ asset: "wSOL" });
+    expect(await normalisePair("tusdc", "ngn")).toMatchObject({ asset: "tUSDC" });
+  });
+
+  /*
+   * The other half of the same defect. `USD1` and `SOL` were in the app's
+   * constant and name no mint on this deployment, so both were pages about
+   * tokens nobody can be paid in — `/usd1/kes` down to rendering a USD1 coin
+   * mark. A ticker the node does not answer for is not a pair.
+   */
+  it("refuses a ticker no node named, however plausible it sounds", async () => {
+    expect(await normalisePair("usd1", "kes")).toBeNull();
+    expect(await normalisePair("sol", "kes")).toBeNull();
   });
 
   /*
    * `/[asset]/[currency]` sits at the root, so it would otherwise swallow any
-   * two-segment URL and render a pair page about nothing. The asset check is
-   * what stops that — and it is the asset that is checked against a closed
-   * list, not the currency, because the currencies are whatever an oracle
-   * chooses to publish.
+   * two-segment URL and render a pair page about nothing. Junk is rejected on
+   * shape before the node is asked — which is also the only gate left when
+   * the node cannot be reached.
    */
-  it("rejects a URL that is not a pair rather than rendering an empty page", () => {
-    expect(normalisePair("nope", "kes")).toBeNull();
-    expect(normalisePair("some", "thing")).toBeNull();
-    expect(normalisePair("usdt", "toolongcode")).toBeNull();
+  it("rejects a URL that is not a pair rather than rendering an empty page", async () => {
+    expect(await normalisePair("nope", "kes")).toBeNull();
+    expect(await normalisePair("some", "thing")).toBeNull();
+    expect(await normalisePair("usdt", "toolongcode")).toBeNull();
   });
 
   /*
@@ -503,8 +549,33 @@ describe("pair landing pages", () => {
    * start publishing a corridor without anyone editing a table here, and
    * 404ing it would make the app's own list the limit of the network.
    */
-  it("accepts a currency it has no country data for", () => {
-    expect(normalisePair("usdt", "xaf")?.slug).toBe("usdt/xaf");
+  it("accepts a currency it has no country data for", async () => {
+    expect((await normalisePair("usdt", "xaf"))?.slug).toBe("usdt/xaf");
+  });
+
+  /*
+   * Silence is not evidence. A 404 is this app stating "there is no such
+   * asset", and it has no grounds to state that because a node did not
+   * answer — failing that way would 404 every legitimate pair page for the
+   * duration of an outage. A node too old to publish the table is the same
+   * case: `mints` absent is silence, not an empty list.
+   */
+  it("still resolves a pair when the node cannot be asked", async () => {
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")));
+    expect(await normalisePair("usdt", "kes")).toMatchObject({ asset: "USDT", slug: "usdt/kes" });
+
+    nodeNaming(undefined);
+    expect(await normalisePair("usdt", "kes")).toMatchObject({ asset: "USDT" });
+  });
+
+  /*
+   * The reverse, and the reason `null` and `[]` are kept apart: a node that
+   * answered and named nothing has told us something, and every ticker page
+   * is then a page about a token it cannot confirm exists.
+   */
+  it("refuses every ticker when the node answers that it names none", async () => {
+    nodeNaming([]);
+    expect(await normalisePair("usdt", "kes")).toBeNull();
   });
 });
 
