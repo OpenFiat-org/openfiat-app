@@ -12,6 +12,9 @@ import {
 } from "@/lib/payment-accounts";
 import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import type { TradeDirection } from "@/lib/types";
+import { addressForPeerIdHex } from "@/lib/peer-id";
+import { formatBaseUnits } from "@/lib/live-vaults";
+import { useVaultBacking, vaultCovers } from "@/components/wallet/use-vault-backing";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 
 /** How long a quoted price stands before it refreshes. */
@@ -93,12 +96,49 @@ export function OrderPanel({
   const tooHigh = cryptoAmount > maxAsset;
   const overLiquidity = cryptoAmount > ad.availableLiquidity;
   const noPrice = ad.price === null;
+
+  /*
+   * The seller-balance check, against the advertiser's real vault.
+   *
+   * `ad.availableLiquidity` above is what the *advertisement declares* — a
+   * number its author chose. This is what actually backs it: the
+   * `LiquidityVault` for (merchant, mint), both halves taken straight off
+   * the record. The merchant's wallet is not looked up anywhere; a PeerId is
+   * a prefix plus the raw Ed25519 key, so it is already in the record (see
+   * `addressForPeerIdHex`), and the mint is `ad.assetMint`. No ticker is
+   * involved in either half, which is what makes this checkable at all —
+   * the previous version was keyed on a symbol and could verify nothing.
+   *
+   * Both figures are shown. When they disagree the advertisement is
+   * offering more than it holds, and that is exactly the thing a taker
+   * needs to see rather than have averaged away.
+   */
+  const merchantWallet = useMemo(() => addressForPeerIdHex(ad.merchantPeerId), [ad.merchantPeerId]);
+  const backing = useVaultBacking(merchantWallet, ad.assetMint);
+  const cover = backing.kind === "found" ? vaultCovers(backing.vault, receiveText) : null;
+
+  // Only ever true on something the chain asserted. A failed lookup is not
+  // evidence that an advertiser is unfunded.
+  const overVault =
+    cryptoAmount > 0 && (backing.kind === "none" || (cover !== null && !cover.covered));
+
+  /*
+   * Whether the vault covers what the advertisement *claims*, independent of
+   * what this taker typed. Compared in base units rather than by parsing the
+   * formatted string back into a float — `formatBaseUnits` inserts thousands
+   * separators and truncates past six decimals, so reading its output as a
+   * number is both locale-dependent and lossy.
+   */
+  const vaultCoversDeclared =
+    backing.kind === "found" ? vaultCovers(backing.vault, String(ad.availableLiquidity))?.covered : undefined;
+
   const ready =
     !noPrice &&
     fiatAmount > 0 &&
     !tooLow &&
     !tooHigh &&
     !overLiquidity &&
+    !overVault &&
     !needsAccount &&
     method !== "";
 
@@ -122,9 +162,15 @@ export function OrderPanel({
     if (tooLow) return `Below this advertiser's minimum of ${formatCrypto(minAsset, assetLabel(ad))}`;
     if (tooHigh) return `Above this advertiser's maximum of ${formatCrypto(maxAsset, assetLabel(ad))}`;
     if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, assetLabel(ad))} is available on this ad`;
+    if (backing.kind === "none" && cryptoAmount > 0) {
+      return "This advertiser has no liquidity vault for the token this ad settles in — nothing on chain backs it";
+    }
+    if (cover !== null && !cover.covered) {
+      return `This advertiser's vault holds only ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} ${assetLabel(ad)} available`;
+    }
     if (!method) return "Choose a payment method";
     return null;
-  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat]);
+  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat, backing, cover, cryptoAmount]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -184,7 +230,37 @@ export function OrderPanel({
 
           <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
-            <Fact label="Available" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
+            <Fact label="Declared on the ad" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
+            {/*
+              * Shown next to the declared figure, never instead of it. A
+              * taker comparing the two is the whole point: the left number
+              * is a claim, the right one is the vault behind it.
+              */}
+            <Fact
+              label="Backed by the merchant's vault"
+              value={
+                backing.kind === "found" ? (
+                  <span
+                    className={vaultCoversDeclared === false ? "text-amber-300" : "text-gray-200"}
+                    title={`Vault ${backing.vault.address.toBase58()}`}
+                  >
+                    {formatBaseUnits(backing.vault.available, backing.vault.decimals)} {assetLabel(ad)} available
+                  </span>
+                ) : backing.kind === "none" ? (
+                  <span className="text-red-300">No vault for this mint</span>
+                ) : backing.kind === "loading" ? (
+                  <span className="text-gray-500">Reading the chain…</span>
+                ) : backing.kind === "error" ? (
+                  <span className="text-amber-300/80" title={backing.message}>
+                    Could not reach the cluster — unverified, not unbacked
+                  </span>
+                ) : (
+                  // The merchant field is not an Ed25519 identity PeerId, so
+                  // there is no wallet in it to key a vault read on.
+                  <span className="text-gray-500">Merchant identity carries no Solana address</span>
+                )
+              }
+            />
             <Fact label="Limits" value={<TradeLimits ad={ad} />} />
             <Fact
               label="Pricing"

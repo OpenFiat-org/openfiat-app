@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import bs58 from "bs58";
 import { formatNumber, shortAddress } from "@/lib/format";
 import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
+import { formatBaseUnits } from "@/lib/live-vaults";
+import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
+import { useVaultBacking, vaultCovers, type VaultBacking } from "@/components/wallet/use-vault-backing";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
 import { MethodPicker } from "@/components/ads/method-picker";
 
@@ -87,6 +90,16 @@ export function AdWizard() {
   const [loaded, setLoaded] = useState(false);
   const [resumed, setResumed] = useState(false);
   const [published, setPublished] = useState(false);
+  const [wallet, setWallet] = useState<WalletConnection | null>(null);
+
+  // The merchant half of the vault key. Read post-mount and kept in sync,
+  // the same way `components/wallet/vaults-panel.tsx` does it.
+  useEffect(() => {
+    const update = () => setWallet(readWalletConnection());
+    update();
+    window.addEventListener(WALLET_CHANGED_EVENT, update);
+    return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
+  }, []);
 
   // Restore draft on mount (SSR renders the default step 1 — no hydration flash).
   useEffect(() => {
@@ -151,27 +164,38 @@ export function AdWizard() {
   const maxNum = Number(max) || 0;
   const liqNum = Number(liquidity) || 0;
   /*
-   * There is no vault-backing check here any more, and that is deliberate.
+   * The vault-backing check, against the merchant's real `LiquidityVault`.
    *
    * It used to read a `VAULTS` fixture keyed by asset ticker and refuse any
-   * advertised liquidity above the figure it found. That gate looked like a
-   * safety check and enforced nothing: the numbers were invented, identical
-   * for every visitor, and unrelated to any vault on chain.
+   * advertised liquidity above the figure it found — a gate that looked like
+   * a safety check and enforced nothing, because the numbers were invented
+   * and identical for every visitor. It was then removed entirely, because
+   * a ticker maps to no mint and there was nothing to key a real read on.
    *
-   * A real check needs the merchant's `LiquidityVault` for the mint being
-   * advertised, and `lib/live-vaults.ts` can do exactly that. Until this
-   * screen picked a mint the lookup had no key to use — an asset ticker is
-   * not one, and no devnet mint is mapped to any of the tickers it used to
-   * offer. It has a key now, so what is missing is only the read: the
-   * connected wallet plus one call. That is a change worth making on its own
-   * rather than smuggling in here, and until it is made the step says
-   * plainly that it cannot verify backing rather than implying it did.
+   * Both halves of the key exist now: the mint is what this screen collects,
+   * and the merchant is the connected wallet. No name is involved in either.
    */
+  const backing = useVaultBacking(wallet?.address ?? null, mintValid ? mint.trim() : null);
+  const cover = backing.kind === "found" ? vaultCovers(backing.vault, liquidity) : null;
+
+  /*
+   * Blocking only on evidence, and only on evidence of a shortfall.
+   *
+   * `found` with too little available, and `none` (no vault at all, so
+   * nothing is available) are both things the chain asserted, and
+   * advertising liquidity that is not there is the oversell this gate
+   * exists to stop. `loading`, `error` and `unkeyed` are not findings about
+   * the merchant's balance and must never read as one — an unreachable RPC
+   * saying "insufficient" would be a lie in the direction that costs
+   * somebody a trade.
+   */
+  const backingShortfall =
+    liqNum > 0 && (backing.kind === "none" || (cover !== null && !cover.covered));
 
   const stepValid: Record<number, boolean> = {
     1: mintValid,
     2: pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0,
-    3: minNum > 0 && maxNum >= minNum && liqNum > 0,
+    3: minNum > 0 && maxNum >= minNum && liqNum > 0 && !backingShortfall,
     4: methods.length >= 1,
     5: true,
   };
@@ -185,6 +209,14 @@ export function AdWizard() {
       ...(minNum <= 0 ? ["Min trade must be greater than 0."] : []),
       ...(maxNum < minNum ? ["Max trade must be ≥ min trade."] : []),
       ...(liqNum <= 0 ? ["Liquidity must be greater than 0."] : []),
+      ...(backing.kind === "none" && liqNum > 0
+        ? [`This wallet has no vault for ${shortAddress(mint)}, so nothing backs this advertisement. Open one with a deposit first.`]
+        : []),
+      ...(cover !== null && !cover.covered
+        ? [
+            `Your vault has ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} available — less than the ${formatNumber(liqNum)} advertised.`,
+          ]
+        : []),
     ],
     4: methods.length === 0 ? ["Select at least one payment method."] : [],
     5: [],
@@ -413,16 +445,17 @@ export function AdWizard() {
                 <label className={labelCls} title={mint}>
                   Liquidity ({shortAddress(mint)})
                 </label>
-                <span className="text-xs text-amber-300/80">Not checked against a vault — see below</span>
+                <VaultBackingStatus backing={backing} liquidity={liquidity} />
               </div>
               <input value={liquidity} onChange={(e) => patch({ liquidity: e.target.value })} type="number" className={inputCls} />
               <p className="mt-1.5 text-[11px] text-gray-600">
-                Nothing here confirms you hold this much. A vault is keyed by mint and by merchant,
-                so checking would mean reading the chain for the connected wallet — a call this
-                wizard does not make, rather than a lookup it cannot key. An earlier version filled
-                the gap with invented balances and refused advertisements against them.{" "}
+                Checked against your on-chain liquidity vault for this mint — the merchant half of
+                the key is your connected wallet, the mint half is the address above. Compared
+                against the vault&rsquo;s <span className="text-gray-500">available</span>{" "}
+                balance, which is the only figure a reservation can draw on; a vault&rsquo;s lifetime total
+                includes tokens that have already settled and left.{" "}
                 <Link href="/wallet" className="text-gray-400 underline hover:text-white">
-                  Your real vault balances
+                  Your vault balances
                 </Link>{" "}
                 are on the Wallet page.
               </p>
@@ -556,4 +589,44 @@ export function AdWizard() {
       </div>
     </div>
   );
+}
+
+/**
+ * What the vault lookup found, next to the liquidity field.
+ *
+ * Five outcomes, five sentences. The two that mean "you are advertising
+ * more than you hold" are red and block the step; the three that mean "no
+ * finding" are grey and block nothing. Nothing here ever renders an
+ * unanswered lookup as a shortfall — see `useVaultBacking`.
+ */
+function VaultBackingStatus({ backing, liquidity }: { backing: VaultBacking; liquidity: string }) {
+  const base = "text-xs";
+  switch (backing.kind) {
+    case "unkeyed":
+      return <span className={`${base} text-gray-500`}>Connect a wallet and enter a mint to check backing</span>;
+    case "loading":
+      return <span className={`${base} text-gray-500`}>Checking your vault…</span>;
+    case "error":
+      return (
+        <span className={`${base} text-amber-300/80`} title={backing.message}>
+          Could not reach the cluster — backing unverified, not unbacked
+        </span>
+      );
+    case "none":
+      return <span className={`${base} text-red-300`}>No vault for this mint on this wallet</span>;
+    case "found": {
+      const cover = vaultCovers(backing.vault, liquidity);
+      const available = formatBaseUnits(backing.vault.available, backing.vault.decimals);
+      if (cover === null) {
+        // The typed amount has more precision than the mint has decimals, so
+        // there is no quantity to compare yet.
+        return <span className={`${base} text-gray-500`}>{available} available in your vault</span>;
+      }
+      return cover.covered ? (
+        <span className={`${base} text-emerald-400`}>Backed — {available} available in your vault</span>
+      ) : (
+        <span className={`${base} text-red-300`}>Only {available} available in your vault</span>
+      );
+    }
+  }
 }
