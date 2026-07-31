@@ -7,10 +7,11 @@ import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } fro
 import {
   fetchVaultsByMerchant,
   formatBaseUnits,
-  mintLabel,
+  nameForMint,
   shortMint,
   type LiveVault,
 } from "@/lib/live-vaults";
+import { useMintNames } from "@/components/wallet/use-mint-names";
 import { isWrappedSol } from "@/lib/vault-instructions";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
@@ -33,6 +34,8 @@ import { MetricStrip } from "@/components/metrics";
  * Total is labelled as the lifetime figure it is.
  */
 export function VaultsPanel() {
+  // Names come from the node, never from a table here — see `nameForMint`.
+  const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [vaults, setVaults] = useState<LiveVault[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -150,11 +153,13 @@ export function VaultsPanel() {
           }
         >
           {vaults.map((v) => {
-            const { name, known } = mintLabel(v.mint);
+            const naming = nameForMint(v.mint, mints);
             return (
               <Tr key={v.address.toBase58()}>
                 <Td py="py-5">
-                  <span className="block font-medium text-gray-200">{name}</span>
+                  {naming.kind === "named" && (
+                    <span className="block font-medium text-gray-200">{naming.symbol}</span>
+                  )}
                   <a
                     href={`https://explorer.solana.com/address/${v.mint.toBase58()}?cluster=devnet`}
                     target="_blank"
@@ -176,9 +181,24 @@ export function VaultsPanel() {
                       Held as wrapped SOL; deposits and withdrawals convert in the same transaction.
                     </span>
                   )}
-                  {!known && (
+                  {/*
+                    * Two different silences, and only one is worth an
+                    * amber warning. `unnamed` means the node answered and
+                    * has no name for this address — worth flagging to a
+                    * merchant about to trade against it. `unasked` means we
+                    * could not reach a node, which is a fact about this
+                    * app's connection and says nothing about the mint, so
+                    * it must not be dressed up as a finding. `asking` is a
+                    * request in flight and says nothing at all.
+                    */}
+                  {naming.kind === "unnamed" && (
                     <span className="mt-0.5 block text-[11px] text-amber-300/80">
-                      Not a mint this build knows by name — check the address.
+                      No node has a name for this mint — check the address.
+                    </span>
+                  )}
+                  {naming.kind === "unasked" && (
+                    <span className="mt-0.5 block text-[11px] text-gray-600">
+                      Token names could not be read from an OpenFiat node.
                     </span>
                   )}
                 </Td>

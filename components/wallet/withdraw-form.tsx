@@ -15,11 +15,12 @@ import { getConnection } from "@/lib/onchain-config";
 import {
   fetchVaultsByMerchant,
   formatBaseUnits,
-  mintLabel,
+  nameForMint,
   parseBaseUnits,
   shortMint,
   type LiveVault,
 } from "@/lib/live-vaults";
+import { useMintNames } from "@/components/wallet/use-mint-names";
 import {
   fetchWrappedSolBalance,
   isWrappedSol,
@@ -68,6 +69,8 @@ type SubmitState =
  * transaction and not two.
  */
 export function WithdrawForm({ initialMint }: { initialMint?: string }) {
+  // Names come from the node, never from a table here — see `nameForMint`.
+  const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [vaults, setVaults] = useState<LiveVault[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -323,12 +326,23 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
             }}
             className={inputCls}
           >
-            {vaults.map((v) => (
-              <option key={v.address.toBase58()} value={v.mint.toBase58()}>
-                {mintLabel(v.mint).name} ({shortMint(v.mint)}) —{" "}
-                {formatBaseUnits(v.available, v.decimals)} available
-              </option>
-            ))}
+            {vaults.map((v) => {
+              // Named: the symbol, with the short address to disambiguate.
+              // Unnamed: the address in full. This picks which vault to
+              // withdraw from, so an unnamed mint identified by eight
+              // characters would be the one place truncation could cost
+              // somebody the wrong token.
+              const naming = nameForMint(v.mint, mints);
+              const label =
+                naming.kind === "named"
+                  ? `${naming.symbol} (${shortMint(v.mint)})`
+                  : v.mint.toBase58();
+              return (
+                <option key={v.address.toBase58()} value={v.mint.toBase58()}>
+                  {label} — {formatBaseUnits(v.available, v.decimals)} available
+                </option>
+              );
+            })}
           </select>
         </div>
 

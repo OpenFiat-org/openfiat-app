@@ -4,8 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
 import { fetchTokenBalances, type TokenBalance } from "@/lib/live-token-balances";
-import { formatBaseUnits, shortMint } from "@/lib/live-vaults";
-import { KNOWN_DEVNET_MINTS } from "@/lib/onchain-config";
+import {
+  formatBaseUnits,
+  nameForMint,
+  shortMint,
+} from "@/lib/live-vaults";
+import { useMintNames } from "@/components/wallet/use-mint-names";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 
 /**
@@ -17,6 +21,8 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
  * with no market is a specific false claim about what someone owns.
  */
 export function BalancesPanel() {
+  // Names come from the node, never from a table here — see `nameForMint`.
+  const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [balances, setBalances] = useState<TokenBalance[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +83,7 @@ export function BalancesPanel() {
   }
 
   return (
+    <>
     <DataTable
       minWidth={680}
       head={
@@ -88,13 +95,24 @@ export function BalancesPanel() {
       }
     >
       {balances.map((b) => {
-        const known = KNOWN_DEVNET_MINTS.find((m) => m.address === b.mint.toBase58());
+        const naming = nameForMint(b.mint, mints);
         return (
           <Tr key={`${b.mint.toBase58()}-${b.tokenProgram.toBase58()}`}>
             <Td>
-              <span className="block font-medium text-gray-200">{known?.label ?? "Unrecognised mint"}</span>
-              <span className="mt-0.5 block font-mono text-[11px] text-gray-500" title={b.mint.toBase58()}>
-                {shortMint(b.mint)}
+              {naming.kind === "named" && (
+                <span className="block font-medium text-gray-200">{naming.symbol}</span>
+              )}
+              {/* No name, no truncation: with nothing above it, `shortMint`
+                  would identify a token by eight characters. */}
+              <span
+                className={
+                  naming.kind === "named"
+                    ? "mt-0.5 block font-mono text-[11px] text-gray-500"
+                    : "block font-mono text-[11px] text-gray-400 [overflow-wrap:anywhere]"
+                }
+                title={b.mint.toBase58()}
+              >
+                {naming.kind === "named" ? shortMint(b.mint) : b.mint.toBase58()}
               </span>
             </Td>
             <Td right num className="text-gray-200">
@@ -107,5 +125,12 @@ export function BalancesPanel() {
         );
       })}
     </DataTable>
+      {mints === null && (
+        <p className="mt-2 text-[11px] text-gray-600">
+          Token names could not be read from an OpenFiat node, so mints are shown by address. The
+          balances themselves come from Solana and are unaffected.
+        </p>
+      )}
+    </>
   );
 }

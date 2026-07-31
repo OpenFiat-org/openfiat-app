@@ -249,6 +249,41 @@ function code(source: string): string {
 /** An array literal of two or more quoted, ticker-shaped, upper-case names. */
 const TICKER_LIST = /\[\s*"(?:USD|SOL|BTC|ETH)[A-Z0-9]*"\s*,\s*"[A-Z0-9]{2,10}"/;
 
+/**
+ * A record that carries an address *and* a name for it.
+ *
+ * The ticker-list check above missed every instance of this shape, and it is
+ * the worse of the two. A ticker list can only mis-filter — `/sol/kes` was a
+ * page that showed an empty book. A name attached to an address is a claim
+ * about an identity, and it fails in the direction that costs money: a
+ * merchant reads a name this app invented for an address and deposits into
+ * the wrong token. `lib/onchain-config.ts` carried exactly that, and it made
+ * one app print three different names for `SK1JE…WsM` depending on the
+ * screen — "Devnet settlement stablecoin" here, `tUSDC` from the node,
+ * `usdcMint` in the deployment record.
+ *
+ * The line is drawn on what the field *means*, not on which files may break
+ * the rule. A record keyed by a mint address may carry anything the node
+ * does not publish — `note`, `obtainable`, `decimals` — and may not carry a
+ * name. That way the check forbids the thing that can be wrong and permits
+ * the thing that cannot, and needs no per-file exemptions. Exemptions are
+ * where guards go to rot.
+ *
+ * Names still exist in this app as bare constants — `NATIVE_SOL_FLOW_LABEL`,
+ * `PROTOCOL_TOKEN_NAME` — which is deliberate and is why the pattern is
+ * about the *pairing* rather than about the presence of a name. Each of
+ * those is one word with a paragraph saying whose word it is; neither is a
+ * table that can silently disagree with a node.
+ */
+const NAME_ON_AN_ADDRESS = new RegExp(
+  [
+    // { address: …, label: … } and { mint: …, symbol: … }, either order,
+    // within one brace level so an unrelated outer object cannot trip it.
+    /\{[^{}]*\b(?:address|mint)\s*:[^{}]*\b(?:label|symbol|name)\s*:/.source,
+    /\{[^{}]*\b(?:label|symbol|name)\s*:[^{}]*\b(?:address|mint)\s*:/.source,
+  ].join("|"),
+);
+
 describe("asset tickers", () => {
   it("are never declared as a list in this app", () => {
     const offenders = ROOTS.flatMap(sourceFiles)
@@ -257,9 +292,27 @@ describe("asset tickers", () => {
     expect(offenders).toEqual([]);
   });
 
-  /** The check is worthless if its own pattern has drifted out of matching. */
-  it("would be caught by this check if one came back", () => {
+  it("are never attached to a mint address in this app", () => {
+    const offenders = ROOTS.flatMap(sourceFiles)
+      .filter((path) => !NOT_THIS_APPS_TO_NAME.some((exempt) => path.includes(exempt)))
+      .filter((path) => NAME_ON_AN_ADDRESS.test(code(readFileSync(path, "utf8"))));
+    expect(offenders).toEqual([]);
+  });
+
+  /** Both checks are worthless if their patterns have drifted out of matching. */
+  it("would be caught by these checks if either came back", () => {
     expect(TICKER_LIST.test(code(`const TRADED = ["USDT", "USDC", "USD1", "SOL"];`))).toBe(true);
     expect(TICKER_LIST.test(code(`// const TRADED = ["USDT", "USDC"];`))).toBe(false);
+
+    // The exact shape `KNOWN_DEVNET_MINTS` had, and its type declaration.
+    expect(NAME_ON_AN_ADDRESS.test(code(`{ address: MINT, label: "OPEN", decimals: 9 }`))).toBe(true);
+    expect(NAME_ON_AN_ADDRESS.test(code(`interface KnownMint { address: string; label: string }`))).toBe(true);
+    expect(NAME_ON_AN_ADDRESS.test(code(`{ symbol: "wSOL", mint: "So111…" }`))).toBe(true);
+    expect(NAME_ON_AN_ADDRESS.test(code(`// { address: MINT, label: "OPEN" }`))).toBe(false);
+
+    // What must stay allowed: the picker record with no name on it, and a
+    // name that is not sitting on an address.
+    expect(NAME_ON_AN_ADDRESS.test(code(`{ address: MINT, decimals: 9, obtainable: false }`))).toBe(false);
+    expect(NAME_ON_AN_ADDRESS.test(code(`export const PROTOCOL_TOKEN_NAME = "OPEN";`))).toBe(false);
   });
 });

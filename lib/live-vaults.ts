@@ -3,15 +3,19 @@ import {
   ESCROW_PROGRAM_ID,
   escrow,
   getConnection,
-  KNOWN_DEVNET_MINTS,
-  type KnownMint,
+  OFFERED_DEVNET_MINTS,
+  type OfferedMint,
 } from "@/lib/onchain-config";
 import {
   decodeLiquidityVault,
   LIQUIDITY_VAULT_LEN,
   type DecodedLiquidityVault,
 } from "@/lib/onchain-decode";
-import { isWrappedSol, WRAPPED_SOL_DECIMALS, WRAPPED_SOL_MINT } from "@/lib/vault-instructions";
+import { WRAPPED_SOL_DECIMALS, WRAPPED_SOL_MINT } from "@/lib/vault-instructions";
+import type { ReferenceData } from "@/lib/reference";
+
+/** One entry of the node's mint phrasebook: an address and what it is called. */
+export type ReferenceMint = ReferenceData["mints"][number];
 
 /**
  * Real `LiquidityVault` accounts, read from the escrow program on Solana
@@ -209,41 +213,147 @@ export function shortMint(mint: PublicKey): string {
 /**
  * Wrapped SOL as an option in the mint pickers.
  *
- * It is not in `KNOWN_DEVNET_MINTS` because that list is a set of addresses
- * this deployment recognises on devnet, and wSOL is not one of those: its
- * address is the same on every cluster and the escrow program ships it on
- * `DEFAULT_SETTLEMENT_MINTS` for that reason. Declaring it here also keeps
- * it beside the wrap/unwrap code that is the whole reason it is offerable
- * at all — a vault denominated in a token nobody holds would be no use
- * without it.
+ * It is not in `OFFERED_DEVNET_MINTS` because that list is cluster-specific
+ * scaffolding, and wSOL is not: its address is the same on every cluster,
+ * which is why the escrow program ships it on `DEFAULT_SETTLEMENT_MINTS` as
+ * the one entry `devnet-addresses.json` marks "the only cluster-independent
+ * entry". Declaring it here also keeps it beside the wrap/unwrap code that
+ * is the whole reason it is offerable at all — a vault denominated in a
+ * token nobody holds would be no use without it.
  *
  * `obtainable` is true and means what it says: SOL is the one asset a
  * devnet wallet can always get, by airdrop.
  */
-export const NATIVE_SOL_MINT_OPTION: KnownMint = {
+export const NATIVE_SOL_MINT_OPTION: OfferedMint = {
   address: WRAPPED_SOL_MINT.toBase58(),
-  label: "SOL",
   decimals: WRAPPED_SOL_DECIMALS,
   note: "Deposited and withdrawn as plain SOL. Wrapping and unwrapping happen inside the same transaction, so no wrapped-SOL account is left behind.",
   obtainable: true,
 };
 
+/**
+ * What the deposit and withdraw forms call the wSOL option.
+ *
+ * # Three things say different words about this mint and none of them is wrong
+ *
+ * The node calls it `wSOL`. The vaults panel says "held as wrapped SOL".
+ * This says `SOL`. Someone will eventually notice and try to make all three
+ * agree — this comment exists to stop them picking the wrong one.
+ *
+ * They answer different questions. `wSOL` is the token's *name*, and the
+ * node is the authority for that. "Held as wrapped SOL" is what the vault
+ * *contains*, which is a fact about the account. `SOL` is what you *hand
+ * over*: the form takes plain SOL out of your wallet and the wrapping
+ * happens inside the same transaction, so a picker offering "wSOL" would be
+ * asking a tester for a token they have to go and acquire first, and they
+ * do not. It is a statement about the flow, not a claim about the mint.
+ *
+ * That is why this is a bare string and not a `label` on the option above.
+ * A name sitting on an address-keyed record is the shape that went wrong
+ * everywhere else in this app, and `tests/exchange-assets.test.tsx` now
+ * refuses it outright.
+ */
+export const NATIVE_SOL_FLOW_LABEL = "SOL";
+
 /** Every mint the deposit picker offers, with SOL first — it is the only
  *  one every wallet already holds. */
-export const DEPOSITABLE_MINTS: KnownMint[] = [NATIVE_SOL_MINT_OPTION, ...KNOWN_DEVNET_MINTS];
+export const DEPOSITABLE_MINTS: OfferedMint[] = [NATIVE_SOL_MINT_OPTION, ...OFFERED_DEVNET_MINTS];
 
 /**
- * A mint's display name, and whether this build recognises the address at
- * all.
+ * What a mint is called, and — when it is called nothing — which kind of
+ * nothing.
  *
- * Shared by all three wallet screens so a wSOL vault does not read as
- * "Unrecognised mint" on one of them and as "SOL" on the next. `known` is
- * false for anything not on the list, and the caller is expected to say so
- * — a name this app invented for an address it does not know is how a
- * merchant deposits into the wrong token.
+ * The single place in this app where an address becomes a name. It used to
+ * be four places: `mintLabel` here, a private `label()` in the explorer, an
+ * inline lookup in the balances panel, and `KNOWN_DEVNET_MINTS` underneath
+ * all of them. They disagreed, which is the whole problem — the same mint
+ * read as "Devnet settlement stablecoin" on a wallet screen and `tUSDC` on
+ * an advertisement row.
+ *
+ * `mints` is the node's phrasebook (`getReferenceData`), or `null` when it
+ * could not be asked. The three outcomes are kept apart because a reader
+ * needs them apart:
+ *
+ * - `named` — the node has a name for this address. Show it.
+ * - `unnamed` — the node answered and has no name. Show the address. This
+ *   is an ordinary answer, not a fault: an address with no nickname is
+ *   unhelpful and true, which beats helpful and false. Nothing here
+ *   guesses, because a name this app invented for an address it does not
+ *   know is how a merchant deposits into the wrong token.
+ * - `unasked` — nobody could be asked. Show the address *and* say why,
+ *   because this one is a fact about the connection rather than about the
+ *   mint, and silently rendering it as `unnamed` would turn a failed
+ *   request into a finding about somebody's token.
+ *
+ * There is deliberately no fallback to a table in this repo. A fallback is
+ * this app quietly becoming the authority again at exactly the moment
+ * nobody can check.
  */
-export function mintLabel(mint: PublicKey): { name: string; known: boolean } {
-  if (isWrappedSol(mint)) return { name: NATIVE_SOL_MINT_OPTION.label, known: true };
-  const known = KNOWN_DEVNET_MINTS.find((m) => m.address === mint.toBase58());
-  return { name: known?.label ?? "Unrecognised mint", known: Boolean(known) };
+export type MintNaming =
+  | { kind: "named"; symbol: string }
+  | { kind: "unnamed" }
+  | { kind: "unasked" }
+  /** Still asking. A client screen renders the address and says nothing. */
+  | { kind: "asking" };
+
+/**
+ * `undefined` is a request in flight, and is not the same as `null`.
+ *
+ * A screen that showed "names could not be read" for the moment between
+ * mount and answer would accuse the node of being unreachable on every page
+ * load. Server callers never see it — they await first.
+ */
+export function nameForMint(
+  mint: PublicKey,
+  mints: ReferenceMint[] | null | undefined,
+): MintNaming {
+  if (mints === undefined) return { kind: "asking" };
+  if (mints === null) return { kind: "unasked" };
+  const address = mint.toBase58();
+  const found = mints.find((m) => m.mint === address);
+  return found ? { kind: "named", symbol: found.symbol } : { kind: "unnamed" };
+}
+
+/**
+ * The node's mint phrasebook, or `null` if it could not be read.
+ *
+ * `null` for any failure, never a throw, and that asymmetry is deliberate.
+ * Every figure on the screens that call this comes from Solana and none of
+ * it depends on an OpenFiat node, so losing the names must not cost a
+ * reader their balances — this is the one read on those screens whose
+ * failure is allowed to be quiet. It is still visible: callers say the
+ * names could not be read rather than pretending the mints are unnamed.
+ *
+ * A node built before the mint table simply omits `mints`, which arrives
+ * here as the same `null`. Absent and unreachable are both "nobody told
+ * us", and neither is evidence about a mint.
+ *
+ * # Its own JSON-RPC rather than `@openfiat/sdk`'s `reference` namespace
+ *
+ * The SDK published `types` pointing at `src` and `import` pointing at a
+ * `dist` built before that namespace existed, so `reference.getReferenceData`
+ * type-checked and was `undefined` at runtime — a `TypeError` thrown
+ * synchronously, before any `.catch()`. The packaging is being fixed
+ * (openfiat-sdks #190), and collapsing this and `lib/pairs.ts` onto that one
+ * call is the right end state; it is a follow-up rather than something to do
+ * on an export that was broken this morning. The *type* comes from the SDK
+ * either way — a type-only import is erased at compile time, so it cannot
+ * depend on a runtime export that may not be there, and taking the shape
+ * from the SDK is what stops this becoming another copy of somebody else's
+ * table.
+ */
+export async function fetchMintNames(endpoint: string): Promise<ReferenceMint[] | null> {
+  try {
+    const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getReferenceData", params: {} }),
+      cache: "no-store",
+    });
+    const body = (await res.json()) as { result?: { mints?: ReferenceMint[] } };
+    const mints = body.result?.mints;
+    return Array.isArray(mints) ? mints : null;
+  } catch {
+    return null;
+  }
 }

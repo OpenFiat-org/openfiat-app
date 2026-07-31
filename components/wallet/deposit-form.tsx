@@ -11,15 +11,20 @@ import {
   readWalletConnection,
   type WalletConnection,
 } from "@/lib/wallet-connection";
-import { getConnection } from "@/lib/onchain-config";
+import { DEVNET_OPEN_MINT, getConnection, PROTOCOL_TOKEN_NAME } from "@/lib/onchain-config";
 import { fetchTokenBalance, type TokenBalance } from "@/lib/live-token-balances";
 import {
   DEPOSITABLE_MINTS,
   fetchVault,
   formatBaseUnits,
+  NATIVE_SOL_FLOW_LABEL,
+  NATIVE_SOL_MINT_OPTION,
+  nameForMint,
   parseBaseUnits,
   type LiveVault,
+  type ReferenceMint,
 } from "@/lib/live-vaults";
+import { useMintNames } from "@/components/wallet/use-mint-names";
 import {
   depositInstructions,
   fetchWrapCapacity,
@@ -89,7 +94,30 @@ type SubmitState =
  * that has to be one transaction rather than two, and for what the amount
  * offered as Max leaves behind.
  */
+/**
+ * What the picker calls one of its options.
+ *
+ * Three sources, in this order, and the order is the point:
+ *
+ * 1. wSOL is offered as `SOL`, because that is what you hand over — the
+ *    wrapping happens inside the same transaction. A statement about the
+ *    flow, not about the mint. See `NATIVE_SOL_FLOW_LABEL`.
+ * 2. OPEN is named by the protocol, because the node deliberately never
+ *    names it: it is not a settlement mint until the public sale. See
+ *    `PROTOCOL_TOKEN_NAME`.
+ * 3. Everything else is the node's answer, or the address when it has none.
+ *    Nothing here invents a third name.
+ */
+function optionLabel(address: string, mints: ReferenceMint[] | null | undefined): string {
+  if (address === NATIVE_SOL_MINT_OPTION.address) return NATIVE_SOL_FLOW_LABEL;
+  if (address === DEVNET_OPEN_MINT) return PROTOCOL_TOKEN_NAME;
+  const naming = nameForMint(new PublicKey(address), mints);
+  return naming.kind === "named" ? naming.symbol : address;
+}
+
 export function DepositForm({ initialMint }: { initialMint?: string }) {
+  // Names come from the node, never from a table here — see `nameForMint`.
+  const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [mintInput, setMintInput] = useState(initialMint ?? DEPOSITABLE_MINTS[0]!.address);
   const [amount, setAmount] = useState("");
@@ -298,7 +326,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
           >
             {DEPOSITABLE_MINTS.map((m) => (
               <option key={m.address} value={m.address}>
-                {m.label}
+                {optionLabel(m.address, mints)}
               </option>
             ))}
             <option value="custom">Another mint address…</option>
@@ -310,15 +338,15 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
             className={`mt-2 font-mono text-xs ${inputCls}`}
           />
           {/*
-            * The address is always visible, even for a named mint. Neither
-            * devnet mint carries on-chain metadata, so every name in the
-            * picker is this app's label rather than something the chain
-            * asserts — and a merchant depositing into the wrong token
-            * because two labels looked alike loses the tokens.
+            * The address is always visible, even for a named mint. A name
+            * is a nickname a node applied to an address; the address is the
+            * fact underneath, and a merchant depositing into the wrong
+            * token because two names looked alike loses the tokens.
             */}
           <p className="mt-1.5 text-[11px] text-gray-600">
-            Names are this build&apos;s labels — no devnet mint here publishes on-chain metadata. Check the
-            address. SOL&apos;s address is wrapped SOL&apos;s, which is what the vault actually holds.
+            Names come from the node you are connected to, not from this app — no devnet mint here
+            publishes on-chain metadata of its own. Check the address. SOL&apos;s address is wrapped
+            SOL&apos;s, which is what the vault actually holds.
           </p>
           {known && <p className="mt-1.5 text-xs text-gray-500">{known.note}</p>}
           {known && !known.obtainable && (

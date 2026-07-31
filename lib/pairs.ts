@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { ReferenceData } from "@openfiat/sdk";
 
 import { COUNTRIES } from "@/lib/data/countries";
 import { DEFAULT_NODE_URL } from "@/lib/node-endpoint";
@@ -56,20 +57,6 @@ import { DEFAULT_NODE_URL } from "@/lib/node-endpoint";
  * claim about this network.
  */
 
-/** One mint the node has a name for, as `getReferenceData` sends it. */
-interface WireMint {
-  mint: string;
-  symbol: string;
-}
-
-interface WireReferenceData {
-  /**
-   * Absent on a node built before the mint table was published. Absent is
-   * deliberately not the same as empty — see `fetchNamedAssets`.
-   */
-  mints?: WireMint[];
-}
-
 export interface PairSlug {
   /**
    * The ticker, spelled the way the node spells it — `USDC`, `wSOL`.
@@ -100,19 +87,38 @@ function looksLikeAPair(asset: string, currency: string): boolean {
   return /^[A-Z0-9]{2,10}$/.test(asset) && /^[A-Z]{3,4}$/.test(currency);
 }
 
-async function fetchReferenceData(endpoint: string): Promise<WireReferenceData> {
+/**
+ * `getReferenceData`, over a plain JSON-RPC POST.
+ *
+ * Not `@openfiat/sdk`'s `reference.getReferenceData`: the package published
+ * `types` pointing at `src` and `import` pointing at a `dist` built before
+ * that namespace existed, so the call type-checked and threw a `TypeError`
+ * at runtime. The packaging is being fixed (openfiat-sdks #190) and this
+ * should collapse into that one call afterwards, together with
+ * `lib/live-vaults.ts`'s `fetchMintNames` and `lib/reference.ts`'s loader.
+ *
+ * The *type* is imported from the SDK regardless. A type-only import is
+ * erased at compile time, so it cannot depend on a runtime export that is
+ * missing — and taking the shape from the SDK rather than restating it here
+ * is what keeps this from becoming another copy of somebody else's table.
+ * `Partial` because a node built before the mint table simply omits it.
+ */
+async function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
   const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getReferenceData", params: {} }),
-    // Never from Next's data cache. The whole point of asking is that the
-    // node is the authority, and a cached answer is this app quietly
-    // becoming the authority again for however long the entry lives.
-    // Within one server render `namedAssetsForRender` still collapses this
-    // to a single call.
+    // Stated rather than left to a framework default. The whole point of
+    // asking is that the node is the authority, and a cached answer is this
+    // app quietly becoming the authority again for as long as the entry
+    // lives. Within one server render `namedAssetsForRender` still collapses
+    // this to a single call.
     cache: "no-store",
   });
-  const body = (await res.json()) as { result?: WireReferenceData; error?: { message: string } };
+  const body = (await res.json()) as {
+    result?: Partial<ReferenceData>;
+    error?: { message: string };
+  };
   if (body.error) throw new Error(body.error.message);
   return body.result ?? {};
 }
@@ -139,6 +145,8 @@ export async function fetchNamedAssets(
 ): Promise<string[] | null> {
   try {
     const { mints } = await fetchReferenceData(endpoint);
+    // Absent, rather than empty, on a node built before the mint table was
+    // published. Absent is silence — see the `null` contract above.
     if (!Array.isArray(mints)) return null;
     // A mint with no symbol is an ordinary answer on the node's side — an
     // address with no nickname — and it names no ticker, so it is dropped
