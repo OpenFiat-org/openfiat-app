@@ -108,7 +108,8 @@ async function fetchReferenceData(endpoint: string): Promise<WireReferenceData> 
     // Never from Next's data cache. The whole point of asking is that the
     // node is the authority, and a cached answer is this app quietly
     // becoming the authority again for however long the entry lives.
-    // Within one render `cache()` below still collapses this to one call.
+    // Within one server render `namedAssetsForRender` still collapses this
+    // to a single call.
     cache: "no-store",
   });
   const body = (await res.json()) as { result?: WireReferenceData; error?: { message: string } };
@@ -123,27 +124,42 @@ async function fetchReferenceData(endpoint: string): Promise<WireReferenceData> 
  * `null` and `[]` are different answers and callers must keep them apart.
  * `[]` is the node saying it names no mints; `null` is silence — an
  * unreachable node, or one built before it published the table. Only the
- * first is evidence about a ticker.
+ * first is evidence about a ticker, and the two send an interface in
+ * different directions: nothing to name, versus nothing to go on.
  *
- * Memoised for the render rather than across renders. `generateMetadata` and
- * the page body are separate calls into this module for one page view, and
- * `cache()` collapses them into a single request without letting the answer
- * outlive it.
+ * Takes an explicit endpoint because its callers do not agree on one and
+ * must not. The pair route renders on the server against `DEFAULT_NODE_URL`;
+ * `components/p2p/exchange.tsx` runs in the browser and reads the node the
+ * *user* selected, and it has to ask that node — the one whose book it is
+ * about to show — or the asset pills and the advertisements under them come
+ * from two different tables.
  */
-export const fetchNamedAssets = cache(
-  async (endpoint: string = DEFAULT_NODE_URL): Promise<string[] | null> => {
-    try {
-      const { mints } = await fetchReferenceData(endpoint);
-      if (!Array.isArray(mints)) return null;
-      // A mint with no symbol is an ordinary answer on the node's side —
-      // an address with no nickname — and it names no ticker page, so it
-      // is dropped here rather than turned into a blank one.
-      return mints.map((entry) => entry?.symbol).filter((symbol): symbol is string => !!symbol);
-    } catch {
-      return null;
-    }
-  },
-);
+export async function fetchNamedAssets(
+  endpoint: string = DEFAULT_NODE_URL,
+): Promise<string[] | null> {
+  try {
+    const { mints } = await fetchReferenceData(endpoint);
+    if (!Array.isArray(mints)) return null;
+    // A mint with no symbol is an ordinary answer on the node's side — an
+    // address with no nickname — and it names no ticker, so it is dropped
+    // here rather than turned into a blank one.
+    return mints.map((entry) => entry?.symbol).filter((symbol): symbol is string => !!symbol);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `fetchNamedAssets`, memoised for one server render.
+ *
+ * `generateMetadata` and the page body are separate calls into this module
+ * for a single page view, and `cache()` collapses them into one request
+ * without letting the answer outlive it. Server-side only, which is why it
+ * is not the exported form: `components/p2p/exchange.tsx` is a client
+ * component, and a request-scoped cache means nothing in a browser that
+ * fetches once per mount anyway.
+ */
+const namedAssetsForRender = cache(fetchNamedAssets);
 
 /**
  * `("wsol", "kes")` to a canonical pair, or `null` if the URL is not one.
@@ -173,7 +189,7 @@ export async function normalisePair(
   const upperCurrency = currency.toUpperCase();
   if (!looksLikeAPair(upperAsset, upperCurrency)) return null;
 
-  const named = await fetchNamedAssets(endpoint);
+  const named = await namedAssetsForRender(endpoint);
   // Silence: keep the caller's spelling, uppercased, since there is no
   // authoritative one to adopt.
   const resolved =

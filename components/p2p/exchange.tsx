@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { StablecoinAsset, TradeDirection } from "@/lib/types";
+import type { TradeDirection } from "@/lib/types";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { fetchNamedAssets } from "@/lib/pairs";
+import { nodeUrl } from "@/lib/node-endpoint";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
 import { formatNumber } from "@/lib/format";
@@ -39,12 +41,31 @@ import { OrderPanel } from "@/components/p2p/order-panel";
  * by yet.
  */
 
-/**
- * Assets with an order book. OPEN is deliberately absent — it has no
- * peer-to-peer market until mainnet, so it is linked to its own page rather
- * than offered as a book to browse.
+/*
+ * The asset pills used to be `["USDT", "USDC", "USD1", "SOL"]`, four tickers
+ * declared here, and the book is filtered by comparing a pill to the symbol
+ * the *node* resolved for each advertisement's mint. Two of the four could
+ * therefore never match anything: the node calls the wrapped-SOL mint `wSOL`,
+ * so the `SOL` pill was a filter for a name nothing answers to, and `USD1`
+ * names no mint on this deployment at all. Meanwhile `wSOL` and `tUSDC` — the
+ * latter being the Token-2022 mint the running devnet deployment denominates
+ * its fee treasuries in — had no pill, so their books were unreachable from
+ * the app's own landing page.
+ *
+ * The list comes from the node now (`fetchNamedAssets`), for the reason
+ * `lib/pairs.ts` sets out at length: the settlement-mint allowlist is on
+ * chain and governance-updatable, so any list here is a snapshot that starts
+ * going stale the moment governance touches it. Hand-correcting the four
+ * strings would have rebuilt the same fault one release later.
+ *
+ * OPEN is still absent and still linked to its own page. That is not a
+ * naming decision this file is making — OPEN is deliberately not on the
+ * escrow settlement allowlist until the public sale, so the node does not
+ * name it either and it cannot appear in the answer.
  */
-const TRADED_ASSETS: StablecoinAsset[] = ["USDT", "USDC", "USD1", "SOL"];
+
+/** No pill selected: every asset in the book, unfiltered. */
+const ALL_ASSETS = null;
 
 type SortKey = "price" | "limits";
 
@@ -75,7 +96,19 @@ export function P2PExchange({
   savePreference?: string;
 }) {
   const [tab, setTab] = useState<TradeDirection>("Buy");
-  const [asset, setAsset] = useState<StablecoinAsset>("USDT");
+  /*
+   * `null` is "all assets", and it is the default.
+   *
+   * This used to open on `"USDT"` — one of the four tickers the file also
+   * declared existed. With the list coming from the node, picking a
+   * favourite out of it on the visitor's behalf is the same app-side
+   * assertion one step smaller, and there is no honest basis for choosing
+   * one: "first in the node's table" is an implementation detail of a
+   * display table, and "the one with the most ads" moves the book under a
+   * reader between renders. Unfiltered shows strictly more of the real book,
+   * and every row names its own token through `AssetLabel` regardless.
+   */
+  const [asset, setAsset] = useState<string | null>(ALL_ASSETS);
   const [fiat, setFiat] = useState(initialFiat);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
@@ -84,6 +117,28 @@ export function P2PExchange({
 
   const [ads, setAds] = useState<LiveAd[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Which tickers this node names a mint — `undefined` while asking, `null`
+   * if it could not be asked, `[]` if it answered that it names none.
+   *
+   * All three are kept apart because they mean different things to a reader.
+   * See the pill row below for what each one renders.
+   */
+  const [named, setNamed] = useState<string[] | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    // `nodeUrl()`, not the build's default: `fetchAdvertisements` reads the
+    // node the user selected, and pills sourced from a different node would
+    // offer filters for a table the book below was never resolved against.
+    void fetchNamedAssets(nodeUrl()).then((symbols) => {
+      if (!cancelled) setNamed(symbols);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
@@ -157,12 +212,18 @@ export function P2PExchange({
     const fiatAmount = Number(amount) || 0;
     const out: LiveAd[] = [];
     for (const ad of BOOK) {
+      if (ad.direction !== wantDirection) continue;
       // Matched against the symbol the NODE resolved for the ad's mint, not
       // against a mint this app mapped `asset` to. The pill says "USDC", so
       // the question is "which advertisements does the node call USDC" — and
       // an ad naming a mint nothing has a name for belongs to no ticker
       // market, because nothing names it. See `assetLabel`.
-      if (ad.direction !== wantDirection || ad.assetSymbol !== asset) continue;
+      //
+      // Both sides of this comparison now come out of the node's mint table:
+      // the pill was built from it, and `assetSymbol` was resolved through
+      // it. Nothing case-folds, because there is no longer a spelling
+      // mismatch to paper over.
+      if (asset !== ALL_ASSETS && ad.assetSymbol !== asset) continue;
       if (ad.fiatCurrency !== fiat) continue;
       if (ad.price === null) continue; // no oracle read yet — nothing to quote
       if (method !== "" && !ad.paymentMethods.includes(method)) continue;
@@ -195,7 +256,7 @@ export function P2PExchange({
         <PageHero
           compact
           variant={tab === "Sell" ? "flow-rev" : "flow"}
-          title={`${tab} ${asset} with ${fiat} via P2P`}
+          title={`${tab} ${asset ?? "crypto"} with ${fiat} via P2P`}
           description="Trade stablecoins peer-to-peer. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
         />
       )}
@@ -219,21 +280,22 @@ export function P2PExchange({
             </button>
           ))}
         </div>
-        {/* Wraps. Five asset buttons do not fit across 390px, and without
+        {/* Wraps. The asset buttons do not fit across 390px, and without
             this the row pushed the whole page into a horizontal scroll —
             on the landing page, at the width most visitors arrive at. */}
         <div className="flex flex-wrap gap-1">
-          {TRADED_ASSETS.map((a) => (
-            <button
-              key={a}
-              onClick={() => setAsset(a)}
-              className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition-colors ${
-                asset === a ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <AssetIcon asset={a} size={16} />
-              {a}
-            </button>
+          <AssetPill label="All assets" selected={asset === ALL_ASSETS} onSelect={() => setAsset(ALL_ASSETS)} />
+          {/* Nothing while the node is being asked. A pill row assembled from
+              a guess and then rearranged under the pointer is worse than one
+              that arrives a moment late. */}
+          {(named ?? []).map((symbol) => (
+            <AssetPill
+              key={symbol}
+              label={symbol}
+              icon
+              selected={asset === symbol}
+              onSelect={() => setAsset(symbol)}
+            />
           ))}
           <Link
             href="/open"
@@ -245,6 +307,34 @@ export function P2PExchange({
             <span aria-hidden className="text-gray-600">↗</span>
           </Link>
         </div>
+
+        {/*
+          Why the two empty answers are not one message.
+
+          `null` is silence — the node could not be asked, or is a build from
+          before it published its mint table. That is a fact about this app's
+          connection, not about the network, and saying "there are no assets"
+          on the strength of it would be inventing a finding out of a failed
+          request. `[]` is an answer: the node names no mints, so no ticker
+          filter exists to offer.
+
+          Both leave the book unfiltered rather than empty. Every row still
+          names its own token through `AssetLabel`, which reads the mint the
+          advertisement actually carries — so the reader loses a filter here,
+          never the ability to see what a row is denominated in.
+        */}
+        {named === null && (
+          <p className="basis-full text-xs text-gray-500">
+            Could not ask this node which assets it names, so the book below is unfiltered. This says
+            nothing about which assets are traded — only that we could not ask.
+          </p>
+        )}
+        {named?.length === 0 && (
+          <p className="basis-full text-xs text-gray-500">
+            This node names no assets, so there is nothing to filter the book by. Advertisements are
+            still shown, each against the mint address it carries.
+          </p>
+        )}
         <p className="ml-auto text-xs text-gray-500">
           Buying crypto with fiat?{" "}
           <Link href="/guide/buy" className="text-brand hover:text-brand-hover">How to buy →</Link>
@@ -328,7 +418,7 @@ export function P2PExchange({
                 <td colSpan={5} className="px-4 py-12">
                   <div className="mx-auto max-w-xl text-center">
                     <p className="text-sm text-gray-300">
-                      Nobody is advertising {asset}/{fiat} yet.
+                      Nobody is advertising {asset ? `${asset}/${fiat}` : `anything in ${fiat}`} yet.
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">
                       This market is empty rather than closed. The first merchant in a corridor sets the price and takes
@@ -359,8 +449,48 @@ export function P2PExchange({
         )}
       </div>
 
-      {showExplainer && <HomeExplainer asset={asset} fiat={fiat} buying={tab === "Buy"} />}
+      {/* The walkthrough is about the mechanics of a trade, which do not
+          depend on the token — so with no asset selected it says "crypto"
+          rather than naming one the reader did not pick. */}
+      {showExplainer && (
+        <HomeExplainer asset={asset ?? "crypto"} fiat={fiat} buying={tab === "Buy"} />
+      )}
     </div>
+  );
+}
+
+/**
+ * One asset filter.
+ *
+ * `icon` is off for "All assets", which is a filter rather than a token and
+ * has no mark to draw. For the rest `AssetIcon` decides for itself: it draws
+ * only names this repo ships art for, and the node answers names it does not
+ * — `wSOL` and `tUSDC` among them. A pill with no mark is the correct
+ * rendering of a token whose logo we do not have, and the name is right
+ * beside it.
+ */
+function AssetPill({
+  label,
+  icon = false,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  icon?: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition-colors ${
+        selected ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+      }`}
+    >
+      {icon && <AssetIcon asset={label} size={16} />}
+      {label}
+    </button>
   );
 }
 
