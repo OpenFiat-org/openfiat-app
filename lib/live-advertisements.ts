@@ -274,7 +274,7 @@ const MAX_PAGES = 50;
 const PAGE_SIZE = 100;
 
 export async function fetchAdvertisements(
-  filter: { status?: LiveAd["status"] } = {},
+  filter: { merchant?: string; statuses?: LiveAd["status"][] } = {},
 ): Promise<LiveAd[]> {
   const rows: LiveAd[] = [];
   for await (const ad of advertisements.eachAdvertisement(client(), {
@@ -372,22 +372,21 @@ export async function fetchTradablePairs(): Promise<
 /**
  * Every advertisement this wallet has published, whatever state it is in.
  *
- * Four queries, because `getAdvertisements` filters to `Active` by
- * default and its `status` filter takes one value. That default is right
- * for the order book — an advertisement that is paused is not on offer,
- * and listing it would be offering something that is not — and wrong for
- * the merchant's own console, where it meant a paused advertisement
- * vanished from the only screen that could put it back. The merchant
- * could pause an ad and then had no way to reach it again.
+ * Both halves are the node's work. The merchant filter is why: asking for
+ * one wallet's rows by reading the whole book and keeping the matches
+ * made the node serialize every advertisement on the network so this
+ * browser could throw nearly all of them away — and it gets worse in
+ * exactly the direction the paging exists to fix.
  *
- * The merchant filter is still applied here rather than by the node,
- * which is a real limit: this reads the whole book to find one wallet's
- * rows. It is fine for a devnet and is not fine for a market, and the fix
- * is a `merchant` filter on `AdvertisementFilter` rather than anything
- * this file can do.
+ * Every status, because `getAdvertisements` answers with active ones
+ * unless told otherwise. That default is right for the order book — a
+ * paused advertisement is not on offer — and wrong here, where it meant a
+ * paused advertisement vanished from the only screen that could put it
+ * back.
  */
 export async function fetchAdsByMerchant(merchantPeerId: string): Promise<LiveAd[]> {
-  const statuses: LiveAd["status"][] = ["Active", "Vacation", "Disabled", "Deleted"];
-  const pages = await Promise.all(statuses.map((status) => fetchAdvertisements({ status })));
-  return pages.flat().filter((ad) => ad.merchantPeerId === merchantPeerId);
+  return fetchAdvertisements({
+    merchant: merchantPeerId,
+    statuses: ["Active", "Vacation", "Disabled", "Deleted"],
+  });
 }

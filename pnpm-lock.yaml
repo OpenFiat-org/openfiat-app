@@ -15,8 +15,8 @@ importers:
         specifier: ^9.4.3
         version: 9.4.3
       '@openfiat/sdk':
-        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#bf99d04be752ec3e740ec569c6eecb4052e9a70d&path:typescript
-        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/bf99d04be752ec3e740ec569c6eecb4052e9a70d#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
+        specifier: git+https://github.com/OpenFiat-org/openfiat-sdks.git#1bff279887ffc1d41fd797fb26fe1bb454e206e6&path:typescript
+        version: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       '@solana/spl-token':
         specifier: ^0.4.15
         version: 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)(utf-8-validate@6.0.6)
@@ -77,7 +77,7 @@ importers:
         version: 7.1.1(eslint@10.8.0(jiti@2.7.0))
       jsdom:
         specifier: ^30.0.0
-        version: 30.0.0(@noble/hashes@1.8.0)
+        version: 30.0.0(@noble/hashes@2.2.0)
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.3
@@ -89,7 +89,7 @@ importers:
         version: 8.65.0(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@26.1.1)(jsdom@30.0.0(@noble/hashes@1.8.0))(lightningcss@1.32.0)(terser@5.49.0)
+        version: 2.1.9(@types/node@26.1.1)(jsdom@30.0.0(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.49.0)
 
 packages:
 
@@ -863,8 +863,8 @@ packages:
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
     engines: {node: '>= 20.19.0'}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/bf99d04be752ec3e740ec569c6eecb4052e9a70d#path:typescript':
-    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/bf99d04be752ec3e740ec569c6eecb4052e9a70d}
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript':
+    resolution: {path: typescript, tarball: https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6}
     version: 0.1.0
     engines: {node: '>=20'}
 
@@ -3872,9 +3872,9 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@exodus/bytes@1.15.1(@noble/hashes@1.8.0)':
+  '@exodus/bytes@1.15.1(@noble/hashes@2.2.0)':
     optionalDependencies:
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.2.0
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -4070,7 +4070,7 @@ snapshots:
 
   '@noble/hashes@2.2.0': {}
 
-  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/bf99d04be752ec3e740ec569c6eecb4052e9a70d#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
+  '@openfiat/sdk@https://codeload.github.com/OpenFiat-org/openfiat-sdks/tar.gz/1bff279887ffc1d41fd797fb26fe1bb454e206e6#path:typescript(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)':
     dependencies:
       '@noble/ciphers': 2.2.0
       '@noble/curves': 2.2.0
@@ -5513,10 +5513,10 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  data-urls@7.0.0(@noble/hashes@1.8.0):
+  data-urls@7.0.0(@noble/hashes@2.2.0):
     dependencies:
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1(@noble/hashes@1.8.0)
+      whatwg-url: 16.0.1(@noble/hashes@2.2.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -5801,9 +5801,9 @@ snapshots:
     dependencies:
       hermes-estree: 0.36.0
 
-  html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
+  html-encoding-sniffer@6.0.0(@noble/hashes@2.2.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -5922,17 +5922,17 @@ snapshots:
 
   jsc-safe-url@0.2.4: {}
 
-  jsdom@30.0.0(@noble/hashes@1.8.0):
+  jsdom@30.0.0(@noble/hashes@2.2.0):
     dependencies:
       '@asamuzakjp/css-color': 6.0.5
       '@asamuzakjp/dom-selector': 8.3.0
       '@bramus/specificity': 2.4.2
       '@csstools/css-syntax-patches-for-csstree': 1.1.7(css-tree@3.2.1)
-      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
       css-tree: 3.2.1
-      data-urls: 7.0.0(@noble/hashes@1.8.0)
+      data-urls: 7.0.0(@noble/hashes@2.2.0)
       decimal.js: 10.6.0
-      html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
+      html-encoding-sniffer: 6.0.0(@noble/hashes@2.2.0)
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.2
       parse5: 8.0.1
@@ -5943,7 +5943,7 @@ snapshots:
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
-      whatwg-url: 17.1.0(@noble/hashes@1.8.0)
+      whatwg-url: 17.1.0(@noble/hashes@2.2.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
@@ -6827,7 +6827,7 @@ snapshots:
       lightningcss: 1.32.0
       terser: 5.49.0
 
-  vitest@2.1.9(@types/node@26.1.1)(jsdom@30.0.0(@noble/hashes@1.8.0))(lightningcss@1.32.0)(terser@5.49.0):
+  vitest@2.1.9(@types/node@26.1.1)(jsdom@30.0.0(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.49.0):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@26.1.1)(lightningcss@1.32.0)(terser@5.49.0))
@@ -6851,7 +6851,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.1.1
-      jsdom: 30.0.0(@noble/hashes@1.8.0)
+      jsdom: 30.0.0(@noble/hashes@2.2.0)
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -6881,17 +6881,17 @@ snapshots:
 
   whatwg-mimetype@5.0.0: {}
 
-  whatwg-url@16.0.1(@noble/hashes@1.8.0):
+  whatwg-url@16.0.1(@noble/hashes@2.2.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
 
-  whatwg-url@17.1.0(@noble/hashes@1.8.0):
+  whatwg-url@17.1.0(@noble/hashes@2.2.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
