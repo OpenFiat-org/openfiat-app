@@ -1,5 +1,5 @@
 import { WalletAvatar } from "@/components/wallet-avatar";
-import { hexForPeerId, shortPeerHex } from "@/lib/peer-id";
+import { shortPeerId } from "@/lib/peer-id";
 
 /**
  * A party to a trade or a dispute, as the only thing the protocol knows about
@@ -21,16 +21,15 @@ export function PeerIdentity({
   isYou = false,
   size = 22,
 }: {
-  peer: number[];
+  peer: string;
   isYou?: boolean;
   size?: number;
 }) {
   if (isYou) return <>You</>;
-  const hex = hexForPeerId(peer);
-  const short = shortPeerHex(peer);
+  const short = shortPeerId(peer);
   return (
     <span className="inline-flex items-center gap-2">
-      <WalletAvatar seed={hex} label={short} size={size} />
+      <WalletAvatar seed={peer} label={short} size={size} />
       <span className="font-mono">{short}</span>
     </span>
   );

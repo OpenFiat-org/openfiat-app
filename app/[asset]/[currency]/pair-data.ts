@@ -64,10 +64,15 @@ export const loadPairData = cache(async (pair: PairSlug): Promise<PairData> => {
   let advertisers = 0;
   let methods: string[] = [];
   try {
+    // `pair.asset` is a ticker, because the URL is one. It is matched against
+    // the symbol the node resolved for each advertisement's mint — never
+    // against a mint this app decided the ticker means. An advertisement in a
+    // mint the node cannot name therefore counts towards no ticker page,
+    // which is right: nothing names it, so no ticker URL is about it.
     const ads = (await fetchAdvertisements()).filter(
       (ad) =>
         ad.status === "Active" &&
-        ad.asset.toUpperCase() === pair.asset &&
+        ad.assetSymbol?.toUpperCase() === pair.asset &&
         ad.fiatCurrency.toUpperCase() === pair.currency,
     );
     advertisers = new Set(ads.map((ad) => ad.merchantPeerId)).size;

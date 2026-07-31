@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { asCid } from "@/lib/ipfs/cid";
 import { MAX_AVATAR_BYTES, ipfsUrl } from "@/lib/ipfs/gateway";
@@ -99,7 +100,7 @@ export async function publishAvatar(
   const publish = {
     id: crypto.randomUUID(),
     wallet: peerIdForPublicKey(publicKey),
-    wallet_public_key: Array.from(publicKey),
+    wallet_public_key: bs58.encode(publicKey),
     claim_type: AVATAR,
     value: cid,
     // Self-published: nothing verifies that a picture is of anyone. See

@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 /**
  * Puts real, signed protocol state on the devnet cluster so every route in
  * this app has something genuine to render.
@@ -43,6 +44,13 @@ import {
   type Registration,
   type ServiceType,
 } from "@openfiat/sdk";
+// The one mint this app already asserts is a settlement mint on this
+// deployment, imported rather than retyped so there is a single place the
+// address lives. This script deliberately ships no mint-to-ticker table of
+// its own: the names these advertisements read under are resolved by the
+// node from the address, which is the whole point of the change that made
+// `asset_mint` the field.
+import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
 
 const NODE_URL = process.env.OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080";
 
@@ -55,7 +63,9 @@ const NODE_URL = process.env.OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080";
  * These are devnet test identities with no value attached; the seed material
  * is intentionally non-secret and in the clear.
  */
-async function identityFor(label: string): Promise<{ keypair: Keypair; peerId: Uint8Array }> {
+async function identityFor(
+  label: string,
+): Promise<{ keypair: Keypair; peerId: Uint8Array }> {
   const seed = new Uint8Array(32);
   const labelBytes = new TextEncoder().encode(`openfiat-devnet-seed:${label}`);
   // A plain fold rather than a hash: the only requirement is that distinct
@@ -169,8 +179,8 @@ async function seedProviders(client: Client): Promise<number> {
     const registration: Registration = {
       service_id: spec.serviceId,
       service_type: spec.serviceType,
-      provider: Array.from(peerId),
-      provider_public_key: Array.from(keypair.publicKey),
+      provider: bs58.encode(peerId),
+      provider_public_key: bs58.encode(keypair.publicKey),
       endpoints: spec.endpoints,
       supported_ofs: OFS_BY_TYPE[variantName(spec.serviceType)] ?? [1500],
       region: spec.region,
@@ -184,7 +194,9 @@ async function seedProviders(client: Client): Promise<number> {
       timestamp: Date.now(),
     };
     await providers.sendProviderRegister(client, registration, keypair);
-    console.log(`  registered ${spec.serviceId} (${variantName(spec.serviceType)})`);
+    console.log(
+      `  registered ${spec.serviceId} (${variantName(spec.serviceType)})`,
+    );
     registered++;
   }
   return registered;
@@ -192,11 +204,32 @@ async function seedProviders(client: Client): Promise<number> {
 
 interface AdSpec {
   merchantLabel: string;
-  asset: string;
+  /**
+   * The mint the buyer is paid in. An advertisement names a mint and no
+   * ticker (OFS-2100, after `asset_mint` replaced `asset`), because a ticker
+   * on a record is a label its author chose and is connected to the token
+   * the escrow moves by nothing at all.
+   *
+   * That applies to a seed script as much as to a merchant: writing "USDC"
+   * here and settling something else is the exact failure the change closed.
+   * The name these render under comes back from the node, resolved from the
+   * address — this file states no symbol anywhere.
+   */
+  mint: string;
   fiat: string;
   direction: "Buy" | "Sell";
   /** Fiat price per unit of asset, in whole fiat units. */
   price: number;
+  /**
+   * Trade bounds in the ASSET, like `liquidity` — not in `fiat`.
+   *
+   * OFS-2100's `min_trade`/`max_trade` are `Amount`s denominated in the
+   * token being escrowed. These were fiat-scale (500 – 200,000 against a
+   * 4,000-unit vault), so this script was seeding a real, signed book
+   * whose advertised maximum was fifty times the liquidity behind it —
+   * and the app was then reading those records back as evidence its
+   * screens were right.
+   */
   minTrade: number;
   maxTrade: number;
   liquidity: number;
@@ -211,60 +244,68 @@ interface AdSpec {
  * Prices are near the live oracle rate the cluster already publishes for
  * USDC/KES (~129.5) rather than invented, so a floating-vs-fixed comparison
  * in the UI reads sensibly against real oracle data.
+ *
+ * Every ad is denominated in the same mint, and that is a narrowing this
+ * accepts rather than works around. The alternative is a list of addresses
+ * transcribed here from the escrow program's allowlist, which is a copy of
+ * somebody else's table that goes stale the first time governance changes it
+ * — and getting one wrong would seed a book advertising a token nobody can
+ * be paid in. One address the app already knows is honest; several guessed
+ * ones would not be.
  */
 const ADS: AdSpec[] = [
   {
     merchantLabel: "merchant-nairobi",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Sell",
     price: 129.8,
-    minTrade: 500,
-    maxTrade: 200_000,
+    minTrade: 5,
+    maxTrade: 3_500,
     liquidity: 4_000,
     paymentMethods: ["M-Pesa Kenya (Safaricom)", "Equity Bank"],
   },
   {
     merchantLabel: "merchant-nairobi",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Buy",
     price: 128.4,
-    minTrade: 500,
-    maxTrade: 150_000,
+    minTrade: 5,
+    maxTrade: 2_500,
     liquidity: 3_000,
     paymentMethods: ["M-Pesa Kenya (Safaricom)"],
   },
   {
     merchantLabel: "merchant-mombasa",
-    asset: "USDT",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "KES",
     direction: "Sell",
     price: 130.2,
-    minTrade: 1_000,
-    maxTrade: 80_000,
+    minTrade: 10,
+    maxTrade: 2_000,
     liquidity: 2_500,
     paymentMethods: ["Mpesa Pochi la Biashara", "I&M Bank"],
   },
   {
     merchantLabel: "merchant-lagos",
-    asset: "USDT",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "NGN",
     direction: "Sell",
     price: 1_548,
-    minTrade: 10_000,
-    maxTrade: 2_000_000,
+    minTrade: 20,
+    maxTrade: 5_000,
     liquidity: 6_000,
     paymentMethods: ["Bank Transfer (Nigeria)", "Opay"],
   },
   {
     merchantLabel: "merchant-lagos",
-    asset: "USDC",
+    mint: DEVNET_SETTLEMENT_MINT,
     fiat: "NGN",
     direction: "Buy",
     price: 1_531,
-    minTrade: 10_000,
-    maxTrade: 1_000_000,
+    minTrade: 20,
+    maxTrade: 4_000,
     liquidity: 5_000,
     paymentMethods: ["Bank Transfer (Nigeria)"],
   },
@@ -282,12 +323,13 @@ async function seedAdvertisements(client: Client): Promise<number> {
     // Deterministic id so a re-run refreshes the same ad rather than growing
     // the book without bound — the exchange would otherwise fill with
     // duplicates across runs and stop resembling a real market.
-    const id = `devnet-${spec.merchantLabel}-${spec.asset}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
+    const id =
+      `devnet-${spec.merchantLabel}-${spec.fiat}-${spec.direction}-${index}`.toLowerCase();
     const create: AdvertisementCreate = {
       id,
-      merchant: Array.from(peerId),
-      merchant_public_key: Array.from(keypair.publicKey),
-      asset: spec.asset,
+      merchant: bs58.encode(peerId),
+      merchant_public_key: bs58.encode(keypair.publicKey),
+      asset_mint: spec.mint,
       direction: spec.direction,
       fiat_currency: spec.fiat,
       min_trade: amount(spec.minTrade),
@@ -298,7 +340,9 @@ async function seedAdvertisements(client: Client): Promise<number> {
       timestamp: Date.now(),
     };
     await advertisements.sendAdvertisementCreate(client, create, keypair);
-    console.log(`  ${spec.direction.padEnd(4)} ${spec.asset}/${spec.fiat} @ ${spec.price} — ${id}`);
+    console.log(
+      `  ${spec.direction.padEnd(4)} ${spec.mint}/${spec.fiat} @ ${spec.price} — ${id}`,
+    );
     created++;
   }
   return created;
@@ -307,7 +351,10 @@ async function seedAdvertisements(client: Client): Promise<number> {
 async function main() {
   const client = new Client({ endpoint: NODE_URL, timeoutMs: 30_000 });
 
-  const version = await client.call<Record<string, never>, { version: string }>("getVersion", {});
+  const version = await client.call<Record<string, never>, { version: string }>(
+    "getVersion",
+    {},
+  );
   console.log(`node ${NODE_URL} — version ${version.version}\n`);
 
   console.log("service registry (OFS-1500):");
@@ -330,11 +377,18 @@ async function main() {
 
   console.log("\nadvertisement book (OFS-2100):");
   const created = await seedAdvertisements(client);
-  const book = await advertisements.getAdvertisements(client);
-  console.log(`\n  getAdvertisements now returns ${book.length} ad(s)`);
-  if (book.length < created) {
+  // One page, and the seed writes fewer ads than a page holds — but count
+  // the whole book rather than the first page, so this check keeps meaning
+  // what it says if the seed ever grows past the node's page size.
+  let readable = 0;
+  for await (const row of advertisements.eachAdvertisement(client)) {
+    void row;
+    readable += 1;
+  }
+  console.log(`\n  getAdvertisements now returns ${readable} ad(s)`);
+  if (readable < created) {
     throw new Error(
-      `created ${created} advertisements but only ${book.length} are readable — ` +
+      `created ${created} advertisements but only ${readable} are readable — ` +
         "the node accepted fewer than were sent",
     );
   }

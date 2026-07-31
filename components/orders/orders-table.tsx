@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
-import { peerIdBytesForAddress, peerIdHexForAddress } from "@/lib/peer-id";
+import { peerIdForAddress } from "@/lib/peer-id";
 import { fetchTrades, tradesForPeer, deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
-import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { formatCrypto, formatDateMs } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { StatusPill } from "@/components/status-pill";
@@ -25,7 +25,6 @@ function matches(trade: Trade, filter: Filter): boolean {
   }
 }
 
-const toHex = (bytes: number[]) => bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
 
 /**
  * `/orders`, reading this wallet's real trades from a node.
@@ -101,7 +100,7 @@ export function OrdersTable() {
     return <p className="p-6 text-sm text-gray-500">Reading trades…</p>;
   }
 
-  const myPeerId = peerIdBytesForAddress(wallet.address);
+  const myPeerId = peerIdForAddress(wallet.address) ?? "";
   const mine = tradesForPeer(trades, myPeerId);
   const visible = mine.filter((t) => matches(t, filter));
 
@@ -146,9 +145,10 @@ export function OrdersTable() {
               const ad = adById.get(t.reservation.advertisement_id);
               const amount = t.reservation.amount.base_units / 10 ** t.reservation.amount.decimals;
               const status = deriveStatus(t);
-              const requesterHex = toHex(t.reservation.requester);
-              const myHex = peerIdHexForAddress(wallet.address);
-              const role = requesterHex === myHex ? "Requester" : "Counterparty";
+              const role =
+                t.reservation.requester === peerIdForAddress(wallet.address)
+                  ? "Requester"
+                  : "Counterparty";
               return (
                 <Tr key={t.reservation.id}>
                   <Td py="py-5">
@@ -157,10 +157,10 @@ export function OrdersTable() {
                     </Link>
                   </Td>
                   <Td py="py-5" className="text-gray-300">
-                    {ad ? `${ad.asset}/${ad.fiatCurrency}` : "—"}
+                    {ad ? `${assetLabel(ad)}/${ad.fiatCurrency}` : "—"}
                   </Td>
                   <Td py="py-5" right num className="text-gray-300">
-                    {ad ? formatCrypto(amount, ad.asset) : amount}
+                    {ad ? formatCrypto(amount, assetLabel(ad)) : amount}
                   </Td>
                   <Td py="py-5" className="text-gray-400">{role}</Td>
                   <Td py="py-5"><StatusPill status={TRADE_STATUS_LABEL[status]} /></Td>

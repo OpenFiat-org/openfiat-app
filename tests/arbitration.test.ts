@@ -15,10 +15,10 @@ import {
   OFFCHAIN_VOTE_NAME,
   ONCHAIN_OUTCOME_BYTE,
   saveSalt,
-  type LiveDispute,
 } from "@/lib/arbitration";
+import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 
-const who = { publicKey: new Uint8Array(32).fill(7), peerId: [1, 2, 3] };
+const who = { publicKey: new Uint8Array(32).fill(7), peerId: "peer-alice" };
 
 describe("outcome byte tables", () => {
   // The bug this guards against is real: committing the off-chain byte to the
@@ -120,27 +120,65 @@ describe("salt persistence", () => {
 });
 
 describe("case state", () => {
-  const dispute: LiveDispute = {
+  /**
+   * The whole record, which only `getMyDisputes` returns. Where an
+   * arbitrator sits on a case and how they voted is not in the public read
+   * at all, so these three questions can only be asked of a case this
+   * wallet is entitled to.
+   */
+  const dispute: Dispute = {
     id: "d1",
     settlement_id: "s1",
+    buyer: "peer-buyer",
+    buyer_public_key: "key-buyer",
+    seller: "peer-seller",
+    seller_public_key: "key-seller",
+    opener: "peer-buyer",
     reason: "no payment",
     status: "Open",
     required_arbitrators: 3,
-    arbitrators: [[1, 2, 3]],
-    commitments: [{ arbitrator: [1, 2, 3], commitment: [] }],
+    arbitrators: ["peer-alice"],
+    arbitrator_keys: [],
+    commitments: [{ arbitrator: "peer-alice", commitment: [] }],
     reveals: [],
+    resolution: null,
+    buyer_agreed_mutual_settlement: false,
+    seller_agreed_mutual_settlement: false,
+    onchain_execution_signature: null,
+    opened_at: 1,
+    updated_at: 2,
   };
 
   it("reads this arbitrator's progress by peer id", () => {
-    expect(hasJoined(dispute, [1, 2, 3])).toBe(true);
-    expect(hasJoined(dispute, [9, 9, 9])).toBe(false);
-    expect(hasCommitted(dispute, [1, 2, 3])).toBe(true);
-    expect(hasRevealed(dispute, [1, 2, 3])).toBe(false);
+    expect(hasJoined(dispute, "peer-alice")).toBe(true);
+    expect(hasJoined(dispute, "peer-mallory")).toBe(false);
+    expect(hasCommitted(dispute, "peer-alice")).toBe(true);
+    expect(hasRevealed(dispute, "peer-alice")).toBe(false);
   });
 
+  /**
+   * Joinability is asked of the *public* docket, and has to stay that way:
+   * a prospective arbitrator has to see a free seat on a case they are not
+   * in yet, which is precisely why the seat count survives redaction while
+   * the roster does not.
+   */
+  const open: PublicDispute = {
+    id: "d1",
+    settlement_id: "s1",
+    status: "Open",
+    required_arbitrators: 3,
+    arbitrators_seated: 1,
+    commitments: 1,
+    reveals: 0,
+    resolution: null,
+    onchain_execution_signature: null,
+    opened_at: 1,
+    updated_at: 2,
+  };
+
   it("treats a case as joinable only while open and under quota", () => {
-    expect(isJoinable(dispute)).toBe(true);
-    expect(isJoinable({ ...dispute, status: "CaseLocked" })).toBe(false);
-    expect(isJoinable({ ...dispute, arbitrators: [[1], [2], [3]] })).toBe(false);
+    expect(isJoinable(open)).toBe(true);
+    expect(isJoinable({ ...open, status: "CaseLocked" })).toBe(false);
+    expect(isJoinable({ ...open, arbitrators_seated: 3 })).toBe(false);
   });
 });

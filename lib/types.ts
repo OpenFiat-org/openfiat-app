@@ -73,9 +73,20 @@ export interface Advertisement {
   direction: TradeDirection;
   fiatCurrency: FiatCurrency;
   pricing: PricingModel;
-  minTrade: number; // fiat
-  maxTrade: number; // fiat
-  availableLiquidity: number; // crypto, backed by the merchant's liquidity vault
+  /**
+   * Trade bounds in the ASSET, like `availableLiquidity` below.
+   *
+   * These said `// fiat`, and the fixture data was generated to match by
+   * multiplying by an FX rate. OFS-2100 denominates `min_trade` and
+   * `max_trade` in the token being escrowed, so the simulated book was
+   * describing a different record from the real one — on the one route
+   * that still renders it, beside a directory reading real advertisements
+   * the other way.
+   */
+  minTrade: number;
+  maxTrade: number;
+  /** In the asset, backed by the merchant's liquidity vault. */
+  availableLiquidity: number;
   /** Empty on international ads — they semantically accept any payment method. */
   paymentMethods: string[];
   /** Borderless ad: priced in USD, accepts any fiat currency (FX-converted) and any payment method. */

@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
+import { TradeLimits } from "@/components/asset-label";
 import {
   type SavedPaymentAccount,
   accountsFor,
   isComplete,
   readAccounts,
 } from "@/lib/payment-accounts";
-import type { LiveAd } from "@/lib/live-advertisements";
+import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import type { TradeDirection } from "@/lib/types";
+import { addressForPeerId } from "@/lib/peer-id";
+import { formatBaseUnits } from "@/lib/live-vaults";
+import { useVaultBacking, vaultCovers } from "@/components/wallet/use-vault-backing";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 
 /** How long a quoted price stands before it refreshes. */
@@ -38,8 +42,15 @@ export function OrderPanel({
   const buy = userDirection === "Buy";
   const price = ad.price ?? 0;
   const fiat = ad.fiatCurrency;
-  const minFiat = ad.minTrade;
-  const maxFiat = ad.maxTrade;
+  /*
+   * In the ASSET, not in `fiat` — see `LiveAd.minTrade`. These were named
+   * `minFiat`/`maxFiat` and used as fiat throughout: shown with the
+   * currency code, compared against the fiat box, and divided by the price
+   * to get a crypto bound that was already one. On a KES pair every one of
+   * those was out by the exchange rate.
+   */
+  const minAsset = ad.minTrade;
+  const maxAsset = ad.maxTrade;
 
   const [payText, setPayText] = useState("");
   const [receiveText, setReceiveText] = useState("");
@@ -66,24 +77,68 @@ export function OrderPanel({
   const fiatAmount = Number(payText) || 0;
   const cryptoAmount = Number(receiveText) || 0;
 
-  const minCrypto = minFiat / price;
-  const maxCrypto = Math.min(maxFiat / price, ad.availableLiquidity);
+  const minCrypto = minAsset;
+  const maxCrypto = Math.min(maxAsset, ad.availableLiquidity);
+  // The fiat side of the same band, at this advertisement's own price —
+  // derived, because the record states the bounds in the asset.
+  const minFiat = minAsset * price;
+  const maxFiat = maxAsset * price;
 
   const usable = accountsFor(accounts, ad.paymentMethods, false);
   // Only relevant when selling: a buyer pays out of their own account and has
   // nothing to nominate.
   const needsAccount = !buy && usable.length === 0;
 
-  const tooLow = fiatAmount > 0 && fiatAmount < minFiat;
-  const tooHigh = fiatAmount > maxFiat;
+  // Tested on the asset side, which is the side the bounds are stated on.
+  // `cryptoAmount` tracks `fiatAmount` through `onPay`/`onReceive`, so a
+  // taker typing into either box is measured against the same band.
+  const tooLow = cryptoAmount > 0 && cryptoAmount < minAsset;
+  const tooHigh = cryptoAmount > maxAsset;
   const overLiquidity = cryptoAmount > ad.availableLiquidity;
   const noPrice = ad.price === null;
+
+  /*
+   * The seller-balance check, against the advertiser's real vault.
+   *
+   * `ad.availableLiquidity` above is what the *advertisement declares* — a
+   * number its author chose. This is what actually backs it: the
+   * `LiquidityVault` for (merchant, mint), both halves taken straight off
+   * the record. The merchant's wallet is not looked up anywhere; a PeerId is
+   * a prefix plus the raw Ed25519 key, so it is already in the record (see
+   * `addressForPeerId`), and the mint is `ad.assetMint`. No ticker is
+   * involved in either half, which is what makes this checkable at all —
+   * the previous version was keyed on a symbol and could verify nothing.
+   *
+   * Both figures are shown. When they disagree the advertisement is
+   * offering more than it holds, and that is exactly the thing a taker
+   * needs to see rather than have averaged away.
+   */
+  const merchantWallet = useMemo(() => addressForPeerId(ad.merchantPeerId), [ad.merchantPeerId]);
+  const backing = useVaultBacking(merchantWallet, ad.assetMint);
+  const cover = backing.kind === "found" ? vaultCovers(backing.vault, receiveText) : null;
+
+  // Only ever true on something the chain asserted. A failed lookup is not
+  // evidence that an advertiser is unfunded.
+  const overVault =
+    cryptoAmount > 0 && (backing.kind === "none" || (cover !== null && !cover.covered));
+
+  /*
+   * Whether the vault covers what the advertisement *claims*, independent of
+   * what this taker typed. Compared in base units rather than by parsing the
+   * formatted string back into a float — `formatBaseUnits` inserts thousands
+   * separators and truncates past six decimals, so reading its output as a
+   * number is both locale-dependent and lossy.
+   */
+  const vaultCoversDeclared =
+    backing.kind === "found" ? vaultCovers(backing.vault, String(ad.availableLiquidity))?.covered : undefined;
+
   const ready =
     !noPrice &&
     fiatAmount > 0 &&
     !tooLow &&
     !tooHigh &&
     !overLiquidity &&
+    !overVault &&
     !needsAccount &&
     method !== "";
 
@@ -96,13 +151,26 @@ export function OrderPanel({
         ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
         : "None of your saved accounts uses a method this advertiser accepts. Add one that does in Settings.";
     }
-    if (fiatAmount <= 0) return `Enter an amount between ${formatFiat(minFiat, fiat, 0)} and ${formatFiat(maxFiat, fiat, 0)}`;
-    if (tooLow) return `Below this advertiser's minimum of ${formatFiat(minFiat, fiat, 0)}`;
-    if (tooHigh) return `Above this advertiser's maximum of ${formatFiat(maxFiat, fiat, 0)}`;
-    if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, ad.asset)} is available on this ad`;
+    // Quoted in the asset, because that is the unit the merchant set the
+    // bound in. The fiat equivalent follows in brackets so a taker filling
+    // in the fiat box still knows what to type — a conversion this app
+    // performed, not a figure on the record.
+    const band = `${formatCrypto(minAsset, assetLabel(ad))} and ${formatCrypto(maxAsset, assetLabel(ad))}`;
+    if (fiatAmount <= 0) {
+      return `Enter an amount between ${band} (about ${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)})`;
+    }
+    if (tooLow) return `Below this advertiser's minimum of ${formatCrypto(minAsset, assetLabel(ad))}`;
+    if (tooHigh) return `Above this advertiser's maximum of ${formatCrypto(maxAsset, assetLabel(ad))}`;
+    if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, assetLabel(ad))} is available on this ad`;
+    if (backing.kind === "none" && cryptoAmount > 0) {
+      return "This advertiser has no liquidity vault for the token this ad settles in — nothing on chain backs it";
+    }
+    if (cover !== null && !cover.covered) {
+      return `This advertiser's vault holds only ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} ${assetLabel(ad)} available`;
+    }
     if (!method) return "Choose a payment method";
     return null;
-  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minFiat, maxFiat, fiat]);
+  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat, backing, cover, cryptoAmount]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -126,8 +194,9 @@ export function OrderPanel({
       value={receiveText}
       onChange={onReceive}
       placeholder={buy ? "0.00" : `${formatNumber(minCrypto, 2)} ~ ${formatNumber(maxCrypto, 2)}`}
-      unit={ad.asset}
-      icon={<AssetIcon asset={ad.asset} size={18} />}
+      unit={assetLabel(ad)}
+      // No coin art for a mint the node has no name for; see AssetLabel.
+      icon={ad.assetSymbol ? <AssetIcon asset={ad.assetSymbol} size={18} /> : null}
       invalid={overLiquidity || (!buy && (tooLow || tooHigh))}
     />
   );
@@ -161,11 +230,38 @@ export function OrderPanel({
 
           <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
-            <Fact label="Available" value={formatCrypto(ad.availableLiquidity, ad.asset)} />
+            <Fact label="Declared on the ad" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
+            {/*
+              * Shown next to the declared figure, never instead of it. A
+              * taker comparing the two is the whole point: the left number
+              * is a claim, the right one is the vault behind it.
+              */}
             <Fact
-              label="Limits"
-              value={`${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)}`}
+              label="Backed by the merchant's vault"
+              value={
+                backing.kind === "found" ? (
+                  <span
+                    className={vaultCoversDeclared === false ? "text-amber-300" : "text-gray-200"}
+                    title={`Vault ${backing.vault.address.toBase58()}`}
+                  >
+                    {formatBaseUnits(backing.vault.available, backing.vault.decimals)} {assetLabel(ad)} available
+                  </span>
+                ) : backing.kind === "none" ? (
+                  <span className="text-red-300">No vault for this mint</span>
+                ) : backing.kind === "loading" ? (
+                  <span className="text-gray-500">Reading the chain…</span>
+                ) : backing.kind === "error" ? (
+                  <span className="text-amber-300/80" title={backing.message}>
+                    Could not reach the cluster — unverified, not unbacked
+                  </span>
+                ) : (
+                  // The merchant field is not an Ed25519 identity PeerId, so
+                  // there is no wallet in it to key a vault read on.
+                  <span className="text-gray-500">Merchant identity carries no Solana address</span>
+                )
+              }
             />
+            <Fact label="Limits" value={<TradeLimits ad={ad} />} />
             <Fact
               label="Pricing"
               value={
@@ -178,8 +274,8 @@ export function OrderPanel({
 
           <p className="mt-6 max-w-prose text-xs leading-relaxed text-gray-500">
             {buy
-              ? `Your ${ad.asset} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
-              : `Your ${ad.asset} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
+              ? `Your ${assetLabel(ad)} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
+              : `Your ${assetLabel(ad)} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
           </p>
 
           {/*
@@ -267,7 +363,7 @@ export function OrderPanel({
                   buy ? "bg-emerald-600/35" : "bg-orange-600/35"
                 }`}
               >
-                {userDirection} {ad.asset}
+                {userDirection} {assetLabel(ad)}
               </span>
               <p className="mt-2 text-xs text-amber-300">{blocker}</p>
             </>
@@ -278,7 +374,7 @@ export function OrderPanel({
   );
 }
 
-function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Fact({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex justify-between gap-4 border-t border-white/5 pt-2">
       <dt className="text-gray-500">{label}</dt>

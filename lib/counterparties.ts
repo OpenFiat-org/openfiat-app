@@ -1,6 +1,9 @@
-import bs58 from "bs58";
-import { peerIdFromPublicKey } from "@openfiat/sdk";
-import { base64 } from "@/lib/earnings";
+import {
+  cachedRead,
+  signedRead,
+  type GatedSurface,
+  type WalletProofFailure,
+} from "@/lib/wallet-proof";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -26,14 +29,22 @@ import type { SolanaProvider } from "@/lib/wallet-connection";
  * The whole list arrives in one authenticated call and is cached in memory
  * for the tab, because the alternative is a wallet prompt every time a badge
  * renders on a merchant card. The cache is keyed by wallet *and* node, and
- * disconnecting clears it (`forgetCounterparties`) so a second wallet on the
+ * disconnecting clears it (`forgetSignedReads`) so a second wallet on the
  * same machine never sees the first one's history.
+ *
+ * # Where the handshake lives now
+ *
+ * This was the first gated read and carried the whole mechanism. It is no
+ * longer the only one — `getMySettlements`, `getMyReservations` and
+ * `getMyDisputes` are gated the same way — so the challenge-sign-present
+ * machinery moved to `lib/wallet-proof.ts` and what is left here is this
+ * surface's own domain, its own copy, and what its answer means.
  */
 
 /** A counterparty summary exactly as `getCounterparties` returns it. */
 export interface CounterpartySummary {
   /** Raw `PeerId` bytes — the only identifier the protocol has for them. */
-  counterparty: number[];
+  counterparty: string;
   /** Settlements that reached `Approved` or `Completed`. */
   trades: number;
   /** Awaiting payment, or awaiting the merchant's decision. */
@@ -46,29 +57,8 @@ export interface CounterpartySummary {
   last_traded_at: number | null;
 }
 
-interface Challenge {
-  subject: string;
-  nonce: string;
-  expires_at: number;
-}
-
-/** Signed bytes the node expects: `<domain>:<subject>:<nonce>`. */
-const CHALLENGE_DOMAIN = "openfiat-counterparties";
-
-function challengeBytes(challenge: Challenge): Uint8Array {
-  return new TextEncoder().encode(
-    `${CHALLENGE_DOMAIN}:${challenge.subject}:${challenge.nonce}`,
-  );
-}
-
 /** Why a read failed, in terms the person in front of the screen can act on. */
-export type CounterpartyFailure =
-  | "not-your-wallet"
-  | "challenge-expired"
-  | "challenge-spent"
-  | "wrong-key"
-  | "wallet-cannot-sign"
-  | "unreachable";
+export type CounterpartyFailure = WalletProofFailure;
 
 export const FAILURE_MESSAGE: Record<CounterpartyFailure, string> = {
   "not-your-wallet":
@@ -83,69 +73,25 @@ export const FAILURE_MESSAGE: Record<CounterpartyFailure, string> = {
   unreachable: "Could not reach the selected node.",
 };
 
-export class CounterpartyError extends Error {
-  readonly kind: CounterpartyFailure;
-  constructor(kind: CounterpartyFailure) {
-    super(FAILURE_MESSAGE[kind]);
-    this.kind = kind;
-    this.name = "CounterpartyError";
-  }
-}
-
 /**
- * Map a node error onto something actionable.
+ * This surface's handshake: its own nonce issuer, its own domain, its own
+ * copy.
  *
- * `INVALID_IDENTITY_CLAIM` is the one that matters: it is the node refusing
- * to answer for a wallet the caller does not hold the key to, and it must
- * never be presented as "no trades found" — a refusal and an empty history
- * are opposite answers.
+ * The issuer is `getCounterpartiesChallenge` rather than the shared
+ * `getWalletChallenge` the newer gated reads use. Both exist on the node and
+ * both draw from one challenge ledger, so the choice changes nothing about
+ * what is proved — but this read works today against nodes running the
+ * binary before the redaction landed, and moving it would break that for no
+ * gain.
  */
-export function classifyFailure(message: string): CounterpartyFailure {
-  if (message.includes("INVALID_IDENTITY_CLAIM")) return "not-your-wallet";
-  if (message.includes("INVALID_SIGNATURE")) return "wrong-key";
-  if (message.includes("INVALID_REQUEST")) return "challenge-expired";
-  if (message.includes("RESOURCE_NOT_FOUND")) return "challenge-spent";
-  return "unreachable";
-}
+export const COUNTERPARTIES: GatedSurface = {
+  challenge: "getCounterpartiesChallenge",
+  domain: "openfiat-counterparties",
+  messages: FAILURE_MESSAGE,
+};
 
-async function rpc<T>(endpoint: string, method: string, params: unknown): Promise<T> {
-  let body: { result?: T; error?: { message: string } };
-  try {
-    const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-    });
-    body = (await res.json()) as { result?: T; error?: { message: string } };
-  } catch {
-    throw new CounterpartyError("unreachable");
-  }
-  if (body.error) throw new CounterpartyError(classifyFailure(body.error.message));
-  return body.result as T;
-}
-
-/**
- * The `PeerId` a Solana address derives to, or null if it is not a valid
- * 32-byte Ed25519 key.
- *
- * Returning null rather than throwing is deliberate: the simulated merchant
- * dataset carries pseudo-addresses, and a badge that cannot identify a wallet
- * should render nothing rather than break the page around it.
- */
-export function peerIdForAddress(address: string): number[] | null {
-  try {
-    const decoded = bs58.decode(address);
-    if (decoded.length !== 32) return null;
-    return Array.from(peerIdFromPublicKey(decoded));
-  } catch {
-    return null;
-  }
-}
-
-/** Base64 for the wire, matching every other encoded field on this surface. */
-function encodePeerId(peerId: number[]): string {
-  return base64(Uint8Array.from(peerId));
-}
+export { classifyFailure } from "@/lib/wallet-proof";
+export { peerIdForAddress } from "@/lib/peer-id";
 
 /**
  * A `PeerId` in its canonical base58btc form (`12D3Koo…`), abbreviated.
@@ -155,21 +101,16 @@ function encodePeerId(peerId: number[]): string {
  * fiction. Shown abbreviated because the full string is 52 characters and
  * the first and last few are what a person actually recognises.
  */
-export function formatPeerId(peerId: number[]): string {
-  const encoded = bs58.encode(Uint8Array.from(peerId));
-  return encoded.length > 16 ? `${encoded.slice(0, 8)}…${encoded.slice(-6)}` : encoded;
-}
-
-export function sameBytes(a: number[], b: number[]): boolean {
-  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+export function formatPeerId(peerId: string): string {
+  return peerId.length > 16 ? `${peerId.slice(0, 8)}…${peerId.slice(-6)}` : peerId;
 }
 
 /** This pair's summary, or null if the two have never started a settlement. */
 export function summaryFor(
   summaries: CounterpartySummary[],
-  counterparty: number[],
+  counterparty: string,
 ): CounterpartySummary | null {
-  return summaries.find((s) => sameBytes(s.counterparty, counterparty)) ?? null;
+  return summaries.find((s) => s.counterparty === counterparty) ?? null;
 }
 
 /**
@@ -203,71 +144,22 @@ export async function fetchCounterparties(
   address: string,
   signer: SolanaProvider,
 ): Promise<CounterpartySummary[]> {
-  if (!signer.signMessage) throw new CounterpartyError("wallet-cannot-sign");
-  const peerId = peerIdForAddress(address);
-  if (!peerId) throw new CounterpartyError("not-your-wallet");
-
-  const wallet = encodePeerId(peerId);
-  const challenge = await rpc<Challenge>(endpoint, "getCounterpartiesChallenge", { wallet });
-  const { signature } = await signer.signMessage(challengeBytes(challenge));
-
-  return rpc<CounterpartySummary[]>(endpoint, "getCounterparties", {
-    wallet,
-    public_key: base64(bs58.decode(address)),
-    nonce: challenge.nonce,
-    signature: base64(signature),
-  });
+  return signedRead<CounterpartySummary[]>(
+    endpoint,
+    "getCounterparties",
+    address,
+    signer,
+    COUNTERPARTIES,
+  );
 }
-
-/**
- * In-memory only. Trading history is not something to leave in localStorage
- * on a shared machine, and it is cheap to re-sign for once per tab.
- */
-const cache = new Map<string, Promise<CounterpartySummary[]>>();
-
-const cacheKey = (endpoint: string, address: string) => `${endpoint} ${address}`;
 
 /**
  * `fetchCounterparties`, memoized per wallet and node for the life of the
- * tab. Concurrent callers share one in-flight request, so several badges
- * mounting at once still produce exactly one wallet prompt.
+ * tab, so several badges mounting at once still produce exactly one wallet
+ * prompt.
  *
- * A failure is not cached — the next caller retries rather than being stuck
- * with a stale error from a node that was briefly unreachable.
+ * `peek` is what lets an inline badge fill itself in silently once the
+ * history has been read on the account page, while never being the thing
+ * that pops a wallet prompt on a page the user was only browsing.
  */
-export function loadCounterparties(
-  endpoint: string,
-  address: string,
-  signer: SolanaProvider,
-): Promise<CounterpartySummary[]> {
-  const key = cacheKey(endpoint, address);
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const pending = fetchCounterparties(endpoint, address, signer).catch((err: unknown) => {
-    cache.delete(key);
-    throw err;
-  });
-  cache.set(key, pending);
-  return pending;
-}
-
-/**
- * The cached read for this wallet and node, if one has already happened in
- * this tab, without starting a new one.
- *
- * This is what lets an inline badge fill itself in silently once the history
- * has been read on the account page, while never being the thing that pops a
- * wallet prompt on a page the user was only browsing.
- */
-export function peekCounterparties(
-  endpoint: string,
-  address: string,
-): Promise<CounterpartySummary[]> | undefined {
-  return cache.get(cacheKey(endpoint, address));
-}
-
-/** Drop everything cached — called when the connected wallet changes. */
-export function forgetCounterparties(): void {
-  cache.clear();
-}
+export const counterparties = cachedRead(fetchCounterparties);

@@ -1,255 +1,126 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Client } from "@openfiat/sdk";
 
+import { NodeChip } from "@/components/access-node";
+import { FOOTER_ICONS } from "@/components/footer-icons";
+import { FOOTER_COLUMNS, SITE_URL, type FooterLink } from "@/components/footer-links";
 import { NETWORK_LABEL, SOLANA_CLUSTER, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
-import { nodeUrlFor, unreachableReason } from "@/lib/node-scheme";
-import {
-  NODE_CHANGED_EVENT,
-  connectableNodes,
-  readNodeSelection,
-  writeNodeSelection,
-  type NodeSelection,
-} from "@/lib/node-preference";
 
-const FOOTER_LINKS: Array<[string, string]> = [
-  ["Countries", "/countries"],
-  ["Guide", "/guide"],
-  ["How to buy", "/guide/buy"],
-  ["How to sell", "/guide/sell"],
-  ["Become a merchant", "/guide/merchant"],
-  ["Explorer", "/explorer"],
-  ["Network", "/network"],
-  // Next to Providers, not next to the guides: both are directories of who is
-  // on the network, read from the same node, and someone looking for one is
-  // usually looking for the other.
-  ["Merchants", "/merchants"],
-  ["Providers", "/providers"],
-  ["Governance", "/governance"],
-];
+const linkClass =
+  "inline-flex items-center gap-2 rounded-sm text-sm text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70";
+
+/** The same micro-label the nav uses for its mega-menu sections. */
+const headingClass = "text-xs font-semibold uppercase tracking-wider text-gray-400";
+
+function FooterLinkItem({ link }: { link: FooterLink }) {
+  const Icon = link.icon ? FOOTER_ICONS[link.icon] : null;
+
+  const body = (
+    <>
+      {Icon && <Icon />}
+      <span>{link.label}</span>
+      {link.external && (
+        <span aria-hidden="true" className="text-gray-600">
+          ↗
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <li>
+      {link.external ? (
+        <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          {body}
+        </a>
+      ) : (
+        <Link href={link.href} className={linkClass}>
+          {body}
+        </Link>
+      )}
+    </li>
+  );
+}
 
 /**
- * The old copy here read "Simulated data, not connected to a live node" on
- * every page. It was wrong in both directions at once: false on the routes
- * that read a real node and real Solana accounts, and an alibi for the ones
- * that were still serving fixtures. A blanket disclaimer cannot describe a
- * mixed app, and a reader cannot tell which half they are looking at.
+ * Four columns of links, then a baseline bar carrying the one disclaimer that
+ * is true on every route and the node this interface is actually talking to.
  *
- * It now states the one thing true everywhere — this is devnet, so nothing
+ * The links used to be a single flat row, which stopped being readable at
+ * exactly the width where it started being useful. Grouping them means adding
+ * one is an entry in `components/footer-links.tsx` and no layout change.
+ *
+ * The copy above them once read "Simulated data, not connected to a live
+ * node" on every page. It was wrong in both directions at once: false on the
+ * routes that read a real node and real Solana accounts, and an alibi for the
+ * ones that were still serving fixtures. A blanket disclaimer cannot describe
+ * a mixed app, and a reader cannot tell which half they are looking at. What
+ * is left states the one thing true everywhere — this is devnet, so nothing
  * here is worth anything — and leaves provenance to each route.
  */
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-white/10">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-4 py-8">
-        <div className="text-xs text-gray-500">
-          <p>
-            © 2026 OpenFiat — decentralized P2P stablecoin protocol. Running on {NETWORK_LABEL} (
-            {SOLANA_CLUSTER}){TOKENS_ARE_WORTHLESS ? "; tokens and balances here have no value." : "."}
-          </p>
-          <nav className="mt-2 flex gap-5">
-            {FOOTER_LINKS.map(([label, href]) => (
-              <Link key={href} href={href} className="hover:text-gray-300">
-                {label}
-              </Link>
-            ))}
-          </nav>
+      <div className="mx-auto max-w-7xl px-4 py-10">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-14">
+          <div className="lg:w-64 lg:shrink-0">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <Image
+                src="/logo-mark.png"
+                alt=""
+                width={26}
+                height={26}
+                className="h-[26px] w-[26px]"
+              />
+              <span className="text-base font-semibold text-white">OpenFiat</span>
+            </Link>
+            <p className="mt-3 text-sm leading-relaxed text-gray-500">
+              A decentralized marketplace for stablecoins and local fiat. No operator holds your
+              money, and no company can suspend you.
+            </p>
+            <a
+              href={SITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-3 ${linkClass}`}
+            >
+              openfiat.network
+              <span aria-hidden="true" className="text-gray-600">
+                ↗
+              </span>
+            </a>
+          </div>
+
+          <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+            {FOOTER_COLUMNS.map((column) => {
+              const headingId = `footer-${column.title.toLowerCase()}`;
+              return (
+                <nav key={column.title} aria-labelledby={headingId} className="min-w-0">
+                  <h2 id={headingId} className={headingClass}>
+                    {column.title}
+                  </h2>
+                  <ul className="mt-4 space-y-2.5">
+                    {column.links.map((link) => (
+                      <FooterLinkItem key={link.href} link={link} />
+                    ))}
+                  </ul>
+                </nav>
+              );
+            })}
+          </div>
         </div>
-        <NodeChip />
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5">
+          <p className="text-xs text-gray-500">
+            © 2026 OpenFiat — decentralized P2P stablecoin protocol. Running on {NETWORK_LABEL} (
+            {SOLANA_CLUSTER})
+            {TOKENS_ARE_WORTHLESS ? "; tokens and balances here have no value." : "."}
+          </p>
+          <NodeChip />
+        </div>
       </div>
     </footer>
-  );
-}
-
-function NodeChip() {
-  const [selection, setSelection] = useState<NodeSelection | null>(null);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const update = () => setSelection(readNodeSelection());
-    update();
-    window.addEventListener(NODE_CHANGED_EVENT, update);
-    return () => window.removeEventListener(NODE_CHANGED_EVENT, update);
-  }, []);
-
-  // SSR/initial render shows a neutral placeholder; preference applies post-mount.
-  const label = selection
-    ? `${selection.label}${selection.chainMode ? ` · ${selection.chainMode}` : ""}`
-    : "…";
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 text-xs text-gray-300 hover:border-white/25"
-        title="Access node — click to change"
-      >
-        <span className="h-2 w-2 rounded-full bg-emerald-400" />
-        <span className="tabular-nums">{label}</span>
-      </button>
-      {open && <AccessNodeModal selection={selection} onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
-/** Round-trip time to a node's `getHealth`, or `null` if it did not answer. */
-async function measure(url: string): Promise<number | null> {
-  const started = performance.now();
-  try {
-    const client = new Client({ endpoint: url, timeoutMs: 4_000 });
-    await client.call<Record<string, never>, unknown>("getHealth", {});
-    return Math.round(performance.now() - started);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Pick the node this interface talks to.
- *
- * Every entry is a node that actually exists and is actually contacted: the
- * list is `knownNodes()` (the real devnet cluster), and each row's status
- * comes from a live `getHealth` round trip rather than a declared constant.
- * A node that does not answer is shown as unreachable instead of being
- * hidden, because "the node I chose is down" is something the user needs to
- * be able to see.
- */
-function AccessNodeModal({
-  selection,
-  onClose,
-}: {
-  selection: NodeSelection | null;
-  onClose: () => void;
-}) {
-  const [host, setHost] = useState("");
-  const [error, setError] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [latency, setLatency] = useState<Record<string, number | null>>({});
-  const [probing, setProbing] = useState(true);
-
-  const nodes = connectableNodes();
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const entries = await Promise.all(
-        nodes.map(async (n) => [n.id, await measure(n.url)] as const),
-      );
-      if (!cancelled) {
-        setLatency(Object.fromEntries(entries));
-        setProbing(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // `nodes` is derived from a pure function of build-time config, so it is
-    // stable across renders; probing once on open is intended.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function selectNode(id: string) {
-    writeNodeSelection(id);
-    setTimeout(onClose, 400);
-  }
-
-  /** A custom node gets the same real `getHealth` check as the listed ones. */
-  async function connectCustom() {
-    const value = host.trim();
-    if (!/^[\w.-]+:\d{2,5}$/.test(value)) {
-      setError("Enter a host:port address, e.g. p2p.mynode.example:9000");
-      return;
-    }
-    setError("");
-    setChecking(true);
-    const ms = await measure(nodeUrlFor(value));
-    setChecking(false);
-    if (ms === null) {
-      // Not always the node's fault — see `lib/node-scheme.ts`.
-      setError(unreachableReason(value));
-      return;
-    }
-    setError(`✓ reachable — ${ms} ms`);
-    selectNode(`custom:${value}`);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-md border border-white/15 bg-[#10151d] shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-white">Access node</h2>
-            <p className="mt-0.5 text-xs text-gray-500">
-              The {NETWORK_LABEL} cluster. Each node is contacted directly — status and latency below
-              are measured, not declared.
-            </p>
-          </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
-        </div>
-
-        <ul className="max-h-72 divide-y divide-white/5 overflow-y-auto">
-          {nodes.map((n) => {
-            const ms = latency[n.id];
-            const reachable = ms !== null && ms !== undefined;
-            return (
-              <li key={n.id} className="flex items-center gap-3 px-5 py-3 text-sm">
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${
-                    probing ? "bg-gray-500" : reachable ? "bg-emerald-400" : "bg-red-400"
-                  }`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-gray-200">{n.label}</p>
-                  <p className="text-xs text-gray-500">
-                    {n.chainMode} ·{" "}
-                    {probing ? "checking…" : reachable ? `${ms} ms` : "unreachable"}
-                  </p>
-                </div>
-                {selection?.id === n.id ? (
-                  <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
-                    Connected
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => selectNode(n.id)}
-                    className="rounded-md border border-white/15 px-3 py-1 text-xs text-gray-300 hover:bg-white/5"
-                  >
-                    Use this node
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="border-t border-white/10 px-5 py-4">
-          <p className="text-xs font-medium text-gray-300">Custom node</p>
-          <div className="mt-2 flex gap-2">
-            <input
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder="p2p.mynode.example:9000"
-              className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 font-mono text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
-            />
-            <button
-              onClick={connectCustom}
-              disabled={checking}
-              className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {checking ? "Checking…" : "Connect"}
-            </button>
-          </div>
-          {error && <p className="mt-1.5 text-xs text-amber-300">{error}</p>}
-          <p className="mt-2 text-[11px] text-gray-600">
-            Sends a real getHealth request to the address above before switching.
-          </p>
-        </div>
-      </div>
-    </div>
   );
 }

@@ -135,8 +135,28 @@ export interface KnownNode {
    * directly; a `GossipOnly` node learns on-chain facts second-hand over
    * gossip, so it can lag. Surfaced because it changes what the node can
    * answer, not as decoration.
+   *
+   * A CLAIM, whatever its source. For a seed it is a line in this build's
+   * configuration; for a discovered node it is `chain:rpc`/`chain:gossip`
+   * from a registration the node signed for itself. Neither is evidence,
+   * and `null` — nothing was declared — is an answer this type has to be
+   * able to give rather than round down to gossip-only. See
+   * `lib/node-capabilities.ts`.
    */
-  chainMode: "RpcConnected" | "GossipOnly";
+  chainMode: "RpcConnected" | "GossipOnly" | null;
+  /**
+   * The capability strings from the node's own registration, verbatim.
+   *
+   * Empty for a seed compiled into this build: there is no registration
+   * behind it to quote. Never filtered down to the ones this app happens
+   * to understand — see `readCapabilities`.
+   */
+  capabilities: string[];
+  /**
+   * A region the operator declared, or `null`. Self-declared and
+   * unverified; nothing proves where a node is.
+   */
+  region: string | null;
 }
 
 /**
@@ -174,7 +194,10 @@ export function knownNodes(): KnownNode[] {
           url,
           label: id,
           role: (role as KnownNode["role"]) ?? "Full Node",
-          chainMode: (chainMode as KnownNode["chainMode"]) ?? "GossipOnly",
+          chainMode: (chainMode as KnownNode["chainMode"]) ?? null,
+          // A configured seed carries no registration to quote.
+          capabilities: [],
+          region: null,
         };
       });
   }
@@ -186,6 +209,8 @@ export function knownNodes(): KnownNode[] {
         label: "openfiat.allenhark.com",
         role: "Public API Node",
         chainMode: "RpcConnected",
+        capabilities: [],
+        region: null,
       },
     ];
   }
@@ -197,6 +222,8 @@ export function knownNodes(): KnownNode[] {
       label: "devnet node0",
       role: "Full Node",
       chainMode: "RpcConnected",
+      capabilities: [],
+      region: null,
     },
     {
       id: "devnet-node1",
@@ -204,6 +231,8 @@ export function knownNodes(): KnownNode[] {
       label: "devnet node1",
       role: "Full Node",
       chainMode: "GossipOnly",
+      capabilities: [],
+      region: null,
     },
     {
       id: "devnet-node2",
@@ -211,6 +240,8 @@ export function knownNodes(): KnownNode[] {
       label: "devnet node2",
       role: "Full Node",
       chainMode: "GossipOnly",
+      capabilities: [],
+      region: null,
     },
   ];
 }

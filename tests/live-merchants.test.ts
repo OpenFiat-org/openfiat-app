@@ -18,12 +18,15 @@ function ad(overrides: Partial<LiveAd> = {}): LiveAd {
     id: `ad-${nextId}`,
     merchantPeerId: "aa".repeat(16),
     merchantShort: "aaaaaa",
-    asset: "USDT",
+    assetMint: "C4rSGhdxWhSFQuFcAxQti1JvBxriwHJoHtJjfhs5p24Y",
+    assetSymbol: "USDT",
     fiatCurrency: "KES",
     direction: "Sell",
     price: 129.5,
     pricingKind: "Fixed",
     premiumBps: null,
+    unpriceableReason: null,
+    quoteExpiresAt: null,
     minTrade: 10,
     maxTrade: 1000,
     availableLiquidity: 5000,
@@ -106,9 +109,21 @@ describe("merchantsFrom", () => {
     const [row] = merchantsFrom([
       ad({ fiatCurrency: "KES", paymentMethods: ["M-Pesa", "Bank transfer"] }),
       ad({ fiatCurrency: "KES", paymentMethods: ["M-Pesa"] }),
-      ad({ asset: "USDC", fiatCurrency: "NGN", paymentMethods: ["Bank transfer"] }),
+      ad({ assetSymbol: "USDC", fiatCurrency: "NGN", paymentMethods: ["Bank transfer"] }),
+      /*
+       * A mint this node has no name for. It still makes a pair — the
+       * merchant really is advertising it — and the pair is named by the
+       * address, because that is the only true name available. Dropping it,
+       * or labelling it "Unknown", would make this list disagree with the
+       * book it was built from.
+       */
+      ad({ assetMint: "MintNoNodeHasNamed1111111111111111111111111", assetSymbol: null, fiatCurrency: "KES" }),
     ]);
-    expect(row.pairs).toEqual(["USDC/NGN", "USDT/KES"]);
+    expect(row.pairs).toEqual([
+      "MintNoNodeHasNamed1111111111111111111111111/KES",
+      "USDC/NGN",
+      "USDT/KES",
+    ]);
     expect(row.paymentMethods).toEqual(["Bank transfer", "M-Pesa"]);
   });
 

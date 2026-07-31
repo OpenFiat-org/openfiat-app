@@ -14,7 +14,7 @@ import {
 } from "@/lib/merchant-profile";
 import { adsForMerchant, adPrice, paymentMethodsForMerchant } from "@/lib/data/ads";
 import { getCountry } from "@/lib/data/countries";
-import { formatCrypto, formatFiat, formatNumber, shortAddress } from "@/lib/format";
+import { formatCrypto, formatNumber, shortAddress } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { TradedBadge } from "@/components/counterparties/traded-badge";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -178,8 +178,11 @@ export default async function MerchantProfilePage({ params }: { params: Promise<
                   {ad.pricing.type === "Floating" ? `Floating ${ad.pricing.premiumPct >= 0 ? "+" : ""}${ad.pricing.premiumPct}%` : "Fixed"}
                 </span>
               </Td>
+              {/* In the asset, not in `fiatCurrency` — OFS-2100 denominates
+                  the trade bounds in the token being escrowed, the same unit
+                  as the liquidity column beside it. */}
               <Td right num className="text-gray-400">
-                {formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – {formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}
+                {formatCrypto(ad.minTrade, ad.asset)} – {formatCrypto(ad.maxTrade, ad.asset)}
               </Td>
               <Td right num className="text-gray-300">{formatCrypto(ad.availableLiquidity, ad.asset)}</Td>
               <Td className="text-xs text-gray-400">

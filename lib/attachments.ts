@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { asCid } from "@/lib/ipfs/cid";
 import { MAX_UPLOAD_BYTES, ipfsUrl, isAcceptedMediaType } from "@/lib/ipfs/gateway";
@@ -165,7 +166,7 @@ export async function publishAttachment(
     id: crypto.randomUUID(),
     subject: { Settlement: settlementId },
     author: peerIdForPublicKey(publicKey),
-    author_public_key: Array.from(publicKey),
+    author_public_key: bs58.encode(publicKey),
     cid: uploaded.cid,
     media_type: variant,
     size_bytes: uploaded.sizeBytes,

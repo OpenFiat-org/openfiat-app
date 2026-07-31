@@ -1,6 +1,11 @@
 import Link from "next/link";
-import type { LiveAd } from "@/lib/live-advertisements";
+import {
+  assetLabel,
+  type LiveAd,
+  unpriceableLabel,
+} from "@/lib/live-advertisements";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
+import { TradeLimits } from "@/components/asset-label";
 import { Panel } from "@/components/panel";
 
 /**
@@ -43,15 +48,23 @@ export function NewTradeReview({
           {fiatAmount > 0 && ad.price !== null && (
             <div className="py-4">
               <p className="flex justify-between text-sm">
-                <span className="text-gray-500">{buy ? "You would pay" : "You would sell"}</span>
+                <span className="text-gray-500">
+                  {buy ? "You would pay" : "You would sell"}
+                </span>
                 <span className="tabular-nums font-medium text-white">
-                  {buy ? formatFiat(fiatAmount, ad.fiatCurrency) : formatCrypto(cryptoAmount, ad.asset, 4)}
+                  {buy
+                    ? formatFiat(fiatAmount, ad.fiatCurrency)
+                    : formatCrypto(cryptoAmount, assetLabel(ad), 4)}
                 </span>
               </p>
               <p className="mt-1.5 flex justify-between text-sm">
-                <span className="text-gray-500">{buy ? "You would receive" : "You would receive"}</span>
+                <span className="text-gray-500">
+                  {buy ? "You would receive" : "You would receive"}
+                </span>
                 <span className="tabular-nums font-medium text-emerald-400">
-                  {buy ? formatCrypto(cryptoAmount, ad.asset, 4) : formatFiat(fiatAmount, ad.fiatCurrency)}
+                  {buy
+                    ? formatCrypto(cryptoAmount, assetLabel(ad), 4)
+                    : formatFiat(fiatAmount, ad.fiatCurrency)}
                 </span>
               </p>
             </div>
@@ -63,13 +76,24 @@ export function NewTradeReview({
             </div>
           )}
           <div className="py-4">
-            <p className="text-sm font-medium text-amber-200">Placing an order isn't wired to the protocol yet</p>
+            <p className="text-sm font-medium text-amber-200">
+              Placing an order isn't wired to the protocol yet
+            </p>
             <p className="mt-1.5 text-xs leading-relaxed text-gray-400">
-              A real order is a signed <code className="font-mono">ReservationRequest</code> submitted to a node
-              (OFS-2200 §11), which then locks the merchant&apos;s crypto in an escrow PDA on Solana. This interface can
-              read the live advertisement above and validate an amount against it, but does not yet build, sign, and
-              send that request — so no reservation is created by anything on this page, and nothing here should be
-              read as one. <Link href="/orders" className="text-brand hover:text-brand-hover">Your real orders</Link>{" "}
+              A real order is a signed{" "}
+              <code className="font-mono">ReservationRequest</code> submitted to
+              a node (OFS-2200 §11), which then locks the merchant&apos;s crypto
+              in an escrow PDA on Solana. This interface can read the live
+              advertisement above and validate an amount against it, but does
+              not yet build, sign, and send that request — so no reservation is
+              created by anything on this page, and nothing here should be read
+              as one.{" "}
+              <Link
+                href="/orders"
+                className="text-brand hover:text-brand-hover"
+              >
+                Your real orders
+              </Link>{" "}
               are what the node actually reports.
             </p>
           </div>
@@ -81,12 +105,15 @@ export function NewTradeReview({
           <SummaryRow label="Ad" value={ad.id} />
           <SummaryRow label="Merchant" value={`…${ad.merchantShort}`} />
           <SummaryRow label="Direction" value={`Merchant ${ad.direction}`} />
-          <SummaryRow label="Pair" value={`${ad.asset}/${ad.fiatCurrency}`} />
+          <SummaryRow
+            label="Pair"
+            value={`${assetLabel(ad)}/${ad.fiatCurrency}`}
+          />
           <SummaryRow
             label="Price"
             value={
               ad.price === null
-                ? "Floating — no oracle read yet"
+                ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
                 : `${formatNumber(ad.price)} ${ad.fiatCurrency} (${
                     ad.pricingKind === "Floating"
                       ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}%`
@@ -94,12 +121,18 @@ export function NewTradeReview({
                   })`
             }
           />
-          <SummaryRow label="Available" value={formatCrypto(ad.availableLiquidity, ad.asset)} />
           <SummaryRow
-            label="Limits"
-            value={`${formatFiat(ad.minTrade, ad.fiatCurrency, 0)} – ${formatFiat(ad.maxTrade, ad.fiatCurrency, 0)}`}
+            label="Available"
+            value={formatCrypto(ad.availableLiquidity, assetLabel(ad))}
           />
-          <SummaryRow label="Payment methods" value={ad.paymentMethods.join(", ") || "—"} />
+          {/* In the asset — see `LiveAd.minTrade`. This row showed the same
+              two numbers with the fiat currency code beside them, which on a
+              KES pair overstated the band by the exchange rate. */}
+          <SummaryRow label="Limits" value={<TradeLimits ad={ad} />} />
+          <SummaryRow
+            label="Payment methods"
+            value={ad.paymentMethods.join(", ") || "—"}
+          />
           <SummaryRow label="Status" value={ad.status} />
         </div>
       </Panel>
@@ -107,7 +140,13 @@ export function NewTradeReview({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
       <span className="text-gray-500">{label}</span>
@@ -121,8 +160,14 @@ export function NewTradeMissingAd() {
   return (
     <Panel>
       <div className="px-4 py-10 text-center text-sm text-gray-500">
-        <p>This advertisement could not be found on the node — it may have been paused, filled, or never existed.</p>
-        <Link href="/" className="mt-3 inline-block text-brand hover:text-brand-hover">
+        <p>
+          This advertisement could not be found on the node — it may have been
+          paused, filled, or never existed.
+        </p>
+        <Link
+          href="/"
+          className="mt-3 inline-block text-brand hover:text-brand-hover"
+        >
           ← Back to the P2P exchange
         </Link>
       </div>

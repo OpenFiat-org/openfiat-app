@@ -70,7 +70,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             surface below it read the same adapter state. */}
         <AppWalletProvider>
           <TopNav />
-          <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+          {/*
+            * Full width, and the only thing that clips horizontally. It exists
+            * so `PageHero`'s `w-screen` escape has something to be trimmed
+            * against — 100vw exceeds the document width by the scrollbar on
+            * platforms that reserve space for one. The nav and footer sit
+            * outside it on purpose: see `.full-bleed-clip` in
+            * `app/globals.css` for what putting this on `body` cost.
+            */}
+          <div className="full-bleed-clip">
+            <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+          </div>
           <Footer />
           <NetworkNotice />
         </AppWalletProvider>

@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 /**
  * Withdraws the seeded service registrations whose endpoints can never
  * resolve.
@@ -105,7 +106,7 @@ async function main() {
 
     await providers.sendProviderWithdraw(
       client,
-      { service_id: serviceId, provider: Array.from(peerId), timestamp: Date.now() },
+      { service_id: serviceId, provider: bs58.encode(peerId), timestamp: Date.now() },
       keypair,
     );
     console.log(`  ${serviceId}: withdrawn`);

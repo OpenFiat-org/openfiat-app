@@ -1,8 +1,17 @@
+import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
+import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
  * Working a dispute case as an arbitrator.
+ *
+ * Reading cases is `lib/live-disputes.ts`'s job and used to be duplicated
+ * here with a second raw-`fetch` client. It is one surface now, because it
+ * has become two reads that have to agree: the public docket says which cases
+ * exist and which have a seat free, and `getMyDisputes` — behind a wallet
+ * signature — says what is in the ones this arbitrator is seated on. What
+ * stays here is the signing and the two vote encodings.
  *
  * Two independent commit-reveal votes run side by side and this module keeps
  * them apart deliberately:
@@ -118,9 +127,9 @@ export function clearSalt(disputeId: string): void {
   localStorage.removeItem(saltKey(disputeId));
 }
 
-/** The PeerId this wallet's public key derives to. */
-export function peerIdForPublicKey(publicKey: Uint8Array): number[] {
-  return Array.from(peerIdFromPublicKey(publicKey));
+/** The PeerId this wallet's public key derives to, base58 as the node writes it. */
+export function peerIdForPublicKey(publicKey: Uint8Array): string {
+  return bs58.encode(peerIdFromPublicKey(publicKey));
 }
 
 /**
@@ -131,13 +140,13 @@ export function peerIdForPublicKey(publicKey: Uint8Array): number[] {
 export async function signPayload(
   provider: SolanaProvider,
   payload: unknown,
-): Promise<number[]> {
+): Promise<string> {
   if (!provider.signMessage) {
     throw new Error("This wallet does not support message signing, which arbitration requires.");
   }
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   const { signature } = await provider.signMessage(bytes);
-  return Array.from(signature);
+  return bs58.encode(signature);
 }
 
 /** Submit an already-signed event as an OFS-8200 `sendX` call. */
@@ -159,14 +168,14 @@ export async function sendSignedEvent(
 
 export interface ArbitratorIdentity {
   publicKey: Uint8Array;
-  peerId: number[];
+  peerId: string;
 }
 
 export function buildJoin(disputeId: string, who: ArbitratorIdentity) {
   return {
     dispute_id: disputeId,
     arbitrator: who.peerId,
-    arbitrator_public_key: Array.from(who.publicKey),
+    arbitrator_public_key: bs58.encode(who.publicKey),
     timestamp: Date.now(),
   };
 }
@@ -195,53 +204,37 @@ export function buildReveal(
   };
 }
 
-/** A dispute as a node reports it. Only the fields this app reads. */
-export interface LiveDispute {
-  id: string;
-  settlement_id: string;
-  reason: string;
-  status: "Open" | "CaseLocked" | "RevealPhase" | "Resolved";
-  required_arbitrators: number;
-  arbitrators: number[][];
-  commitments: { arbitrator: number[]; commitment: number[] }[];
-  reveals: { arbitrator: number[]; vote: string }[];
+
+/**
+ * Where this arbitrator stands on a case they have joined.
+ *
+ * All three take the whole `Dispute`, which only `getMyDisputes` returns, and
+ * that is the point: an arbitrator's seat and their vote are exactly the
+ * pairing the public read now withholds, so "have I joined this?" is a
+ * question only the wallet that joined can be answered. There is no version
+ * of these that works on the public docket, and writing one would mean
+ * reconstructing the roster from somewhere else.
+ */
+export function hasJoined(dispute: Dispute, peerId: string): boolean {
+  return dispute.arbitrators.some((a) => a === peerId);
 }
 
-async function rpc<T>(endpoint: string, method: string, params: unknown): Promise<T> {
-  const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  const body = (await res.json()) as { result?: T; error?: { message: string } };
-  if (body.error) throw new Error(body.error.message);
-  return body.result as T;
+export function hasCommitted(dispute: Dispute, peerId: string): boolean {
+  return dispute.commitments.some((c) => c.arbitrator === peerId);
 }
 
-export async function fetchDisputes(endpoint: string): Promise<LiveDispute[]> {
-  return rpc<LiveDispute[]>(endpoint, "getDisputes", {});
+export function hasRevealed(dispute: Dispute, peerId: string): boolean {
+  return dispute.reveals.some((r) => r.arbitrator === peerId);
 }
 
-export async function fetchDispute(endpoint: string, id: string): Promise<LiveDispute | null> {
-  return rpc<LiveDispute | null>(endpoint, "getDispute", { id });
-}
-
-const sameBytes = (a: number[], b: number[]) =>
-  a.length === b.length && a.every((x, i) => x === b[i]);
-
-export function hasJoined(dispute: LiveDispute, peerId: number[]): boolean {
-  return dispute.arbitrators.some((a) => sameBytes(a, peerId));
-}
-
-export function hasCommitted(dispute: LiveDispute, peerId: number[]): boolean {
-  return dispute.commitments.some((c) => sameBytes(c.arbitrator, peerId));
-}
-
-export function hasRevealed(dispute: LiveDispute, peerId: number[]): boolean {
-  return dispute.reveals.some((r) => sameBytes(r.arbitrator, peerId));
-}
-
-/** Cases still short of their arbitrator quota, which is what you can join. */
-export function isJoinable(dispute: LiveDispute): boolean {
-  return dispute.status === "Open" && dispute.arbitrators.length < dispute.required_arbitrators;
+/**
+ * Cases still short of their arbitrator quota, which is what can be joined.
+ *
+ * Reads the public docket, and needs nothing more: how many seats are filled
+ * is a fact about the case, and survives redaction precisely so that a
+ * prospective arbitrator can see there is a seat free without being told who
+ * is in the others.
+ */
+export function isJoinable(dispute: PublicDispute): boolean {
+  return dispute.status === "Open" && dispute.arbitrators_seated < dispute.required_arbitrators;
 }

@@ -224,6 +224,20 @@ pnpm dev
 
 Open http://localhost:3000.
 
+That runs against the public devnet node with no configuration at all. Every
+environment variable is optional and turns something on rather than being
+required — see [`.env.example`](.env.example), and copy it to `.env.local`
+when you want one of them.
+
+**Uploads are the one thing that is off by default and looks like a bug.**
+Setting an avatar or attaching dispute evidence needs a pinning provider
+(`PINATA_JWT`, or `IPFS_RPC_URL` for a Kubo-compatible endpoint). Without
+one, the interface says "This deployment has no IPFS provider configured, so
+uploads are unavailable" — which is deliberate, because the alternative is
+pushing a user's file to a service nobody chose and nobody will keep paying
+to pin. Reading and displaying content needs none of this; an OpenFiat node
+serves blocks itself.
+
 
 ## Development
 

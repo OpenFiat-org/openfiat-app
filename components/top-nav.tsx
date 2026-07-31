@@ -6,53 +6,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
 import { NetworkBadge } from "@/components/network-badge";
+import { MobileNav } from "@/components/mobile-nav";
+import {
+  ACCOUNT_MENU,
+  ECOSYSTEM_MENU,
+  MAIN_LINKS,
+  isActiveRoute,
+  type MenuSection,
+} from "@/components/nav-items";
 import { NETWORK_LABEL, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
-
-const MAIN_LINKS: Array<[string, string]> = [
-  ["P2P Exchange", "/"],
-  ["Countries", "/countries"],
-  ["Disputes", "/disputes"],
-  ["Governance", "/governance"],
-];
-
-interface MenuSection {
-  title?: string;
-  items: Array<{ label: string; href: string; marker: string; description: string }>;
-}
-
-const ECOSYSTEM_MENU: MenuSection[] = [
-  {
-    items: [
-      { label: "Explorer", href: "/explorer", marker: "⌕", description: "Search addresses, trades & protocol events" },
-      { label: "Network", href: "/network", marker: "⛁", description: "Nodes, peers & event stream" },
-      { label: "Providers", href: "/providers", marker: "⚡", description: "Notifications, oracles & risk intelligence" },
-      { label: "Faucet", href: "/faucet", marker: "◍", description: "Get SOL, mock USDC/USDT and OPEN for testing on devnet" },
-    ],
-  },
-];
-
-const ACCOUNT_MENU: MenuSection[] = [
-  {
-    title: "Account",
-    items: [
-      { label: "Orders", href: "/orders", marker: "⇄", description: "Trade history & active escrow" },
-      { label: "My Ads", href: "/ads", marker: "◫", description: "Merchant console & liquidity" },
-      { label: "Wallet", href: "/wallet", marker: "◈", description: "Balances & liquidity vaults" },
-      { label: "Staking", href: "/staking", marker: "◎", description: "Bond OPEN as a merchant, node, or arbitrator" },
-      { label: "Arbitrate", href: "/arbitrate", marker: "⚖", description: "Work a dispute case and cast your ruling" },
-      { label: "Earnings", href: "/earnings", marker: "▤", description: "What your node, oracle or gateway has earned" },
-      { label: "Settings", href: "/settings", marker: "⚙", description: "Preferences & notifications" },
-    ],
-  },
-  {
-    title: "Trust",
-    items: [
-      { label: "Identity", href: "/account/identity", marker: "✓", description: "Verification levels L0–L3" },
-      { label: "Reputation", href: "/account/reputation", marker: "◆", description: "Your tier & dimensions" },
-      { label: "Counterparties", href: "/account/counterparties", marker: "⇄", description: "Who you trade with, and how often" },
-    ],
-  },
-];
 
 export function TopNav() {
   const pathname = usePathname();
@@ -62,26 +24,54 @@ export function TopNav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-5 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 text-lg font-semibold text-white">
           <Image src="/logo-mark.png" alt="" width={28} height={28} priority />
-          OpenFiat
+          {/*
+            * The wordmark is the first thing to go, and 400px is where it
+            * goes — measured, not a stock breakpoint. The bar needs 272px for
+            * the mark, the wallet button (152) and the menu trigger (44); the
+            * wordmark is another ~90. That fits from ~370px up, so `sm`
+            * (640) would have dropped it on every phone made, while 400
+            * keeps it everywhere except the narrowest, where those 90px are
+            * the difference between the wallet button fitting and not.
+            */}
+          <span className="hidden min-[400px]:inline">OpenFiat</span>
         </Link>
 
-        {/* Single row in both wallet states: fits at desktop widths, tightens on smaller ones. */}
-        <nav className="flex flex-1 flex-nowrap items-center gap-x-0.5">
-          {MAIN_LINKS.map(([label, href]) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <NavLink key={href} href={href} active={active}>
-                {label}
-              </NavLink>
-            );
-          })}
+        {/*
+          * Shown from `lg` up, because that is where it fits — measured, not
+          * guessed. The row's intrinsic width is ~1046px (logo 118 + links
+          * 504 + controls 360 + gaps), so it overflowed every viewport below
+          * a laptop and took the wallet control off-screen with it. Below
+          * `lg` the same destinations are in `MobileNav`'s sheet.
+          */}
+        <nav className="hidden flex-1 flex-nowrap items-center gap-x-0.5 lg:flex">
+          {MAIN_LINKS.map(([label, href]) => (
+            <NavLink key={href} href={href} active={isActiveRoute(pathname, href)}>
+              {label}
+            </NavLink>
+          ))}
           <NavMenu label="Ecosystem" sections={ECOSYSTEM_MENU} width="w-80" />
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <NetworkBadge />
-          <NavMenu label="My Account" sections={ACCOUNT_MENU} width="w-[36rem]" align="right" />
+        {/* `flex-1 justify-end` below `lg`, where there is no nav to push
+            against it; `flex-none` once the nav returns and does the pushing. */}
+        <div className="flex flex-1 items-center justify-end gap-2 lg:flex-none lg:gap-3">
+          {/*
+            * From `xl` only. Between `lg` and `xl` the row has room for the
+            * links or the badge but not both, and the amber banner
+            * immediately below states the network on every viewport — so the
+            * badge is the redundant one, and it is what gets dropped.
+            */}
+          <div className="hidden xl:block">
+            <NetworkBadge />
+          </div>
+          <div className="hidden lg:block">
+            <NavMenu label="My Account" sections={ACCOUNT_MENU} width="w-[36rem]" align="right" />
+          </div>
+          {/* Never hidden. Every actionable surface in this app needs a
+              connected wallet, so this is the one control that survives at
+              every width. */}
           <WalletConnect />
+          <MobileNav />
         </div>
       </div>
 
@@ -137,7 +127,7 @@ function NavMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const routes = sections.flatMap((s) => s.items.map((i) => i.href));
-  const active = routes.some((href) => pathname.startsWith(href));
+  const active = routes.some((href) => isActiveRoute(pathname, href));
 
   // Close on outside pointer-down (trigger + panel both live inside rootRef,
   // whose ancestor's backdrop-blur makes fixed-position backdrops unreliable),
@@ -185,7 +175,7 @@ function NavMenu({
                 )}
                 <ul className="space-y-0.5">
                   {section.items.map((item) => {
-                    const itemActive = pathname.startsWith(item.href);
+                    const itemActive = isActiveRoute(pathname, item.href);
                     return (
                       <li key={item.href}>
                         <Link

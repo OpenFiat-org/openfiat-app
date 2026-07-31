@@ -66,20 +66,57 @@ export const BRAND_HEX = {
 } as const;
 
 /**
+ * `hex` mixed towards white by `amount`, as another bare hex.
+ *
+ * A derivation rather than a fourth constant, so `app/globals.css` stays the
+ * only place a brand colour is *chosen*. Picking a lighter blue by hand would
+ * have put a value in this file that the drift test cannot check against
+ * anything, and it would stop tracking the brand the first time the palette
+ * moves. This tracks it: change `--color-brand-hover` and the chassis moves
+ * with it, still lighter by the same step.
+ */
+function lighten(hex: string, amount: number): string {
+  const channel = (offset: number) => {
+    const value = Number.parseInt(hex.slice(offset, offset + 2), 16);
+    return Math.round(value + (0xff - value) * amount)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `${channel(0)}${channel(2)}${channel(4)}`;
+}
+
+/**
+ * The robot's chassis: `--color-brand-hover`, lightened.
+ *
+ * The chassis used to be `--color-brand-hover` itself, painted straight onto
+ * a background whose first gradient stop is `--color-brand`. Those two are
+ * adjacent blues — 1.25:1 against each other once the placeholder's dimming
+ * was composited in — so the robot's silhouette had almost nothing to
+ * separate it from its own backdrop, and at the 32px a table row gives it
+ * there was nothing left to see. That was the real reason these read as
+ * invisible: not that the avatar was too dark against the page, but that the
+ * robot was the same colour as the disc it was drawn on.
+ *
+ * 0.55 towards white takes that to 2.5:1, which is enough for the shape to
+ * survive being 32px wide, while the hue is still unmistakably the brand's.
+ */
+export const CHASSIS_HEX = lighten(BRAND_HEX.brandHover, 0.55);
+
+/**
  * Fixed options for every placeholder.
  *
  * The background runs the logo's blue-to-teal gradient, and the robot's own
- * chassis takes the lighter blue so it reads against it. Restricting the
- * palette this hard is the point: DiceBear's default bottts palette is a
+ * chassis takes a lightened brand blue so it reads against it. Restricting
+ * the palette this hard is the point: DiceBear's default bottts palette is a
  * bright multicoloured set that would make each placeholder look like a
- * deliberate, individual choice. Constrained to three brand colours, the
+ * deliberate, individual choice. Constrained to the brand's own colours, the
  * variation between wallets is in the robot's shape rather than its colour,
  * which is recognisable without looking chosen.
  */
 const OPTIONS = {
   backgroundColor: [BRAND_HEX.brand, BRAND_HEX.brandTeal],
   backgroundType: ["gradientLinear" as const],
-  baseColor: [BRAND_HEX.brandHover],
+  baseColor: [CHASSIS_HEX],
 };
 
 /**

@@ -97,14 +97,35 @@ export function SettingsForm() {
               <button
                 role="switch"
                 aria-checked={channels[c.key]}
+                // The button's only child is the knob, so without this the
+                // switch has no accessible name and every row announces
+                // itself identically.
+                aria-label={c.label}
                 onClick={() => setChannels((s) => ({ ...s, [c.key]: !s[c.key] }))}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                   channels[c.key] ? "bg-brand" : "bg-white/15"
                 }`}
               >
+                {/*
+                 * `left-0.5` is what keeps the knob inside the track.
+                 *
+                 * It was absolutely positioned with no `left` at all, so it
+                 * resolved to its static position — and a `<button>` centres
+                 * its content, which puts an out-of-flow child's static
+                 * origin at the track's midpoint, 22px in. Both offsets were
+                 * then measured from there: `translate-x-[22px]` put the
+                 * white circle at 44px, entirely outside the 44px track and
+                 * over the panel's right edge, and the off state sat flush
+                 * against the right instead of the left. The switch showed
+                 * its knob on the wrong side in both states.
+                 *
+                 * Anchored explicitly, the travel is the plain arithmetic it
+                 * looks like: 44 track − 20 knob − 2 inset = 20px, so both
+                 * ends inset equally.
+                 */}
                 <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                    channels[c.key] ? "translate-x-[22px]" : "translate-x-0.5"
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                    channels[c.key] ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
               </button>
