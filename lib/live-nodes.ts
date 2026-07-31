@@ -1,7 +1,30 @@
 import { Client, providers, type ServiceRecord } from "@openfiat/sdk";
 
+import { readBranding, type ProviderBranding } from "@/lib/live-providers";
 import { readCapabilities } from "@/lib/node-capabilities";
 import { knownNodes, type KnownNode } from "@/lib/node-endpoint";
+
+/**
+ * A node this app can talk to, plus what its registration says it is
+ * called.
+ *
+ * Branding lives here rather than on `KnownNode` because a seed cannot
+ * have any: a seed is a line in this build's configuration, with no
+ * registration behind it to quote, and a type that let one carry a name
+ * would invite this app to invent one. `null` is the honest value for
+ * every seed and for every node that declared nothing.
+ */
+export interface DiscoveredNode extends KnownNode {
+  /**
+   * What the node calls itself, from its own signed registration.
+   *
+   * A claim, exactly like `capabilities` and `region` beside it. The
+   * node's `label` stays the host — that is observable, it is what an
+   * operator recognises their node by, and it is not something anyone
+   * can assert about anyone else.
+   */
+  branding: ProviderBranding | null;
+}
 
 /**
  * Which nodes this interface knows it can talk to.
@@ -57,10 +80,15 @@ function canonical(url: string): string {
  * which leaves the seed itself — still the truth about what this build
  * knows, just no richer.
  */
-export async function discoverNodes(): Promise<KnownNode[]> {
-  const seeds = knownNodes();
+export async function discoverNodes(): Promise<DiscoveredNode[]> {
+  const seeds: DiscoveredNode[] = knownNodes().map((seed) => ({
+    ...seed,
+    // A seed is compiled into this build. There is no registration
+    // behind it, so there is nothing it can be quoted as calling itself.
+    branding: null,
+  }));
   const seen = new Set(seeds.map((node) => canonical(node.url)));
-  const discovered: KnownNode[] = [];
+  const discovered: DiscoveredNode[] = [];
 
   for (const seed of seeds) {
     let records: ServiceRecord[];
@@ -100,6 +128,13 @@ export async function discoverNodes(): Promise<KnownNode[]> {
           chainMode: readCapabilities(record.capabilities ?? []).chainMode,
           capabilities: record.capabilities ?? [],
           region: record.region ?? null,
+          /*
+           * Checked before it is carried, not before it is rendered:
+           * this record came from whichever node the user selected, and
+           * a logo that is not a CID or a website that is not http(s)
+           * must never reach the view. See `readBranding`.
+           */
+          branding: readBranding(record),
         });
       }
     }

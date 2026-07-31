@@ -12,6 +12,9 @@ vi.mock("@openfiat/sdk", () => ({
 }));
 
 vi.mock("@/lib/node-endpoint", () => ({
+  // A declared logo resolves against the selected node, so this mock has
+  // to answer for it as well as for the seed list.
+  nodeUrl: () => "https://openfiat.allenhark.com",
   knownNodes: () => [
     {
       id: "devnet-public",
@@ -33,6 +36,7 @@ function record(
   endpoints: string[],
   capabilities: string[] = [],
   region: string | null = null,
+  branding: unknown = null,
 ) {
   return {
     service_id: id,
@@ -40,8 +44,12 @@ function record(
     endpoints,
     capabilities,
     region,
+    branding,
   };
 }
+
+/** A real CIDv1 base32 sha2-256, the only shape a logo may take. */
+const LOGO_CID = "bafkreibdmq27skp3wnycoyoqcei47etyaulerpsegivlkfvyhjkw7ufjva";
 
 beforeEach(() => {
   getProviders.mockReset();
@@ -157,6 +165,51 @@ describe("discoverNodes", () => {
     const [, discovered] = await discoverNodes();
     expect(discovered.chainMode).toBeNull();
     expect(discovered.region).toBeNull();
+  });
+
+  it("carries the name and logo a node declares for itself, as a claim beside the others", async () => {
+    // Before this the network view showed a URL and nothing else, so an
+    // operator running three nodes could not tell which was which and a
+    // visitor had no way to recognise anybody.
+    getProviders.mockResolvedValue([
+      record("node-eu", "PublicApiNode", ["https://eu.example.org"], [], null, {
+        name: "AllenHark EU",
+        description: "Public API node in Frankfurt.",
+        logo: LOGO_CID,
+        website: "https://openfiat.allenhark.com",
+      }),
+    ]);
+
+    const [, discovered] = await discoverNodes();
+    expect(discovered.branding?.name).toBe("AllenHark EU");
+    expect(discovered.branding?.website).toBe("https://openfiat.allenhark.com");
+    // The label stays the host. That is observable — the app just sent a
+    // request there — where a name is only what the operator wrote.
+    expect(discovered.label).toBe("eu.example.org");
+  });
+
+  it("refuses a logo or website that would leak the viewer, even from the seed's own registry", async () => {
+    // The registry a seed reports is not trusted output: the seed may be
+    // hostile, or the user may have typed it in. A hotlinked logo would
+    // report every visitor of the network page to whoever hosts it.
+    getProviders.mockResolvedValue([
+      record("node-hostile", "PublicApiNode", ["https://hostile.example.org"], [], null, {
+        name: "Legit Node",
+        logo: "https://tracker.example/pixel.png",
+        website: "javascript:alert(1)",
+      }),
+    ]);
+
+    const [, discovered] = await discoverNodes();
+    expect(discovered.branding?.logoUrl).toBeNull();
+    expect(discovered.branding?.website).toBeNull();
+    expect(discovered.branding?.name).toBe("Legit Node");
+  });
+
+  it("gives a seed no branding, because there is no registration behind it to quote", async () => {
+    getProviders.mockRejectedValue(new Error("unreachable"));
+    const [seed] = await discoverNodes();
+    expect(seed.branding).toBeNull();
   });
 
   it("skips a registration with no endpoint rather than producing a blank entry", async () => {

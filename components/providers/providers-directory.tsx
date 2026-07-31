@@ -156,7 +156,10 @@ export function ProvidersDirectory() {
             <tr>
               <Th>Provider</Th>
               <Th>Type</Th>
-              <Th>Region</Th>
+              {/* Headed "declared" because it is. Nothing observes where
+                  a provider is — see docs/region-is-declared.md in
+                  openfiat-core for why deriving it was rejected. */}
+              <Th>Region (declared)</Th>
               <Th>Capabilities</Th>
               <Th>Pricing</Th>
               <Th right>Last heard from</Th>
@@ -168,14 +171,42 @@ export function ProvidersDirectory() {
             const color = TYPE_COLORS[p.type];
             const identity = (
               <span className="flex items-center gap-2.5">
-                {/* Seeded by the provider's PeerId, not the service id: one
-                    operator may register several services, and they should be
-                    recognisable as the same operator across all of them. */}
-                <WalletAvatar seed={p.provider} label={p.name} size={32} />
+                {/*
+                  * A declared logo where there is one, and otherwise the
+                  * robot drawn from the provider's PeerId — which is not
+                  * an invented fact about anybody, just a rendering of
+                  * the id already on the row, and which stays the same
+                  * across every service one operator registers.
+                  *
+                  * The logo is served by the node the user selected, from
+                  * a CID, never hotlinked from the provider's own host:
+                  * see `readBranding`.
+                  */}
+                {p.branding?.logoUrl ? (
+                  <img
+                    src={p.branding.logoUrl}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 rounded-full border border-white/10 bg-white/5 object-cover"
+                  />
+                ) : (
+                  <WalletAvatar seed={p.provider} label={p.name} size={32} />
+                )}
                 <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
-                <span>
-                  <span className="block font-medium text-white">{p.name}</span>
-                  <span className="block font-mono text-xs text-gray-600">{p.id}</span>
+                <span className="min-w-0">
+                  {/*
+                    * The declared name where there is one, and the Service
+                    * ID underneath it either way. Never the name alone:
+                    * two providers may register the same one — the
+                    * registry allows it deliberately rather than becoming
+                    * a first-come land grab over a global namespace — so
+                    * the id is the part that identifies this row.
+                    */}
+                  <span className="block truncate font-medium text-white">
+                    {p.branding?.name ?? p.name}
+                  </span>
+                  <span className="block truncate font-mono text-xs text-gray-600">{p.id}</span>
                 </span>
               </span>
             );
@@ -219,6 +250,13 @@ export function ProvidersDirectory() {
             </tr>
           )}
         </DataTable>
+        <p className="mt-3 text-xs leading-relaxed text-gray-600">
+          Names, logos and regions come from each provider&apos;s own signed registration. The
+          signature proves the record reached you unaltered; it proves nothing about the name —
+          anyone can register a service under any name, and the registry deliberately does not
+          hand out exclusive ones. The Service ID under each row is the part that identifies it.
+          Logos are fetched from your access node by content hash, so nobody learns you looked.
+        </p>
       </div>
     </div>
   );

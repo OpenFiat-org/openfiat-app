@@ -8,7 +8,7 @@ import { MetricStrip } from "@/components/metrics";
 import { StatusPill } from "@/components/status-pill";
 import { NodeUseButton } from "@/components/network/node-use-button";
 import { formatNumber } from "@/lib/format";
-import { NETWORK_LABEL, SOLANA_CLUSTER, type KnownNode } from "@/lib/node-endpoint";
+import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
 import {
   chainModeClaim,
   chainObservationLabel,
@@ -16,7 +16,7 @@ import {
   readCapabilities,
   type ChainObservation,
 } from "@/lib/node-capabilities";
-import { discoverNodes } from "@/lib/live-nodes";
+import { discoverNodes, type DiscoveredNode } from "@/lib/live-nodes";
 import { fetchLiveNetworkStats } from "@/lib/live-explorer";
 
 /**
@@ -60,7 +60,7 @@ interface Probe {
   chain: ChainObservation;
 }
 
-async function probe(node: KnownNode): Promise<Probe> {
+async function probe(node: DiscoveredNode): Promise<Probe> {
   const started = performance.now();
   try {
     const client = new Client({ endpoint: node.url, timeoutMs: 4_000 });
@@ -85,7 +85,7 @@ async function probe(node: KnownNode): Promise<Probe> {
 }
 
 export function LiveNetwork() {
-  const [nodes, setNodes] = useState<KnownNode[]>([]);
+  const [nodes, setNodes] = useState<DiscoveredNode[]>([]);
   const [probes, setProbes] = useState<Record<string, Probe>>({});
   const [checking, setChecking] = useState(true);
 
@@ -188,6 +188,31 @@ export function LiveNetwork() {
                   </span>
                 </Td>
                 <Td py="py-5" className="w-64">
+                  {/*
+                    * Deliberately inside Claims and not in the Node cell
+                    * beside the host. The host is observable — it is
+                    * where this page just sent a request. A name and a
+                    * logo are what the operator wrote about themselves,
+                    * and putting them in the identity column would let
+                    * them borrow the credibility of the column they sat
+                    * in.
+                    */}
+                  {(n.branding?.name || n.branding?.logoUrl) && (
+                    <span className="mb-1.5 flex items-center gap-1.5">
+                      {n.branding.logoUrl && (
+                        <img
+                          src={n.branding.logoUrl}
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="h-4 w-4 shrink-0 rounded-full border border-white/10 bg-white/5 object-cover"
+                        />
+                      )}
+                      <span className="truncate text-gray-300">
+                        calls itself {n.branding.name ?? "—"}
+                      </span>
+                    </span>
+                  )}
                   {/* Every one of these is the node's own word. No ticks. */}
                   <span className={contradicted ? "text-amber-300" : "text-gray-300"}>
                     {chainModeClaim(n.chainMode)}
@@ -196,7 +221,12 @@ export function LiveNetwork() {
                     {claims.retention && <Chip>retention {claims.retention}</Chip>}
                     {claims.servesContent && <Chip>serves content</Chip>}
                     {claims.producesSnapshots && <Chip>produces snapshots</Chip>}
-                    {n.region && <Chip>region {n.region}</Chip>}
+                    {/* "declared" spelled out on the chip itself, not
+                        only in the column heading: a chip is read on its
+                        own. Nothing anywhere observes a node's region —
+                        deriving it from the node's own addresses was
+                        investigated under #173 and rejected. */}
+                    {n.region && <Chip>region {n.region} (declared)</Chip>}
                     {/* A capability string this build has no reading for is
                         shown as itself. Dropping it would hide the newest
                         thing a node can do and keep looking correct. */}
@@ -236,9 +266,12 @@ export function LiveNetwork() {
         <p className="mt-3 text-xs leading-relaxed text-gray-600">
           Everything under <span className="text-gray-500">Claims</span> comes from the node&apos;s own
           registration, signed by its own key: it is what the operator configured, and nothing here
-          verifies any of it. <span className="text-gray-500">Observed</span>, latency and status come
-          from a live request to each node when this page loads — that is the part that was checked.
-          Peer count and version are still absent because no method this app calls reports them.
+          verifies any of it — including the name it calls itself and the region it declares, which
+          nobody measures. <span className="text-gray-500">Observed</span>, latency and status come
+          from a live request to each node when this page loads — that is the part that was checked,
+          and latency is measured from your browser, so it answers &quot;is this node fast for
+          me&quot; better than any declared region could. Peer count and version are still absent
+          because no method this app calls reports them.
         </p>
       </div>
     </>

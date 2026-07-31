@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { ServiceRecord } from "@openfiat/sdk";
-
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { TYPE_COLORS } from "@/lib/data/providers";
 import { formatPricing } from "@/lib/earnings";
 import { sinceLabel } from "@/lib/format";
-import { fetchProviderRecord, labelForServiceType } from "@/lib/live-providers";
+import {
+  fetchProviderRecord,
+  labelForServiceType,
+  readBranding,
+  type RecordWithBranding,
+} from "@/lib/live-providers";
 import { chainModeClaim, readCapabilities } from "@/lib/node-capabilities";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 
@@ -33,7 +36,7 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  * were using uptime to ask.
  */
 export function ProviderDetail({ serviceId }: { serviceId: string }) {
-  const [record, setRecord] = useState<ServiceRecord | null>(null);
+  const [record, setRecord] = useState<RecordWithBranding | null>(null);
   const [nodeLabel, setNodeLabel] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -79,9 +82,76 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
   const type = labelForServiceType(record.service_type);
   const color = TYPE_COLORS[type];
   const claims = readCapabilities(record.capabilities);
+  const branding = readBranding(record);
 
   return (
     <div className="space-y-6">
+      {/*
+        * First, because it is what a reader looks for, and headed with
+        * what it is. "How this provider presents itself" rather than
+        * "About": the panel exists to carry four self-asserted strings,
+        * and a neutral heading would let them read as facts the page
+        * established. Absent entirely when nothing was declared — an
+        * empty panel would suggest the answer is unknown rather than
+        * that there was no claim.
+        */}
+      {branding && (
+        <Panel title="How this provider presents itself">
+          <div className="px-4 py-4">
+            <div className="flex items-start gap-4">
+              {branding.logoUrl && (
+                <img
+                  src={branding.logoUrl}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 shrink-0 rounded-lg border border-white/10 bg-white/5 object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                {branding.name && (
+                  <p className="text-base font-medium text-white">{branding.name}</p>
+                )}
+                {branding.description && (
+                  <p className="mt-1 text-sm leading-relaxed text-gray-400">
+                    {branding.description}
+                  </p>
+                )}
+                {branding.website && (
+                  <a
+                    href={branding.website}
+                    target="_blank"
+                    // `noopener` because the opened page can otherwise
+                    // reach back through `window.opener` and navigate
+                    // this one; `noreferrer` so the provider is not told
+                    // which page the visitor came from.
+                    rel="noopener noreferrer nofollow"
+                    className="mt-2 inline-block break-all text-sm text-brand-hover hover:underline"
+                  >
+                    {branding.website}
+                  </a>
+                )}
+              </div>
+            </div>
+            <p className="mt-4 border-t border-white/5 pt-3 text-xs leading-relaxed text-gray-500">
+              All four of these are declared by the provider in its own signed registration.
+              The signature proves the record reached you unaltered and proves nothing else:
+              nobody checks that the name is theirs to use, and the registry deliberately does
+              not hand out exclusive names. Judge this entry by the Service ID and provider key
+              below.
+              {branding.logoCid && (
+                <>
+                  {" "}
+                  The logo is fetched from your access node by content hash (
+                  <span className="font-mono break-all">{branding.logoCid}</span>), never from
+                  the provider&apos;s own server — so viewing this page tells them nothing.
+                </>
+              )}
+            </p>
+          </div>
+        </Panel>
+      )}
+
       <Panel
         title="Registration"
         action={<StatusPill status={record.health} />}
@@ -97,8 +167,15 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
               </span>
             }
           />
-          {/* Self-declared and unverified — nothing here observes where a
-              node is, and "not declared" is a better answer than a guess. */}
+          {/*
+            * Self-declared and unverified, permanently. Deriving it from
+            * the endpoint's address was investigated (#173) and
+            * rejected: geolocation answers "where does this socket
+            * terminate", which is not the question OFS-1500 §10 asks —
+            * a VPS in Frankfurt serving Kenya is the ordinary
+            * deployment here, not the edge case. See
+            * `docs/region-is-declared.md` in openfiat-core.
+            */}
           <Row
             label="Region"
             value={record.region ? `${record.region} (declared, unverified)` : "Not declared"}

@@ -38,8 +38,9 @@ const REGISTRATION = [
   ["Provider identity", "The wallet, node identity, peer ID and public key above."],
   ["Network endpoints", "Where clients reach the service. Multiple endpoints are normal — one per region."],
   ["Supported protocol versions", "So a client can tell whether it can talk to you before it tries."],
-  ["Geographic region", "Used for provider selection; clients prefer nearby infrastructure."],
+  ["Geographic region", "Which regions you serve, if you want to say. Self-declared and unverified — nothing in the protocol measures where a service is, and nothing ever will: geolocating an endpoint would answer where your socket terminates, which is a different question from who you serve. Clients see it labelled as declared."],
   ["Capabilities", "What the service actually does — currency pairs for an oracle, channels for a gateway, retention for snapshots."],
+  ["Branding", "A name, a sentence, a logo and a website, all optional. The logo is an IPFS CID rather than a URL, so viewers fetch it from their own access node and nobody learns who looked at your listing. Names are not exclusive: the registry will not stop someone else registering yours, so your Service ID is what identifies you."],
   ["Pricing", "If you charge. Optional, and advertised as metadata rather than enforced by the registry."],
   ["Timestamp and signature", "The event is signed and gossiped to the network. There is nothing to submit to anyone."],
 ];
