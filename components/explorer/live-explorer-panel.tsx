@@ -12,6 +12,7 @@ import { StatusPill } from "@/components/status-pill";
 import { MetricStrip } from "@/components/metrics";
 import { PageHero } from "@/components/page-hero";
 import { ExplorerSearch } from "@/components/explorer/explorer-search";
+import { SettledVolumePanel } from "@/components/explorer/settled-volume";
 
 const MAX_LIVE_EVENTS = 8;
 
@@ -85,7 +86,15 @@ export function ExplorerLive({ settlements }: { settlements: Trade[] | null }) {
       sub: "Solana settlement layer",
     },
     { label: "Protocol events seen", value: formatNumber(events.length, 0), sub: "this session" },
-    { label: "Settled trades", value: settlements ? formatNumber(settlements.length, 0) : "—" },
+    /*
+     * A "Settled trades" tile used to sit here counting `settlements.length`
+     * — the array this page slices to eight for the table below it. It read
+     * "8" on a node with eight thousand trades and "8" on a node with nine,
+     * and the trades in it are not all settled. What it was reaching for is
+     * answered properly by the volume panel, which reports confirmed
+     * settlements per asset with the node's own scope attached, so the tile
+     * is gone rather than restated.
+     */
   ];
 
   return (
@@ -99,8 +108,20 @@ export function ExplorerLive({ settlements }: { settlements: Trade[] | null }) {
         <MetricStrip items={metrics} />
       </PageHero>
 
+      {/* Volume before the feeds: it is the question people come to an
+          explorer with, and it is the one figure here that has to carry
+          its own scope with it. */}
+      <div className="mt-12">
+        <SettledVolumePanel />
+      </div>
+
+      {/* `min-w-0` on the columns, not decoration: a grid item's default
+          `min-width: auto` sizes it to its content, so the 520px-wide
+          tables below stretched their own `overflow-x-auto` wrappers past
+          the viewport and the whole page scrolled sideways at 390px
+          instead of the tables scrolling inside themselves. */}
       <div className="mt-12 grid gap-10 lg:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest protocol events</h2>
             {live && (
@@ -141,7 +162,7 @@ export function ExplorerLive({ settlements }: { settlements: Trade[] | null }) {
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest trades</h2>
           <div className="mt-3">
             <DataTable
