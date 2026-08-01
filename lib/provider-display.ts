@@ -13,6 +13,12 @@ import type { ServiceType } from "@/lib/types";
  *
  * What remains is not data about anyone. It is how a type is drawn,
  * needed to render whatever the registry returns.
+ *
+ * It moved out of `lib/data/` for that reason: everything left in that
+ * directory is a table this app is the authority for, and `tests/
+ * no-fixtures.test.ts` now asserts the directory holds exactly one — the
+ * country-to-slug map the routing needs at build time. A label and a colour
+ * are presentation, and presentation does not belong beside data.
  */
 
 export const PROVIDER_TYPES: Record<ServiceType, string> = {

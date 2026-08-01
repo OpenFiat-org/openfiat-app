@@ -105,23 +105,61 @@ export interface DecodedStakingConfig {
    *  NotificationProvider, OracleProvider, RiskIntelligenceProvider,
    *  SnapshotProvider. */
   minStakeByRole: bigint[];
-  unbondingPeriodSecs: bigint;
+  /**
+   * How long a bond stays locked after `request_unstake`, per role, same
+   * indexing as `minStakeByRole`.
+   *
+   * This was one flat `unbondingPeriodSecs`, and reading it that way is now
+   * wrong twice over. OFS-4100 §4 gives the roles three different periods —
+   * 24 hours for a merchant, 3 days for an arbitrator, 7 days for everyone
+   * else — so `StakingConfig` replaced the scalar with `[i64; 7]` **in
+   * place**, growing the account from 237 to 285 bytes. The old reader
+   * therefore returned Merchant's period under a name promising everyone's,
+   * and every field after the array moved 48 bytes: `slashBps` was reading
+   * the low half of Arbitrator's period and reporting 62592 basis points.
+   *
+   * Neither error could show up as a crash. That is the whole hazard of a
+   * byte-offset reader, and why the length is asserted below rather than
+   * trusted.
+   */
+  unbondingPeriodSecsByRole: bigint[];
   slashBps: number;
 }
 
-/** Layout: disc(8) admin(32) mint(32) min_stake_by_role(7 * 8)
- *  unbonding_period_secs(8) slash_bps(2) ... (remaining fields unused here). */
+/**
+ * Layout: disc(8) admin(32) mint(32) min_stake_by_role(7 * 8)
+ * unbonding_period_secs_by_role(7 * 8) slash_bps(2) ... (remaining fields
+ * unused here).
+ *
+ * The two arrays are the same length and sit adjacent, so a reader that gets
+ * the boundary wrong produces plausible numbers from the wrong array. The
+ * account length is checked as a cheap proof that this is the post-migration
+ * layout: 285 bytes is what `migrate_staking_config` resized the singleton
+ * to, and a 237-byte account is the old shape, which this must refuse rather
+ * than misread.
+ */
+const STAKING_CONFIG_LEN = 285;
+
 export function decodeStakingConfig(data: Uint8Array): DecodedStakingConfig {
   checkDiscriminator(data, STAKING_CONFIG_DISCRIMINATOR, "StakingConfig");
+  if (data.length !== STAKING_CONFIG_LEN) {
+    throw new Error(
+      `StakingConfig: expected ${STAKING_CONFIG_LEN} bytes, got ${data.length} — this is a different layout, and reading it would return numbers from the wrong fields`,
+    );
+  }
   const minStakeByRole: bigint[] = [];
   for (let i = 0; i < ROLE_COUNT; i++) minStakeByRole.push(readU64(data, 72 + i * 8));
-  const tail = 72 + ROLE_COUNT * 8;
+  const unbonding = 72 + ROLE_COUNT * 8;
+  const unbondingPeriodSecsByRole: bigint[] = [];
+  for (let i = 0; i < ROLE_COUNT; i++) {
+    unbondingPeriodSecsByRole.push(readI64(data, unbonding + i * 8));
+  }
   return {
     admin: readPubkey(data, 8),
     mint: readPubkey(data, 40),
     minStakeByRole,
-    unbondingPeriodSecs: readI64(data, tail),
-    slashBps: readU16(data, tail + 8),
+    unbondingPeriodSecsByRole,
+    slashBps: readU16(data, unbonding + ROLE_COUNT * 8),
   };
 }
 
@@ -280,5 +318,92 @@ export function decodeProposal(data: Uint8Array): DecodedProposal {
     quorumMet: data[164] === 1,
     depositSettled: data[165] === 1,
     executed: data[166] === 1,
+  };
+}
+
+// --- openfiat-presale -----------------------------------------------------
+
+const SALE_CONFIG_DISCRIMINATOR = [86, 47, 71, 156, 87, 152, 149, 246];
+
+/** OFS-4200 §3 — matches `openfiat-presale::state::SaleState`. */
+export const SALE_STATE = ["Active", "Finalized", "SoftCapMissed"] as const;
+export type SaleStateLabel = (typeof SALE_STATE)[number];
+
+export interface DecodedSaleConfig {
+  admin: PublicKey;
+  openMint: PublicKey;
+  usdcMint: PublicKey;
+  presaleVault: PublicKey;
+  usdcVault: PublicKey;
+  treasury: PublicKey;
+  /** USDC base units. The whole Community Presale bucket, at 1 OPEN = 1 USDC. */
+  hardCap: bigint;
+  /**
+   * USDC base units, and `0n` on a spec-conforming sale.
+   *
+   * Zero is how "no minimum to raise" is expressed on chain: `finalize_sale`
+   * then always resolves to `Finalized` and the `SoftCapMissed` state that
+   * refunds are gated on can never be reached. A UI must not render this as
+   * a threshold — there is nothing to fall short of.
+   */
+  softCap: bigint;
+  minContribution: bigint;
+  maxContribution: bigint;
+  openDecimals: number;
+  usdcDecimals: number;
+  startTime: bigint;
+  endTime: bigint;
+  /** Running USDC-equivalent raised, in USDC base units. */
+  totalRaised: bigint;
+  state: SaleStateLabel;
+}
+
+/**
+ * Layout: disc(8) admin(32) open_mint(32) usdc_mint(32) presale_vault(32)
+ * usdc_vault(32) treasury(32) swap_program(32) hard_cap(8) soft_cap(8)
+ * min_contribution(8) max_contribution(8) max_slippage_bps(2)
+ * open_decimals(1) usdc_decimals(1) start_time(8) end_time(8)
+ * stablecoin_whitelist(4 + n*32) total_raised(8) state(1) bump(1)
+ * usdc_vault_bump(1).
+ *
+ * `stablecoin_whitelist` is a `Vec<Pubkey>`, so everything after it sits at
+ * an offset that depends on the account's own contents — a fixed offset for
+ * `total_raised` would read whichever pubkey happened to be last on a sale
+ * with a different whitelist length and report it as a number of dollars.
+ * The length prefix is read and the cursor moved by it.
+ */
+const WHITELIST_LEN_OFFSET = 284;
+
+export function decodeSaleConfig(data: Uint8Array): DecodedSaleConfig {
+  checkDiscriminator(data, SALE_CONFIG_DISCRIMINATOR, "SaleConfig");
+  // The `Vec`'s own u32 length prefix sits immediately after `end_time`.
+  const whitelistLen = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(
+    WHITELIST_LEN_OFFSET,
+    true,
+  );
+  const afterWhitelist = WHITELIST_LEN_OFFSET + 4 + whitelistLen * 32;
+  if (afterWhitelist + 9 > data.length) {
+    throw new Error(
+      `SaleConfig: whitelist of ${whitelistLen} runs past the account — not a SaleConfig this build understands`,
+    );
+  }
+  const stateIndex = data[afterWhitelist + 8]!;
+  return {
+    admin: readPubkey(data, 8),
+    openMint: readPubkey(data, 40),
+    usdcMint: readPubkey(data, 72),
+    presaleVault: readPubkey(data, 104),
+    usdcVault: readPubkey(data, 136),
+    treasury: readPubkey(data, 168),
+    hardCap: readU64(data, 232),
+    softCap: readU64(data, 240),
+    minContribution: readU64(data, 248),
+    maxContribution: readU64(data, 256),
+    openDecimals: data[266]!,
+    usdcDecimals: data[267]!,
+    startTime: readI64(data, 268),
+    endTime: readI64(data, 276),
+    totalRaised: readU64(data, afterWhitelist),
+    state: SALE_STATE[stateIndex] ?? "Active",
   };
 }

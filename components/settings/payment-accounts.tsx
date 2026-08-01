@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { COUNTRIES, currenciesFor, getCountry } from "@/lib/data/countries";
+import { useEffect, useMemo, useState } from "react";
 import {
   type SavedPaymentAccount,
   blankFields,
   isComplete,
   readAccounts,
-  selectableMethods,
   writeAccounts,
 } from "@/lib/payment-accounts";
+import { flagForCountry, useReferenceData } from "@/lib/reference";
 import { CopyButton } from "@/components/copy-button";
 import { Panel } from "@/components/panel";
 
@@ -24,14 +23,47 @@ const labelCls = "block text-xs text-gray-500";
  * to retype their bank details on every trade will paste them into the chat
  * instead — which puts them in the trade log for anyone reading it later, and
  * loses the per-field copy the buyer needs.
+ *
+ * # Both dropdowns read the node
+ *
+ * The method list came from `lib/data/payment-methods.ts` and the country
+ * list from `lib/data/countries.ts` — two tables compiled into the bundle,
+ * and the last readers either had. That made this the one screen where a
+ * merchant could nominate an account on a rail the network does not carry,
+ * and it meant adding a payment method needed a release of this app before
+ * anybody could hold an account on it.
+ *
+ * There is no fallback list when the node cannot be reached, deliberately —
+ * see `lib/reference.ts`. An empty dropdown reads as "the network supports
+ * nothing", which is a claim about the network made out of a failure to
+ * reach one, so the form says "could not load" and refuses to open instead.
  */
 export function PaymentAccounts() {
+  const reference = useReferenceData();
   const [accounts, setAccounts] = useState<SavedPaymentAccount[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [method, setMethod] = useState("M-Pesa Kenya (Safaricom)");
-  const [countryCode, setCountryCode] = useState("KE");
-  const [fields, setFields] = useState(blankFields("M-Pesa Kenya (Safaricom)"));
+  // Empty until the node answers. A default rail written here would be this
+  // app naming a payment method again, and the previous default
+  // ("M-Pesa Kenya (Safaricom)") was a string only the deleted table used.
+  const [method, setMethod] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [fields, setFields] = useState(blankFields(""));
+
+  const methods = useMemo(
+    () =>
+      reference.status === "ready"
+        ? [...reference.data.payment_methods].sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [reference],
+  );
+  const countries = useMemo(
+    () =>
+      reference.status === "ready"
+        ? [...reference.data.countries].sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [reference],
+  );
 
   // SSR renders the empty state; accounts arrive post-mount so there is no
   // hydration mismatch.
@@ -44,6 +76,22 @@ export function PaymentAccounts() {
     if (loaded) writeAccounts(accounts);
   }, [accounts, loaded]);
 
+  /**
+   * Opens the form, seeded from the node's own first entries.
+   *
+   * Seeded here rather than in an effect, and never from a constant: the
+   * button that calls this is disabled until the reference data is in hand,
+   * so there is no moment at which this form has to guess a rail. The
+   * previous default was the literal "M-Pesa Kenya (Safaricom)" — a string
+   * only the deleted table ever used.
+   */
+  function startAdding() {
+    setMethod(methods[0]?.name ?? "");
+    setCountryCode(countries[0]?.code ?? "");
+    setFields(blankFields(methods[0]?.name ?? ""));
+    setAdding(true);
+  }
+
   function chooseMethod(next: string) {
     setMethod(next);
     // Field shapes differ per rail, so switching method starts a fresh set
@@ -52,12 +100,15 @@ export function PaymentAccounts() {
   }
 
   function save() {
-    const country = getCountry(countryCode);
+    const country = countries.find((c) => c.code === countryCode);
     const account: SavedPaymentAccount = {
       id: `acct-${Date.now().toString(36)}`,
       method,
       countryCode,
-      currencyCode: country ? currenciesFor(country)[0] : "USD",
+      // The node's own currency for that country. There is no "USD" fallback
+      // any more: a country the node did not list is not one this form can
+      // offer, so the branch cannot be reached from the dropdown.
+      currencyCode: country?.currency ?? "",
       fields,
     };
     setAccounts((prev) => [...prev, account]);
@@ -80,13 +131,17 @@ export function PaymentAccounts() {
         {accounts.length > 0 && (
           <ul className="mt-4 divide-y divide-white/5 border-y border-white/5">
             {accounts.map((a) => {
-              const country = getCountry(a.countryCode);
+              // The node's name for the stored code, when it is reachable;
+              // the code itself otherwise. A saved account keeps working
+              // whether or not a node can be asked what its country is called.
+              const country = countries.find((c) => c.code === a.countryCode);
               return (
                 <li key={a.id} className="py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-white">{a.method}</span>
                     <span className="text-xs text-gray-500">
-                      {country?.flag} {country?.name} · {a.currencyCode}
+                      {flagForCountry(a.countryCode)} {country?.name ?? a.countryCode} ·{" "}
+                      {a.currencyCode}
                     </span>
                     {!isComplete(a) && (
                       <span className="rounded border border-amber-400/40 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-300">
@@ -131,9 +186,9 @@ export function PaymentAccounts() {
                   onChange={(e) => chooseMethod(e.target.value)}
                   className={inputCls}
                 >
-                  {selectableMethods().map((m) => (
-                    <option key={m} value={m}>
-                      {m}
+                  {methods.map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.name}
                     </option>
                   ))}
                 </select>
@@ -148,9 +203,9 @@ export function PaymentAccounts() {
                   onChange={(e) => setCountryCode(e.target.value)}
                   className={inputCls}
                 >
-                  {COUNTRIES.map((c) => (
+                  {countries.map((c) => (
                     <option key={c.code} value={c.code}>
-                      {c.name} — {c.currencyCode}
+                      {c.name} — {c.currency}
                     </option>
                   ))}
                 </select>
@@ -198,13 +253,31 @@ export function PaymentAccounts() {
               )}
             </div>
           </div>
+        ) : reference.status === "error" ? (
+          /* Not an empty dropdown. Which rails and countries the network
+             carries is the node's answer, and "could not load" has to be
+             distinguishable from "loaded, and empty". */
+          <p className="mt-4 text-sm text-amber-300">
+            Couldn&apos;t ask your access node which payment methods and countries
+            the network supports ({reference.message}).{" "}
+            <button
+              type="button"
+              onClick={reference.retry}
+              className="underline hover:text-amber-200"
+            >
+              Try again
+            </button>
+          </p>
         ) : (
           <button
             type="button"
-            onClick={() => setAdding(true)}
-            className="mt-4 rounded-md border border-white/15 px-4 py-2 text-sm text-gray-200 hover:border-white/30"
+            onClick={startAdding}
+            disabled={reference.status !== "ready"}
+            className="mt-4 rounded-md border border-white/15 px-4 py-2 text-sm text-gray-200 hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Add a payment account
+            {reference.status === "ready"
+              ? "Add a payment account"
+              : "Asking your node which rails exist…"}
           </button>
         )}
       </div>

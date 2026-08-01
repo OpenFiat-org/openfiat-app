@@ -8,8 +8,6 @@
  * app is connected to a live OpenFiat node.
  */
 
-export type StablecoinAsset = "USDT" | "USDC" | "USD1" | "SOL";
-export type Asset = StablecoinAsset | "OPEN";
 
 /** ISO 4217 code (or local pseudo-code) — open-ended, see lib/data/countries.ts. */
 export type FiatCurrency = string;
@@ -17,107 +15,7 @@ export type FiatCurrency = string;
 /** Buy/Sell from the perspective stated on the entity (ad: the merchant, trade: the current user). */
 export type TradeDirection = "Buy" | "Sell";
 
-export type MerchantTier =
-  | "Explorer"
-  | "Verified"
-  | "Professional"
-  | "Elite"
-  | "Institutional";
 
-export type MerchantAvailability =
-  | "Online"
-  | "Busy"
-  | "Away"
-  | "Offline"
-  | "Vacation";
-
-export interface Merchant {
-  id: string;
-  name: string;
-  /** ISO/pseudo country code — see lib/data/countries.ts. */
-  countryCode: string;
-  /** Borderless OTC desk: trades in any fiat currency, any payment method. */
-  international?: boolean;
-  tier: MerchantTier;
-  orders: number;
-  completionRate: number; // 0–100
-  availability: MerchantAvailability;
-  avgResponseTime: string; // e.g. "<1 min"
-  /** Full Solana wallet address (deterministic pseudo-address in simulated data). */
-  wallet: string;
-  /** OPEN staked (merchant bond + delegation). */
-  stake: number;
-  /** Highest verified identity level. */
-  identityLevel: IdentityLevel;
-  /** e.g. "14 months". */
-  merchantAge: string;
-  /** 30-day trade volume in USDT. */
-  volume30d: number;
-  /** Average ticket size in USDT. */
-  avgTicket: number;
-  /** e.g. "6 min median". */
-  settlementSpeed: string;
-}
-
-export type PricingModel =
-  | { type: "Fixed"; price: number }
-  | { type: "Floating"; premiumPct: number };
-
-export type AdStatus = "Online" | "Paused";
-
-export interface Advertisement {
-  id: string;
-  merchantId: string;
-  asset: StablecoinAsset;
-  /** Merchant's direction: a Sell ad appears under the taker's "Buy" tab. */
-  direction: TradeDirection;
-  fiatCurrency: FiatCurrency;
-  pricing: PricingModel;
-  /**
-   * Trade bounds in the ASSET, like `availableLiquidity` below.
-   *
-   * These said `// fiat`, and the fixture data was generated to match by
-   * multiplying by an FX rate. OFS-2100 denominates `min_trade` and
-   * `max_trade` in the token being escrowed, so the simulated book was
-   * describing a different record from the real one — on the one route
-   * that still renders it, beside a directory reading real advertisements
-   * the other way.
-   */
-  minTrade: number;
-  maxTrade: number;
-  /** In the asset, backed by the merchant's liquidity vault. */
-  availableLiquidity: number;
-  /** Empty on international ads — they semantically accept any payment method. */
-  paymentMethods: string[];
-  /** Borderless ad: priced in USD, accepts any fiat currency (FX-converted) and any payment method. */
-  international?: boolean;
-  /**
-   * Advertiser terms — the merchant's own conditions, in their own words.
-   *
-   * OFS-2100 §13 lets a merchant declare methods but not the practical
-   * conditions around them, and those conditions are what disputes turn on:
-   * whose name must be on the transfer, what reference to use, which hours
-   * they settle. Shown before a taker commits rather than discovered in chat.
-   */
-  terms?: string;
-  /**
-   * Minimum counterparty reputation the merchant will trade with.
-   *
-   * Not a protocol field: OFS-2100 §6 enumerates what an advertisement contains
-   * and this is not in it. It is an application-level preference, so it is
-   * advisory — this client will not open an order below it and says why, but a
-   * different client is under no obligation to honour it, and nothing on chain
-   * enforces it. Presenting it as a hard gate would be a lie about where the
-   * enforcement lives.
-   *
-   * Filtering on reputation is squarely within OFS-3000 §22, which leaves
-   * marketplace ranking to the application; requiring it is the part the
-   * protocol does not speak to.
-   */
-  minCounterpartyReputation?: number;
-  status: AdStatus;
-  updatedAt: string; // ISO timestamp
-}
 
 /** Sentinel for the International market view (any currency, any payment method). */
 export const INTERNATIONAL_MARKET = "INTERNATIONAL";
@@ -173,46 +71,12 @@ export interface PaymentField {
   value: string;
 }
 
-export interface TradeEvent {
-  time: string; // static label, e.g. "14:02"
-  kind: "event" | "message";
-  actor: string;
-  text: string;
-}
-
-export interface Trade {
-  id: string;
-  adId: string;
-  counterpartyId: string;
-  /** The current user's direction in this trade. */
-  direction: TradeDirection;
-  asset: StablecoinAsset;
-  cryptoAmount: number;
-  fiatAmount: number;
-  price: number;
-  fiatCurrency: FiatCurrency;
-  paymentMethod: string;
-  paymentInstructions: string;
-  /** Standardized copyable payment details, shaped per payment method. */
-  paymentFields: PaymentField[];
-  /** Solana-style settlement transaction signature (88-char base58). */
-  txSig: string;
-  /** Escrow creation transaction signature. */
-  escrowSig: string;
-  status: SettlementStatus;
-  createdAt: string; // ISO
-  updatedAt: string; // static relative label, e.g. "2 min ago"
-  events: TradeEvent[];
-}
-
 /*
- * Dispute resolution, modelled on OFS-2400 (ODP) and Chapter 11.
- *
- * The protocol is not a judge model. A case is published with metadata only,
- * qualified arbitrators volunteer by committing OPEN stake, evidence is
- * withheld until they are accepted, the required number of them is never
- * disclosed, and they vote by commit-and-reveal. Every type below exists to
- * keep one of those properties representable.
+ * A `Trade` interface and its `TradeEvent` chat rows used to sit here: a
+ * fixture shape carrying `paymentInstructions`, hand-written `time` labels
+ * like "14:02", and pseudo transaction signatures. The real one is in
+ * `lib/live-trades.ts`, keyed the way the node keys it, and the trade chat
+ * is the node's own sealed channel (`getMyTradeChannel`).
  */
 
 /** OFS-2400 §14, in order. The stepper walks this list. */
@@ -388,48 +252,6 @@ export function evidenceVisible(dispute: Dispute, joined: boolean): boolean {
   return isDisputeParty(dispute) || joined;
 }
 
-export type IdentityLevel = "L0" | "L1" | "L2" | "L3";
-
-/*
- * `IdentityClaim` and `ClaimStatus` stood here, as the shape of
- * `lib/data/identity.ts`'s fixture. Both are gone with it, and are
- * deliberately not replaced by an equivalent.
- *
- * The real shape is not equivalent, and pretending it was is what let the
- * fixture look plausible. A stored claim (`crates/identity`'s `Claim`) has no
- * level, no title and no description — a level is a reader's conclusion from
- * §8, not a field — and its status is `Verified | Unverified` set by the
- * publisher rather than a three-state progress marker with "Pending" and
- * "Not started" in it. Nothing is ever pending: a claim exists or it does
- * not. `lib/live-identity.ts` carries the shape the registry actually
- * returns.
- */
-
-/**
- * A written review left by a counterparty after a trade.
- *
- * The rater is a truncated wallet, not a name: OFS-5000 publishes identity
- * claims only where a participant chose to, and a buyer who verified nothing
- * beyond their wallet has no name to show. Borrowing the merchant's convention
- * of display names here would invent identity for the other side.
- */
-export interface MerchantReview {
-  id: string;
-  merchantId: string;
-  /** Truncated wallet of the counterparty who left it. */
-  rater: string;
-  positive: boolean;
-  at: string; // ISO
-  /** What the rater did, from their side of the trade. */
-  side: "Bought" | "Sold";
-  comment: string;
-}
-
-export interface ReputationDimension {
-  label: string;
-  score: number; // 0–100
-  display: string; // human-readable value, e.g. "98.6%" or "4.2 h"
-}
 
 /*
  * `ReputationProfile` — a tier, a next tier, a percentage toward it and eight
@@ -456,32 +278,6 @@ export interface ReputationDimension {
  * it from chain.
  */
 
-export type NodeRole =
-  | "Full Node"
-  | "Bootstrap Node"
-  | "Snapshot Provider"
-  | "Notification Gateway"
-  | "Oracle Provider"
-  | "Risk Intelligence Provider"
-  | "Merchant Gateway"
-  | "Public API Node";
-
-export interface StakingPosition {
-  node: string;
-  role: NodeRole;
-  amount: number; // OPEN
-  aprPct: number;
-  rewards: number; // OPEN earned
-}
-
-export interface StakingSummary {
-  totalStaked: number; // OPEN
-  merchantBond: number; // OPEN locked as the bond required to publish ads
-  pendingRewards: number; // OPEN
-  cooldownDays: number;
-}
-
-export type ProposalStatus = "Active" | "Passed" | "Rejected" | "Executed";
 
 /** OFS-4100 §5's 6-category taxonomy, chosen over OFS-4000's 5-category one. */
 export type ProposalCategory =
@@ -492,54 +288,7 @@ export type ProposalCategory =
   | "Protocol-Upgrade"
   | "Constitutional";
 
-export interface Proposal {
-  id: string; // OFIP-####
-  category: ProposalCategory;
-  title: string;
-  description: string;
-  status: ProposalStatus;
-  votingEnds: string; // static label
-  votesFor: number; // percent
-  votesAgainst: number; // percent
-  votesAbstain: number; // percent
-  /** Required quorum, set by category (OFS-4100 §5) — 10% standard, 20% for Protocol-Upgrade/Constitutional. */
-  quorumPct: number;
-  /** Required For-share to pass, set by category — 50/60/66 (simple majority / Treasury / Protocol-Upgrade & Constitutional). */
-  approvalThresholdPct: number;
-  turnoutPct: number; // current turnout
-  /** [PROPOSED — NEEDS SIGN-OFF] OFS-4100 §5: 5,000 OPEN, refunded if quorum is met by the deadline. */
-  depositOpen: number;
-  /** null while voting is still open; set once the deadline passes. */
-  depositRefunded: boolean | null;
-}
 
-export type NodeStatus = "Online" | "Syncing" | "Offline";
-
-export interface NetworkNode {
-  id: string;
-  role: NodeRole;
-  region: string;
-  version: string;
-  status: NodeStatus;
-  latencyMs: number;
-  peers: number;
-}
-
-export interface NetworkStats {
-  nodesOnline: number;
-  peers: number;
-  blockHeight: number;
-  epoch: number;
-  protocolVersion: string;
-}
-
-/** Event-sourced coordination layer: every transition emits a signed event. */
-export interface ProtocolEvent {
-  type: string; // e.g. "ReservationAccepted"
-  actor: string;
-  timestamp: string; // ISO
-  summary: string;
-}
 
 // ── Service Registry (OFS-1500) ───────────────────────────────────────────────
 
@@ -554,43 +303,3 @@ export type ServiceType =
 /** OFS-1500 §11. Maintenance is a distinct state from degraded: one is
  *  planned, the other is not, and a client picking a provider should be able to
  *  tell them apart. */
-export type ProviderStatus = "Online" | "Maintenance" | "Degraded" | "Offline";
-
-export interface PricingItem {
-  item: string;
-  price: string;
-}
-
-/** OFS-1500 Service Registration. */
-export interface ServiceProvider {
-  /** Service ID, e.g. "svc-pingrelay". */
-  id: string;
-  type: ServiceType;
-  /** Provider identity (display name). */
-  name: string;
-  /** Provider wallet (registration signer). */
-  wallet: string;
-  /**
-   * The rest of the §5 identity. A registered endpoint URL on its own proves
-   * nothing — anyone can advertise a host. A node connecting to a provider
-   * needs the peer ID it expects to handshake with and the public key the
-   * registration was signed under, or the registry becomes a list of addresses
-   * an attacker can impersonate.
-   */
-  nodeIdentity: string;
-  peerId: string;
-  publicKey: string;
-  endpoints: string[];
-  protocolVersions: string[];
-  region: string;
-  capabilities: string[];
-  pricing: PricingItem[];
-  /** Registration timestamp (ISO). */
-  registeredAt: string;
-  /** Registration signature over the record. */
-  signature: string;
-  status: ProviderStatus;
-  uptimePct: number; // 0–100
-  latencyMs: number;
-  description: string;
-}

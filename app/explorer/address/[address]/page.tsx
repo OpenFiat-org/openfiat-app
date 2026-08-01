@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CURRENT_USER, MERCHANTS, reputationFor } from "@/lib/data/merchants";
-import { STAKING_SUMMARY } from "@/lib/data/staking";
-import { getCountry } from "@/lib/data/countries";
-import { formatNumber, shortAddress } from "@/lib/format";
+
 import { CopyButton } from "@/components/copy-button";
 import { AddressOnchain } from "@/components/explorer/address-onchain";
-import { MerchantCell } from "@/components/merchant-cell";
-import { MetricStrip } from "@/components/metrics";
-import { Panel } from "@/components/panel";
-import { TierBadge } from "@/components/tier-badge";
+import { AddressProtocol } from "@/components/explorer/address-protocol";
+import { shortAddress } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Address",
@@ -19,14 +14,32 @@ interface Params {
   address: string;
 }
 
+/**
+ * Everything this app can read about one address, from both halves of the
+ * system it spans.
+ *
+ * # What this replaced
+ *
+ * The page resolved the address against `MERCHANTS` — a fixture of invented
+ * wallets — and rendered a country, tier, identity level, settlement speed,
+ * scored reputation dimensions and `STAKING_SUMMARY`'s 25,000 staked OPEN.
+ * Anything not in that fixture, meaning every real address, got "Not found
+ * in the simulated index". So the one page whose entire purpose is to answer
+ * about an arbitrary address answered only about wallets that do not exist,
+ * and the staked figure it showed for "you" was the same number for
+ * everybody.
+ *
+ * # No "not found", by construction
+ *
+ * There is nothing to be absent from. An address is asked about directly:
+ * the chain answers for its accounts and vaults, and the node answers for
+ * the PeerId derived from the same key. A wallet that has done nothing gets
+ * a page saying so — which is a real answer about a real address, and the
+ * thing an explorer exists to give.
+ */
 export default async function AddressPage({ params }: { params: Promise<Params> }) {
   const { address: raw } = await params;
   const address = decodeURIComponent(raw);
-
-  const merchant =
-    address === CURRENT_USER.wallet
-      ? CURRENT_USER
-      : MERCHANTS.find((m) => m.wallet === address || m.id === address);
 
   return (
     <section>
@@ -41,110 +54,31 @@ export default async function AddressPage({ params }: { params: Promise<Params> 
         </span>
       </div>
 
-      {!merchant ? (
-        <Panel className="mt-8">
-          <div className="px-4 py-14 text-center">
-            <p className="text-sm text-gray-400">Not found in the simulated index.</p>
-            <p className="mt-2 text-xs text-gray-600">
-              This demo indexes simulated merchants and your own wallet only. Once connected to a live node, any
-              address resolves here.
-            </p>
-          </div>
-        </Panel>
-      ) : merchant.id === CURRENT_USER.id ? (
-        <CurrentUserView address={address} />
-      ) : (
-        <MerchantView merchantId={merchant.id} />
-      )}
-    </section>
-  );
-}
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
+        On chain
+      </h2>
+      <div className="mt-3">
+        <AddressOnchain address={address} />
+      </div>
 
-function MerchantView({ merchantId }: { merchantId: string }) {
-  const merchant = MERCHANTS.find((m) => m.id === merchantId)!;
-  const country = getCountry(merchant.countryCode);
-  const reputation = reputationFor(merchant);
-  const topDimensions = reputation.slice(0, 4);
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
+        On the protocol
+      </h2>
+      <div className="mt-3">
+        <AddressProtocol address={address} />
+      </div>
 
-  return (
-    <div className="mt-8 space-y-8">
-      <div className="flex flex-wrap items-center gap-4">
-        <MerchantCell merchant={merchant} size="md" />
-        <Link href={`/merchants/${merchant.id}`} className="text-sm text-brand hover:text-brand-hover">
-          View full profile →
+      <p className="mt-10 max-w-3xl text-xs leading-relaxed text-gray-500">
+        Two different systems, deliberately kept apart. The chain holds token
+        accounts and escrow vaults and answers the same for everyone reading
+        it; the protocol half is whatever your access node has replicated, so
+        a node that has seen less of the network reports less. Your own trades
+        are at{" "}
+        <Link href="/orders" className="text-brand hover:text-brand-hover">
+          /orders
         </Link>
-      </div>
-
-      <MetricStrip
-        items={[
-          { label: "Country", value: `${country?.flag ?? ""} ${country?.name ?? merchant.countryCode}` },
-          { label: "Identity level", value: merchant.identityLevel },
-          { label: "Staked OPEN", value: `${formatNumber(merchant.stake, 0)} OPEN` },
-          { label: "Tier", value: merchant.tier },
-          { label: "Settlement speed", value: merchant.settlementSpeed },
-        ]}
-      />
-
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Reputation summary</h2>
-        <div className="mt-3">
-          <Panel>
-            <ol className="divide-y divide-white/5">
-              {topDimensions.map((d) => (
-                <li key={d.label} className="flex items-center gap-4 px-4 py-3 text-sm">
-                  <span className="w-40 shrink-0 text-gray-300">{d.label}</span>
-                  <span className="h-1 flex-1 rounded-full bg-white/10">
-                    <span className="block h-1 rounded-full bg-brand" style={{ width: `${d.score}%` }} />
-                  </span>
-                  <span className="w-40 shrink-0 text-right text-xs tabular-nums text-gray-500">{d.display}</span>
-                </li>
-              ))}
-            </ol>
-          </Panel>
-        </div>
-      </div>
-
-      {/*
-        * A "recent trades with you" table used to live here, sourced from
-        * `TRADES` — a fixture keyed by this simulated merchant directory's
-        * own ids. There is no live equivalent: real trades are keyed by
-        * PeerId, and this directory's merchants have none, so there is
-        * nothing real to filter by. See `/orders` for actual trades.
-        */}
-      <p className="text-sm text-gray-500">
-        Real trades are keyed by PeerId, not by this simulated directory —{" "}
-        <Link href="/orders" className="text-brand hover:text-brand-hover">see your actual trades</Link>.
+        , which needs a connected wallet — nothing here does.
       </p>
-    </div>
-  );
-}
-
-function CurrentUserView({ address }: { address: string }) {
-  return (
-    <div className="mt-8 space-y-8">
-      <div className="flex items-center gap-3">
-        <MerchantCell merchant={CURRENT_USER} size="md" />
-        <TierBadge tier={CURRENT_USER.tier} />
-        <span className="text-xs text-gray-500">This is you</span>
-      </div>
-
-      <MetricStrip
-        items={[
-          { label: "Identity level", value: CURRENT_USER.identityLevel },
-          { label: "Staked OPEN", value: `${formatNumber(STAKING_SUMMARY.totalStaked, 0)} OPEN` },
-          { label: "Merchant bond", value: `${formatNumber(STAKING_SUMMARY.merchantBond, 0)} OPEN` },
-          { label: "Reputation tier", value: CURRENT_USER.tier },
-        ]}
-      />
-
-      {/* Real, and specific to the address in the URL — see
-          `components/explorer/address-onchain.tsx` for what these two
-          sections used to show instead. */}
-      <AddressOnchain address={address} />
-
-      <p className="text-sm text-gray-500">
-        <Link href="/orders" className="text-brand hover:text-brand-hover">See your actual trades →</Link>
-      </p>
-    </div>
+    </section>
   );
 }

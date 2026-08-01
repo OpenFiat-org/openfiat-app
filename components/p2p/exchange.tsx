@@ -7,7 +7,12 @@ import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-adverti
 import { fetchNamedAssets } from "@/lib/pairs";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { WalletAvatar } from "@/components/wallet-avatar";
-import { COUNTRIES_BY_SLUG, countriesByCurrency } from "@/lib/data/countries";
+import { COUNTRIES_BY_SLUG } from "@/lib/data/countries";
+import {
+  readMarketSlug,
+  writeMarketSlug,
+  writePreferredCurrency,
+} from "@/lib/market-preference";
 import { formatNumber } from "@/lib/format";
 import { AssetIcon } from "@/components/asset-icon";
 import { AssetLabel, TradeLimits } from "@/components/asset-label";
@@ -77,7 +82,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 const selectCls =
   "rounded-md border border-white/10 px-3 py-2 text-sm text-gray-300 outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
 
-const STORAGE_KEY = "openfiat:market";
+
 
 const DEFAULT_FIAT = "USD";
 
@@ -160,7 +165,7 @@ export function P2PExchange({
   useEffect(() => {
     if (!rememberPreference) return;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = readMarketSlug();
       if (!saved) return;
       const country = COUNTRIES_BY_SLUG.get(saved);
       if (country) setFiat(country.currencyCode);
@@ -172,23 +177,15 @@ export function P2PExchange({
   // Remember the last-browsed country page as the preferred market.
   useEffect(() => {
     if (!savePreference) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, savePreference);
-    } catch {
-      /* localStorage unavailable */
-    }
+    writeMarketSlug(savePreference);
   }, [savePreference]);
 
   function chooseFiat(code: string) {
     setFiat(code);
     setMethod("");
-    try {
-      const users = countriesByCurrency(code);
-      const country = users.find((c) => c.isRecognized) ?? users[0];
-      if (country) localStorage.setItem(STORAGE_KEY, country.slug);
-    } catch {
-      /* localStorage unavailable */
-    }
+    // Shared with the settings screen's own currency preference, so the two
+    // controls cannot disagree about which market this browser prefers.
+    writePreferredCurrency(code);
   }
 
   const BOOK = useMemo(() => (ads ?? []).filter((a) => a.status === "Active"), [ads]);

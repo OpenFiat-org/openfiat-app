@@ -1,40 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
+import { NotificationSubscription } from "@/components/settings/notification-subscription";
 import { PaymentAccounts } from "@/components/settings/payment-accounts";
 import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
+import { preferredCurrency, writePreferredCurrency } from "@/lib/market-preference";
 
-/**
- * The delivery channels OFS-6000 §8 defines. All toggles are local state.
- *
- * Each hint used to end "· via PingRelay", "· via NotifyHive", "· via
- * TgramBridge", "· via PushSignal". No such providers exist — not in the
- * specs, not in the registry, nowhere. They read as the named partners
- * actually carrying a merchant's dispute alerts, and naming a carrier that
- * does not exist for a message that is not sent is a strange thing for a
- * settings screen to do.
- *
- * OFS-6000 has no fixed carriers to name in the first place: a notification
- * provider is a registered service a wallet subscribes to, discovered like
- * any other, so which one delivers an SMS is a property of a subscription
- * this app does not yet create.
+/*
+ * Four channel toggles — Email, SMS, Telegram, Push — stood here in
+ * `useState`, saving nowhere, under a footer conceding "Preferences are
+ * simulated and reset on reload". They have moved to
+ * `components/settings/notification-subscription.tsx` and become the five
+ * categories a subscription is actually signed against, read from and
+ * written back to the node. See `lib/notifications.ts` for why channels were
+ * the wrong axis in the first place.
  */
-const CHANNELS = [
-  { key: "email", label: "Email", hint: "Trade receipts and dispute updates" },
-  { key: "sms", label: "SMS", hint: "Reservation and escrow alerts" },
-  { key: "telegram", label: "Telegram", hint: "Chat-style trade session notifications" },
-  { key: "push", label: "Push", hint: "Browser push, delivered by a registered Web Push provider" },
-] as const;
 
 export function SettingsForm() {
-  const [fiat, setFiat] = useState("KES");
-  const [channels, setChannels] = useState<Record<string, boolean>>({
-    email: true,
-    sms: true,
-    telegram: false,
-    push: true,
-  });
+  /*
+   * Empty until mount. The preference lives in localStorage, which cannot be
+   * read during a server render, so seeding this with a currency here would
+   * both cause a hydration mismatch and state a preference the reader never
+   * expressed — the previous version's `useState("KES")` did exactly that,
+   * and then wrote nowhere.
+   */
+  const [fiat, setFiat] = useState("");
+
+  useEffect(() => {
+    setFiat(preferredCurrency() ?? "");
+  }, []);
+
+  function chooseFiat(code: string) {
+    setFiat(code);
+    // The same key the exchange reads, so this control genuinely changes
+    // which market the exchange opens on.
+    writePreferredCurrency(code);
+  }
 
   return (
     <div className="space-y-6">
@@ -46,10 +48,14 @@ export function SettingsForm() {
         <ol className="divide-y divide-white/5">
           <li className="flex items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-sm text-gray-200">Default fiat currency</p>
-              <p className="text-xs text-gray-500">Used across the P2P exchange and trade screens</p>
+              <p className="text-sm text-gray-200">Default market</p>
+              <p className="text-xs text-gray-500">
+                {fiat
+                  ? "The currency the exchange opens on, in this browser."
+                  : "No market chosen yet — the exchange opens on whichever you last browsed."}
+              </p>
             </div>
-            <CurrencyCombobox value={fiat} onChange={setFiat} />
+            <CurrencyCombobox value={fiat} onChange={chooseFiat} />
           </li>
           {/*
            * A "Language" row stood here, offering English, Kiswahili,
@@ -86,55 +92,14 @@ export function SettingsForm() {
         </ol>
       </Panel>
 
-      <Panel title="Notification channels (OFS-6000)">
-        <ol className="divide-y divide-white/5">
-          {CHANNELS.map((c) => (
-            <li key={c.key} className="flex items-center justify-between gap-4 px-4 py-4">
-              <div>
-                <p className="text-sm text-gray-200">{c.label}</p>
-                <p className="text-xs text-gray-500">{c.hint}</p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={channels[c.key]}
-                // The button's only child is the knob, so without this the
-                // switch has no accessible name and every row announces
-                // itself identically.
-                aria-label={c.label}
-                onClick={() => setChannels((s) => ({ ...s, [c.key]: !s[c.key] }))}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  channels[c.key] ? "bg-brand" : "bg-white/15"
-                }`}
-              >
-                {/*
-                 * `left-0.5` is what keeps the knob inside the track.
-                 *
-                 * It was absolutely positioned with no `left` at all, so it
-                 * resolved to its static position — and a `<button>` centres
-                 * its content, which puts an out-of-flow child's static
-                 * origin at the track's midpoint, 22px in. Both offsets were
-                 * then measured from there: `translate-x-[22px]` put the
-                 * white circle at 44px, entirely outside the 44px track and
-                 * over the panel's right edge, and the off state sat flush
-                 * against the right instead of the left. The switch showed
-                 * its knob on the wrong side in both states.
-                 *
-                 * Anchored explicitly, the travel is the plain arithmetic it
-                 * looks like: 44 track − 20 knob − 2 inset = 20px, so both
-                 * ends inset equally.
-                 */}
-                <span
-                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                    channels[c.key] ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </li>
-          ))}
-        </ol>
-      </Panel>
-
-      <p className="text-[11px] text-gray-600">Preferences are simulated and reset on reload — nothing is persisted.</p>
+      <NotificationSubscription />
+      {/*
+        * "Preferences are simulated and reset on reload — nothing is
+        * persisted" used to close this page, and it was true of everything
+        * above it. Each panel now says for itself where its state lives:
+        * payment accounts in this browser, the default market in this
+        * browser, and the subscription on the network under your signature.
+        */}
     </div>
   );
 }

@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { STAKING_ROLES } from "@/lib/data/staking";
-import { PROVIDER_TYPES } from "@/lib/data/providers";
+import { STAKING_ROLES, roleByKey, toOpen, unbondingLabel } from "@/lib/staking-roles";
 import { formatNumber, shortSig } from "@/lib/format";
 import { Panel } from "@/components/panel";
 import {
@@ -14,19 +13,13 @@ import {
   readWalletConnection,
   type WalletConnection,
 } from "@/lib/wallet-connection";
-import { fetchStakeAccount } from "@/lib/live-staking";
+import { fetchStakeAccount, fetchStakingConfig } from "@/lib/live-staking";
+import type { DecodedStakingConfig } from "@/lib/onchain-decode";
 import { DEVNET_OPEN_MINT, getConnection, staking } from "@/lib/onchain-config";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
 const labelCls = "mb-1 block text-xs text-gray-500";
-
-const ROLE_TO_ONCHAIN: Record<string, number> = {
-  merchant: 0, // Role.Merchant
-  arbitrator: 1, // Role.Arbitrator
-  node: 2, // Role.NodeOperator
-  provider: 3, // Role.NotificationProvider
-};
 
 const DECIMALS = 1_000_000_000; // OPEN has 9 decimals (OFS-4100 §1)
 const OPEN_MINT = new PublicKey(DEVNET_OPEN_MINT);
@@ -38,16 +31,30 @@ type SubmitState =
   | { phase: "done"; signature: string; amount: number; role: string }
   | { phase: "error"; message: string };
 
-/** Bonds OPEN for a chosen protocol role via a real, wallet-signed
- *  `openfiat-staking` transaction (OFS-4200 §5). */
+/**
+ * Bonds OPEN for a chosen protocol role via a real, wallet-signed
+ * `openfiat-staking` transaction (OFS-4200 §5).
+ *
+ * # The minimum comes from the chain, and the form waits for it
+ *
+ * It used to come from `lib/data/staking.ts`, whose figures were stale in
+ * the direction that matters: the fixture said a merchant bond was 1,000
+ * OPEN and an arbitrator's 10,000 while the deployed `StakingConfig` holds
+ * 500 for both. So the form refused a valid 500 OPEN stake with "Below the
+ * 1,000 OPEN minimum" — the app rejecting a transaction the program would
+ * have accepted, citing a number the program does not hold.
+ *
+ * There is no fallback. Until the config is read the submit button is
+ * disabled and says why: a minimum this form guessed at could only ever be
+ * a transaction the chain rejects, or a stake the user did not need to make.
+ */
 export function StakeForm({ initialRole }: { initialRole?: string }) {
-  const [roleKey, setRoleKey] = useState(
-    STAKING_ROLES.some((r) => r.role === initialRole) ? (initialRole as string) : "merchant",
-  );
+  const [roleKey, setRoleKey] = useState(roleByKey(initialRole)?.key ?? "merchant");
   const [amount, setAmount] = useState("");
   const [nodeId, setNodeId] = useState("");
-  const [serviceType, setServiceType] = useState("Notification Provider");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
+  const [config, setConfig] = useState<DecodedStakingConfig | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
   const [submit, setSubmit] = useState<SubmitState>({ phase: "idle" });
 
   useEffect(() => {
@@ -57,11 +64,38 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
     return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
   }, []);
 
-  const role = STAKING_ROLES.find((r) => r.role === roleKey)!;
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const live = await fetchStakingConfig();
+        if (cancelled) return;
+        setConfig(live);
+        if (!live) setConfigError("No staking config exists on this cluster.");
+      } catch (err) {
+        if (!cancelled) {
+          setConfigError(
+            err instanceof Error
+              ? `Couldn't read the staking config: ${err.message}`
+              : "Couldn't read the staking config from the chain.",
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const role = roleByKey(roleKey)!;
+  const minStakeRaw = config?.minStakeByRole[role.onchain];
+  const minBond = minStakeRaw === undefined ? null : toOpen(minStakeRaw);
+  const unbonding = config?.unbondingPeriodSecsByRole[role.onchain];
   const value = Number(amount) || 0;
   const valid =
-    value >= role.minBond &&
-    (role.role !== "node" || nodeId.trim().length >= 4) &&
+    minBond !== null &&
+    value >= minBond &&
+    (role.key !== "node" || nodeId.trim().length >= 4) &&
     wallet !== null &&
     submit.phase !== "signing" &&
     submit.phase !== "confirming";
@@ -77,7 +111,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
     setSubmit({ phase: "signing" });
     try {
       const owner = new PublicKey(wallet.address);
-      const onchainRole = ROLE_TO_ONCHAIN[roleKey]!;
+      const onchainRole = role.onchain;
       const connection = getConnection();
 
       const from = getAssociatedTokenAddressSync(OPEN_MINT, owner, false, TOKEN_2022_PROGRAM_ID);
@@ -121,8 +155,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
           <h2 className="mt-3 text-lg font-semibold text-white">Stake bonded</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
             {formatNumber(submit.amount, 0)} OPEN bonded as {submit.role}
-            {role.role === "node" ? ` for ${nodeId}` : ""}
-            {role.role === "provider" ? ` (${serviceType})` : ""}. Confirmed on devnet.
+            {role.key === "node" ? ` for ${nodeId}` : ""}. Confirmed on devnet.
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -151,23 +184,28 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
         <div className="px-4 py-6">
           <p className={labelCls}>Role</p>
           <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-            {STAKING_ROLES.map((r) => (
-              <button
-                key={r.role}
-                onClick={() => setRoleKey(r.role)}
-                className={`rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors ${
-                  roleKey === r.role ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
-                }`}
-              >
-                <span className="block font-medium">{r.title}</span>
-                <span className="mt-0.5 block text-xs text-gray-500">min {formatNumber(r.minBond, 0)} OPEN</span>
-              </button>
-            ))}
+            {STAKING_ROLES.map((r) => {
+              const min = config?.minStakeByRole[r.onchain];
+              return (
+                <button
+                  key={r.key}
+                  onClick={() => setRoleKey(r.key)}
+                  className={`rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors ${
+                    roleKey === r.key ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <span className="block font-medium">{r.title}</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">
+                    {min === undefined ? "minimum unread" : `min ${formatNumber(toOpen(min), 0)} OPEN`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <p className="mt-3 text-xs text-gray-500">{role.requirement}</p>
         </div>
 
-        {role.role === "node" && (
+        {role.key === "node" && (
           <div className="px-4 py-6">
             <label htmlFor="node-id" className={labelCls}>Node ID you operate</label>
             <input
@@ -183,25 +221,16 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
           </div>
         )}
 
-        {role.role === "provider" && (
-          <div className="px-4 py-6">
-            <label htmlFor="service-type" className={labelCls}>Service type (OFS-1500)</label>
-            <select id="service-type" value={serviceType} onChange={(e) => setServiceType(e.target.value)} className={inputCls}>
-              {Object.keys(PROVIDER_TYPES).map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
         <div className="px-4 py-6">
           <div className="flex items-center justify-between">
             <label htmlFor="amount" className={labelCls}>Amount (OPEN)</label>
             <span className="text-xs tabular-nums text-gray-500">
-              Minimum bond {formatNumber(role.minBond, 0)} OPEN
-              <button onClick={() => setAmount(String(role.minBond))} className="ml-2 text-brand hover:text-brand-hover">
-                Set min
-              </button>
+              {minBond === null ? "Minimum bond unread" : `Minimum bond ${formatNumber(minBond, 0)} OPEN`}
+              {minBond !== null && (
+                <button onClick={() => setAmount(String(minBond))} className="ml-2 text-brand hover:text-brand-hover">
+                  Set min
+                </button>
+              )}
             </span>
           </div>
           <input
@@ -212,19 +241,28 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
             onChange={(e) => setAmount(e.target.value)}
             className={`tabular-nums ${inputCls}`}
           />
-          {value > 0 && value < role.minBond && (
+          {minBond !== null && value > 0 && value < minBond && (
             <p className="mt-1.5 text-xs text-amber-300">
-              Below the {formatNumber(role.minBond, 0)} OPEN minimum for {role.title}.
+              Below the {formatNumber(minBond, 0)} OPEN minimum for {role.title}.
             </p>
           )}
           <p className="mt-3 text-xs text-gray-500">
-            Unstaking starts a 7-day cooldown. Merchant bonds stay locked while you have active ads, reservations, or
-            unsettled escrow.
+            {/* Per role, from the config. A flat "7-day cooldown" was stated
+                here for every role while the chain holds 24 hours for a
+                merchant and 3 days for an arbitrator. */}
+            {unbonding === undefined
+              ? "The unbonding period could not be read from the chain."
+              : `Unstaking starts a ${unbondingLabel(unbonding)} cooldown for this role.`}{" "}
+            Merchant bonds stay locked while you have active ads, reservations, or unsettled escrow.
           </p>
         </div>
 
         <div className="px-4 py-6">
           {!wallet && <p className="mb-2 text-center text-xs text-amber-300">Connect a wallet to stake.</p>}
+          {configError && <p className="mb-2 text-center text-xs text-amber-300">{configError}</p>}
+          {!configError && minBond === null && (
+            <p className="mb-2 text-center text-xs text-gray-500">Reading the minimum from the chain…</p>
+          )}
           {submit.phase === "error" && <p className="mb-2 text-center text-xs text-red-300">{submit.message}</p>}
           <button
             onClick={handleStake}

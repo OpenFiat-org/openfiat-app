@@ -34,7 +34,25 @@ export default defineConfig({
     command: "npx next build && npx next start --port 3101",
     url: "http://127.0.0.1:3101",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 300_000,
+    /*
+     * The node under test, pinned rather than left to the build default.
+     *
+     * `NEXT_PUBLIC_OPENFIAT_NODE_URL` is inlined at build time, so it has to
+     * be set on the command that builds — setting it on the test process
+     * would do nothing at all, and the suite would quietly exercise the
+     * public node instead of the local one. Loopback over plain HTTP is fine
+     * here because the page itself is served over HTTP; a deployed app on
+     * HTTPS could not reach it (see `lib/node-scheme.ts`).
+     *
+     * There is deliberately no mock. Every route these specs touch reads
+     * either this node or Solana devnet, and a stub would re-introduce
+     * exactly the class of thing this suite exists to prove is gone.
+     */
+    env: {
+      NEXT_PUBLIC_OPENFIAT_NODE_URL:
+        process.env.NEXT_PUBLIC_OPENFIAT_NODE_URL ?? "http://127.0.0.1:7080",
+    },
   },
   projects: [
     {

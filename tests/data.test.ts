@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ADS, ALL_ADS, GENERATED_ADS, MARKETS, MY_ADS, adPrice, adPriceIn, fxPerUsd, paymentMethodsForCurrency } from "@/lib/data/ads";
 import {
   COUNTRIES,
   COUNTRIES_BY_SLUG,
@@ -8,25 +7,12 @@ import {
   getCountry,
   searchCountries,
 } from "@/lib/data/countries";
-import { PROPOSALS } from "@/lib/data/governance";
 import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
-import { CURRENT_USER, MERCHANTS, merchantById, reputationFor } from "@/lib/data/merchants";
-import { PROTOCOL_EVENTS, PROTOCOL_EVENT_TYPES } from "@/lib/data/network";
 import { connectableNodes, defaultNode, resolveNodeSelection } from "@/lib/node-preference";
-import { PAYMENT_METHOD_REGISTRY } from "@/lib/data/payment-methods";
-import { STAKING_ROLES } from "@/lib/data/staking";
-import { OPEN_PRICE_USDC, PRESALE, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/data/sale";
+import { STAKING_ROLES, roleByKey, unbondingLabel } from "@/lib/staking-roles";
+import { OPEN_PRICE_USDC, PRESALE_BUCKET_OPEN, PUBLIC_SALE_PRICE_USDC, SALE_PHASES } from "@/lib/sale-terms";
 import qr from "qrcode-generator";
-import { pseudoAddress } from "@/lib/format";
-import { REVIEWS, reviewsFor } from "@/lib/data/reviews";
-import { lifetimeOrders, ratingFor, recentOrders, verifications } from "@/lib/merchant-profile";
 import { normalisePair } from "@/lib/pairs";
-import { compositeScore } from "@/lib/reputation";
-import { TIER_BADGE, TIER_RING } from "@/lib/tiers";
-
-const merchantIds = new Set([...MERCHANTS.map((m) => m.id), CURRENT_USER.id]);
-const countryCodes = new Set(COUNTRIES.map((c) => c.code));
-const adIds = new Set(ALL_ADS.map((a) => a.id));
 
 describe("countries registry", () => {
   it("has global coverage (~250 entries)", () => {
@@ -71,24 +57,14 @@ describe("countries registry", () => {
     expect(COUNTRIES_BY_SLUG.get("hong-kong")?.isRecognized).toBe(false);
   });
 
-  it("Taiwan has a market, so its page is not a bank-transfer fallback", () => {
-    expect(paymentMethodsForCurrency("TWD")).toContain("JKOPay");
-    expect(paymentMethodsForCurrency("TWD")).not.toEqual(["Bank Transfer"]);
-  });
-
-  it("Hong Kong and Macau carry their own local rails", () => {
-    // Both were reachable before but had nothing local: HKD listed a bare
-    // "FPS" plus Wise, and MOP had no market at all, so Macau fell through to
-    // the generic ["Bank Transfer"] default.
-    const hkd = paymentMethodsForCurrency("HKD");
-    expect(hkd).toContain("PayMe");
-    expect(hkd).toContain("FPS (Faster Payment System)");
-
-    const mop = paymentMethodsForCurrency("MOP");
-    expect(mop).toContain("MPay");
-    expect(mop).not.toEqual(["Bank Transfer"]);
-  });
-
+  /*
+   * Two tests here asserted that Taiwan, Hong Kong and Macau had local
+   * payment rails, against `paymentMethodsForCurrency` in `lib/data/ads.ts`.
+   * That map is gone: which rails a currency's merchants take is a fact
+   * about the advertisement book, and the country pages read it from there.
+   * What this table is still the authority for — that these territories are
+   * listed at all, with their own currencies and slugs — is asserted above.
+   */
   it("records countries that trade in more than one currency", () => {
     // A single currencyCode per country is wrong where it matters most: in a
     // dollarised economy the USD leg is often the larger P2P market, and
@@ -120,344 +96,6 @@ describe("countries registry", () => {
     expect(searchCountries("kenya").some((c) => c.code === "KE")).toBe(true);
     expect(searchCountries("KES").some((c) => c.code === "KE")).toBe(true);
     expect(searchCountries("palestine")[0]?.slug).toBe("palestine");
-  });
-});
-
-describe("merchants", () => {
-  it("has a realistic global roster", () => {
-    expect(MERCHANTS.length).toBeGreaterThanOrEqual(40);
-  });
-
-  it("completion rates are percentages and countries are valid", () => {
-    for (const m of MERCHANTS) {
-      expect(m.completionRate).toBeGreaterThan(0);
-      expect(m.completionRate).toBeLessThanOrEqual(100);
-      expect(countryCodes.has(m.countryCode), `${m.name} -> ${m.countryCode}`).toBe(true);
-    }
-  });
-});
-
-describe("merchant reviews", () => {
-  it("only exists for merchants that were written, not all of them", () => {
-    // Ratings are derived; reviews are prose and cannot be. Two merchants have
-    // them as a sample rather than forty having fabricated testimony.
-    const withReviews = new Set(REVIEWS.map((r) => r.merchantId));
-    expect(withReviews.size).toBe(2);
-    for (const id of withReviews) {
-      expect(merchantIds.has(id), id).toBe(true);
-    }
-  });
-
-  it("never claims more written reviews than total ratings", () => {
-    // Most people rate without commenting, so the written subset must be the
-    // smaller of the two — the reverse would be incoherent.
-    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
-      const merchant = merchantById(id);
-      expect(reviewsFor(id).length, id).toBeLessThan(ratingFor(merchant).count);
-    }
-  });
-
-  it("includes negative reviews, since a page of praise says nothing", () => {
-    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
-      expect(reviewsFor(id).some((r) => !r.positive), id).toBe(true);
-    }
-  });
-
-  it("returns reviews newest first", () => {
-    for (const id of new Set(REVIEWS.map((r) => r.merchantId))) {
-      const list = reviewsFor(id);
-      for (let i = 1; i < list.length; i++) {
-        expect(list[i - 1].at >= list[i].at, id).toBe(true);
-      }
-    }
-  });
-});
-
-describe("merchant profile figures", () => {
-  it("splits orders without inventing or losing any", () => {
-    for (const m of MERCHANTS) {
-      const life = lifetimeOrders(m);
-      expect(life.buy + life.sell, m.name).toBe(m.orders);
-      const recent = recentOrders(m);
-      expect(recent.buy + recent.sell, m.name).toBe(recent.total);
-    }
-  });
-
-  it("never claims more recent orders than the account has ever done", () => {
-    // A desk that is months old cannot have done all its trades this month.
-    for (const m of MERCHANTS) {
-      expect(recentOrders(m).total, m.name).toBeLessThanOrEqual(m.orders);
-    }
-  });
-
-  it("keeps ratings coherent with completion rate", () => {
-    // A merchant completing 99.8% of trades with a 70% rating would be
-    // incoherent, and a reader would rightly not trust either number.
-    for (const m of MERCHANTS) {
-      const r = ratingFor(m);
-      expect(Math.abs(r.goodPct - m.completionRate), m.name).toBeLessThanOrEqual(2);
-      expect(r.up + r.down, m.name).toBe(r.count);
-      // Most people never leave a rating.
-      expect(r.count, m.name).toBeLessThan(m.orders);
-    }
-  });
-
-  it("only claims a bond when there is stake behind it", () => {
-    for (const m of MERCHANTS) {
-      const bonded = verifications(m).find((v) => v.label === "Bonded");
-      expect(bonded?.verified, m.name).toBe(m.stake > 0);
-    }
-  });
-});
-
-describe("advertisements", () => {
-  it("every ad references an existing merchant", () => {
-    for (const ad of ALL_ADS) {
-      expect(merchantIds.has(ad.merchantId), `${ad.id} -> ${ad.merchantId}`).toBe(true);
-    }
-  });
-
-  it("ad ids are unique", () => {
-    expect(adIds.size).toBe(ALL_ADS.length);
-  });
-
-  it("limits are sane (min <= max, positive liquidity)", () => {
-    for (const ad of ALL_ADS) {
-      expect(ad.minTrade).toBeGreaterThan(0);
-      expect(ad.minTrade).toBeLessThanOrEqual(ad.maxTrade);
-      expect(ad.availableLiquidity).toBeGreaterThan(0);
-      // International ads accept any payment method (empty list); local ads declare theirs.
-      if (!ad.international) expect(ad.paymentMethods.length).toBeGreaterThan(0);
-    }
-  });
-
-  // `ORACLE_MID` is no longer exported — it is internal to this fixture's own
-  // pricing, and reading it from anywhere user-facing is what put fifteen
-  // invented rates on the pair landing pages. The property worth checking is
-  // the one that was ever visible: that every ad prices to something.
-  it("every floating pair has a positive effective price", () => {
-    for (const ad of ALL_ADS) {
-      expect(adPrice(ad), ad.id).toBeGreaterThan(0);
-    }
-  });
-
-  it("the current merchant owns all MY_ADS", () => {
-    for (const ad of MY_ADS) {
-      expect(ad.merchantId).toBe(CURRENT_USER.id);
-    }
-  });
-
-  it("spans both trade directions", () => {
-    expect(ADS.some((a) => a.direction === "Buy")).toBe(true);
-    expect(ADS.some((a) => a.direction === "Sell")).toBe(true);
-  });
-});
-
-describe("reputation as a trading control", () => {
-  it("keeps advertiser floors modest enough to be tradeable", () => {
-    // A floor that excludes every new participant costs the merchant volume,
-    // so the data should not model unreachable requirements.
-    const withFloor = ALL_ADS.filter((a) => a.minCounterpartyReputation !== undefined);
-    expect(withFloor.length).toBeGreaterThan(0);
-    for (const ad of withFloor) {
-      expect(ad.minCounterpartyReputation, ad.id).toBeGreaterThanOrEqual(50);
-      expect(ad.minCounterpartyReputation, ad.id).toBeLessThanOrEqual(90);
-    }
-  });
-
-  it("leaves most of the book open to anyone", () => {
-    // The floor is a minority behaviour. If most ads carried one, a new
-    // participant could not start trading at all.
-    const withFloor = ALL_ADS.filter((a) => a.minCounterpartyReputation !== undefined);
-    expect(withFloor.length / ALL_ADS.length).toBeLessThan(0.5);
-  });
-
-  it("has advertisers the current user can actually trade with", () => {
-    const mine = compositeScore(CURRENT_USER);
-    const reachable = ALL_ADS.filter(
-      (a) => a.minCounterpartyReputation === undefined || mine >= a.minCounterpartyReputation,
-    );
-    expect(reachable.length).toBeGreaterThan(0);
-  });
-});
-
-describe("generated global book", () => {
-  it("generates deep global liquidity", () => {
-    expect(GENERATED_ADS.length).toBeGreaterThanOrEqual(300);
-  });
-
-  it("every market currency has at least one ad", () => {
-    for (const mk of MARKETS) {
-      expect(
-        ALL_ADS.some((a) => a.fiatCurrency === mk.currency),
-        mk.currency,
-      ).toBe(true);
-    }
-  });
-
-  it("generated ads reference merchants and use market payment methods", () => {
-    for (const ad of GENERATED_ADS) {
-      expect(merchantIds.has(ad.merchantId), ad.id).toBe(true);
-      const mk = MARKETS.find((m) => m.currency === ad.fiatCurrency);
-      expect(mk).toBeDefined();
-      for (const method of ad.paymentMethods) {
-        expect(mk!.methods).toContain(method);
-      }
-    }
-  });
-
-  it("is deterministic (stable snapshot of first generated ad)", () => {
-    expect(GENERATED_ADS[0].id).toBe("AD-G5001");
-    expect(GENERATED_ADS[0].fiatCurrency).toBe("KES");
-    expect(GENERATED_ADS[0].minTrade).toBeLessThanOrEqual(GENERATED_ADS[0].maxTrade);
-  });
-});
-
-describe("international market", () => {
-  it("has flagged international merchants with strong tiers", () => {
-    const intl = MERCHANTS.filter((m) => m.international);
-    expect(intl.length).toBeGreaterThanOrEqual(8);
-    for (const m of intl) {
-      expect(["Professional", "Elite", "Institutional"]).toContain(m.tier);
-      expect(m.completionRate).toBeGreaterThanOrEqual(98);
-      expect(countryCodes.has(m.countryCode)).toBe(true);
-    }
-  });
-
-  it("international ads reference international merchants and are USD-priced", () => {
-    const intlAds = ALL_ADS.filter((a) => a.international);
-    expect(intlAds.length).toBeGreaterThanOrEqual(16);
-    for (const ad of intlAds) {
-      expect(merchantById(ad.merchantId).international, ad.id).toBe(true);
-      expect(ad.fiatCurrency).toBe("USD");
-      expect(ad.minTrade).toBeLessThanOrEqual(ad.maxTrade);
-      expect(ad.availableLiquidity).toBeGreaterThan(0);
-      expect(adPrice(ad)).toBeGreaterThan(0);
-    }
-  });
-
-  it("international ads FX-convert to finite positive prices in sample currencies", () => {
-    const sample = ALL_ADS.filter((a) => a.international).slice(0, 5);
-    expect(sample.length).toBeGreaterThan(0);
-    for (const ad of sample) {
-      for (const currency of ["KES", "NGN", "EUR", "BRL", "INR", "ZAR"]) {
-        const price = adPriceIn(ad, currency);
-        expect(price, `${ad.id} -> ${currency}`).toBeDefined();
-        expect(Number.isFinite(price!)).toBe(true);
-        expect(price!).toBeGreaterThan(0);
-        // Converts back consistently with the FX table
-        expect(price! / fxPerUsd(currency)!).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it("local ads do not convert to other currencies", () => {
-    const local = ADS.find((a) => !a.international && a.fiatCurrency === "KES")!;
-    expect(adPriceIn(local, "NGN")).toBeUndefined();
-    expect(adPriceIn(local, "KES")).toBeGreaterThan(0);
-  });
-});
-
-describe("merchant profiles", () => {
-  it("ids and wallets are unique (profiles resolvable)", () => {
-    expect(new Set(MERCHANTS.map((m) => m.id)).size).toBe(MERCHANTS.length);
-    expect(new Set(MERCHANTS.map((m) => m.wallet)).size).toBe(MERCHANTS.length);
-  });
-
-  it("profile fields are complete for every merchant", () => {
-    for (const m of [...MERCHANTS, CURRENT_USER]) {
-      expect(m.wallet).toMatch(/^[1-9A-HJ-NP-Za-km-z]{44}$/);
-      expect(m.stake).toBeGreaterThan(0);
-      expect(["L0", "L1", "L2", "L3"]).toContain(m.identityLevel);
-      expect(m.merchantAge.length).toBeGreaterThan(0);
-      expect(m.volume30d).toBeGreaterThan(0);
-      expect(m.avgTicket).toBeGreaterThan(0);
-      expect(m.settlementSpeed.length).toBeGreaterThan(0);
-      expect(m.availability.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("reputationFor yields all 8 spec dimensions with sane scores", () => {
-    for (const m of [MERCHANTS[0], MERCHANTS[10], CURRENT_USER]) {
-      const dims = reputationFor(m);
-      expect(dims.length).toBe(8);
-      for (const d of dims) {
-        expect(d.score).toBeGreaterThanOrEqual(0);
-        expect(d.score).toBeLessThanOrEqual(100);
-        expect(d.display.length).toBeGreaterThan(0);
-      }
-    }
-  });
-});
-
-describe("explorer index", () => {
-  it("the current user address is well-formed and distinct", () => {
-    expect(CURRENT_USER.wallet).toMatch(/^[1-9A-HJ-NP-Za-km-z]{44}$/);
-    expect(MERCHANTS.some((m) => m.wallet === CURRENT_USER.wallet)).toBe(false);
-  });
-});
-
-
-describe("reputation", () => {
-  it("scores the eight dimensions OFS-3000 §6 defines", () => {
-    const labels = reputationFor(MERCHANTS[0]).map((d) => d.label);
-    expect(labels).toEqual([
-      "Settlement Speed",
-      "Trade Success Rate",
-      "Dispute Rate",
-      "Trade Volume",
-      "Average Ticket Size",
-      "Merchant Age",
-      "Availability",
-      "Payment Accuracy",
-    ]);
-  });
-
-  it("summarises conduct, not scale", () => {
-    // Volume, ticket size and age describe how big a desk is, not how it
-    // behaves. Averaging them in dragged a 99.8%-completion Institutional
-    // merchant into the 70s, which reads as mediocre. Guard against that
-    // returning: a merchant with excellent conduct must score in the top band
-    // regardless of how small their tickets are.
-    for (const m of MERCHANTS) {
-      if (m.completionRate >= 99.5 && m.availability === "Online") {
-        expect(compositeScore(m), m.name).toBeGreaterThanOrEqual(80);
-      }
-    }
-  });
-
-  it("tracks tier order across the roster", () => {
-    const byTier = (tier: string) =>
-      MERCHANTS.filter((m) => m.tier === tier).map((m) => compositeScore(m));
-    const institutional = byTier("Institutional");
-    const explorer = byTier("Explorer");
-    if (institutional.length && explorer.length) {
-      const min = (xs: number[]) => Math.min(...xs);
-      const max = (xs: number[]) => Math.max(...xs);
-      expect(min(institutional)).toBeGreaterThan(max(explorer));
-    }
-  });
-
-  it("stays inside 0-100", () => {
-    for (const m of MERCHANTS) {
-      const score = compositeScore(m);
-      expect(score, m.name).toBeGreaterThanOrEqual(0);
-      expect(score, m.name).toBeLessThanOrEqual(100);
-    }
-  });
-});
-
-describe("protocol events", () => {
-  it("every feed event type is in the registry", () => {
-    for (const e of PROTOCOL_EVENTS) {
-      expect(PROTOCOL_EVENT_TYPES).toContain(e.type);
-    }
-  });
-
-  it("event timestamps are fixed ISO strings", () => {
-    for (const e of PROTOCOL_EVENTS) {
-      expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
-    }
   });
 });
 
@@ -657,7 +295,11 @@ describe("QR encoding", () => {
     // The failure mode of a hand-rolled encoder is a code that looks right and
     // does not scan, which is why this uses a library — and why the structure
     // is asserted rather than assumed.
-    const address = pseudoAddress("openfiat-deposit-USDT");
+    // A real base58 Solana address, not a generated one. `pseudoAddress`
+    // used to supply this: a deterministic fake that also fed the merchant
+    // fixture's wallets, so it went when they did. What is being tested is
+    // the encoder, and any 44-character payload exercises it.
+    const address = "ALLENLMtV1zEAHT3xpVryqcbdPCB8c9JhM1Jdbe5XHg5";
     const code = qr(0, "M");
     code.addData(address);
     code.make();
@@ -765,149 +407,126 @@ describe("access nodes", () => {
 
 
 describe("staking roles", () => {
-  it("covers every protocol role with a positive minimum bond", () => {
-    const roles = STAKING_ROLES.map((r) => r.role);
-    expect(new Set(roles).size).toBe(STAKING_ROLES.length);
-    for (const required of ["merchant", "node", "arbitrator", "provider"]) {
-      expect(roles).toContain(required);
+  /*
+   * This block used to assert the fixture's minimums — 1,000 merchant,
+   * 10,000 arbitrator — with a comment insisting they "must match the
+   * deployed StakingConfig on devnet, because the stake form submits against
+   * that program". They did not match: the live config holds 500 for both.
+   * The test passed for as long as it did precisely because it checked the
+   * repository's copy against itself.
+   *
+   * So there are no figures here at all now. `lib/staking-roles.ts` carries
+   * only the vocabulary; every number comes from the chain and is asserted
+   * against hand-built account bytes in `tests/onchain-decode.test.ts`.
+   */
+  it("gives every on-chain Role exactly one row", () => {
+    // `StakeAccount` is keyed by (owner, role), so a UI bucket standing in
+    // for several roles opens the wrong account. The fixture had one
+    // "Service Provider" row mapped to NotificationProvider, covering four
+    // distinct roles with four different minimums.
+    const discriminants = STAKING_ROLES.map((r) => r.onchain).sort((a, b) => a - b);
+    expect(discriminants).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("keys are unique and URL-safe, and each carries a requirement", () => {
+    const keys = STAKING_ROLES.map((r) => r.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const role of STAKING_ROLES) {
+      expect(role.key).toMatch(/^[a-z-]+$/);
+      expect(role.title.length).toBeGreaterThan(0);
+      expect(role.requirement.length).toBeGreaterThan(0);
     }
-    for (const r of STAKING_ROLES) {
-      expect(r.minBond).toBeGreaterThan(0);
-      expect(r.staked).toBeGreaterThanOrEqual(0);
-      expect(r.requirement.length).toBeGreaterThan(0);
+  });
+
+  it("states no minimum bond anywhere in the module", () => {
+    // The point of the rewrite, pinned: a governance-updatable on-chain
+    // parameter copied into this repository is a copy that goes stale
+    // silently and is believed anyway.
+    for (const role of STAKING_ROLES) {
+      expect(Object.keys(role)).toEqual(["key", "onchain", "title", "requirement"]);
+      expect(role.requirement).not.toMatch(/[0-9],?[0-9]{3}\s*OPEN/);
     }
-    // Minimums must match the deployed StakingConfig on devnet, because the
-    // stake form submits against that program — a wrong number here is a
-    // transaction that fails on chain. Flat minimum 1,000 OPEN, arbitrator
-    // 10,000 (OFS-4100 §4), notification gateway 5,000.
-    const minBondFor = (role: string) =>
-      STAKING_ROLES.find((r) => r.role === role)?.minBond;
-    expect(minBondFor("merchant")).toBe(1000);
-    expect(minBondFor("node")).toBe(1000);
-    expect(minBondFor("arbitrator")).toBe(10000);
-    expect(minBondFor("provider")).toBe(5000);
+  });
+
+  it("resolves a role by its URL key and refuses an unknown one", () => {
+    expect(roleByKey("merchant")?.onchain).toBe(0);
+    expect(roleByKey("arbitrator")?.onchain).toBe(1);
+    expect(roleByKey("provider")).toBeUndefined();
+    expect(roleByKey(undefined)).toBeUndefined();
+  });
+
+  it("renders each of the three real unbonding periods distinctly", () => {
+    // 86400 / 259200 / 604800 are what the live config holds. One flat
+    // "7 days" was printed for all three.
+    expect(unbondingLabel(86_400n)).toBe("24 hours");
+    expect(unbondingLabel(259_200n)).toBe("3 days");
+    expect(unbondingLabel(604_800n)).toBe("7 days");
   });
 });
 
-/**
- * What is left of these after the picker moved to the node.
+/*
+ * The payment-methods block that stood here is gone with the table it
+ * tested. `lib/data/payment-methods.ts` was an 84-entry snapshot of the
+ * node's own list, kept alive by one synchronous caller — the settings
+ * screen's "which rail is this account on" dropdown — and its own doc
+ * comment said so and asked that no reader be added. That caller now reads
+ * `getReferenceData` like every other picker, so the copy has none.
  *
- * `searchPaymentMethods` and the alias rules it enforced are tested in
- * `tests/reference.test.ts` now, against the shape the node sends, and the
- * table itself is asserted where it lives — `crates/rpc/src/methods/
- * reference.rs` checks the FPS/Faster Payments distinction and the rest.
- * Testing a stale copy for those properties would keep passing long after
- * the copy stopped being what anybody sees.
- *
- * These remain because the copy still has one reader: `selectableMethods`
- * on the settings screen. When that moves, this block goes with it.
+ * The properties it asserted are asserted where they belong: the alias and
+ * search rules in `tests/reference.test.ts`, against the shape the node
+ * sends, and the table's own contents (the FPS/Faster Payments distinction,
+ * AlipayHK against Alipay) in `crates/rpc/src/methods/reference.rs`.
  */
-describe("payment methods registry (unmigrated, settings screen only)", () => {
-  it("names are unique and categories are valid", () => {
-    const names = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
-    expect(new Set(names).size).toBe(names.length);
-    for (const m of PAYMENT_METHOD_REGISTRY) {
-      expect(["Mobile Money", "Bank Transfer", "Fintech", "Cash"]).toContain(m.category);
-      expect(Array.isArray(m.aliases)).toBe(true);
-    }
-  });
 
-  it("keeps Hong Kong wallets distinct from their mainland namesakes", () => {
-    // An AlipayHK account cannot receive from a mainland Alipay account, so
-    // the two must be separately selectable.
-    const names = PAYMENT_METHOD_REGISTRY.map((m) => m.name);
-    expect(names).toContain("AlipayHK");
-    expect(names).toContain("Alipay");
-    expect(names).toContain("WeChat Pay HK");
-    expect(names).toContain("WeChat Pay");
-  });
-
-  it("offers cash in every market, and as the fallback", () => {
-    // Cash is the only rail that exists everywhere, and a currency with no
-    // market entry is exactly where the banking rail is least dependable — so
-    // bank transfer alone is the wrong default there.
-    for (const mk of MARKETS) {
-      expect(mk.methods, mk.currency).toContain("Cash Deposit");
-      expect(mk.methods, mk.currency).toContain("Cash in Person");
-    }
-    const unlisted = paymentMethodsForCurrency("XZZ");
-    expect(unlisted).toContain("Cash Deposit");
-    expect(unlisted).toContain("Bank Transfer");
-  });
-
-  it("covers the world's larger economies with local rails", () => {
-    // Most currencies used to fall through to ["Bank Transfer"], which showed
-    // no local rail at all on the majority of country pages.
-    for (const code of ["KRW", "PLN", "CHF", "SEK", "KZT", "NPR", "QAR", "TND", "CRC", "NZD"]) {
-      const methods = paymentMethodsForCurrency(code);
-      const local = methods.filter(
-        (m) => m !== "Bank Transfer" && m !== "Cash Deposit" && m !== "Cash in Person",
-      );
-      expect(local.length, code).toBeGreaterThan(0);
-    }
-  });
-
-});
-
-describe("OPEN token", () => {
+describe("OPEN sale terms", () => {
+  /*
+   * These used to assert `PRESALE.raised > PRESALE.target` — a test whose
+   * whole content was that an invented fundraising total had been positioned
+   * above an invented goal, so the page could show a sale overshooting. The
+   * figure and the assertion are both gone. What a sale has raised is a
+   * field on the on-chain `SaleConfig`, read by `lib/live-presale.ts`, and
+   * there is no account on devnet — so the page says the sale is not open
+   * rather than showing a number.
+   */
   it("prices the presale at 1 OPEN = 1 USDC", () => {
     // [CONFIRMED] in OFS-4100 §3, and enforced on chain by
     // `open_entitlement_for`, which applies no rate beyond a decimal scale.
     // Any other value here is a number the program would refuse.
     expect(OPEN_PRICE_USDC).toBe(1);
-    expect(PRESALE.priceUsdc).toBe(1);
   });
 
-  it("sells the entire presale bucket toward a target, not a cap", () => {
-    // OFS-4100 §2-3: the Community Presale bucket is the full 20% of supply
-    // (200,000,000 OPEN), and the presale has no hard cap distinct from it —
-    // it sells at 1:1 toward a $20,000,000 target that demand may exceed.
-    expect(PRESALE.bucketOpen).toBe(200_000_000);
-    expect(PRESALE.target).toBe(20_000_000);
-    expect(PRESALE.minContribution).toBeLessThan(PRESALE.maxContribution);
-    // No soft cap: with no minimum to raise there is no shortfall condition,
-    // so contributions are not refundable on that ground (§3). Asserted so a
-    // reintroduced figure here fails rather than quietly implying refunds.
-    expect(PRESALE.softCap).toBeNull();
-    // Simulated `raised` deliberately exceeds `target`, to illustrate that
-    // exceeding it doesn't stop the sale — see lib/data/sale.ts.
-    expect(PRESALE.raised).toBeGreaterThan(PRESALE.target);
+  it("sizes the presale at the whole Community Presale bucket", () => {
+    // OFS-4100 §2-3: the bucket is the full 20% of supply, and the presale
+    // has no hard cap distinct from it.
+    expect(PRESALE_BUCKET_OPEN).toBe(200_000_000);
   });
 
-  it("offers a presale and a public-sale price, with market pricing only after mainnet", () => {
-    // Two priced phases against the one bucket (OFS-4100 §3): the presale at
-    // 1:1, then a Public Sale at 1.25 for whatever the presale didn't sell.
+  it("offers a presale and a public-sale price, with market pricing after", () => {
     const priced = SALE_PHASES.filter((p) => p.priceUsdc !== null);
     expect(priced).toHaveLength(2);
-    expect(priced[0].priceUsdc).toBe(OPEN_PRICE_USDC);
-    expect(priced[1].priceUsdc).toBe(PUBLIC_SALE_PRICE_USDC);
+    expect(priced[0]!.priceUsdc).toBe(OPEN_PRICE_USDC);
+    expect(priced[1]!.priceUsdc).toBe(PUBLIC_SALE_PRICE_USDC);
+  });
+
+  it("carries no status, raised total, cap or contribution limit", () => {
+    // Every one of those is a fact about a chain account. A "Live" status
+    // written here made `/open` say the sale was open on a cluster where no
+    // SaleConfig exists.
+    for (const phase of SALE_PHASES) {
+      expect(Object.keys(phase)).toEqual(["name", "priceUsdc", "allocation", "note"]);
+    }
   });
 });
 
-describe("governance", () => {
-  it("vote percentages sum to 100", () => {
-    for (const p of PROPOSALS) {
-      expect(p.votesFor + p.votesAgainst + p.votesAbstain).toBe(100);
-    }
-  });
-
-  it("uses the OFIP identifier, not the superseded OFP one", () => {
-    // OFS-4100 §5: whitepaper's "OFIP" chosen over OFS-4000's "OFP".
-    for (const p of PROPOSALS) {
-      expect(p.id).toMatch(/^OFIP-\d{4}$/);
-    }
-  });
-
-  it("derives quorum and approval threshold from category, not per-proposal", () => {
-    // OFS-4100 §5: the two move together per category, they are not
-    // independently configurable per proposal.
-    for (const p of PROPOSALS) {
-      const rule = CATEGORY_RULES[p.category];
-      expect(p.quorumPct).toBe(rule.quorumPct);
-      expect(p.approvalThresholdPct).toBe(rule.approvalThresholdPct);
-    }
-  });
-
+describe("governance rules", () => {
+  /*
+   * The `PROPOSALS` fixture is gone — six invented OFIPs with invented vote
+   * splits and turnout, which `/governance` no longer reads (it reads
+   * `lib/live-governance.ts`). What is left is `lib/governance.ts`, which is
+   * not data about anybody: it is OFS-4100 §5's rule table, the same for
+   * every deployment, and the app derives a proposal's quorum and threshold
+   * from its category through it rather than reading per-proposal knobs.
+   */
   it("requires a higher bar for Protocol-Upgrade and Constitutional proposals", () => {
     for (const category of ["Protocol-Upgrade", "Constitutional"] as const) {
       expect(CATEGORY_RULES[category].quorumPct).toBe(20);
@@ -923,33 +542,15 @@ describe("governance", () => {
 
   it("posts the same stake deposit for every proposal", () => {
     expect(PROPOSAL_STAKE_DEPOSIT_OPEN).toBe(5000);
-    for (const p of PROPOSALS) {
-      expect(p.depositOpen).toBe(PROPOSAL_STAKE_DEPOSIT_OPEN);
-    }
-  });
-
-  it("refunds the deposit exactly when quorum was met, regardless of outcome", () => {
-    // OFS-4100 §5: refund condition is quorum-met, not proposal pass/fail —
-    // OFIP-0016 below is Rejected but still refunds, since turnout cleared quorum.
-    for (const p of PROPOSALS) {
-      if (p.status === "Active") {
-        expect(p.depositRefunded).toBeNull();
-      } else {
-        expect(p.depositRefunded).toBe(p.turnoutPct >= p.quorumPct);
-      }
-    }
-    const rejectedButQuorate = PROPOSALS.find((p) => p.id === "OFIP-0016");
-    expect(rejectedButQuorate?.status).toBe("Rejected");
-    expect(rejectedButQuorate?.depositRefunded).toBe(true);
   });
 });
 
-describe("reputation tiers", () => {
-  it("every tier has a ring and badge color defined in one place", () => {
-    const tiers = ["Explorer", "Verified", "Professional", "Elite", "Institutional"] as const;
-    for (const t of tiers) {
-      expect(TIER_RING[t]).toMatch(/^ring-/);
-      expect(TIER_BADGE[t]).toContain("border-");
-    }
-  });
-});
+/*
+ * A "reputation tiers" block used to assert that every tier in
+ * `lib/tiers.ts` had a ring and a badge colour. There are no tiers: the
+ * protocol defines none, `ReputationProfile::tier()` is a method whose
+ * thresholds the crate marks as placeholders and which `getReputation` never
+ * serializes, and the ladder this app drew — Explorer through Institutional
+ * — was its own invention. The module, the badge and the ring are gone with
+ * the merchant fixture that fed them.
+ */

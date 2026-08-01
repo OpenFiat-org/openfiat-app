@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PROVIDER_TYPES } from "@/lib/data/providers";
+import { PROVIDER_TYPES } from "@/lib/provider-display";
 import { PageHero } from "@/components/page-hero";
 import { Panel } from "@/components/panel";
 

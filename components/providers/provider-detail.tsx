@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { WalletAvatar } from "@/components/wallet-avatar";
-import { TYPE_COLORS } from "@/lib/data/providers";
+import { TYPE_COLORS } from "@/lib/provider-display";
 import { formatPricing } from "@/lib/earnings";
 import { sinceLabel } from "@/lib/format";
 import {

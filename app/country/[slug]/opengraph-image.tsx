@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { COUNTRIES_BY_SLUG } from "@/lib/data/countries";
-import { paymentMethodsForCurrency } from "@/lib/data/ads";
 import { BRAND, OG_SIZE, flagPlateLetters } from "@/lib/og";
 
 export const size = OG_SIZE;
@@ -23,7 +22,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const name = country?.name ?? "Global";
   const code = country?.currencyCode ?? "";
   const currencyName = country?.currencyName ?? "";
-  const methods = country ? paymentMethodsForCurrency(country.currencyCode).slice(0, 3) : [];
 
   return new ImageResponse(
     (
@@ -80,30 +78,37 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ color: BRAND.text, fontSize: 78, fontWeight: 700, lineHeight: 1.05 }}>
-            {`Buy & sell USDT in ${name}`}
+            {`Buy & sell stablecoins in ${name}`}
           </div>
           <div style={{ color: BRAND.muted, fontSize: 32, marginTop: 20, lineHeight: 1.35 }}>
             Escrow enforced by Solana programs. OpenFiat never takes custody of your fiat.
           </div>
         </div>
 
+        {/*
+          * A row of payment-method pills used to sit here, taken from a
+          * hand-written currency-to-rails table. An OpenGraph card is the
+          * one piece of a page that is read where the page is not, so a
+          * claim on it cannot be qualified, corrected or checked — and this
+          * one asserted which rails a country's merchants took whether or
+          * not anybody was advertising there. What replaces it is the
+          * protocol's own guarantee, which is true of every market on this
+          * network with no book to consult.
+          */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {methods.map((m) => (
-            <div
-              key={m}
-              style={{
-                display: "flex",
-                padding: "10px 20px",
-                borderRadius: 8,
-                background: BRAND.panel,
-                border: `1px solid ${BRAND.line}`,
-                color: BRAND.muted,
-                fontSize: 26,
-              }}
-            >
-              {m}
-            </div>
-          ))}
+          <div
+            style={{
+              display: "flex",
+              padding: "10px 20px",
+              borderRadius: 8,
+              background: BRAND.panel,
+              border: `1px solid ${BRAND.line}`,
+              color: BRAND.muted,
+              fontSize: 26,
+            }}
+          >
+            Non-custodial · on-chain escrow · wallet-bound reputation
+          </div>
         </div>
       </div>
     ),

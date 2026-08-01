@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { AssetLabel, TradeLimits } from "@/components/asset-label";
@@ -14,10 +14,7 @@ import {
   type MerchantOffering,
   type MerchantRow,
 } from "@/lib/live-merchants";
-import {
-  fetchReputationForPeerId,
-  type LiveReputation,
-} from "@/lib/live-reputation";
+import { TradingRecord } from "@/components/merchants/trading-record";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 
 /**
@@ -37,16 +34,18 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  * reason to copy that: the strip sits directly above the filters instead, and
  * the hero above it stays static.
  *
- * # A row opens rather than links
+ * # A row opens in place, and also links out
  *
- * Nothing here links to `/merchants/<id>`. That route is the fixture profile —
- * `lib/data/merchants.ts` reputations, `lib/data/reviews.ts` reviews — keyed by
- * invented ids that no real PeerId will ever match, so every link would either
- * 404 or, worse, land on somebody else's fabricated history. A row expands in
- * place instead: the merchant's advertisements are already in hand from the
- * book, and their trading record is read on demand from `getReputation`, which
- * is one request for the merchant a reader actually asked about rather than one
- * per merchant on the page.
+ * The expansion stays because it costs nothing: the merchant's advertisements
+ * are already in hand from the book, and their trading record is one request
+ * for the merchant a reader actually asked about rather than one per row.
+ *
+ * It now also links to `/merchants/<peerId>`, which it deliberately did not
+ * before: that route used to be a fixture profile keyed by invented ids that
+ * no real PeerId could match, so a link would have landed a reader on somebody
+ * else's fabricated history. It reads the same node this table does now, so
+ * the link is a link to more of the same facts — reviews and the identity
+ * claims a wallet has published, which do not fit in a row.
  */
 
 interface DirectoryState {
@@ -240,8 +239,8 @@ function MerchantRows({
             aria-expanded={open}
             className="flex items-center gap-2.5 text-left"
           >
-            {/* Seeded by the PeerId in the same hex spelling the order book
-                uses, so one merchant is the same robot on every screen. */}
+            {/* Seeded by the PeerId in the same base58 spelling the order
+                book uses, so one merchant is the same robot on every screen. */}
             <WalletAvatar
               seed={row.peerId}
               label={`Merchant …${row.short}`}
@@ -256,6 +255,14 @@ function MerchantRows({
               </span>
             </span>
           </button>
+          {/* Outside the toggle, because a link nested in a button is not a
+              control a keyboard or a screen reader can separate. */}
+          <Link
+            href={`/merchants/${row.peerId}`}
+            className="mt-1 inline-block pl-[2.625rem] text-xs text-brand hover:text-brand-hover"
+          >
+            Full profile →
+          </Link>
         </Td>
         <Td py="py-5">
           <OfferingPill offering={row.offering} />
@@ -404,145 +411,4 @@ function AdLine({ ad }: { ad: LiveAd }) {
       </span>
     </li>
   );
-}
-
-/**
- * The merchant's conduct, as `crates/reputation` computes it from settlement,
- * dispute and reservation state.
- *
- * Every figure is a counter or a ratio of counters. There is no score, no tier
- * and no rating, because the node returns none: `getReputation` serializes
- * `ReputationProfile`'s fields, and its `tier()` is a method whose thresholds
- * the crate itself marks as placeholders pending governance. A wallet with no
- * history says so rather than rendering zeroes, which read as a bad record
- * instead of an absent one.
- */
-function TradingRecord({ peerId }: { peerId: string }) {
-  const [data, setData] = useState<LiveReputation | null>(null);
-  const [error, setError] = useState(false);
-
-  const load = useCallback(async () => {
-    setError(false);
-    try {
-      setData(await fetchReputationForPeerId(peerId));
-    } catch {
-      setError(true);
-    }
-  }, [peerId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return (
-    <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-        Trading record
-      </h3>
-      {error ? (
-        <p className="mt-3 text-xs text-amber-300">
-          Your access node did not answer for this wallet.
-        </p>
-      ) : !data ? (
-        <p className="mt-3 text-xs text-gray-500">Reading…</p>
-      ) : data.empty ? (
-        <p className="mt-3 text-xs leading-relaxed text-gray-500">
-          This node has no settlements, disputes or payments involving this
-          wallet. It has advertised but not yet traded — or has traded only
-          through peers this node has not replicated from.
-        </p>
-      ) : (
-        <dl className="mt-3 divide-y divide-white/5 text-xs">
-          <Fact label="Trades started" value={String(data.tradesStarted)} />
-          <Fact label="Completed" value={String(data.tradesCompleted)} />
-          <Fact
-            label="Completion rate"
-            value={
-              data.completionRate === null ? "—" : percent(data.completionRate)
-            }
-            hint="Completed settlements ÷ started settlements (OFS-3000 §8). Not a rating."
-          />
-          <Fact label="Cancelled" value={String(data.tradesCancelled)} />
-          <Fact
-            label="Disputes"
-            value={`${data.disputesInvolved} involved · ${data.disputesLost} lost`}
-          />
-          <Fact
-            label="Answered payment claims"
-            value={
-              data.responseRate === null
-                ? "Never asked"
-                : percent(data.responseRate)
-            }
-            hint="How often this wallet, as merchant, approved or rejected a buyer's payment declaration at all (OFS-3000 §13)."
-          />
-          <Fact
-            label="Mean time to answer"
-            value={
-              data.meanResponseMs === null ? "—" : duration(data.meanResponseMs)
-            }
-            hint="Measured between two signed events: the buyer declaring payment and the merchant ruling on it. Not an advertised turnaround."
-          />
-          <Fact
-            label="Mean settlement"
-            value={
-              data.medianSettlementMs === null
-                ? "—"
-                : duration(data.medianSettlementMs)
-            }
-          />
-          <Fact
-            label="Missed reservations"
-            value={String(data.reservationsMissed)}
-            hint="Reservations this wallet requested and let expire."
-          />
-          <Fact
-            label="First traded"
-            value={
-              data.firstActiveAt === null
-                ? "—"
-                : new Date(data.firstActiveAt).toLocaleDateString()
-            }
-          />
-        </dl>
-      )}
-      <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
-        Computed by your access node from settlements, disputes and reservations
-        it has replicated — nothing here is asserted by the merchant. A node
-        that has seen less of the network will report less.
-      </p>
-    </div>
-  );
-}
-
-function Fact({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-1.5">
-      <dt className={`text-gray-500 ${hint ? "cursor-help" : ""}`} title={hint}>
-        {label}
-      </dt>
-      <dd className="text-right tabular-nums text-gray-200">{value}</dd>
-    </div>
-  );
-}
-
-function percent(ratio: number): string {
-  return `${(ratio * 100).toFixed(1)}%`;
-}
-
-function duration(ms: number): string {
-  const seconds = Math.round(ms / 1000);
-  if (seconds < 90) return `${seconds}s`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 90) return `${minutes} min`;
-  const hours = Math.round(minutes / 60);
-  return hours < 36 ? `${hours} h` : `${Math.round(hours / 24)} d`;
 }

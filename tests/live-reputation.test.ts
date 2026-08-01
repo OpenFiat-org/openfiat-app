@@ -37,6 +37,10 @@ beforeEach(() => {
   call.mockResolvedValue(EMPTY);
 });
 
+/** A real PeerId off the live book, and its base64 encoding. */
+const PEER_ID = "12D3KooWHSjonqZMAHmZKzSYgTsPdJ1UrxCYcKTBy4BfbUhU3Qmj";
+const PEER_ID_BASE64 = "ACQIARIgcVMvQm++vzAWtHfpDtHOwDOrLa2mQh/Z/fzcPpzcsh4=";
+
 describe("fetchReputationForPeerId", () => {
   /*
    * The node decodes `wallet` as base64 into `PeerId::from_bytes` and answers
@@ -44,26 +48,40 @@ describe("fetchReputationForPeerId", () => {
    * `lib/wallet-param.ts`. A wrong encoding here would therefore look exactly
    * like a merchant who has never traded, on every row of the directory, and
    * nobody would notice. So the encoding is pinned rather than trusted.
+   *
+   * This pinned the *hex* spelling until now, and that is exactly how the
+   * defect it was written to prevent got in anyway. The node moved to base58
+   * — `12D3Koo…`, the spelling on every row of the order book and the one
+   * `lib/peer-id.ts` fixed as canonical — and this function's
+   * `/^[0-9a-f]+$/` rejected it outright. Every merchant's trading record in
+   * the directory reported "your access node did not answer", which is
+   * indistinguishable from an unreachable node, so nothing surfaced it. The
+   * test kept passing because it fed the function the encoding the function
+   * still wanted.
    */
-  it("sends base64 of the PeerId bytes, not the hex string", async () => {
-    await fetchReputationForPeerId("0102ff");
-    expect(call).toHaveBeenCalledWith("getReputation", { wallet: "AQL/" });
+  it("sends base64 of the PeerId bytes, not the base58 string", async () => {
+    await fetchReputationForPeerId(PEER_ID);
+    expect(call).toHaveBeenCalledWith("getReputation", { wallet: PEER_ID_BASE64 });
   });
 
-  it("accepts uppercase hex", async () => {
-    await fetchReputationForPeerId("0102FF");
-    expect(call).toHaveBeenCalledWith("getReputation", { wallet: "AQL/" });
+  it("accepts the spelling the order book displays", async () => {
+    // The directory passes `LiveAd.merchantPeerId` straight through, so what
+    // the book renders and what this sends must be the same string.
+    await fetchReputationForPeerId(` ${PEER_ID} `);
+    expect(call).toHaveBeenCalledWith("getReputation", { wallet: PEER_ID_BASE64 });
   });
 
   it("refuses a malformed id instead of asking about somebody else", async () => {
-    await expect(fetchReputationForPeerId("abc")).rejects.toThrow(/hex-encoded PeerId/);
-    await expect(fetchReputationForPeerId("zz")).rejects.toThrow(/hex-encoded PeerId/);
-    await expect(fetchReputationForPeerId("")).rejects.toThrow(/hex-encoded PeerId/);
+    // Base58 omits 0, O, I and l precisely so these cannot be confused, and
+    // an id that is not base58 must not become a PeerId belonging to nobody.
+    await expect(fetchReputationForPeerId("0OIl")).rejects.toThrow(/base58 PeerId/);
+    await expect(fetchReputationForPeerId("")).rejects.toThrow(/base58 PeerId/);
+    await expect(fetchReputationForPeerId("   ")).rejects.toThrow(/base58 PeerId/);
     expect(call).not.toHaveBeenCalled();
   });
 
   it("reports a wallet with no history as empty rather than as all zeroes", async () => {
-    const reputation = await fetchReputationForPeerId("aabb");
+    const reputation = await fetchReputationForPeerId(PEER_ID);
     expect(reputation.empty).toBe(true);
     expect(reputation.completionRate).toBeNull();
     expect(reputation.meanResponseMs).toBeNull();

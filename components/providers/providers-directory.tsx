@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
-import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/data/providers";
+import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/provider-display";
 import { sinceLabel } from "@/lib/format";
 import { fetchLiveProviders, type DirectoryRow } from "@/lib/live-providers";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";

@@ -4,10 +4,12 @@ import {
   decodeGovernanceConfig,
   decodeLiquidityVault,
   decodeProposal,
+  decodeSaleConfig,
   decodeStakeAccount,
   decodeStakingConfig,
   LIQUIDITY_VAULT_LEN,
 } from "@/lib/onchain-decode";
+import { PRESALE_PROGRAM_ID } from "@/lib/live-presale";
 
 function u64le(value: bigint): number[] {
   const buf = Buffer.alloc(8);
@@ -83,34 +85,85 @@ describe("decodeStakeAccount", () => {
   });
 });
 
+/**
+ * The values below are the ones the live devnet singleton
+ * (`2wrGGjcUFSn1ZiYzo2o64r7ZC88QNhvvgUYktNs2ifT9`) actually holds, read off
+ * the chain rather than invented: 500 OPEN floors for Merchant and
+ * Arbitrator, per-role unbonding of 86400/259200/604800, slash_bps 500.
+ *
+ * `StakingConfig` grew from 237 to 285 bytes when `unbonding_period_secs`
+ * became `unbonding_period_secs_by_role: [i64; 7]` **in place**, and the
+ * decoder that predated that change kept working: it returned Merchant's
+ * period under a name promising everyone's, and read `slash_bps` out of the
+ * middle of Arbitrator's, reporting 62592 basis points. Nothing crashed.
+ * That is why the account length is asserted rather than trusted, and why
+ * the wrong-length case is a test of its own.
+ */
+function stakingConfigBytes(admin: PublicKey, mint: PublicKey): Buffer {
+  return Buffer.from([
+    45, 134, 252, 82, 37, 57, 84, 25, // discriminator
+    ...admin.toBytes(),
+    ...mint.toBytes(),
+    // min_stake_by_role, indexed by Role (7 entries)
+    ...u64le(500_000_000_000n), // Merchant
+    ...u64le(500_000_000_000n), // Arbitrator
+    ...u64le(1_000_000_000_000n), // NodeOperator
+    ...u64le(5_000_000_000_000n), // NotificationProvider
+    ...u64le(1_000_000_000_000n), // OracleProvider
+    ...u64le(1_000_000_000_000n), // RiskIntelligenceProvider
+    ...u64le(1_000_000_000_000n), // SnapshotProvider
+    // unbonding_period_secs_by_role, same indexing
+    ...i64le(86_400n), // Merchant — 24 hours
+    ...i64le(259_200n), // Arbitrator — 3 days
+    ...i64le(604_800n), // NodeOperator
+    ...i64le(604_800n), // NotificationProvider
+    ...i64le(604_800n), // OracleProvider
+    ...i64le(604_800n), // RiskIntelligenceProvider
+    ...i64le(604_800n), // SnapshotProvider
+    ...u16le(500), // slash_bps
+    // The tail this decoder does not read: three authorities and three
+    // bumps, present only so the account is its real 285 bytes.
+    ...new Uint8Array(285 - 8 - 32 - 32 - 56 - 56 - 2),
+  ]);
+}
+
 describe("decodeStakingConfig", () => {
-  it("decodes admin/mint/thresholds exactly", () => {
+  it("decodes admin, mint, and both per-role arrays exactly", () => {
     const admin = PublicKey.unique();
     const mint = PublicKey.unique();
-    const bytes = Buffer.from([
-      45, 134, 252, 82, 37, 57, 84, 25, // discriminator
-      ...admin.toBytes(),
-      ...mint.toBytes(),
-      // min_stake_by_role, indexed by Role (7 entries)
-      ...u64le(1_000_000_000_000n), // Merchant
-      ...u64le(10_000_000_000_000n), // Arbitrator
-      ...u64le(1_000_000_000_000n), // NodeOperator
-      ...u64le(5_000_000_000_000n), // NotificationProvider
-      ...u64le(1_000_000_000_000n), // OracleProvider
-      ...u64le(1_000_000_000_000n), // RiskIntelligenceProvider
-      ...u64le(1_000_000_000_000n), // SnapshotProvider
-      ...i64le(604_800n), // unbonding_period_secs
-      ...u16le(1000), // slash_bps
-    ]);
-    const decoded = decodeStakingConfig(bytes);
+    const decoded = decodeStakingConfig(stakingConfigBytes(admin, mint));
     expect(decoded.admin.equals(admin)).toBe(true);
     expect(decoded.mint.equals(mint)).toBe(true);
     expect(decoded.minStakeByRole).toHaveLength(7);
-    expect(decoded.minStakeByRole[0]).toBe(1_000_000_000_000n);
-    expect(decoded.minStakeByRole[1]).toBe(10_000_000_000_000n);
+    expect(decoded.minStakeByRole[0]).toBe(500_000_000_000n);
+    expect(decoded.minStakeByRole[1]).toBe(500_000_000_000n);
     expect(decoded.minStakeByRole[3]).toBe(5_000_000_000_000n);
-    expect(decoded.unbondingPeriodSecs).toBe(604_800n);
-    expect(decoded.slashBps).toBe(1000);
+  });
+
+  it("reads each role's own unbonding period, not one flat value", () => {
+    // The three periods differ, which is the entire reason the field became
+    // an array. A decoder reading a scalar here would return 86400 and be
+    // wrong about five of the seven roles while looking right about one.
+    const decoded = decodeStakingConfig(stakingConfigBytes(PublicKey.unique(), PublicKey.unique()));
+    expect(decoded.unbondingPeriodSecsByRole).toHaveLength(7);
+    expect(decoded.unbondingPeriodSecsByRole[0]).toBe(86_400n);
+    expect(decoded.unbondingPeriodSecsByRole[1]).toBe(259_200n);
+    expect(decoded.unbondingPeriodSecsByRole[6]).toBe(604_800n);
+  });
+
+  it("reads slash_bps after the array, not from inside it", () => {
+    const decoded = decodeStakingConfig(stakingConfigBytes(PublicKey.unique(), PublicKey.unique()));
+    expect(decoded.slashBps).toBe(500);
+  });
+
+  it("refuses the pre-migration 237-byte layout rather than misreading it", () => {
+    const bytes = stakingConfigBytes(PublicKey.unique(), PublicKey.unique()).subarray(0, 237);
+    expect(() => decodeStakingConfig(bytes)).toThrow(/expected 285 bytes/);
+  });
+
+  it("rejects a mismatched discriminator", () => {
+    const bytes = Buffer.alloc(285);
+    expect(() => decodeStakingConfig(bytes)).toThrow(/discriminator mismatch/);
   });
 });
 
@@ -286,5 +339,120 @@ describe("decodeLiquidityVault", () => {
     });
     bytes[0] = 0;
     expect(() => decodeLiquidityVault(bytes)).toThrow(/discriminator mismatch/);
+  });
+});
+
+/**
+ * `SaleConfig` cannot be decoded against a live account: the presale program
+ * is deployed on devnet but `initialize_sale` has never run there, so the
+ * singleton PDA holds nothing. That absence is the honest answer `/open`
+ * renders — and it is also why this decoder is tested against a hand-built
+ * account rather than a real one.
+ *
+ * The variable-length `stablecoin_whitelist` is the reason a test is needed
+ * at all. Everything after it sits at an offset that depends on the
+ * account's own contents, so a fixed offset for `total_raised` would read
+ * the last whitelisted pubkey and report it as a dollar figure — on a token
+ * sale page. Both lengths are exercised.
+ */
+function saleConfigBytes(options: {
+  whitelist: PublicKey[];
+  hardCap: bigint;
+  softCap: bigint;
+  minContribution: bigint;
+  maxContribution: bigint;
+  totalRaised: bigint;
+  state: number;
+}): Buffer {
+  const whitelistBytes: number[] = [];
+  for (const key of options.whitelist) whitelistBytes.push(...key.toBytes());
+  const len = Buffer.alloc(4);
+  len.writeUInt32LE(options.whitelist.length);
+
+  return Buffer.from([
+    86, 47, 71, 156, 87, 152, 149, 246, // discriminator
+    ...PublicKey.unique().toBytes(), // admin
+    ...PublicKey.unique().toBytes(), // open_mint
+    ...PublicKey.unique().toBytes(), // usdc_mint
+    ...PublicKey.unique().toBytes(), // presale_vault
+    ...PublicKey.unique().toBytes(), // usdc_vault
+    ...PublicKey.unique().toBytes(), // treasury
+    ...PublicKey.unique().toBytes(), // swap_program
+    ...u64le(options.hardCap),
+    ...u64le(options.softCap),
+    ...u64le(options.minContribution),
+    ...u64le(options.maxContribution),
+    ...u16le(50), // max_slippage_bps
+    9, // open_decimals
+    6, // usdc_decimals
+    ...i64le(1_700_000_000n), // start_time
+    ...i64le(1_800_000_000n), // end_time
+    ...len,
+    ...whitelistBytes,
+    ...u64le(options.totalRaised),
+    options.state,
+    255, // bump
+    254, // usdc_vault_bump
+  ]);
+}
+
+describe("decodeSaleConfig", () => {
+  const base = {
+    hardCap: 200_000_000_000_000n,
+    softCap: 0n,
+    minContribution: 50_000_000n,
+    maxContribution: 10_000_000_000_000n,
+    totalRaised: 1_234_567_000_000n,
+    state: 0,
+  };
+
+  it("decodes the economic parameters and the running total", () => {
+    const decoded = decodeSaleConfig(saleConfigBytes({ ...base, whitelist: [] }));
+    expect(decoded.hardCap).toBe(200_000_000_000_000n);
+    expect(decoded.minContribution).toBe(50_000_000n);
+    expect(decoded.maxContribution).toBe(10_000_000_000_000n);
+    expect(decoded.totalRaised).toBe(1_234_567_000_000n);
+    expect(decoded.openDecimals).toBe(9);
+    expect(decoded.usdcDecimals).toBe(6);
+    expect(decoded.state).toBe("Active");
+  });
+
+  it("finds total_raised past a whitelist of any length", () => {
+    const three = decodeSaleConfig(
+      saleConfigBytes({
+        ...base,
+        whitelist: [PublicKey.unique(), PublicKey.unique(), PublicKey.unique()],
+      }),
+    );
+    expect(three.totalRaised).toBe(1_234_567_000_000n);
+    expect(three.hardCap).toBe(200_000_000_000_000n);
+  });
+
+  it("reads a zero soft cap as itself — 'no minimum to raise', not a threshold", () => {
+    // §3 records no soft cap as [CONFIRMED]; zero is how the program says so,
+    // and it makes SoftCapMissed unreachable. A UI treating it as a bar to
+    // clear would invent a refund condition that does not exist.
+    const decoded = decodeSaleConfig(saleConfigBytes({ ...base, whitelist: [] }));
+    expect(decoded.softCap).toBe(0n);
+  });
+
+  it("refuses an account whose whitelist length runs past its own bytes", () => {
+    const bytes = saleConfigBytes({ ...base, whitelist: [] });
+    bytes.writeUInt32LE(9999, 284);
+    expect(() => decodeSaleConfig(bytes)).toThrow(/runs past the account/);
+  });
+
+  it("rejects an account that is not a SaleConfig", () => {
+    const bytes = saleConfigBytes({ ...base, whitelist: [] });
+    bytes[0] = 0;
+    expect(() => decodeSaleConfig(bytes)).toThrow(/discriminator mismatch/);
+  });
+
+  it("pins the presale program id against openfiat-core's declare_id!", () => {
+    // Hand-copied, because the SDK exports escrow, staking and governance and
+    // not this one. A transposed character derives a PDA that does not exist,
+    // which renders as "the sale is not open" — the same answer as the truth
+    // today, so nothing on screen would catch it.
+    expect(PRESALE_PROGRAM_ID).toBe("75rJ9MRAaSnAc8tg4AfeTFVDCVrN6jdD5CqeyE4UoUw7");
   });
 });

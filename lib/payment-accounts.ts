@@ -1,4 +1,3 @@
-import { PAYMENT_METHOD_REGISTRY } from "@/lib/data/payment-methods";
 import type { PaymentField } from "@/lib/types";
 
 /**
@@ -67,10 +66,18 @@ export function blankFields(method: string): PaymentField[] {
   return LABELS[shapeFor(method)].map((label) => ({ label, value: "" }));
 }
 
-/** Methods a user can plausibly hold an account on, for the picker. */
-export function selectableMethods(): string[] {
-  return PAYMENT_METHOD_REGISTRY.map((m) => m.name).sort((a, b) => a.localeCompare(b));
-}
+/*
+ * `selectableMethods()` used to live here, returning every name in
+ * `lib/data/payment-methods.ts` — a stale snapshot of the node's own table,
+ * kept alive by this one caller. The settings screen reads
+ * `getReferenceData` directly now (`components/settings/payment-accounts.tsx`),
+ * so the table is gone and this module no longer knows what methods exist.
+ *
+ * `shapeFor` above stays, and it is a different kind of thing: it asks which
+ * *fields* a rail needs, which is a fact about how you are paid rather than
+ * about what the network supports. It matches on the name and falls through
+ * to a bank shape, so a rail no build has heard of still gets a usable form.
+ */
 
 /**
  * Accounts usable for a given advertisement.

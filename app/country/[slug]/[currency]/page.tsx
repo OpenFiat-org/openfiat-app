@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { COUNTRIES, COUNTRIES_BY_SLUG, currenciesFor } from "@/lib/data/countries";
-import { paymentMethodsForCurrency } from "@/lib/data/ads";
+import { CurrencyPaymentMethods } from "@/components/p2p/currency-payment-methods";
 import { P2PExchange } from "@/components/p2p/exchange";
 
 interface Params {
@@ -43,12 +43,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const found = resolve(slug, currency);
   if (!found) return {};
   const { country, code } = found;
-  const methods = paymentMethodsForCurrency(code).slice(0, 3).join(", ");
   return {
     title: {
-      absolute: `Buy & Sell USDT with ${code} in ${country.name} — P2P Exchange | OpenFiat`,
+      absolute: `Buy & Sell Stablecoins with ${code} in ${country.name} — P2P Exchange | OpenFiat`,
     },
-    description: `Buy and sell USDT, USDC, USD1, and SOL with ${code} in ${country.name}. Pay with ${methods}. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
+    // See `app/country/[slug]/page.tsx` on why no rails and no tickers.
+    description: `Buy and sell stablecoins with ${code} in ${country.name}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
     alternates: { canonical: `/country/${country.slug}/${code.toLowerCase()}` },
   };
 }
@@ -58,7 +58,6 @@ export default async function CountryCurrencyPage({ params }: { params: Promise<
   const found = resolve(slug, currency);
   if (!found) notFound();
   const { country, code } = found;
-  const methods = paymentMethodsForCurrency(code);
 
   return (
     <section>
@@ -70,9 +69,10 @@ export default async function CountryCurrencyPage({ params }: { params: Promise<
       </h1>
       <p className="mt-1 max-w-3xl text-sm text-gray-400">
         {code} circulates in {country.name} alongside {country.currencyName} ({country.currencyCode}), and often carries
-        the deeper book of the two. Local merchants accept {methods.join(", ")}. Escrow is locked on Solana before you
-        pay and released only after receipt is verified; OpenFiat never takes custody of your {code}.
+        the deeper book of the two. Escrow is locked on Solana before you pay and released only after receipt is
+        verified; OpenFiat never takes custody of your {code}.
       </p>
+      <CurrencyPaymentMethods currency={code} />
 
       <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
         <span className="text-gray-500">Other markets here:</span>

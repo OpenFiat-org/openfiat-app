@@ -1,6 +1,6 @@
 import { Client } from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
-import { walletParam } from "@/lib/wallet-param";
+import { peerIdParam, walletParam } from "@/lib/wallet-param";
 
 /**
  * Reputation as the protocol actually records it.
@@ -137,27 +137,11 @@ export async function fetchReputation(wallet: string): Promise<LiveReputation> {
  * derives one from the other and cannot be run backwards, so a caller holding a
  * PeerId has no address to give it.
  *
- * The node's `decode_peer_id` is base64 straight into `PeerId::from_bytes`,
- * which is what `walletParam` produces after deriving the id; skipping the
- * derivation and encoding the bytes directly is the same argument by a shorter
- * route. The hex spelling is the one `lib/live-advertisements.ts` puts on every
- * row, so callers pass through what they already display.
- *
- * A malformed id throws rather than being sent: the node answers an
- * unrecognised PeerId with an all-zero profile, indistinguishable from a real
- * wallet that has never traded, which is the exact trap `lib/wallet-param.ts`
- * exists to document.
+ * The base58 spelling is the one `lib/live-advertisements.ts` puts on every
+ * row, so callers pass through what they already display. `peerIdParam` owns
+ * the encoding and the argument for it, including why passing the wrong
+ * spelling is worse than an error here.
  */
-export async function fetchReputationForPeerId(peerIdHex: string): Promise<LiveReputation> {
-  return read(base64OfHex(peerIdHex));
-}
-
-function base64OfHex(hex: string): string {
-  if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(hex)) {
-    throw new Error(`Not a hex-encoded PeerId: ${hex}`);
-  }
-  const bytes = Uint8Array.from(hex.match(/../g)!.map((pair) => parseInt(pair, 16)));
-  return typeof Buffer !== "undefined"
-    ? Buffer.from(bytes).toString("base64")
-    : btoa(String.fromCharCode(...bytes));
+export async function fetchReputationForPeerId(peerId: string): Promise<LiveReputation> {
+  return read(peerIdParam(peerId));
 }

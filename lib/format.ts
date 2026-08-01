@@ -26,26 +26,14 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+/*
+ * `pseudoAddress` and `pseudoSignature` used to sit here: deterministic
+ * fake base58 strings derived from a seed, which gave every merchant in
+ * `lib/data/merchants.ts` a wallet and every trade a signature. Both fed
+ * fixtures only, and both went with them. Nothing in this app should be
+ * able to manufacture an address that looks real.
+ */
 
-/** Deterministic pseudo Solana address (44 base58 chars) derived from a seed string. */
-export function pseudoAddress(seed: string): string {
-  let h = 0x811c9dc5;
-  let out = "";
-  for (let i = 0; i < 44; i++) {
-    h ^= seed.charCodeAt(i % seed.length) + i * 31;
-    h = Math.imul(h, 0x01000193);
-    out += BASE58[(h >>> 8) % 58];
-  }
-  return out;
-}
-
-/** Deterministic 88-char base58 transaction signature (Solana-style) from a seed. */
-export function pseudoSignature(seed: string): string {
-  return pseudoAddress(`sig-a-${seed}`) + pseudoAddress(`sig-b-${seed}`);
-}
-
-/** Truncated middle-ellipsis display for signatures: "5KtP4z…9xYq2m". */
 export function shortSig(sig: string): string {
   return `${sig.slice(0, 6)}…${sig.slice(-6)}`;
 }
