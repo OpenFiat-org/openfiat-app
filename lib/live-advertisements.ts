@@ -34,6 +34,19 @@ export interface LiveAd {
   id: string;
   /** Merchant PeerId, base58 — the only merchant identity the protocol carries. */
   merchantPeerId: string;
+  /**
+   * The merchant's Ed25519 public key, base58, exactly as the record carries
+   * it.
+   *
+   * Carried because a taker needs it and cannot derive it: `SettlementInitiate`
+   * names `seller_public_key`, and a PeerId is not a substitute — the node
+   * checks a signature against the key the settlement recorded, and every
+   * later merchant action verifies against that copy. Deriving one from the
+   * PeerId happens to work today (a PeerId is a fixed prefix plus the key),
+   * but taking the record's own field is what makes the pairing the
+   * merchant's claim rather than this app's reconstruction of it.
+   */
+  merchantPublicKey: string;
   /** Short form for display; the full id remains available for linking. */
   merchantShort: string;
   /**
@@ -90,6 +103,30 @@ export interface LiveAd {
    * hold: past it, re-read rather than re-use.
    */
   quoteExpiresAt: number | null;
+  /**
+   * The same price as `price`, in the fixed-point form a reservation has to
+   * sign — base units plus the exponent, never a float.
+   *
+   * `price` above is a `number` for display and is lossy the moment a
+   * currency has more than a couple of decimals. A reservation's
+   * `agreed_price` is compared against the advertisement's own terms *base
+   * unit for base unit* (`PricingModel::agrees_with`), so a value that made a
+   * round trip through a float would be refused as `PriceDisagreement` on a
+   * price the trader can see is correct.
+   *
+   * `null` exactly when `price` is: an unpriceable advertisement has no
+   * number to agree to.
+   */
+  priceAmount: { base_units: number; decimals: number } | null;
+  /**
+   * The oracle mid this price was derived from, for a floating quote; `null`
+   * for a fixed one.
+   *
+   * A reservation must record it — `agrees_with` requires the mid for a
+   * floating ad and requires its *absence* for a fixed one, because otherwise
+   * a taker could sign any number at all and call it floating.
+   */
+  midRate: number | null;
   /** How the price is set, for a UI that should not present the two as equivalent. */
   pricingKind: "Fixed" | "Floating";
   /** Basis points over the oracle mid; `null` unless `pricingKind` is Floating. */
@@ -252,6 +289,7 @@ export function toLiveAd(
   return {
     id: ad.id,
     merchantPeerId: peerId,
+    merchantPublicKey: ad.merchant_public_key,
     // Last 6 base58 characters. A PeerId has no human-readable name in the
     // protocol, and inventing one here is exactly what the mock did.
     merchantShort: peerId.slice(-6),
@@ -265,6 +303,11 @@ export function toLiveAd(
     // signs a new price and not before, so giving it an expiry would invite
     // a caller to re-read something that cannot have changed.
     quoteExpiresAt: quote.kind === "Floating" ? quote.mid_expires_at : null,
+    // Straight off the quote, un-rounded. This is the number a reservation
+    // signs, so anything derived from `price` above would be the float round
+    // trip the field exists to avoid.
+    priceAmount: quote.kind === "Unpriceable" ? null : quote.price,
+    midRate: quote.kind === "Floating" ? quote.mid_rate : null,
     pricingKind: fixed ? "Fixed" : "Floating",
     // From the quote when there is one, since an unpriceable quote still
     // carries the premium so the ad's terms stay displayable.

@@ -231,6 +231,145 @@ export function decodeLiquidityVault(data: Uint8Array): DecodedLiquidityVault {
   };
 }
 
+const TRADE_ESCROW_VAULT_DISCRIMINATOR = [64, 222, 37, 189, 81, 6, 39, 86];
+const FEE_CONFIG_DISCRIMINATOR = [143, 52, 146, 187, 219, 123, 76, 155];
+
+/**
+ * `VaultState` (programs/shared) in declaration order, which is what the
+ * discriminant byte counts. A trade escrow only ever reaches four of the
+ * six — `Available` belongs to a liquidity vault and `Frozen` to the
+ * emergency authority — but the byte is decoded against the whole enum,
+ * because a name derived from a partial table would be wrong rather than
+ * absent.
+ */
+export const VAULT_STATE = [
+  "Available",
+  "Reserved",
+  "AwaitingFiatSettlement",
+  "Released",
+  "Cancelled",
+  "Frozen",
+] as const;
+export type VaultStateLabel = (typeof VAULT_STATE)[number];
+
+export interface DecodedTradeEscrow {
+  /** The off-chain reservation id, passed in verbatim — the program mints none. */
+  reservationId: bigint;
+  buyer: PublicKey;
+  seller: PublicKey;
+  mint: PublicKey;
+  amount: bigint;
+  state: VaultStateLabel;
+  /**
+   * Set by `approve_settlement`, and a precondition of `release_escrow`.
+   *
+   * Separate from `state` because the on-chain state machine is coarser than
+   * OFS-2300's: there is no `Approved` variant, so an escrow that has been
+   * approved and not yet released still reads `AwaitingFiatSettlement`. A
+   * caller that shows `state` alone cannot tell "waiting on the merchant"
+   * from "waiting on somebody to press release".
+   */
+  approved: boolean;
+  createdAt: bigint;
+  /** Unix seconds after which `expire_reservation` becomes permissionless. */
+  timeoutAt: bigint;
+  bump: number;
+  tokenVaultBump: number;
+}
+
+/** Layout: disc(8) reservation_id(8) buyer(32) seller(32) mint(32) amount(8)
+ *  state(1) approved(1) created_at(8) timeout_at(8) bump(1)
+ *  token_vault_bump(1) = 140 bytes. */
+export const TRADE_ESCROW_VAULT_LEN = 140;
+
+export function decodeTradeEscrow(data: Uint8Array): DecodedTradeEscrow {
+  checkDiscriminator(data, TRADE_ESCROW_VAULT_DISCRIMINATOR, "TradeEscrowVault");
+  const state = VAULT_STATE[data[120]!];
+  if (!state) throw new Error(`TradeEscrowVault: unknown VaultState byte ${data[120]}`);
+  return {
+    reservationId: readU64(data, 8),
+    buyer: readPubkey(data, 16),
+    seller: readPubkey(data, 48),
+    mint: readPubkey(data, 80),
+    amount: readU64(data, 112),
+    state,
+    approved: data[121] === 1,
+    createdAt: readI64(data, 122),
+    timeoutAt: readI64(data, 130),
+    bump: data[138]!,
+    tokenVaultBump: data[139]!,
+  };
+}
+
+/**
+ * The four treasuries `release_escrow` pays the settlement fee into, and the
+ * numbers that decide how much.
+ *
+ * Read from the chain rather than transcribed from
+ * `programs/devnet-addresses.json`, because `update_fee_config` exists
+ * precisely so these can move: they were once the treasury *owner* wallets,
+ * which do not deserialize as token accounts, and the whole release path was
+ * unexecutable until they were repointed at the settlement mint's ATAs. A
+ * client holding a copy of the old set would build a transaction the runtime
+ * rejects, with nothing on screen to say why.
+ */
+export interface DecodedFeeConfig {
+  admin: PublicKey;
+  adListingFee: bigint;
+  disputeFilingFee: bigint;
+  /** Basis points of the trade amount taken as the settlement fee, borne by the buyer. */
+  settlementFeeBps: number;
+  devTreasury: PublicKey;
+  ecosystemTreasury: PublicKey;
+  infraTreasury: PublicKey;
+  emergencyReserve: PublicKey;
+  devTreasuryBps: number;
+  ecosystemTreasuryBps: number;
+  infraTreasuryBps: number;
+  emergencyReserveBps: number;
+  /** Default payment/review window new trade escrows are created with, in seconds. */
+  timeoutSecs: bigint;
+  bump: number;
+  /** The mints a trade may be escrowed in — only the first `count` are live. */
+  settlementMints: PublicKey[];
+}
+
+/** Layout: disc(8) admin(32) ad_listing_fee(8) dispute_filing_fee(8)
+ *  settlement_fee_bps(2) dev(32) ecosystem(32) infra(32) emergency(32)
+ *  dev_bps(2) ecosystem_bps(2) infra_bps(2) emergency_bps(2) timeout_secs(8)
+ *  bump(1) min_arbitrator_stake_age_secs(8) arbitrator_sortition_bps(2)
+ *  settlement_mints(16 × 32) settlement_mint_count(1).
+ *
+ * The last four fields were appended after `bump` rather than inserted in a
+ * natural order, which is what let the live singleton migrate by a resize:
+ * every offset above `bump` kept its meaning. Reading them in a tidier order
+ * would shift all of them. */
+export function decodeFeeConfig(data: Uint8Array): DecodedFeeConfig {
+  checkDiscriminator(data, FEE_CONFIG_DISCRIMINATOR, "FeeConfig");
+  const count = data[725] ?? 0;
+  const settlementMints: PublicKey[] = [];
+  for (let i = 0; i < count && i < 16; i++) {
+    settlementMints.push(readPubkey(data, 213 + i * 32));
+  }
+  return {
+    admin: readPubkey(data, 8),
+    adListingFee: readU64(data, 40),
+    disputeFilingFee: readU64(data, 48),
+    settlementFeeBps: readU16(data, 56),
+    devTreasury: readPubkey(data, 58),
+    ecosystemTreasury: readPubkey(data, 90),
+    infraTreasury: readPubkey(data, 122),
+    emergencyReserve: readPubkey(data, 154),
+    devTreasuryBps: readU16(data, 186),
+    ecosystemTreasuryBps: readU16(data, 188),
+    infraTreasuryBps: readU16(data, 190),
+    emergencyReserveBps: readU16(data, 192),
+    timeoutSecs: readI64(data, 194),
+    bump: data[202]!,
+    settlementMints,
+  };
+}
+
 // --- openfiat-governance --------------------------------------------------
 
 const GOVERNANCE_CONFIG_DISCRIMINATOR = [81, 63, 124, 107, 210, 100, 145, 70];

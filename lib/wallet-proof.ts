@@ -187,6 +187,16 @@ export async function signedRead<T>(
   address: string,
   signer: SolanaProvider,
   surface: GatedSurface,
+  /**
+   * Anything the method needs beyond the proof itself.
+   *
+   * `getMyTradeChannel` is the first: its params are the four proof fields
+   * plus the settlement id, flattened into one object rather than nested, so
+   * that a gated read with a subject looks exactly like every other one with
+   * a field added. Merged *under* the proof below, so a caller cannot
+   * accidentally overwrite the signature with a key of the same name.
+   */
+  extra: Record<string, unknown> = {},
 ): Promise<T> {
   if (!signer.signMessage) {
     throw new WalletProofError("wallet-cannot-sign", surface.messages["wallet-cannot-sign"]);
@@ -204,6 +214,7 @@ export async function signedRead<T>(
     endpoint,
     method,
     {
+      ...extra,
       wallet,
       public_key: base64(bs58.decode(address)),
       nonce: challenge.nonce,

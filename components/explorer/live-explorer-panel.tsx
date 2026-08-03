@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
+import { deriveStatus, TRADE_STATUS_LABEL, type PublicTrade } from "@/lib/live-trades";
 
 import { formatDate, formatNumber } from "@/lib/format";
 import { fetchLiveNetworkStats, subscribeToLiveEvents, type LiveEvent } from "@/lib/live-explorer";
@@ -71,7 +71,7 @@ function useLiveExplorer() {
   return { live, blockHeight, events };
 }
 
-export function ExplorerLive({ settlements }: { settlements: Trade[] | null }) {
+export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | null }) {
   const { live, blockHeight, events } = useLiveExplorer();
 
   // One set of metrics, not a live branch and a fixture branch. Anything the

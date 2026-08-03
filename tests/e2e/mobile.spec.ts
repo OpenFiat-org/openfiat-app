@@ -237,3 +237,47 @@ test.describe("the ad wizard at 375px", () => {
     });
   }
 });
+
+test.describe("the trade path at 375px", () => {
+  test.use({ viewport: { width: 375, height: 780 } });
+
+  /**
+   * The two screens a taker signs on, on a phone.
+   *
+   * This is where the money is agreed to, and the whole market it serves is
+   * one people reach on a phone. Both pages carry the two shapes that go
+   * wrong at this width — a two-column `grid` and a wide table of
+   * monospace ids — so both are checked for sideways scroll and for a
+   * layout that has actually collapsed rather than merely been squeezed.
+   */
+  const PAGES: [string, string][] = [
+    // No `ad` parameter: the review page then renders its own "could not be
+    // found" panel, which is the same layout with the ad facts absent and is
+    // reachable without publishing anything.
+    ["/orders/new", "the order review"],
+    // Likewise an id no node has, which renders the empty state rather than
+    // a trade room. A real trade room is proven in `tests/trade-devnet.live.test.ts`.
+    ["/orders/no-such-reservation", "the trade room"],
+    ["/orders", "my trades"],
+  ];
+
+  for (const [path, name] of PAGES) {
+    test(`${name} fits the screen`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expectNoSidewaysScroll(page, path);
+    });
+  }
+
+  /*
+   * `/orders` asks for a signature before it will answer, so what a phone
+   * gets before connecting is an explanation rather than an empty table —
+   * and the explanation has to be reachable without scrolling sideways to
+   * find the button under it.
+   */
+  test("my trades explains itself before asking for a wallet", async ({ page }) => {
+    await page.goto("/orders");
+    await expect(page.getByText(/Connect a wallet/i)).toBeVisible();
+    await expectNoSidewaysScroll(page, "/orders");
+  });
+});

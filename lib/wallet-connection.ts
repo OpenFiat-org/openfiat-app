@@ -29,6 +29,25 @@ export interface SolanaProvider {
     transaction: import("@solana/web3.js").Transaction,
   ): Promise<SolanaSignResult>;
   /**
+   * Sign without broadcasting.
+   *
+   * Needed by exactly one path, and needed there for a reason worth stating:
+   * a trade's `release_escrow` is submitted **through the OpenFiat node**
+   * rather than straight at the cluster, because the node only learns which
+   * transaction finishes which settlement from `sendTransaction`'s
+   * `correlation` field. A release broadcast directly would confirm perfectly
+   * well on Solana and leave every node's copy of the settlement in
+   * `Approved` forever, with no way to ever record the signature.
+   *
+   * Optional because a wallet may not offer it, and a connection restored
+   * from storage has no provider at all. The absence is surfaced as a named
+   * failure rather than silently falling back to a direct broadcast, which
+   * would be the same trade with an outcome nobody can observe.
+   */
+  signTransaction?(
+    transaction: import("@solana/web3.js").Transaction,
+  ): Promise<import("@solana/web3.js").Transaction>;
+  /**
    * Raw Ed25519 signature over arbitrary bytes — no prefixing, unlike
    * Ethereum's `personal_sign`. Every wallet listed below implements it, but
    * it stays optional here because a connection can be restored from storage

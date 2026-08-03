@@ -14,7 +14,11 @@ export default async function NewOrderPage({
 }) {
   const query = await searchParams;
   const adParam = Array.isArray(query.ad) ? query.ad[0] : query.ad;
-  const amountParam = Array.isArray(query.amount) ? query.amount[0] : query.amount;
+  // In the asset, not in fiat — see `NewTradeReview`. The parameter was
+  // renamed from `amount` along with the unit it carries, so an old link
+  // arrives with nothing here rather than with a fiat total silently read as
+  // a quantity of tokens.
+  const assetParam = Array.isArray(query.asset) ? query.asset[0] : query.asset;
   const methodParam = Array.isArray(query.method) ? query.method[0] : query.method;
 
   let ad = null;
@@ -43,7 +47,7 @@ export default async function NewOrderPage({
           <NewTradeReview
             ad={ad}
             userDirection={ad.direction === "Sell" ? "Buy" : "Sell"}
-            amount={amountParam}
+            assetAmount={assetParam}
             method={methodParam}
           />
         ) : (

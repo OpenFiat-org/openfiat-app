@@ -149,4 +149,55 @@ test("a taker browses the book and opens an order against a real advertisement",
   expect(ad.id).toBe(id);
   expect(ad.status).toBe("Active");
   expect(ad.payment_methods).toEqual([rail!.id]);
+
+  /*
+   * And on through to the page that actually places it.
+   *
+   * The panel used to end here with a notice saying a reservation could not
+   * be submitted. It can now, so the walk continues to the button that signs
+   * one — and to the two things that button must say before anybody presses
+   * it.
+   */
+  /*
+   * First, what the panel refuses to do. This advertisement was published
+   * straight to the node and has no liquidity vault on chain behind it, so
+   * the panel will not open an order against it at all — it compares the
+   * declared liquidity against the merchant's real vault and says the vault
+   * is missing. That is the check working, and it is why the walk continues
+   * by the link the panel builds rather than through the panel itself.
+   */
+  await expect(
+    page.getByText("No vault for this mint"),
+    "an advertisement with no vault behind it must say so, not just decline",
+  ).toBeVisible({ timeout: 30_000 });
+
+  // The amount travels in the *asset*, because that is the unit a
+  // reservation's `amount` and this advertisement's limits are both stated
+  // in. A fiat total here would be divided back out by a rounded price.
+  await page.goto(`/orders/new?ad=${id}&asset=15&method=${encodeURIComponent(rail!.id)}`);
+  await expect(page.getByRole("heading", { name: "Review Order" })).toBeVisible();
+  // The rail is shown by its name, never by the catalogue id the record
+  // carries — the same rule the order-book row follows.
+  await expect(page.getByText(rail!.name).first()).toBeVisible();
+  await expect(page.getByText(rail!.id)).toHaveCount(0);
+
+  // No wallet is connected in this browser, and the page says so rather than
+  // offering a button that would fail at the prompt.
+  await expect(
+    page.getByRole("button", { name: /^Place this order/ }),
+  ).toBeDisabled();
+  await expect(page.getByText(/Connect a wallet first/)).toBeVisible();
+
+  /*
+   * The release warning, read off the chain rather than written down here.
+   *
+   * `release_escrow` pays the settlement fee into treasuries that hold one
+   * specific mint, and this advertisement settles in another — so the trade
+   * could be reserved, funded and approved and then never released. Saying
+   * that after the merchant's tokens are locked would be too late.
+   */
+  await expect(
+    page.getByText(/cannot be released/),
+    "a mint the fee treasuries do not hold must be called out before ordering",
+  ).toBeVisible({ timeout: 30_000 });
 });

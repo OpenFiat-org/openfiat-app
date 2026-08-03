@@ -7,9 +7,11 @@ import {
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 import { TradeLimits } from "@/components/asset-label";
 import { Panel } from "@/components/panel";
+import { PlaceOrder } from "@/components/orders/place-order";
 
 /**
- * A real advertisement's review page.
+ * A real advertisement's review page, and the place an order is actually
+ * placed.
  *
  * This used to be `NewTradeForm`: an amount input that, on submit, minted a
  * `TRD-DEMO<n>` id client-side and pushed to a trade room synthesized from
@@ -22,34 +24,49 @@ import { Panel } from "@/components/panel";
  * signature as proof funds moved, would have been acting on values nobody
  * ever recorded. Both are gone rather than carried forward onto real ads.
  *
- * Submitting a reservation is a signed `ReservationRequest` (OFS-2200 §11) —
- * this interface doesn't build and send one yet, so this page reviews the
- * real advertisement and says so plainly instead of faking a placed order.
+ * It then became a review page that said plainly it could not submit
+ * anything. It can now: `components/orders/place-order.tsx` signs the real
+ * `ReservationRequest` (OFS-2200 §11) and the `SettlementInitiate` that
+ * follows it, and the notice that stood here is gone with the gap it
+ * described.
+ *
+ * # The amount is in the asset, and arrives that way
+ *
+ * The order panel hands over `asset`, not a fiat total. Both were once
+ * plausible readings of the same query parameter, and the reservation's
+ * `amount` is denominated in the asset — so converting a fiat figure here
+ * would divide by a displayed price that has already been rounded, and sign
+ * a number a few base units away from what the taker saw.
  */
 export function NewTradeReview({
   ad,
   userDirection,
-  amount,
+  assetAmount,
   method,
 }: {
   ad: LiveAd;
   userDirection: "Buy" | "Sell";
-  amount?: string;
+  /** In the asset — see the note above. */
+  assetAmount?: string;
   method?: string;
 }) {
   const buy = userDirection === "Buy";
-  const fiatAmount = Number(amount) || 0;
-  const cryptoAmount = ad.price ? fiatAmount / ad.price : 0;
+  const cryptoAmount = Number(assetAmount) || 0;
+  const fiatAmount = ad.price ? cryptoAmount * ad.price : 0;
+  const methodLabel =
+    method === undefined
+      ? undefined
+      : (ad.paymentMethodLabels[ad.paymentMethods.indexOf(method)] ?? method);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <Panel title="What you would be agreeing to">
+      <Panel title="What you are agreeing to">
         <div className="divide-y divide-white/5 px-4">
-          {fiatAmount > 0 && ad.price !== null && (
+          {cryptoAmount > 0 && ad.price !== null && (
             <div className="py-4">
               <p className="flex justify-between text-sm">
                 <span className="text-gray-500">
-                  {buy ? "You would pay" : "You would sell"}
+                  {buy ? "You pay" : "You sell"}
                 </span>
                 <span className="tabular-nums font-medium text-white">
                   {buy
@@ -58,9 +75,7 @@ export function NewTradeReview({
                 </span>
               </p>
               <p className="mt-1.5 flex justify-between text-sm">
-                <span className="text-gray-500">
-                  {buy ? "You would receive" : "You would receive"}
-                </span>
+                <span className="text-gray-500">You receive</span>
                 <span className="tabular-nums font-medium text-emerald-400">
                   {buy
                     ? formatCrypto(cryptoAmount, assetLabel(ad), 4)
@@ -69,34 +84,19 @@ export function NewTradeReview({
               </p>
             </div>
           )}
-          {method && (
+          {methodLabel && (
             <div className="py-3 text-sm">
               <span className="text-gray-500">Payment method</span>{" "}
-              <span className="text-gray-200">{method}</span>
+              <span className="text-gray-200">{methodLabel}</span>
             </div>
           )}
-          <div className="py-4">
-            <p className="text-sm font-medium text-amber-200">
-              Placing an order isn't wired to the protocol yet
-            </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-gray-400">
-              A real order is a signed{" "}
-              <code className="font-mono">ReservationRequest</code> submitted to
-              a node (OFS-2200 §11), which then locks the merchant&apos;s crypto
-              in an escrow PDA on Solana. This interface can read the live
-              advertisement above and validate an amount against it, but does
-              not yet build, sign, and send that request — so no reservation is
-              created by anything on this page, and nothing here should be read
-              as one.{" "}
-              <Link
-                href="/orders"
-                className="text-brand hover:text-brand-hover"
-              >
-                Your real orders
-              </Link>{" "}
-              are what the node actually reports.
-            </p>
-          </div>
+          <PlaceOrder ad={ad} assetAmount={cryptoAmount} method={method} />
+          <p className="py-3 text-xs leading-relaxed text-gray-500">
+            <Link href="/orders" className="text-brand hover:text-brand-hover">
+              Your orders
+            </Link>{" "}
+            are what the node reports, and are the record of anything placed here.
+          </p>
         </div>
       </Panel>
 

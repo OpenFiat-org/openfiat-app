@@ -135,7 +135,8 @@ function mobileWallets(): Adapter[] {
  * API it already uses.
  */
 function WalletBridge() {
-  const { publicKey, connected, wallet, signMessage, sendTransaction } = useWallet();
+  const { publicKey, connected, wallet, signMessage, signTransaction, sendTransaction } =
+    useWallet();
   const { connection } = useConnection();
 
   useEffect(() => {
@@ -157,6 +158,14 @@ function WalletBridge() {
         const signature = await sendTransaction(transaction, connection);
         return { signature };
       },
+      // Sign-without-broadcast, for the one transaction that has to reach
+      // Solana through an OpenFiat node instead of directly — see the
+      // interface's own note. Left undefined when the wallet does not offer
+      // it, so the trade room can say which wallet cannot finish a release
+      // rather than failing at signing time.
+      signTransaction: signTransaction
+        ? async (transaction: Transaction) => signTransaction(transaction)
+        : undefined,
     };
 
     registerAdapterSigner(provider);
@@ -164,7 +173,7 @@ function WalletBridge() {
       wallet: wallet?.adapter.name ?? "Wallet",
       address: publicKey.toBase58(),
     });
-  }, [connected, publicKey, wallet, signMessage, sendTransaction, connection]);
+  }, [connected, publicKey, wallet, signMessage, signTransaction, sendTransaction, connection]);
 
   return null;
 }

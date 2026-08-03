@@ -7,7 +7,10 @@ import {
   decodeSaleConfig,
   decodeStakeAccount,
   decodeStakingConfig,
+  decodeFeeConfig,
+  decodeTradeEscrow,
   LIQUIDITY_VAULT_LEN,
+  TRADE_ESCROW_VAULT_LEN,
 } from "@/lib/onchain-decode";
 import { PRESALE_PROGRAM_ID } from "@/lib/live-presale";
 
@@ -454,5 +457,156 @@ describe("decodeSaleConfig", () => {
     // which renders as "the sale is not open" — the same answer as the truth
     // today, so nothing on screen would catch it.
     expect(PRESALE_PROGRAM_ID).toBe("75rJ9MRAaSnAc8tg4AfeTFVDCVrN6jdD5CqeyE4UoUw7");
+  });
+});
+
+describe("decodeTradeEscrow", () => {
+  const buyer = PublicKey.unique();
+  const seller = PublicKey.unique();
+  const mint = PublicKey.unique();
+
+  function account(state: number, approved: number): Buffer {
+    return Buffer.from([
+      64, 222, 37, 189, 81, 6, 39, 86, // discriminator
+      ...u64le(5_733_152_313_082_856_674n), // reservation_id
+      ...buyer.toBytes(),
+      ...seller.toBytes(),
+      ...mint.toBytes(),
+      ...u64le(1_000_000n), // amount
+      state,
+      approved,
+      ...i64le(1_785_784_135n), // created_at
+      ...i64le(1_785_785_935n), // timeout_at
+      251, // bump
+      252, // token_vault_bump
+    ]);
+  }
+
+  it("decodes a funded, unapproved escrow exactly", () => {
+    const decoded = decodeTradeEscrow(account(2, 0));
+    expect(decoded.reservationId).toBe(5_733_152_313_082_856_674n);
+    expect(decoded.buyer.toBase58()).toBe(buyer.toBase58());
+    expect(decoded.seller.toBase58()).toBe(seller.toBase58());
+    expect(decoded.mint.toBase58()).toBe(mint.toBase58());
+    expect(decoded.amount).toBe(1_000_000n);
+    expect(decoded.state).toBe("AwaitingFiatSettlement");
+    expect(decoded.approved).toBe(false);
+    expect(decoded.createdAt).toBe(1_785_784_135n);
+    expect(decoded.timeoutAt).toBe(1_785_785_935n);
+    expect(decoded.bump).toBe(251);
+    expect(decoded.tokenVaultBump).toBe(252);
+  });
+
+  it("is the length the program allocates", () => {
+    expect(account(2, 0)).toHaveLength(TRADE_ESCROW_VAULT_LEN);
+  });
+
+  /**
+   * `approved` is its own flag rather than a `VaultState` variant, so an
+   * approved escrow still reads `AwaitingFiatSettlement`. A caller that took
+   * the state alone could not tell "waiting on the merchant" from "waiting on
+   * somebody to press release", which are the two halves of the same screen.
+   */
+  it("keeps approval separate from the coarser on-chain state", () => {
+    const decoded = decodeTradeEscrow(account(2, 1));
+    expect(decoded.state).toBe("AwaitingFiatSettlement");
+    expect(decoded.approved).toBe(true);
+  });
+
+  it("names each VaultState by its declaration order", () => {
+    expect(decodeTradeEscrow(account(3, 1)).state).toBe("Released");
+    expect(decodeTradeEscrow(account(4, 0)).state).toBe("Cancelled");
+  });
+
+  it("refuses a state byte outside the enum rather than guessing", () => {
+    expect(() => decodeTradeEscrow(account(9, 0))).toThrow(/VaultState/);
+  });
+
+  it("refuses an account that is not a trade escrow", () => {
+    const wrong = account(2, 0);
+    wrong[0] = 0;
+    expect(() => decodeTradeEscrow(wrong)).toThrow(/discriminator/);
+  });
+});
+
+describe("decodeFeeConfig", () => {
+  const admin = PublicKey.unique();
+  const treasuries = [
+    PublicKey.unique(),
+    PublicKey.unique(),
+    PublicKey.unique(),
+    PublicKey.unique(),
+  ];
+  const mints = [PublicKey.unique(), PublicKey.unique()];
+
+  function account(): Buffer {
+    const settlementMints = Buffer.alloc(16 * 32);
+    mints.forEach((mint, i) => settlementMints.set(mint.toBytes(), i * 32));
+    return Buffer.from([
+      143, 52, 146, 187, 219, 123, 76, 155, // discriminator
+      ...admin.toBytes(),
+      ...u64le(0n), // ad_listing_fee
+      ...u64le(0n), // dispute_filing_fee
+      ...u16le(85), // settlement_fee_bps
+      ...treasuries[0]!.toBytes(),
+      ...treasuries[1]!.toBytes(),
+      ...treasuries[2]!.toBytes(),
+      ...treasuries[3]!.toBytes(),
+      ...u16le(4_000),
+      ...u16le(3_000),
+      ...u16le(2_000),
+      ...u16le(1_000),
+      ...i64le(1_800n), // timeout_secs
+      249, // bump
+      ...i64le(0n), // min_arbitrator_stake_age_secs
+      ...u16le(100), // arbitrator_sortition_bps
+      ...settlementMints,
+      mints.length, // settlement_mint_count
+    ]);
+  }
+
+  it("decodes the singleton exactly", () => {
+    const decoded = decodeFeeConfig(account());
+    expect(decoded.admin.toBase58()).toBe(admin.toBase58());
+    expect(decoded.settlementFeeBps).toBe(85);
+    expect(decoded.devTreasury.toBase58()).toBe(treasuries[0]!.toBase58());
+    expect(decoded.ecosystemTreasury.toBase58()).toBe(treasuries[1]!.toBase58());
+    expect(decoded.infraTreasury.toBase58()).toBe(treasuries[2]!.toBase58());
+    expect(decoded.emergencyReserve.toBase58()).toBe(treasuries[3]!.toBase58());
+    expect([
+      decoded.devTreasuryBps,
+      decoded.ecosystemTreasuryBps,
+      decoded.infraTreasuryBps,
+      decoded.emergencyReserveBps,
+    ]).toEqual([4_000, 3_000, 2_000, 1_000]);
+    expect(decoded.timeoutSecs).toBe(1_800n);
+    expect(decoded.bump).toBe(249);
+  });
+
+  /**
+   * The four appended fields sit after `bump` rather than in a natural order,
+   * which is what let the live singleton migrate by a resize alone. Reading
+   * them anywhere tidier shifts every offset above them, and the four
+   * treasuries are the ones that would move — into addresses that are neither
+   * token accounts nor anything else, with the release path failing at
+   * account load and nothing saying why.
+   */
+  it("reads the fields appended after bump without shifting the ones before", () => {
+    const decoded = decodeFeeConfig(account());
+    expect(decoded.settlementMints.map((m) => m.toBase58())).toEqual(
+      mints.map((m) => m.toBase58()),
+    );
+  });
+
+  it("returns only the live entries of the settlement-mint array", () => {
+    // The rest is `Pubkey::default()` padding; a caller offered the padding
+    // would read the system program as an allowlisted settlement mint.
+    expect(decodeFeeConfig(account()).settlementMints).toHaveLength(mints.length);
+  });
+
+  it("refuses an account that is not a fee config", () => {
+    const wrong = account();
+    wrong[0] = 0;
+    expect(() => decodeFeeConfig(wrong)).toThrow(/discriminator/);
   });
 });

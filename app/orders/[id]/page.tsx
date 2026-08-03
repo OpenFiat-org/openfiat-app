@@ -49,7 +49,7 @@ export default async function TradePage({ params }: { params: Promise<{ id: stri
             <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
           </div>
         ) : trade ? (
-          <TradeRoom trade={trade} ad={ad} />
+          <TradeRoom publicTrade={trade} ad={ad} />
         ) : (
           <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-sm text-gray-400">
             This node has no reservation with id &ldquo;{id}&rdquo;.

@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
 import { peerIdForAddress } from "@/lib/peer-id";
-import { fetchTrades, tradesForPeer, deriveStatus, TRADE_STATUS_LABEL, type Trade } from "@/lib/live-trades";
+import {
+  deriveStatus,
+  MY_TRADES,
+  myTrades,
+  TRADE_STATUS_LABEL,
+  type Trade,
+} from "@/lib/live-trades";
+import { useSignedRead } from "@/components/use-signed-read";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { formatCrypto, formatDateMs } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -33,17 +40,27 @@ function matches(trade: Trade, filter: Filter): boolean {
  * transaction" and "escrow creation transaction" shown in the trade room was
  * a deterministic fake, and every "bank account"/"M-Pesa number" a merchant
  * supposedly gave you was invented too (see `components/orders/trade-room.tsx`
- * and `lib/data/trades.ts`, both deleted). This reads `getTrades` (OFS-2000)
- * and scopes it to whichever trades this wallet's PeerId is a party to,
- * following the same client-side-scoping pattern the merchant console
- * established for advertisements — there is no per-wallet RPC filter.
+ * and `lib/data/trades.ts`, both deleted).
+ *
+ * # It reads `getMyTrades`, and the read it replaced returned nothing
+ *
+ * This used to call `getTrades` and keep the rows naming this wallet. That
+ * read is redacted: the requester, the buyer and the seller are not in it, so
+ * the filter matched nothing and every wallet was told it had no trades. The
+ * failure was invisible because "no trades" is also a perfectly ordinary
+ * answer.
+ *
+ * `getMyTrades` answers for one wallet, behind a signature, and it costs a
+ * wallet prompt — so nothing is fetched on mount. A page that pops a signing
+ * prompt because you opened it trains people to approve prompts without
+ * reading them, which is the argument `components/use-signed-read.ts` makes
+ * at length and this screen follows.
  */
 export function OrdersTable() {
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
-  const [trades, setTrades] = useState<Trade[] | null>(null);
   const [ads, setAds] = useState<LiveAd[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("All");
+  const { status, data: trades, error, read } = useSignedRead<Trade[]>(myTrades, MY_TRADES);
 
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
@@ -52,23 +69,15 @@ export function OrdersTable() {
     return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
   }, []);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const [allTrades, allAds] = await Promise.all([fetchTrades(), fetchAdvertisements()]);
-      setAds(allAds);
-      setTrades(allTrades);
-    } catch (err) {
-      // "No trades" and "could not reach a node" are different facts.
-      setError(err instanceof Error ? err.message : String(err));
-      setTrades(null);
-    }
-  }, []);
-
+  // The advertisements are an open read and name the pair each trade is in.
+  // Their absence is not an error for this table — a row still says what it
+  // is worth in base units — so a failure here is swallowed rather than
+  // taking the page down with it.
   useEffect(() => {
-    if (wallet) void load();
-    else setTrades(null);
-  }, [wallet, load]);
+    fetchAdvertisements()
+      .then(setAds)
+      .catch(() => setAds([]));
+  }, []);
 
   const adById = useMemo(() => new Map(ads.map((a) => [a.id, a])), [ads]);
 
@@ -81,27 +90,45 @@ export function OrdersTable() {
     );
   }
 
-  if (error) {
+  if (status === "failed") {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read trades from the node</p>
-        <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
+        <p className="text-sm font-medium text-red-300">Could not read your trades from the node</p>
+        <p className="mt-1 text-xs text-red-400/80">{error}</p>
         <button
-          onClick={() => void load()}
+          onClick={read}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Retry
+          Try again
         </button>
       </div>
     );
   }
 
   if (trades === null) {
-    return <p className="p-6 text-sm text-gray-500">Reading trades…</p>;
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
+        <p className="text-sm text-gray-300">
+          Your trades are readable only by the wallet that is party to them, so the node asks for a
+          signature before it answers.
+        </p>
+        <p className="mt-1.5 text-xs text-gray-500">
+          Nothing is signed until you ask for it — this is one prompt, and it proves the wallet
+          rather than authorizing anything.
+        </p>
+        <button
+          onClick={read}
+          disabled={status === "loading"}
+          className="mt-4 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
+        >
+          {status === "loading" ? "Waiting for your wallet…" : "Show my trades"}
+        </button>
+      </div>
+    );
   }
 
   const myPeerId = peerIdForAddress(wallet.address) ?? "";
-  const mine = tradesForPeer(trades, myPeerId);
+  const mine = trades;
   const visible = mine.filter((t) => matches(t, filter));
 
   return (
@@ -145,8 +172,14 @@ export function OrdersTable() {
               const ad = adById.get(t.reservation.advertisement_id);
               const amount = t.reservation.amount.base_units / 10 ** t.reservation.amount.decimals;
               const status = deriveStatus(t);
-              const role =
-                t.reservation.requester === peerIdForAddress(wallet.address)
+              // From the settlement once one exists, because that is where
+              // the two sides are actually recorded; before then the
+              // requester is the trade's only named party.
+              const role = t.settlement
+                ? t.settlement.buyer === myPeerId
+                  ? "Buyer"
+                  : "Merchant"
+                : t.reservation.requester === myPeerId
                   ? "Requester"
                   : "Counterparty";
               return (

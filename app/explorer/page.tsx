@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchTrades } from "@/lib/live-trades";
+import { fetchTrades, type PublicTrade } from "@/lib/live-trades";
 import { ExplorerLive } from "@/components/explorer/live-explorer-panel";
 
 export const metadata: Metadata = {
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ExplorerPage() {
-  let trades = null;
+  let trades: PublicTrade[] | null = null;
   try {
     trades = (await fetchTrades()).slice(0, 8);
   } catch {

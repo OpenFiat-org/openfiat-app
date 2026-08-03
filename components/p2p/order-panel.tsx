@@ -286,14 +286,14 @@ export function OrderPanel({
           </p>
 
           {/*
-            * Placing an order isn't wired to the protocol yet — see
-            * app/orders/new/page.tsx. Saying so here, not just on the next
-            * page, means the limits below aren't read as a promise this
-            * button keeps.
+            * The reservation is what expires, so the window is stated here
+            * rather than only on the page that signs it — a taker choosing an
+            * amount is already deciding whether they can pay in time.
             */}
-          <p className="mt-4 border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200">
-            This interface can review an order against this advertisement, but does not yet submit a reservation to
-            the node — see the review page for what that means.
+          <p className="mt-4 text-xs leading-relaxed text-gray-500">
+            Reviewing comes next, and placing the order signs a reservation against this
+            advertisement. A reservation holds the merchant&apos;s liquidity for 30 minutes and
+            lapses on its own if the trade has not moved by then.
           </p>
         </div>
 
@@ -358,7 +358,11 @@ export function OrderPanel({
 
           {ready ? (
             <Link
-              href={`/orders/new?ad=${ad.id}&amount=${fiatAmount}${method ? `&method=${encodeURIComponent(method)}` : ""}`}
+              // In the asset. The reservation's `amount` is denominated in the
+              // asset and so are this advertisement's limits, so handing the
+              // fiat total on and dividing it back out on the next page would
+              // sign a quantity a few base units off the one on screen.
+              href={`/orders/new?ad=${ad.id}&asset=${cryptoAmount}${method ? `&method=${encodeURIComponent(method)}` : ""}`}
               className={`mt-5 block rounded-md py-3 text-center text-sm font-semibold text-white transition-colors ${
                 buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
               }`}
