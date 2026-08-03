@@ -17,6 +17,7 @@ import {
   type AdDraft,
 } from "@/lib/ad-draft";
 import { assetOptions, useReferenceData, type AssetOption } from "@/lib/reference";
+import { tradingSymbol } from "@/lib/asset-display";
 import { formatNumber } from "@/lib/format";
 import { formatBaseUnits } from "@/lib/live-vaults";
 import { explainRefusal, publishAdvertisement, toWireAmount } from "@/lib/merchant-ads";
@@ -138,6 +139,15 @@ export function AdWizard() {
     return assetOptions(reference.data).find((option) => option.mint === draft.mint) ?? null;
   }, [reference, draft.mint]);
 
+  /*
+   * What to call the chosen token on this screen. The node's own spelling
+   * everywhere except the native mint, which reads `SOL` because that is
+   * what a merchant funds the vault with — see `lib/asset-display.ts`.
+   * `asset.symbol` stays the matching identity and is what `PricePosition`
+   * compares the live book on.
+   */
+  const assetName = asset ? (tradingSymbol(asset.mint, asset.symbol) ?? asset.symbol) : null;
+
   const merchantPeerId = useMemo(() => {
     if (!wallet) return null;
     try {
@@ -249,12 +259,12 @@ export function AdWizard() {
         <p className="text-2xl text-emerald-400">✓</p>
         <h2 className="mt-3 text-lg font-semibold text-white">Advertisement posted</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-          {draft.direction} {asset?.symbol ?? "your token"} for {draft.fiat} ·{" "}
+          {draft.direction} {assetName ?? "your token"} for {draft.fiat} ·{" "}
           {draft.pricingType === "Fixed"
             ? `Fixed ${draft.price}`
             : `Floating ${Number(draft.premium) >= 0 ? "+" : ""}${draft.premium}%`}{" "}
           · orders {formatNumber(Number(draft.minOrder))}–{formatNumber(Number(draft.maxOrder))}{" "}
-          {asset?.symbol ?? ""}.
+          {assetName ?? ""}.
         </p>
         <p className="mx-auto mt-3 max-w-md font-mono text-xs text-gray-500">{published}</p>
         <p className="mx-auto mt-2 max-w-md text-xs text-gray-500">
@@ -384,7 +394,7 @@ export function AdWizard() {
             {draft.pricingType === "Fixed" ? (
               <div>
                 <label className={labelCls} htmlFor="ad-price">
-                  Price — {draft.fiat || "fiat"} per {asset?.symbol ?? "unit"}
+                  Price — {draft.fiat || "fiat"} per {assetName ?? "unit"}
                 </label>
                 <input
                   id="ad-price"
@@ -446,6 +456,7 @@ export function AdWizard() {
             <div className="border-l-2 border-white/10 pl-3">
               <PricePosition
                 assetSymbol={asset?.symbol ?? null}
+                assetLabel={assetName}
                 fiat={draft.fiat}
                 direction={draft.direction}
                 pricingType={draft.pricingType}
@@ -461,7 +472,7 @@ export function AdWizard() {
             <div>
               <div className="flex items-center justify-between">
                 <label className={labelCls} htmlFor="ad-total">
-                  Total trading amount ({asset?.symbol ?? "asset"})
+                  Total trading amount ({assetName ?? "asset"})
                 </label>
                 <VaultBackingStatus backing={backing} amount={draft.totalAmount} />
               </div>
@@ -486,7 +497,7 @@ export function AdWizard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls} htmlFor="ad-min">
-                  Minimum order ({asset?.symbol ?? "asset"})
+                  Minimum order ({assetName ?? "asset"})
                 </label>
                 <input
                   id="ad-min"
@@ -498,7 +509,7 @@ export function AdWizard() {
               </div>
               <div>
                 <label className={labelCls} htmlFor="ad-max">
-                  Maximum order ({asset?.symbol ?? "asset"})
+                  Maximum order ({assetName ?? "asset"})
                 </label>
                 <input
                   id="ad-max"
@@ -515,7 +526,7 @@ export function AdWizard() {
                 merchant type a KES figure into a field the protocol reads as
                 USDC. */}
             <p className="text-[11px] leading-relaxed text-gray-600">
-              All three are in {asset?.symbol ?? "the asset"}, not in {draft.fiat || "fiat"} — that
+              All three are in {assetName ?? "the asset"}, not in {draft.fiat || "fiat"} — that
               is the unit the record carries them in.
             </p>
           </div>
@@ -579,7 +590,7 @@ export function AdWizard() {
                     ? "Sell — you sell crypto for fiat"
                     : "Buy — you buy crypto with fiat",
                 ],
-                ["Asset", asset ? `${asset.symbol} · ${asset.decimals} decimals` : "—"],
+                ["Asset", asset ? `${assetName} · ${asset.decimals} decimals` : "—"],
                 // In full, not shortened: this is the last screen before a
                 // merchant commits, and the address is the only thing that
                 // says which token they will actually be paid in.
@@ -593,11 +604,11 @@ export function AdWizard() {
                 ],
                 [
                   "Total on offer",
-                  `${formatNumber(total)} ${asset?.symbol ?? ""}`.trim(),
+                  `${formatNumber(total)} ${assetName ?? ""}`.trim(),
                 ],
                 [
                   "Order limits",
-                  `${formatNumber(Number(draft.minOrder))} – ${formatNumber(Number(draft.maxOrder))} ${asset?.symbol ?? ""}`.trim(),
+                  `${formatNumber(Number(draft.minOrder))} – ${formatNumber(Number(draft.maxOrder))} ${assetName ?? ""}`.trim(),
                 ],
                 ["Payment methods", draft.methods.join(" · ")],
               ].map(([label, value]) => (

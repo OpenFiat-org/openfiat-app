@@ -1,4 +1,5 @@
 import { Client } from "@openfiat/sdk";
+import { tradingSymbol } from "@/lib/asset-display";
 
 /**
  * What the network has actually moved, per asset, from a node's
@@ -144,7 +145,9 @@ export function formatAssetVolume(asset: AssetVolume): VolumeFigure {
       minimumFractionDigits: Math.min(2, asset.decimals),
       maximumFractionDigits: Math.min(2, asset.decimals),
     }),
-    unit: asset.assetSymbol ?? asset.assetMint,
+    // The node's name, except for the native mint, which a reader of a
+    // settled-volume figure knows as SOL — see `lib/asset-display.ts`.
+    unit: tradingSymbol(asset.assetMint, asset.assetSymbol) ?? asset.assetMint,
     rawBaseUnits: false,
     approximate,
   };

@@ -1,4 +1,5 @@
 import { AssetIcon } from "@/components/asset-icon";
+import { tradingSymbol } from "@/lib/asset-display";
 import { formatNumber } from "@/lib/format";
 import { assetLabel } from "@/lib/live-advertisements";
 import type { LiveAd } from "@/lib/live-advertisements";
@@ -35,7 +36,11 @@ export function AssetLabel({
   icon?: boolean;
   className?: string;
 }) {
-  const symbol = ad.assetSymbol;
+  // The name as a trader reads it, which is also what decides whether there
+  // is coin art: the node calls the native mint `wSOL` and this repo ships
+  // `sol.png`, so mapping the name and not the mark would leave the one
+  // asset everybody recognises as the only unmarked row. See `assetLabel`.
+  const symbol = tradingSymbol(ad.assetMint, ad.assetSymbol);
   return (
     <span title={ad.assetMint} className={`inline-flex items-baseline gap-1.5 ${className}`}>
       {/* No art for an address. Coin art is a claim about which token this

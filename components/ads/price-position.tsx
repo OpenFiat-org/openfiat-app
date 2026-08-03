@@ -39,14 +39,27 @@ type BookState =
 
 export function PricePosition({
   assetSymbol,
+  assetLabel,
   fiat,
   direction,
   pricingType,
   price,
   premium,
 }: {
-  /** The node's own spelling of the asset's ticker, or `null` if unnamed. */
+  /**
+   * The node's own spelling of the asset's ticker, or `null` if unnamed.
+   *
+   * This is the *matching* identity and nothing else: the book below is
+   * filtered on `ad.assetSymbol`, which the node resolved from each
+   * advertisement's mint, so both sides of that comparison have to be the
+   * node's spelling. Passing the on-screen name here instead would silently
+   * empty the market for the native mint — the node calls it `wSOL` and
+   * `"SOL" === "wSOL"` is never true — and the merchant would be told they
+   * are the only advertiser in a corridor full of them.
+   */
   assetSymbol: string | null;
+  /** What to call it in the sentence. `null` falls back to "this token". */
+  assetLabel: string | null;
   fiat: string;
   /** The MERCHANT's direction, as the record carries it. */
   direction: "Buy" | "Sell";
@@ -96,7 +109,7 @@ export function PricePosition({
   if (market.length === 0) {
     return (
       <p className="text-xs text-emerald-300/90">
-        Nobody else is advertising {assetSymbol ?? "this token"}/{fiat} on the{" "}
+        Nobody else is advertising {assetLabel ?? "this token"}/{fiat} on the{" "}
         {direction === "Sell" ? "sell" : "buy"} side. Yours would be the only one, which means it
         takes every order in this corridor — and sets the price.
       </p>

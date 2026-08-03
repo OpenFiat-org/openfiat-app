@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { ReferenceData } from "@openfiat/sdk";
 
+import { tradingSymbol } from "@/lib/asset-display";
 import { DEFAULT_NODE_URL } from "@/lib/node-endpoint";
 import { nodeRpc } from "@/lib/node-rpc";
 
@@ -67,6 +68,14 @@ export interface PairSlug {
    * heading say "wSOL" rather than shouting a name nothing uses.
    */
   asset: string;
+  /**
+   * The same ticker as a reader sees it — `SOL` where `asset` is `wSOL`.
+   *
+   * Kept beside `asset` rather than replacing it because they answer
+   * different questions: this one goes in the heading, and `asset` goes into
+   * the comparison that finds the advertisements. See `NamedAsset`.
+   */
+  label: string;
   currency: string;
   slug: string;
 }
@@ -108,6 +117,26 @@ function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
 }
 
 /**
+ * A ticker this node names a mint for, under both the names it goes by.
+ *
+ * They are the same string for every mint but one. `symbol` is the node's,
+ * and it is an identity: the book is filtered on it, and both sides of that
+ * comparison have to come from the same table. `label` is what a reader
+ * sees, which for the native mint is `SOL` rather than `wSOL` — see
+ * `lib/asset-display.ts` for why that substitution belongs at this end and
+ * not in the node's table.
+ *
+ * Carried as a pair rather than mapped at each call site because the two
+ * uses are one line apart in the exchange's pill row — the text of a button
+ * and the filter it applies — and a screen that used one for both would
+ * either show `wSOL` or match nothing.
+ */
+export interface NamedAsset {
+  symbol: string;
+  label: string;
+}
+
+/**
  * The tickers this deployment's node has a mint for, or `null` when it could
  * not be asked.
  *
@@ -126,7 +155,7 @@ function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
  */
 export async function fetchNamedAssets(
   endpoint: string = DEFAULT_NODE_URL,
-): Promise<string[] | null> {
+): Promise<NamedAsset[] | null> {
   try {
     const { mints } = await fetchReferenceData(endpoint);
     // Absent, rather than empty, on a node built before the mint table was
@@ -135,7 +164,12 @@ export async function fetchNamedAssets(
     // A mint with no symbol is an ordinary answer on the node's side — an
     // address with no nickname — and it names no ticker, so it is dropped
     // here rather than turned into a blank one.
-    return mints.map((entry) => entry?.symbol).filter((symbol): symbol is string => !!symbol);
+    return mints
+      .filter((entry) => !!entry?.symbol)
+      .map((entry) => ({
+        symbol: entry.symbol,
+        label: tradingSymbol(entry.mint, entry.symbol) ?? entry.symbol,
+      }));
   } catch {
     return null;
   }
@@ -184,14 +218,27 @@ export async function normalisePair(
   const named = await namedAssetsForRender(endpoint);
   // Silence: keep the caller's spelling, uppercased, since there is no
   // authoritative one to adopt.
-  const resolved =
+  //
+  // Matched on either name. `/wsol/kes` is the node's spelling and has
+  // always worked; `/sol/kes` is the one every screen in this app now
+  // prints, and a URL a reader can copy off the page has to resolve to the
+  // market it was copied from. Both land on the same pair, because both
+  // sides come from the same row of the node's table — this is not the app
+  // deciding that SOL means a mint, which is the failure `PAIR_ASSETS`
+  // shipped; it is one row answering to the two names it is published under.
+  const resolved: NamedAsset | undefined =
     named === null
-      ? upperAsset
-      : named.find((symbol) => symbol.toUpperCase() === upperAsset);
+      ? { symbol: upperAsset, label: upperAsset }
+      : named.find(
+          (asset) =>
+            asset.symbol.toUpperCase() === upperAsset ||
+            asset.label.toUpperCase() === upperAsset,
+        );
   if (resolved === undefined) return null;
 
   return {
-    asset: resolved,
+    asset: resolved.symbol,
+    label: resolved.label,
     currency: upperCurrency,
     slug: `${upperAsset.toLowerCase()}/${upperCurrency.toLowerCase()}`,
   };

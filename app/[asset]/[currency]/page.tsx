@@ -58,9 +58,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (rate.kind !== "current") {
     return {
       title: {
-        absolute: `Convert ${pair.asset} to ${pair.currency} — P2P Exchange | OpenFiat`,
+        absolute: `Convert ${pair.label} to ${pair.currency} — P2P Exchange | OpenFiat`,
       },
-      description: `Buy and sell ${pair.asset} for ${pair.currency} peer-to-peer on OpenFiat. Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
+      description: `Buy and sell ${pair.label} for ${pair.currency} peer-to-peer on OpenFiat. Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
       ...canonical,
     };
   }
@@ -72,9 +72,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       : "";
   return {
     title: {
-      absolute: `Convert ${pair.asset} to ${pair.currency} — ${pair.asset}/${pair.currency} P2P Rate | OpenFiat`,
+      absolute: `Convert ${pair.label} to ${pair.currency} — ${pair.label}/${pair.currency} P2P Rate | OpenFiat`,
     },
-    description: `Convert ${pair.asset} to ${pair.currency} peer-to-peer at ${formatNumber(rate.rate)} ${pair.currency} per ${pair.asset}.${advertiserPhrase} Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
+    description: `Convert ${pair.label} to ${pair.currency} peer-to-peer at ${formatNumber(rate.rate)} ${pair.currency} per ${pair.label}.${advertiserPhrase} Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
     ...canonical,
   };
 }
@@ -96,6 +96,11 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
    * resolved. `pair.asset` is the node's own spelling — `wSOL`, not `WSOL` —
    * so these two comparisons have to fold case or a page would offer itself
    * as one of its own "other assets".
+   *
+   * `pair.asset` and not `pair.label`: an oracle record's base is whatever
+   * the feed publishes, which has nothing to do with what this app decided
+   * to print, and matching on the printed name would make a page list
+   * itself under "other assets" for the one mint where the two differ.
    */
   const sameAsset = (base: string) => base.toUpperCase() === pair.asset.toUpperCase();
   const otherAssets = priced.filter((p) => p.quote === pair.currency && !sameAsset(p.base));
@@ -109,13 +114,13 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
         </Link>
         <span className="mx-2 text-gray-700">/</span>
         <span className="text-gray-400">
-          {pair.asset}/{pair.currency}
+          {pair.label}/{pair.currency}
         </span>
       </nav>
 
       <h1 className="mt-3 flex flex-wrap items-center gap-2.5 text-xl font-semibold text-white">
-        <AssetIcon asset={pair.asset} size={22} />
-        Convert {pair.asset} to {pair.currency}
+        <AssetIcon asset={pair.label} size={22} />
+        Convert {pair.label} to {pair.currency}
       </h1>
 
       {/* The answer, immediately — or, when there isn't one, which of the two
@@ -124,14 +129,14 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
 
       {rate.kind === "current" && (
         <div className="mt-6 max-w-md">
-          <PairConverter asset={pair.asset} currency={pair.currency} rate={rate.rate} />
+          <PairConverter asset={pair.label} currency={pair.currency} rate={rate.rate} />
         </div>
       )}
 
       <div className="mt-8 max-w-3xl space-y-4 text-sm leading-relaxed text-gray-400">
         {advertisers > 0 ? (
           <p>
-            {advertisers} advertiser{advertisers === 1 ? "" : "s"} are trading {pair.asset} against{" "}
+            {advertisers} advertiser{advertisers === 1 ? "" : "s"} are trading {pair.label} against{" "}
             {pair.currency} right now. There is no exchange in the middle: you pick someone whose
             price and limits suit you, and the {pair.currency} moves between your own accounts
             {methods.length > 0 && <> using {methods.slice(0, 3).join(", ")}</>}
@@ -139,14 +144,14 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
           </p>
         ) : (
           <p>
-            Nobody is advertising {pair.asset} against {pair.currency} on this node right now. A
+            Nobody is advertising {pair.label} against {pair.currency} on this node right now. A
             node counts only the advertisements it has replicated, so a node that joined recently
             knows about fewer than exist — and an empty corridor is an opening rather than a
             closure: the first merchant in one sets the price.
           </p>
         )}
         <p>
-          Your {pair.asset} is locked in a Solana escrow program before any {pair.currency} is sent.
+          Your {pair.label} is locked in a Solana escrow program before any {pair.currency} is sent.
           It releases when the receiving side confirms the money arrived, and if they do not,
           independent arbitrators who have staked OPEN decide it. Nobody at OpenFiat can release
           escrow early, freeze it, or take custody of your {pair.currency} at any point.
@@ -198,7 +203,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
 
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-            {pair.asset} in other currencies
+            {pair.label} in other currencies
           </h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {otherCurrencies.map((p) => (
@@ -213,7 +218,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
             ))}
             {otherCurrencies.length === 0 && (
               <li className="text-sm text-gray-500">
-                {pair.asset} is not priced in any other currency right now.
+                {pair.label} is not priced in any other currency right now.
               </li>
             )}
           </ul>
@@ -236,7 +241,7 @@ function Rate({
   rate,
   unreachable,
 }: {
-  pair: { asset: string; currency: string };
+  pair: { label: string; currency: string };
   rate: RateLookup;
   unreachable: boolean;
 }) {
@@ -244,7 +249,7 @@ function Rate({
     return (
       <>
         <p className="mt-3 text-2xl font-semibold tabular-nums text-white">
-          1 {pair.asset} ={" "}
+          1 {pair.label} ={" "}
           <span className="text-brand-teal">
             {formatNumber(rate.rate)} {pair.currency}
           </span>
@@ -262,7 +267,7 @@ function Rate({
     return (
       <p className="mt-3 max-w-2xl text-sm text-amber-300">
         The access node could not be reached, so there is no rate to show. This says nothing about
-        whether {pair.asset}/{pair.currency} is priced — only that we could not ask.
+        whether {pair.label}/{pair.currency} is priced — only that we could not ask.
       </p>
     );
   }
@@ -270,7 +275,7 @@ function Rate({
   if (rate.kind === "stale") {
     return (
       <p className="mt-3 max-w-2xl text-sm text-amber-300">
-        The {pair.asset}/{pair.currency} feed has lapsed — the last record expired{" "}
+        The {pair.label}/{pair.currency} feed has lapsed — the last record expired{" "}
         {new Date(rate.lapsedAt).toLocaleString()}, and expired data is not a rate (OFS-7000 §12).
         A provider publishes this pair, so a fresh reading should appear once they publish again.
       </p>
@@ -279,7 +284,7 @@ function Rate({
 
   return (
     <p className="mt-3 max-w-2xl text-sm text-gray-400">
-      No oracle publishes {pair.asset}/{pair.currency} on this node, so there is no median rate for
+      No oracle publishes {pair.label}/{pair.currency} on this node, so there is no median rate for
       it. That is not a temporary outage: it is a corridor nobody prices yet. Merchants can still
       advertise the pair at a fixed price of their own choosing.
     </p>

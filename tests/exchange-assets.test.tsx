@@ -34,6 +34,19 @@ const { P2PExchange } = await import("@/components/p2p/exchange");
 /** The node's devnet mint table, spellings included — see `crates/chain/src/mints.rs`. */
 const NAMED = ["wSOL", "USDC", "USDT", "tUSDC"];
 
+/**
+ * The addresses those names stand for. Only the native mint's is real and
+ * only it has to be: it is the one address this app is entitled to
+ * recognise, because the SPL Token program defines it (`WRAPPED_SOL_MINT`),
+ * and a pill row built from `mint-wSOL` would never exercise that.
+ */
+const MINT_FOR: Record<string, string> = {
+  wSOL: "So11111111111111111111111111111111111111112",
+};
+
+/** What the pill for a node symbol should read — `SOL` for the native mint. */
+const PILL_FOR: Record<string, string> = { wSOL: "SOL" };
+
 function advertisement(id: string, symbol: string | null, mint: string) {
   const amount = (base_units: number) => ({ base_units, decimals: 6 });
   return {
@@ -83,7 +96,9 @@ function nodeAnswering(mints: string[] | undefined, { reachable = true } = {}) {
     const { method } = JSON.parse(init?.body ?? "{}") as { method?: string };
     if (method === "getReferenceData") {
       if (!reachable) throw new Error("offline");
-      return jsonRpc({ mints: mints?.map((symbol) => ({ mint: `mint-${symbol}`, symbol })) });
+      return jsonRpc({
+        mints: mints?.map((symbol) => ({ mint: MINT_FOR[symbol] ?? `mint-${symbol}`, symbol })),
+      });
     }
     return jsonRpc({ advertisements: BOOK, total: BOOK.length });
   });
@@ -126,18 +141,43 @@ describe("the exchange's asset pills", () => {
   it("are the names the node answered, in the node's own spelling", async () => {
     nodeAnswering(NAMED);
     await mount();
-    // `wSOL` and `tUSDC` are present and correctly cased. Neither had a pill
-    // before, and neither survives being upper-cased on the way into the
-    // book filter, which compares against the node's spelling exactly.
-    expect(pills()).toEqual(["All assets", ...NAMED]);
+    // `tUSDC` is present and correctly cased. It had no pill before, and it
+    // does not survive being upper-cased on the way into the book filter,
+    // which compares against the node's spelling exactly.
+    expect(pills()).toEqual(["All assets", ...NAMED.map((s) => PILL_FOR[s] ?? s)]);
+  });
+
+  /*
+   * One pill reads a name the node did not say, and it is the only one that
+   * ever may. `SOL` is what a trader hands over — the wrapping happens
+   * inside the transaction — and the pill still *filters* on the node's
+   * `wSOL`, which is the half that used to be missing: the old hardcoded
+   * `SOL` entry was a filter for a name nothing answers to. See
+   * `lib/asset-display.ts`.
+   */
+  it("shows the native mint as SOL while still filtering the book on wSOL", async () => {
+    nodeAnswering(NAMED);
+    await mount();
+    expect(pills()).toContain("SOL");
+    expect(pills()).not.toContain("wSOL");
+
+    const sol = [...container.querySelectorAll("button[aria-pressed]")].find(
+      (b) => b.textContent?.trim() === "SOL",
+    )!;
+    await act(async () => sol.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+    // The one advertisement in that mint, found by a filter comparing the
+    // node's spelling on both sides. A pill that filtered on its own label
+    // would have emptied this table and read as "nobody is trading SOL".
+    const rows = [...container.querySelectorAll("tbody tr")];
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.innerHTML).toContain("So11111111111111111111111111111111111111112");
   });
 
   it("offers no pill for a ticker no node named, however familiar it sounds", async () => {
     nodeAnswering(NAMED);
     await mount();
-    // The two the old constant declared. `SOL` was a filter for a name
-    // nothing answers to; `USD1` names no mint on this deployment at all.
-    expect(pills()).not.toContain("SOL");
+    // `USD1` was in the old constant and names no mint on this deployment.
     expect(pills()).not.toContain("USD1");
   });
 

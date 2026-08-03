@@ -87,14 +87,60 @@ describe("pair landing pages", () => {
   });
 
   /*
-   * The other half of the same defect. `USD1` and `SOL` were in the app's
-   * constant and name no mint on this deployment, so both were pages about
-   * tokens nobody can be paid in — `/usd1/kes` down to rendering a USD1 coin
-   * mark. A ticker the node does not answer for is not a pair.
+   * The other half of the same defect. `USD1` was in the app's constant and
+   * names no mint on this deployment, so it was a page about a token nobody
+   * can be paid in — down to rendering a USD1 coin mark. A ticker the node
+   * does not answer for is not a pair.
+   *
+   * `sol` is null *here* for the same reason and not a different one: this
+   * stub's `wSOL` row carries a made-up mint address, so nothing in it is
+   * the native mint. Against a node that does name the native mint the
+   * answer changes, which is the case below — and the difference between
+   * the two is a fact the node supplied, not a ticker this app decided on.
    */
   it("refuses a ticker no node named, however plausible it sounds", async () => {
     expect(await normalisePair("usd1", "kes")).toBeNull();
     expect(await normalisePair("sol", "kes")).toBeNull();
+  });
+
+  /*
+   * `/sol/kes` has to work, because every screen in this app now prints
+   * `SOL` for that mint — a URL a reader copies out of a heading must reach
+   * the market they copied it from.
+   *
+   * It resolves to the node's `wSOL` all the same. That is the whole shape
+   * of this: the app shows one name and matches on the other, and both come
+   * off the same row of the node's table. The alternative — teaching the URL
+   * that "SOL" means a particular address — is `PAIR_ASSETS` again.
+   */
+  it("answers to both the node's name for the native mint and the one it prints", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            result: {
+              mints: [
+                { mint: "So11111111111111111111111111111111111111112", symbol: "wSOL" },
+                { mint: "mint-USDC", symbol: "USDC" },
+              ],
+            },
+          }),
+      }),
+    );
+
+    for (const typed of ["sol", "SOL", "wsol", "WSOL"]) {
+      expect(await normalisePair(typed, "kes"), typed).toMatchObject({
+        // The book is filtered on this, so it stays the node's spelling.
+        asset: "wSOL",
+        // The heading reads this.
+        label: "SOL",
+      });
+    }
+
+    // And nothing else acquires a second name in the process.
+    expect(await normalisePair("usdc", "kes")).toMatchObject({ asset: "USDC", label: "USDC" });
   });
 
   /*

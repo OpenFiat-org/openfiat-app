@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeDirection } from "@/lib/types";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
-import { fetchNamedAssets } from "@/lib/pairs";
+import { fetchNamedAssets, type NamedAsset } from "@/lib/pairs";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import {
@@ -129,15 +129,15 @@ export function P2PExchange({
    * All three are kept apart because they mean different things to a reader.
    * See the pill row below for what each one renders.
    */
-  const [named, setNamed] = useState<string[] | null | undefined>(undefined);
+  const [named, setNamed] = useState<NamedAsset[] | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
     // `nodeUrl()`, not the build's default: `fetchAdvertisements` reads the
     // node the user selected, and pills sourced from a different node would
     // offer filters for a table the book below was never resolved against.
-    void fetchNamedAssets(nodeUrl()).then((symbols) => {
-      if (!cancelled) setNamed(symbols);
+    void fetchNamedAssets(nodeUrl()).then((assets) => {
+      if (!cancelled) setNamed(assets);
     });
     return () => {
       cancelled = true;
@@ -260,13 +260,24 @@ export function P2PExchange({
     return out;
   }, [BOOK, tab, asset, fiat, amount, method, sort]);
 
+  /*
+   * The selected asset as a heading should say it. `asset` is the node's
+   * spelling because that is what the book is matched on; a headline
+   * reading "Buy wSOL with KES" is that identity leaking into prose. Falls
+   * back to `asset` itself so an asset selected before the node answered is
+   * still named, rather than becoming "crypto" for a moment.
+   */
+  const assetName = asset === ALL_ASSETS
+    ? null
+    : ((named ?? []).find((entry) => entry.symbol === asset)?.label ?? asset);
+
   return (
     <div>
       {showHeading && (
         <PageHero
           compact
           variant={tab === "Sell" ? "flow-rev" : "flow"}
-          title={`${tab} ${asset ?? "crypto"} with ${fiat} via P2P`}
+          title={`${tab} ${assetName ?? "crypto"} with ${fiat} via P2P`}
           description="Trade stablecoins peer-to-peer. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
         />
       )}
@@ -298,13 +309,19 @@ export function P2PExchange({
           {/* Nothing while the node is being asked. A pill row assembled from
               a guess and then rearranged under the pointer is worse than one
               that arrives a moment late. */}
-          {(named ?? []).map((symbol) => (
+          {/* The pill reads `label` and filters on `symbol`, and the two
+              differ for exactly one mint. The book below is matched against
+              `ad.assetSymbol`, which the node resolved — so selecting on the
+              *displayed* name would make the SOL pill a filter for a name
+              nothing answers to, which is precisely the bug the hardcoded
+              `["USDT", "USDC", "USD1", "SOL"]` list used to have. */}
+          {(named ?? []).map((entry) => (
             <AssetPill
-              key={symbol}
-              label={symbol}
+              key={entry.symbol}
+              label={entry.label}
               icon
-              selected={asset === symbol}
-              onSelect={() => setAsset(symbol)}
+              selected={asset === entry.symbol}
+              onSelect={() => setAsset(entry.symbol)}
             />
           ))}
           <Link
@@ -463,7 +480,7 @@ export function P2PExchange({
           depend on the token — so with no asset selected it says "crypto"
           rather than naming one the reader did not pick. */}
       {showExplainer && (
-        <HomeExplainer asset={asset ?? "crypto"} fiat={fiat} buying={tab === "Buy"} />
+        <HomeExplainer asset={assetName ?? "crypto"} fiat={fiat} buying={tab === "Buy"} />
       )}
     </div>
   );

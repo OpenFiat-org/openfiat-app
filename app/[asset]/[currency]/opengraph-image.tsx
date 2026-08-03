@@ -36,13 +36,13 @@ export default async function Image({
   const pair = await normalisePair(asset, currency);
 
   const heading = pair
-    ? `${pair.asset} → ${pair.currency}`
+    ? `${pair.label} → ${pair.currency}`
     : `${asset.toUpperCase()} → ${currency.toUpperCase()}`;
 
   const data = pair ? await loadPairData(pair) : null;
   const rate =
     pair && data?.rate.kind === "current"
-      ? `1 ${pair.asset} = ${formatNumber(data.rate.rate)} ${pair.currency}`
+      ? `1 ${pair.label} = ${formatNumber(data.rate.rate)} ${pair.currency}`
       : "";
   const methods = data ? data.methods.slice(0, 3) : [];
 

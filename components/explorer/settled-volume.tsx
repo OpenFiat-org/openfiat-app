@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
+import { tradingSymbol } from "@/lib/asset-display";
 import { formatNumber } from "@/lib/format";
 import {
   countedSettlements,
@@ -93,12 +94,14 @@ export function SettledVolumePanel() {
             >
               {volume.assets.map((asset) => {
                 const figure = formatAssetVolume(asset);
+                // Same name as the figure's own unit, from the same place.
+                const symbol = tradingSymbol(asset.assetMint, asset.assetSymbol);
                 return (
                   <Tr key={asset.assetMint}>
                     <Td py="py-4">
-                      {asset.assetSymbol ? (
+                      {symbol ? (
                         <span className="text-gray-200" title={asset.assetMint}>
-                          {asset.assetSymbol}
+                          {symbol}
                         </span>
                       ) : (
                         <span className="font-mono text-xs text-gray-300 [overflow-wrap:anywhere]">
@@ -108,7 +111,7 @@ export function SettledVolumePanel() {
                       {/* The mint is the fact; a symbol is a nickname a node
                           applied to it. Both, always, so a reader checking
                           which USDC this is does not have to leave the row. */}
-                      {asset.assetSymbol && (
+                      {symbol && (
                         <span className="mt-0.5 block font-mono text-[11px] text-gray-600 [overflow-wrap:anywhere]">
                           {asset.assetMint}
                         </span>

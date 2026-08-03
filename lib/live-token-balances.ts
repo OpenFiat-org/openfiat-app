@@ -76,6 +76,24 @@ export async function fetchTokenBalances(owner: PublicKey): Promise<TokenBalance
 }
 
 /**
+ * Native SOL, in lamports — the balance that pays for transactions.
+ *
+ * Kept apart from `fetchTokenBalances` on purpose, because it is a different
+ * kind of thing and conflating the two is expensive. Native SOL sits in the
+ * account itself and pays every fee and every rent exemption; wrapped SOL is
+ * an ordinary SPL position that pays for nothing. A screen that shows one
+ * under the other's name leaves a user reading a tradeable balance as their
+ * fee balance, and the failure that follows — a transaction that cannot pay
+ * for itself — gives them no way to work out why.
+ *
+ * Throws if the cluster is unreachable, like every other read here. A zero
+ * gas balance and an unread one are not the same finding.
+ */
+export async function fetchNativeSolBalance(owner: PublicKey): Promise<bigint> {
+  return BigInt(await getConnection().getBalance(owner));
+}
+
+/**
  * This wallet's balance of one mint, or `null` if it holds no token account
  * for it at all.
  *

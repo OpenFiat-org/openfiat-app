@@ -11,6 +11,7 @@ import {
   readAccounts,
 } from "@/lib/payment-accounts";
 import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
+import { tradingSymbol } from "@/lib/asset-display";
 import type { TradeDirection } from "@/lib/types";
 import { addressForPeerId } from "@/lib/peer-id";
 import { formatBaseUnits } from "@/lib/live-vaults";
@@ -40,6 +41,10 @@ export function OrderPanel({
   onClose: () => void;
 }) {
   const buy = userDirection === "Buy";
+  // The token's name as this panel prints it — `assetLabel` falls back to
+  // the address, this stays `null` when the node named nothing, which is
+  // what decides whether there is a coin mark to draw.
+  const assetSymbol = tradingSymbol(ad.assetMint, ad.assetSymbol);
   const price = ad.price ?? 0;
   const fiat = ad.fiatCurrency;
   /*
@@ -196,7 +201,9 @@ export function OrderPanel({
       placeholder={buy ? "0.00" : `${formatNumber(minCrypto, 2)} ~ ${formatNumber(maxCrypto, 2)}`}
       unit={assetLabel(ad)}
       // No coin art for a mint the node has no name for; see AssetLabel.
-      icon={ad.assetSymbol ? <AssetIcon asset={ad.assetSymbol} size={18} /> : null}
+      // Named through `tradingSymbol` so the native mint gets `sol.png`
+      // rather than going unmarked under a name this repo ships art for.
+      icon={assetSymbol ? <AssetIcon asset={assetSymbol} size={18} /> : null}
       invalid={overLiquidity || (!buy && (tooLow || tooHigh))}
     />
   );

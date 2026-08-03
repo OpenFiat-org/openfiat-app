@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 
 import { assetOptions, useReferenceData, type AssetOption } from "@/lib/reference";
-import { fetchTokenBalances } from "@/lib/live-token-balances";
+import { fetchNativeSolBalance, fetchTokenBalances } from "@/lib/live-token-balances";
 import { formatBaseUnits, shortMint } from "@/lib/live-vaults";
+import { tradingSymbol } from "@/lib/asset-display";
+import { WRAPPED_SOL_MINT } from "@/lib/vault-instructions";
 import { AssetIcon } from "@/components/asset-icon";
 
 /**
@@ -56,7 +58,11 @@ export function AssetPicker({
     let live = true;
     void (async () => {
       try {
-        const held = await fetchTokenBalances(new PublicKey(walletAddress));
+        const owner = new PublicKey(walletAddress);
+        const [held, lamports] = await Promise.all([
+          fetchTokenBalances(owner),
+          fetchNativeSolBalance(owner),
+        ]);
         if (!live) return;
         const totals = new Map<string, bigint>();
         // Summed rather than taken from the first account found: a wallet can
@@ -66,6 +72,18 @@ export function AssetPicker({
           const key = balance.mint.toBase58();
           totals.set(key, (totals.get(key) ?? 0n) + balance.amount);
         }
+        /*
+         * Native SOL counts towards the native mint's row, and it has to.
+         * That row reads `SOL` — the name a merchant is going to advertise
+         * in — and a wallet holding two SOL and no wrapped-SOL account would
+         * otherwise be told it holds none of the asset it is looking at.
+         * The number is honest because the wrapping is automatic: every
+         * deposit into a wSOL vault wraps inside its own transaction (see
+         * `lib/vault-instructions.ts`), so plain SOL genuinely is stock this
+         * advertisement can be backed by.
+         */
+        const native = WRAPPED_SOL_MINT.toBase58();
+        totals.set(native, (totals.get(native) ?? 0n) + lamports);
         setBalances(totals);
       } catch {
         // `null` is "could not read", and the rows say exactly that. It is
@@ -113,6 +131,10 @@ export function AssetPicker({
         {options.map((option) => {
           const selected = option.mint === value;
           const held = balances instanceof Map ? balances.get(option.mint) : undefined;
+          // The name a merchant will advertise in, which for the native mint
+          // is `SOL` and not the node's `wSOL` — see `lib/asset-display.ts`.
+          // `option.symbol` is non-null here: `assetOptions` drops the rest.
+          const name = tradingSymbol(option.mint, option.symbol) ?? option.symbol;
           return (
             <li key={option.mint}>
               <button
@@ -126,8 +148,8 @@ export function AssetPicker({
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <AssetIcon asset={option.symbol} size={18} />
-                  <span className="text-sm font-medium text-white">{option.symbol}</span>
+                  <AssetIcon asset={name} size={18} />
+                  <span className="text-sm font-medium text-white">{name}</span>
                   <span className="ml-auto text-xs tabular-nums text-gray-400">
                     {balances === undefined
                       ? ""

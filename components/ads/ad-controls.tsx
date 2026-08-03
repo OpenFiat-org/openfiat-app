@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { MethodPicker } from "@/components/ads/method-picker";
+import { tradingSymbol } from "@/lib/asset-display";
 import { formatNumber } from "@/lib/format";
 import type { LiveAd } from "@/lib/live-advertisements";
 import {
@@ -230,7 +231,8 @@ export function AdTermsDialog({
             * wrong one. See `LiveAd.minTrade`.
             */}
           <p className="-mt-2 text-[11px] text-gray-500">
-            In {ad.assetSymbol ?? "the advertised token"}, not {ad.fiatCurrency}. Currently{" "}
+            In {tradingSymbol(ad.assetMint, ad.assetSymbol) ?? "the advertised token"}, not{" "}
+            {ad.fiatCurrency}. Currently{" "}
             {formatNumber(ad.minTrade)}–{formatNumber(ad.maxTrade)}.
           </p>
 

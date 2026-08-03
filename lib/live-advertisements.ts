@@ -3,6 +3,7 @@ import {
   advertisements,
   type AdvertisementView as ProtocolAd,
 } from "@openfiat/sdk";
+import { tradingSymbol } from "@/lib/asset-display";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { fetchMethodNames, methodLabel } from "@/lib/payment-catalog";
 
@@ -171,11 +172,20 @@ export interface LiveAd {
  *
  * Callers should put `assetMint` in a `title` even when a symbol came back.
  * The symbol is a nickname the node applied; the address is the fact.
+ *
+ * # The one substitution, and where it does not apply
+ *
+ * `tradingSymbol` renders the native mint as `SOL` rather than the node's
+ * `wSOL`, because that is what a trader hands over — the wrapping happens
+ * inside the transaction and they never choose to hold the wrapped form.
+ * `lib/asset-display.ts` sets out why that belongs here and not in the
+ * node's table, which stays the matching identity: `fetchBook` below still
+ * compares `assetSymbol`, never this.
  */
 export function assetLabel(
   ad: Pick<LiveAd, "assetMint" | "assetSymbol">,
 ): string {
-  return ad.assetSymbol ?? ad.assetMint;
+  return tradingSymbol(ad.assetMint, ad.assetSymbol) ?? ad.assetMint;
 }
 
 /**
