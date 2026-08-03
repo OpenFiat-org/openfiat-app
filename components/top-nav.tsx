@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
+import { MobileConnectNote } from "@/components/wallet/mobile-connect-note";
 import { NetworkBadge } from "@/components/network-badge";
 import { MobileNav } from "@/components/mobile-nav";
 import {
@@ -93,6 +94,14 @@ export function TopNav() {
           OpenFiat never takes custody of fiat; escrow is enforced on chain.
         </p>
       </div>
+
+      {/*
+        * What the connect button can reach from *this* browser — nothing at
+        * all on iOS Safari, where no Mobile Wallet Adapter exists. Renders
+        * nothing on desktop, nothing where a wallet is already reachable,
+        * and nothing once connected.
+        */}
+      <MobileConnectNote />
     </header>
   );
 }
