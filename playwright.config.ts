@@ -33,6 +33,29 @@ export default defineConfig({
   webServer: {
     command: "npx next build && npx next start --port 3101",
     url: "http://127.0.0.1:3101",
+    /*
+     * Reuses a server already listening on 3101 — which skips the build,
+     * so **a server started before your last edit is tested instead of
+     * your last edit**, and reports green.
+     *
+     * That is not hypothetical. It has already produced one false failure
+     * here (a locator against markup the running bundle predated) and it
+     * can just as easily produce a false pass, which is the dangerous
+     * direction: the same shape as a cached build hiding the thing the
+     * check exists to see.
+     *
+     * Kill the listener before a run that is meant to prove a change:
+     *
+     *     pkill -f "next start --port 3101"
+     *
+     * Two runs cannot share the tree in any case — `next build` refuses to
+     * start while another is running, so concurrent suites in one checkout
+     * kill each other rather than interleave.
+     *
+     * Left on locally regardless, because the alternative is a full
+     * production build for every single-spec run. `CI` has no server to
+     * reuse and always builds.
+     */
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
     /*
