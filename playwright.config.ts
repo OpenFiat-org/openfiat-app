@@ -58,6 +58,35 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } },
+      // The mobile suite is device-emulated and would be meaningless at a
+      // desktop user agent — the connect path it asserts on is chosen by
+      // exactly that.
+      testIgnore: /mobile\.spec\.ts/,
+    },
+    /*
+     * Real device emulation, not a narrow desktop window.
+     *
+     * A resized Chrome reports a desktop user agent, no touch, and a device
+     * pixel ratio of 1 — and the three things this suite is about all turn
+     * on those. The wallet connect path is chosen by the user agent
+     * (Mobile Wallet Adapter exists on Android and not on iOS), so a narrow
+     * desktop window would exercise neither branch and would pass with the
+     * whole feature missing.
+     *
+     * Both real engines. `iPhone 13` runs on WebKit, which is the only
+     * engine an iPhone has: iOS Safari is the browser where connecting is
+     * impossible, so it is the one that has to be tested rather than
+     * imitated.
+     */
+    {
+      name: "pixel-5",
+      use: { ...devices["Pixel 5"] },
+      testMatch: /mobile\.spec\.ts/,
+    },
+    {
+      name: "iphone-13",
+      use: { ...devices["iPhone 13"] },
+      testMatch: /mobile\.spec\.ts/,
     },
   ],
 });

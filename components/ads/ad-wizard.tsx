@@ -325,7 +325,11 @@ export function AdWizard() {
           <div className="space-y-8">
             <div>
               <p className={labelCls}>I want to</p>
-              <div className="grid max-w-md grid-cols-2 gap-3">
+              {/* Stacked on a phone. These two carry a label and a line of
+                  explanation each, and side by side at 375px the
+                  explanation wraps to four lines and the buttons stop
+                  reading as a pair of choices. */}
+              <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
                 {(["Sell", "Buy"] as const).map((d) => (
                   <button
                     key={d}
@@ -368,7 +372,7 @@ export function AdWizard() {
           <div className="max-w-xl space-y-6">
             <div>
               <p className={labelCls}>Price type</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {(["Fixed", "Floating"] as const).map((p) => (
                   <button
                     key={p}
@@ -494,7 +498,9 @@ export function AdWizard() {
                 are on the Wallet page.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Minimum and maximum, one above the other on a phone — same
+                reason as the pair in `ad-controls.tsx`. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className={labelCls} htmlFor="ad-min">
                   Minimum order ({assetName ?? "asset"})

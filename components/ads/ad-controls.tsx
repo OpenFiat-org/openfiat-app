@@ -208,7 +208,11 @@ export function AdTermsDialog({
         </div>
 
         <div className="space-y-5 px-5 py-5">
-          <div className="grid grid-cols-2 gap-4">
+          {/* One column on a phone. Two number fields sharing 375px leave
+              each about 150px wide, and a trade limit typed into a box
+              narrower than the number it holds is a field you cannot check
+              before signing. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
               { label: "Minimum trade", value: min, set: setMin },
               { label: "Maximum trade", value: max, set: setMax },

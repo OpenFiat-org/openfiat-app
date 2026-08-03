@@ -255,9 +255,16 @@ test.describe("the merchant journey", () => {
      * 32-byte public key from memory.
      */
     await expect(page.getByPlaceholder("Base58 mint address")).toHaveCount(0);
-    const wsolOption = page.getByRole("button", { name: /wSOL/ });
-    await expect(wsolOption).toBeVisible({ timeout: 30_000 });
-    await wsolOption.click();
+    /*
+     * `SOL`, not the node's `wSOL`. The mint is the same one, and the row
+     * shows its address; the name is what a merchant is going to advertise
+     * in, and they hand over plain SOL — the deposit wraps it inside its own
+     * transaction. See `lib/asset-display.ts`. The advertisement this posts
+     * still carries the mint, which is asserted against the node below.
+     */
+    const solOption = page.getByRole("button", { name: /\bSOL\b/ });
+    await expect(solOption).toBeVisible({ timeout: 30_000 });
+    await solOption.click();
     // The node's own precision for that mint is on screen beside it, because
     // every amount below is scaled by it.
     await expect(page.getByText("9 decimals")).toBeVisible();
