@@ -155,11 +155,20 @@ export function Td({
    */
   label?: ReactNode;
 }) {
+  /*
+   * `max-lg:w-full max-lg:max-w-none` undoes the column widths call sites
+   * set for the table layout — `w-36`, `w-28`, `w-[45%]`. Those exist so
+   * the auto table algorithm does not let a caveat under a figure decide a
+   * column's width; carried into a stacked card they make a 375px row
+   * 112px wide, so the value sits a third of the way across with nothing
+   * beside it. Variant utilities sort after their base counterparts, so
+   * these win below `lg` and nothing changes above it.
+   */
   return (
     <td
       className={`px-4 ${py} ${right ? "text-right" : ""} ${
         num ? "whitespace-nowrap font-mono tabular-nums" : ""
-      } max-lg:flex max-lg:items-baseline max-lg:justify-between max-lg:gap-4 max-lg:px-3.5 max-lg:py-2.5 max-lg:whitespace-normal ${className}`}
+      } max-lg:flex max-lg:w-full max-lg:max-w-none max-lg:items-baseline max-lg:justify-between max-lg:gap-4 max-lg:px-3.5 max-lg:py-2.5 max-lg:whitespace-normal ${className}`}
     >
       {label !== undefined && label !== null && label !== "" && (
         <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-gray-500 lg:hidden">
