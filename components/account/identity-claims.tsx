@@ -133,11 +133,12 @@ function ClaimRow({
   claim: IdentityClaimRecord;
   inactive: string | null;
 }) {
+  const isEncryptionKey = !claim.custom && claim.type === "EncryptionKey";
   return (
     <li className={`px-4 py-3 ${inactive ? "opacity-55" : ""}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-gray-200">
-          {claim.type}
+          {isEncryptionKey ? "Encryption key" : claim.type}
           {claim.custom && (
             <span className="ml-2 text-[11px] uppercase tracking-wider text-gray-600">custom</span>
           )}
@@ -153,14 +154,33 @@ function ClaimRow({
            * `crates/identity`'s own module doc records that OTP delivery is
            * not implemented and that the publisher decides what to set here,
            * so a green "Verified" badge would credit a check nobody ran.
+           *
+           * The one exception is an encryption key, and it is a real one: a
+           * node parses that value and refuses a malformed or small-order
+           * point at publication, because a grant sealed to one would be
+           * readable by every node holding a replica. Calling it
+           * "self-asserted" alongside an email address would understate the
+           * only claim type anybody actually checks.
            */}
           <span className="rounded-full border border-white/10 px-2 py-0.5 text-gray-400">
-            {claim.verified ? "Marked verified by publisher" : "Self-asserted"}
+            {isEncryptionKey
+              ? "Checked by the node"
+              : claim.verified
+                ? "Marked verified by publisher"
+                : "Self-asserted"}
           </span>
         </div>
       </div>
 
       <p className="mt-1 break-all font-mono text-xs text-white">{claim.value}</p>
+
+      {isEncryptionKey && (
+        <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+          Not a wallet key and it holds no funds. Counterparties seal your trade messages and
+          payment details to this, and only your wallet can derive the private half that opens
+          them — on any device, from the same wallet.
+        </p>
+      )}
 
       <p className="mt-1 text-[11px] text-gray-600">
         Published {formatDateMs(claim.createdAt)}
