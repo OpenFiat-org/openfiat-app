@@ -15,6 +15,9 @@ import { useCountryPaymentMethods } from "@/components/use-country-methods";
 import { CopyButton } from "@/components/copy-button";
 import { CountrySelect } from "@/components/p2p/country-select";
 import { Panel } from "@/components/panel";
+import { peerIdForPublicKey } from "@/lib/arbitration";
+import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
+import bs58 from "bs58";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50";
@@ -60,8 +63,28 @@ export function PaymentAccounts() {
   const [methodId, setMethodId] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [fields, setFields] = useState(blankFields(null));
+  // The connected wallet's peer id, so the rails this merchant defined for
+  // themselves are offered here too. Without it a merchant could publish a
+  // definition, put it on an advertisement, and then have nowhere to record
+  // the account a buyer is supposed to pay into — which is the half of the
+  // trade this screen exists for.
+  const [merchant, setMerchant] = useState<string | null>(null);
 
-  const catalogue = useCountryPaymentMethods(countryCode || null);
+  useEffect(() => {
+    const read = () => {
+      const address = readWalletConnection()?.address;
+      try {
+        setMerchant(address ? peerIdForPublicKey(bs58.decode(address)) : null);
+      } catch {
+        setMerchant(null);
+      }
+    };
+    read();
+    window.addEventListener(WALLET_CHANGED_EVENT, read);
+    return () => window.removeEventListener(WALLET_CHANGED_EVENT, read);
+  }, []);
+
+  const catalogue = useCountryPaymentMethods(countryCode || null, merchant);
   // Grouped, so the country's own rails come first and everything else
   // follows — the node's ordering, kept rather than re-sorted alphabetically.
   const methods = useMemo(
@@ -250,6 +273,11 @@ export function PaymentAccounts() {
                   </option>
                   {methods.map(({ method: m, group }) => (
                     <option key={m.id} value={m.id}>
+                      {/* A rail this merchant defined is marked as theirs and
+                          never as one the network carries — the client
+                          contract's rule 3, in the one control that has no
+                          room for a badge. */}
+                      {group === "merchant" ? "Your own — " : ""}
                       {group === "suggested" && countryCode ? "★ " : ""}
                       {m.name}
                     </option>

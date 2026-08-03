@@ -21,13 +21,20 @@ import { nodeUrl } from "@/lib/node-endpoint";
  * switches from Kenya to Brazil should see PIX at the top, not M-Pesa.
  *
  * `merchant` is the connected wallet's peer id when there is one. Passing it
- * costs nothing and lets the node put the rails this merchant already
- * advertises first, which is the closest thing to a personalised default
- * that is also true.
+ * costs nothing and is what makes the merchant's *own* definitions — signed
+ * records the node holds — show up beside the compiled-in rails.
+ *
+ * `reloadToken` re-asks when it changes and nothing else does. A merchant who
+ * has just published a definition needs it back in the list to select it, and
+ * the alternative — splicing the new row in locally — would put a rail in the
+ * picker on this app's say-so rather than the node's, which is the failure
+ * `lib/reference.ts` exists to avoid. Bumping the token asks again and the
+ * node answers, or it does not and the picker says so.
  */
 export function useCountryPaymentMethods(
   country: string | null,
   merchant: string | null = null,
+  reloadToken = 0,
 ): CountryMethodsState {
   const [state, setState] = useState<CountryMethodsState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -56,7 +63,7 @@ export function useCountryPaymentMethods(
     return () => {
       live = false;
     };
-  }, [country, merchant, attempt, retry]);
+  }, [country, merchant, attempt, reloadToken, retry]);
 
   return state;
 }

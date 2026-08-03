@@ -1,25 +1,56 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import bs58 from "bs58";
+import type { PaymentMethodCategory } from "@openfiat/sdk";
 
 import {
+  MAX_METHOD_NAME_CHARS,
+  defineMerchantMethod,
+  explainDefineRefusal,
   groupedMethods,
   methodLabel,
+  nameProblem,
   searchGrouped,
   type GroupedMethod,
 } from "@/lib/payment-catalog";
 import { useCountryPaymentMethods } from "@/components/use-country-methods";
 import { MAX_PAYMENT_METHODS } from "@/lib/ad-draft";
+import { nodeUrl } from "@/lib/node-endpoint";
+import { peerIdForPublicKey } from "@/lib/arbitration";
+import {
+  WALLET_CHANGED_EVENT,
+  currentSigner,
+  readWalletConnection,
+  type SolanaProvider,
+} from "@/lib/wallet-connection";
 
 const GROUP_LABELS: Record<GroupedMethod["group"], string> = {
-  merchant: "On your other ads",
+  merchant: "Rails you defined",
   suggested: "Common here",
   others: "Everywhere else",
 };
 
 /**
+ * The four categories, and what each one decides.
+ *
+ * Not decoration: the category is what a payment-account form derives its
+ * fields from — `lib/payment-accounts.ts` turns `MobileMoney` into a phone
+ * number and `BankTransfer` into an account number and branch — so choosing
+ * the wrong one gives the merchant a form asking for the wrong details. The
+ * hints say what each will ask for rather than restating the name.
+ */
+const CATEGORIES: { value: PaymentMethodCategory; label: string; hint: string }[] = [
+  { value: "MobileMoney", label: "Mobile money", hint: "asks for a registered name and phone number" },
+  { value: "BankTransfer", label: "Bank transfer", hint: "asks for an account number, bank and branch" },
+  { value: "Fintech", label: "Wallet or fintech", hint: "asks for an account name and handle" },
+  { value: "Cash", label: "Cash", hint: "asks for a name and a meeting area" },
+];
+
+/**
  * Payment-method picker: the node's per-country catalogue, type-ahead over
- * names and aliases, and a cap of five.
+ * names and aliases, a cap of five, and a way to publish a rail the node has
+ * never heard of.
  *
  * # It selects ids and shows names
  *
@@ -31,32 +62,43 @@ const GROUP_LABELS: Record<GroupedMethod["group"], string> = {
  *
  * # The suggestions are local knowledge, and come from the node
  *
- * This used to search a flat list of 84 methods in the order
- * `getReferenceData` happened to return them, so a merchant in Nairobi
- * scrolled past Alipay and Zelle to reach M-Pesa. `getPaymentMethods` takes
- * a country and answers with the rails that country actually uses first —
- * PIX and Mercado Pago for Brazil, UPI for India, SEPA and Faster Payments
- * for the UK. That ordering is the node's local knowledge, not a heuristic
- * invented here, and it is the whole reason for the second call.
+ * This used to search a flat list in the order `getReferenceData` happened
+ * to return it, so a merchant in Nairobi scrolled past Alipay and Zelle to
+ * reach M-Pesa. `getPaymentMethods` takes a country and answers with the
+ * rails that country actually uses first — PIX and Mercado Pago for Brazil,
+ * UPI and IMPS for India, GoPay and DANA for Indonesia. That ordering is the
+ * node's local knowledge, not a heuristic invented here.
  *
- * The `merchant` group is narrower still: rails this merchant already
- * advertises, read off their own live advertisements. Empty for a first ad,
- * and shown as empty rather than filled with a guess.
+ * # "Add your own rail" is back, with the id format it needed
  *
- * # There is no "add your own rail" any more
+ * There was such a control, and it was removed after `custom:whatever` came
+ * back refused. Removing it was right — it guaranteed a failure two screens
+ * later — but the diagnosis was one namespace too broad. The node takes
+ * `builtin:<slug>` and `<peer id>:<digest>`; `custom:` is neither. The
+ * second namespace is reached by *publishing a signed definition*, which is
+ * what the form below does, and the id it returns is one an advertisement
+ * accepts.
  *
- * There was, and it produced advertisements the node refused: an id it does
- * not know is rejected outright, custom ones included. A control that
- * silently guarantees a failure two screens later is worse than its absence,
- * so it is gone and the copy below says what the limit actually is rather
- * than implying the merchant simply has not found their rail yet.
+ * Three things about that are stated in the UI rather than left to be
+ * discovered:
+ *
+ * - **it is published, not saved here.** The predecessor of this control
+ *   wrote to `localStorage` under a footnote claiming it had been "shared in
+ *   the registry"; the counterparty on another node saw an advertisement
+ *   naming something nothing could resolve.
+ * - **only you can select it.** A definition is globally readable and
+ *   merchant-scoped, so nobody else can put it on their ad, and everyone can
+ *   resolve it when they read yours.
+ * - **there is no edit and no delete.** The id is a digest of the
+ *   definition, so a corrected name is a *different* rail and the ads that
+ *   chose the old one still point at the old one. An edit button here would
+ *   fork it silently, which is why there is none.
  *
  * # A node that cannot be reached says so
  *
  * There is deliberately no built-in list to fall back on. An empty dropdown
  * would tell a merchant the network supports no payment methods, which is a
- * claim about the network made out of a failed request — and here it would
- * also be a dead end, since nothing can be typed in instead.
+ * claim about the network made out of a failed request.
  */
 export function MethodPicker({
   selected,
@@ -70,14 +112,15 @@ export function MethodPicker({
   onChange: (methodIds: string[]) => void;
   /** ISO country code whose rails to suggest first, or `null` for all of them. */
   country: string | null;
-  /** The connected merchant's peer id, so the node can surface their own rails. */
+  /** The connected merchant's peer id, so the node can surface their own definitions. */
   merchant?: string | null;
   max?: number;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
-  const state = useCountryPaymentMethods(country, merchant);
+  const state = useCountryPaymentMethods(country, merchant, reloadToken);
 
   const catalogue = useMemo(
     () => (state.status === "ready" ? groupedMethods(state.data) : []),
@@ -116,15 +159,18 @@ export function MethodPicker({
     [catalogue, query, selected],
   );
 
-  function add(id: string) {
-    if (full || selected.includes(id)) return;
-    onChange([...selected, id]);
-    setQuery("");
-    // Closed on selection. Left open, the panel sits on top of whatever
-    // follows it on the page — in the ad wizard, the Continue button — and a
-    // merchant who has just chosen a rail cannot reach it.
-    setOpen(false);
-  }
+  const add = useCallback(
+    (id: string) => {
+      if (selected.length >= max || selected.includes(id)) return;
+      onChange([...selected, id]);
+      setQuery("");
+      // Closed on selection. Left open, the panel sits on top of whatever
+      // follows it on the page — in the ad wizard, the Continue button — and
+      // a merchant who has just chosen a rail cannot reach it.
+      setOpen(false);
+    },
+    [max, onChange, selected],
+  );
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key !== "Enter" || suggestions.length === 0) return;
@@ -145,6 +191,13 @@ export function MethodPicker({
                 catalogue is still loading. Unhelpful and true beats helpful
                 and invented. */}
             {methodLabel(id, names)}
+            {/* A rail nobody but this merchant defined, marked as such —
+                the client contract's rule 3. Without it a merchant-defined
+                name sits in the same row as a compiled-in one and reads as
+                though the network vouches for it. */}
+            {!id.startsWith("builtin:") && (
+              <span className="text-[10px] uppercase tracking-wide text-brand/70">yours</span>
+            )}
             <button
               type="button"
               onClick={() => onChange(selected.filter((x) => x !== id))}
@@ -199,15 +252,15 @@ export function MethodPicker({
                   Try again
                 </button>
                 <span className="mt-1 block text-[11px] text-gray-600">
-                  Nothing can be selected until your node answers — the node only accepts rails
-                  from its own catalogue.
+                  Nothing can be selected until your node answers — the node only accepts rails it
+                  can resolve.
                 </span>
               </li>
             )}
             {state.status === "ready" && suggestions.length === 0 && (
               <li className="px-3 py-2 text-sm text-gray-500">
                 {query.trim()
-                  ? `Your node lists no rail matching “${query.trim()}”.`
+                  ? `Your node lists no rail matching “${query.trim()}” — you can define one below.`
                   : "Your node lists no payment methods."}
               </li>
             )}
@@ -238,17 +291,200 @@ export function MethodPicker({
           </ul>
         )}
       </div>
-      {/*
-        * Two claims this used to make, both wrong. It promised that a method
-        * you added was "shared in the registry" — it went to this browser's
-        * localStorage and nowhere else — and then, after that was fixed, that
-        * "a method it does not list is still allowed". The node refuses one.
-        */}
-      <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
-        These are the rails your node accepts, ordered by what the country you selected actually
-        uses. It refuses any other, so there is nothing to type in — if a rail you settle on is
-        missing, it has to be added to the node&rsquo;s catalogue before anyone can advertise it.
+
+      <DefineYourOwnRail
+        merchant={merchant}
+        disabled={full}
+        onDefined={(id) => {
+          // Re-ask first, so the row the picker draws is the node's answer
+          // and not this component's memory of what it just sent.
+          setReloadToken((n) => n + 1);
+          add(id);
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Publish a rail this build has never heard of, and select it.
+ *
+ * Only offered to the wallet that owns the advertisement being written: a
+ * definition is selectable by its author alone, so publishing one under a
+ * different wallet than the ad's would produce a rail the ad cannot carry.
+ * When the two do not match — no wallet connected, or a wallet without
+ * message signing — this says which, rather than showing a button that
+ * fails.
+ */
+function DefineYourOwnRail({
+  merchant,
+  disabled,
+  onDefined,
+}: {
+  merchant: string | null;
+  disabled: boolean;
+  onDefined: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<PaymentMethodCategory>("BankTransfer");
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [signer, setSigner] = useState<{ provider: SolanaProvider; publicKey: Uint8Array } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const read = () => {
+      const connection = readWalletConnection();
+      const provider = currentSigner(connection);
+      if (!connection || !provider?.signMessage) {
+        setSigner(null);
+        return;
+      }
+      try {
+        setSigner({ provider, publicKey: bs58.decode(connection.address) });
+      } catch {
+        setSigner(null);
+      }
+    };
+    read();
+    window.addEventListener(WALLET_CHANGED_EVENT, read);
+    return () => window.removeEventListener(WALLET_CHANGED_EVENT, read);
+  }, []);
+
+  // The connected wallet has to be the merchant this ad belongs to, or the
+  // definition it signs is one the ad may not name.
+  const mine = signer !== null && merchant !== null && peerIdForPublicKey(signer.publicKey) === merchant;
+  const problem = name.trim().length > 0 ? nameProblem(name) : null;
+
+  async function publish() {
+    if (!signer || problem) return;
+    setPublishing(true);
+    setError(null);
+    try {
+      const id = await defineMerchantMethod(
+        nodeUrl(),
+        signer.provider,
+        signer.publicKey,
+        name,
+        category,
+      );
+      setOpen(false);
+      setName("");
+      onDefined(id);
+    } catch (e: unknown) {
+      setError(explainDefineRefusal(e instanceof Error ? e.message : String(e)));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-1.5">
+        <p className="text-[11px] leading-relaxed text-gray-600">
+          These are the rails your node carries, ordered by what the country you selected actually
+          uses. Settle on something it has never heard of?{" "}
+          {mine ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              disabled={disabled}
+              className="text-brand underline underline-offset-2 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Define your own rail
+            </button>
+          ) : (
+            /* Named as a missing signer, not as a missing feature. A
+               merchant told "not available" goes looking for a setting. */
+            <span className="text-gray-500">
+              Connect the wallet this advertisement belongs to, with message signing, to define your
+              own rail.
+            </span>
+          )}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-white/10 bg-white/[0.02] p-3">
+      <p className="text-xs font-medium text-gray-200">Define your own rail</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+        Published to your node and gossiped to the rest, signed by your wallet — not saved in this
+        browser. Only you can put it on an advertisement; anyone reading one of yours can resolve
+        what it means.
       </p>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs text-gray-500" htmlFor="define-rail-name">
+            Name
+          </label>
+          <input
+            id="define-rail-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={MAX_METHOD_NAME_CHARS * 2}
+            placeholder="e.g. Sacco Standing Order"
+            className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-500" htmlFor="define-rail-category">
+            Kind
+          </label>
+          <select
+            id="define-rail-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as PaymentMethodCategory)}
+            className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-gray-600">
+            Decides what your payment-account form asks for — {" "}
+            {CATEGORIES.find((c) => c.value === category)?.hint}.
+          </p>
+        </div>
+      </div>
+
+      {problem && <p className="mt-2 text-xs text-amber-300">{problem}</p>}
+      {error && <p className="mt-2 text-xs text-amber-300">{error}</p>}
+
+      {/* The one thing a merchant cannot find out by trying: there is no
+          way back from this. Said before the button, not after. */}
+      <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
+        A definition cannot be edited or deleted. Its id is a digest of the name and kind, so
+        changing either publishes a <em>different</em> rail and every advertisement that chose the
+        first still carries the first. Get the name right now.
+      </p>
+
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void publish()}
+          disabled={publishing || name.trim().length === 0 || problem !== null}
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {publishing ? "Waiting for your wallet…" : "Publish and select"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setError(null);
+          }}
+          className="text-sm text-gray-500 hover:text-gray-300"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

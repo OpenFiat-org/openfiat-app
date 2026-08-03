@@ -51,47 +51,23 @@ async function reachable(): Promise<boolean> {
 
 const amount = (whole: number) => ({ base_units: whole * 1_000_000, decimals: 6 });
 
-test("a merchant pauses, reactivates and re-terms their own advertisement", async ({ page }) => {
-  test.skip(!(await reachable()), `no node at ${NODE}`);
-
+/**
+ * A fresh merchant identity, wired into the page as an injected wallet.
+ *
+ * Generated per test rather than shared, which is what keeps these honest
+ * about state the node keeps forever: a merchant may hold only 32 payment
+ * method definitions and there is no delete, so a suite that reused one
+ * wallet would eventually be testing the limit instead of the feature.
+ */
+async function newMerchant(page: import("@playwright/test").Page) {
   const keypair = await generateKeypair();
   const address = bs58.encode(keypair.publicKey);
   const merchant = bs58.encode(peerIdFromPublicKey(keypair.publicKey));
-  const signBytes = async (bytes: number[]) =>
-    Array.from(await sign(keypair, Uint8Array.from(bytes)));
-
-  // The advertisement under test, published straight to the node. The
-  // wizard's own publish path needs a funded liquidity vault for the
-  // mint, which this environment cannot create — see `stake.spec.ts` for
-  // the same constraint. What the console does to an advertisement is
-  // what this file is about.
-  const id = `e2e-${Date.now()}`;
-  const create = {
-    id,
-    merchant,
-    merchant_public_key: address,
-    asset_mint: MINT,
-    direction: "Sell",
-    fiat_currency: "KES",
-    min_trade: amount(1),
-    max_trade: amount(500),
-    initial_liquidity: amount(1_000),
-    pricing: { Fixed: { price: { base_units: 129_000_000, decimals: 6 } } },
-    // A catalogue id, not a display name: the node validates
-    // `payment_methods` against its own catalogue and answers
-    // `UNSUPPORTED_PAYMENT_METHOD` for "M-Pesa". See `lib/payment-catalog.ts`.
-    payment_methods: ["builtin:mpesa-kenya"],
-    timestamp: Date.now(),
-  };
-  const createSig = bs58.encode(
-    await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
-  );
-  await rpc("sendAdvertisementCreate", {
-    data: Buffer.from(JSON.stringify({ create, signature: createSig }), "utf8").toString("base64"),
-  });
 
   // Signing happens in Node, so the secret never enters the page.
-  await page.exposeFunction("__e2eSign", signBytes);
+  await page.exposeFunction("__e2eSign", async (bytes: number[]) =>
+    Array.from(await sign(keypair, Uint8Array.from(bytes))),
+  );
   await page.addInitScript(
     ({ nodeUrl }) => {
       localStorage.setItem("openfiat:node", `custom:${nodeUrl}`);
@@ -118,7 +94,7 @@ test("a merchant pauses, reactivates and re-terms their own advertisement", asyn
   // After first paint every time, because the wallet adapter's own
   // "nothing is connected" effect clears this record on mount — so a
   // reload drops it and it has to be put back.
-  const attachWallet = async () => {
+  const attach = async () => {
     await page.evaluate((walletAddress) => {
       localStorage.setItem(
         "openfiat:wallet",
@@ -127,6 +103,51 @@ test("a merchant pauses, reactivates and re-terms their own advertisement", asyn
       window.dispatchEvent(new Event("openfiat:wallet-changed"));
     }, address);
   };
+
+  /** Publishes an advertisement for this merchant straight at the node. */
+  const publishAd = async (paymentMethods: string[]) => {
+    const id = `e2e-${Date.now()}`;
+    const create = {
+      id,
+      merchant,
+      merchant_public_key: address,
+      asset_mint: MINT,
+      direction: "Sell",
+      fiat_currency: "KES",
+      min_trade: amount(1),
+      max_trade: amount(500),
+      initial_liquidity: amount(1_000),
+      pricing: { Fixed: { price: { base_units: 129_000_000, decimals: 6 } } },
+      payment_methods: paymentMethods,
+      timestamp: Date.now(),
+    };
+    const signature = bs58.encode(
+      await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
+    );
+    await rpc("sendAdvertisementCreate", {
+      data: Buffer.from(JSON.stringify({ create, signature }), "utf8").toString("base64"),
+    });
+    return id;
+  };
+
+  return { address, merchant, attach, publishAd };
+}
+
+test("a merchant pauses, reactivates and re-terms their own advertisement", async ({ page }) => {
+  test.skip(!(await reachable()), `no node at ${NODE}`);
+
+  const { attach: attachWallet, publishAd } = await newMerchant(page);
+
+  // The advertisement under test, published straight to the node. The
+  // wizard's own publish path needs a funded liquidity vault for the
+  // mint, which this environment cannot create — see `stake.spec.ts` for
+  // the same constraint. What the console does to an advertisement is
+  // what this file is about.
+  //
+  // A catalogue id, not a display name: the node validates
+  // `payment_methods` against its own catalogue and answers
+  // `UNSUPPORTED_PAYMENT_METHOD` for "M-Pesa". See `lib/payment-catalog.ts`.
+  const id = await publishAd(["builtin:mpesa-kenya"]);
 
   await page.goto("/ads");
   await attachWallet();
@@ -181,4 +202,88 @@ test("a merchant pauses, reactivates and re-terms their own advertisement", asyn
   const finalAd = (await rpc("getAdvertisement", { id })) as { id: string; status: string };
   expect(finalAd.id).toBe(id);
   expect(finalAd.status).toBe("Active");
+});
+
+/**
+ * The other half of #203: a merchant whose rail this build has never heard
+ * of writes it down themselves, and puts it on their own advertisement.
+ *
+ * This is the path an earlier build deleted. Its "add your own rail" control
+ * produced `custom:whatever`, the node refused it, and the control was
+ * removed — a correct response to a control that guaranteed failure, but the
+ * defect was the id format rather than the feature. So the assertions here
+ * are about the id: it comes back in the `<peer id>:<digest>` namespace, the
+ * node resolves it, and an advertisement carrying it is accepted. A test
+ * that only read the screen would have passed for the broken version too.
+ */
+test("a merchant defines a rail their node has never heard of and advertises it", async ({
+  page,
+}) => {
+  test.skip(!(await reachable()), `no node at ${NODE}`);
+
+  const { merchant, attach: attachWallet, publishAd } = await newMerchant(page);
+  const id = await publishAd(["builtin:cash-in-person"]);
+
+  await page.goto("/ads");
+  await attachWallet();
+
+  const row = page.getByRole("row").filter({ hasText: id });
+  await expect(row).toBeVisible({ timeout: 20_000 });
+  const edit = row.getByRole("button", { name: "Edit terms" });
+  await expect(edit).toBeEnabled({ timeout: 20_000 });
+  await edit.click();
+
+  const dialog = page.getByRole("dialog", { name: "Edit advertisement terms" });
+  await expect(dialog).toBeVisible();
+
+  // A name no catalogue rail folds to, so the node's impersonation check
+  // has nothing to object to. A name that *did* collide is refused, which
+  // is `tests/payment-catalog.test.ts`'s business rather than this one's.
+  const NAME = "Sacco Standing Order";
+  await dialog.getByRole("button", { name: "Define your own rail" }).click();
+  await dialog.getByLabel("Name").fill(NAME);
+  await dialog.getByLabel("Kind").selectOption("BankTransfer");
+  await dialog.getByRole("button", { name: "Publish and select" }).click();
+
+  // The node's own answer, not the screen's: the definition is a signed
+  // record it stores and gossips, and the id is what an advertisement can
+  // carry.
+  const walletParam = Buffer.from(bs58.decode(merchant)).toString("base64");
+  const mine = async () => {
+    const answer = (await rpc("getPaymentMethods", { wallet: walletParam })) as {
+      merchant: { id: string; name: string; category: string }[];
+    };
+    return answer.merchant.find((m) => m.name === NAME) ?? null;
+  };
+  await expect.poll(async () => (await mine())?.name ?? null, { timeout: 20_000 }).toBe(NAME);
+  const defined = (await mine())!;
+
+  // `<peer id>:<16 lowercase hex>`, and the peer id is this merchant's —
+  // not `custom:` anything, which is the form that could never be published.
+  expect(defined.id).toBe(`${merchant}:${defined.id.split(":")[1]}`);
+  expect(defined.id.split(":")[1]).toMatch(/^[0-9a-f]{16}$/);
+  expect(defined.category).toBe("BankTransfer");
+
+  // Readable by id, which is all an advertisement carries — so a
+  // counterparty on another node can say what the ad means.
+  const resolved = (await rpc("getPaymentMethod", { id: defined.id })) as { name: string };
+  expect(resolved.name).toBe(NAME);
+
+  // Selected, and marked as this merchant's own rather than as something
+  // the network vouches for.
+  await expect(dialog.getByTitle(defined.id)).toContainText(NAME);
+  await expect(dialog.getByTitle(defined.id)).toContainText("yours");
+
+  // And the node accepts it on the advertisement, which is the step the
+  // deleted control could never reach.
+  await dialog.getByRole("button", { name: "Sign and publish" }).click();
+  await expect
+    .poll(
+      async () => {
+        const ad = (await rpc("getAdvertisement", { id })) as { payment_methods: string[] };
+        return ad.payment_methods;
+      },
+      { timeout: 20_000 },
+    )
+    .toContain(defined.id);
 });

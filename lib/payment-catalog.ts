@@ -1,6 +1,10 @@
-import type { ReferenceData } from "@openfiat/sdk";
+import bs58 from "bs58";
+import type { PaymentMethodCategory, ReferenceData } from "@openfiat/sdk";
 
+import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { nodeRpc } from "@/lib/node-rpc";
+import { peerIdParam } from "@/lib/wallet-param";
+import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
  * Which payment rails are worth offering *here*, asked of the node.
@@ -20,20 +24,28 @@ import { nodeRpc } from "@/lib/node-rpc";
  *   M-Pesa, Pochi la Biashara, Airtel Money, I&M Bank, Equity Bank, KCB;
  *   Brazil's are PIX and Mercado Pago; the UK's are SEPA and Faster
  *   Payments. Real per-country knowledge, and the reason this call exists.
- * - `merchant` — rails this merchant already advertises, when a merchant id
- *   is supplied. Read off their own live advertisements, so it is empty for
- *   somebody posting their first ad and must not be dressed up as anything
- *   else.
+ * - `merchant` — the rails this merchant has **defined for themselves**,
+ *   when a merchant id is supplied. Signed records the node holds and
+ *   gossips, not a guess about the ads they happen to have posted. Empty
+ *   for a merchant who has defined none, and must not be dressed up as
+ *   anything else.
  * - `others` — everything else the node knows. Still offerable: a merchant
  *   in Kenya who genuinely settles in PIX is not doing anything wrong.
  *
- * # This one *is* a gate, and the SDK's note says otherwise
+ * # The catalogue is a gate, and there is a door beside it
  *
  * `getReferenceData`'s doc comment says an interface "should let them type
- * one in rather than restricting them to what came back". For advertisements
- * that is not true of this node — see {@link CatalogMethod}, which records
- * what it actually accepts and how that was established. Nothing here may be
- * presented to a merchant as optional guidance when publishing depends on it.
+ * one in rather than restricting them to what came back". Taken literally
+ * that is wrong for advertisements — a made-up id is refused, and this app
+ * once shipped a control that produced exactly that failure two screens
+ * later. Deleting the control was right; leaving it deleted was not, because
+ * the fix was never "no custom rails", it was the id format.
+ *
+ * {@link defineMerchantMethod} is the door. A merchant signs a definition,
+ * the node stores and gossips it, and it comes back under `merchant` with an
+ * id in the `<peer id>:<digest>` form an advertisement accepts. So a
+ * merchant in a country this build has nothing listed for is not stuck: they
+ * write the rail down once and it is a real, replicated record afterwards.
  */
 
 /**
@@ -54,14 +66,20 @@ import { nodeRpc } from "@/lib/node-rpc";
  * The consequence for an interface: select ids, show names, and never store
  * a name anywhere a record expects an id.
  *
- * # And the node's list *is* a validation gate, whatever the SDK says
+ * # An id has exactly two namespaces, and `custom:` is not one of them
  *
- * `getReferenceData`'s own doc comment says an interface "should let them
- * type one in rather than restricting them to what came back". That is not
- * true of this node for advertisements: `"custom:whatever"` and
- * `"custom:My Own Rail"` are both refused. A free-text rail therefore
- * produces an advertisement the node will not accept, which is why the
- * picker no longer offers one.
+ * `"custom:whatever"` and `"custom:My Own Rail"` are both refused, which is
+ * what the agent who removed this app's "add your own rail" control found.
+ * The conclusion drawn — that the node allows no custom rails — was one
+ * namespace too broad. The node takes:
+ *
+ * - `builtin:<slug>` — a rail compiled into it, `builtin:pix`;
+ * - `<merchant peer id>:<16 lowercase hex>` — a definition that merchant
+ *   published and signed, e.g. `12D3KooW…:9f3c1a20b4d7e6f8`.
+ *
+ * `custom:` is neither, so it parses as "a peer id called custom", fails the
+ * base58 shape, and is rejected. See {@link defineMerchantMethod} for how
+ * the second namespace is actually reached.
  *
  * `id` and `countries` are absent from the SDK's `ReferencePaymentMethod`
  * even though the node sends both. They are declared here rather than
@@ -93,6 +111,18 @@ export type CountryMethodsState =
   | { status: "error"; message: string; retry: () => void }
   | { status: "ready"; data: CountryMethods };
 
+/**
+ * The picker read.
+ *
+ * `merchant` is a base58 PeerId and goes out as `wallet`, base64 of that
+ * id's bytes. Both halves of that were wrong here: the node's parameter is
+ * named `wallet` and it decodes base64, so a `merchant` key was dropped on
+ * the floor by `serde`'s `#[serde(default)]` and every answer came back with
+ * an empty `merchant` array. That failure is invisible — an empty list of
+ * your own rails is exactly what a merchant who has defined none sees — and
+ * it is the same trap `lib/wallet-param.ts` was written for, one parameter
+ * over.
+ */
 export function fetchCountryMethods(
   endpoint: string,
   country: string | null,
@@ -102,8 +132,140 @@ export function fetchCountryMethods(
     // Omitted rather than sent as null: an absent country asks for the whole
     // catalogue, which is the honest request when nobody has chosen one.
     ...(country ? { country } : {}),
-    ...(merchant ? { merchant } : {}),
+    ...(merchant ? { wallet: peerIdParam(merchant) } : {}),
   });
+}
+
+// ── Defining a rail the node has never heard of ───────────────────────
+
+/**
+ * Publishes a merchant's own payment method and returns its id.
+ *
+ * # What comes back, and why it cannot be edited
+ *
+ * The id is `<peer id>:<digest>`, and the digest is of the definition
+ * itself. So the same definition published twice is the same id and a
+ * no-op, and a definition with one word changed is a *different* id that no
+ * existing advertisement references. There is no update call and no delete
+ * call anywhere on this surface, because there is nothing an edit could land
+ * on — an interface offering an edit button would be silently forking the
+ * rail and leaving every ad that chose it pointing at the old one.
+ *
+ * Callers must say that in the UI rather than discovering it. See
+ * `components/ads/method-picker.tsx`.
+ *
+ * # Scope
+ *
+ * Selectable only by the wallet that signed it; readable by everyone,
+ * because it replicates by gossip and a counterparty on another node has to
+ * be able to resolve what an advertisement means. Putting somebody else's
+ * definition on your own ad is refused by the node.
+ *
+ * # The signed bytes
+ *
+ * A raw Ed25519 signature over the canonical JSON of `method`, whose key
+ * order is the Rust struct's field order — `merchant`, then
+ * `merchant_public_key`, then `name`, then `category`. Reordering the object
+ * literal below changes the bytes and the signature stops verifying.
+ */
+export async function defineMerchantMethod(
+  endpoint: string,
+  signer: SolanaProvider,
+  publicKey: Uint8Array,
+  name: string,
+  category: PaymentMethodCategory,
+): Promise<string> {
+  const method = {
+    merchant: peerIdForPublicKey(publicKey),
+    merchant_public_key: bs58.encode(publicKey),
+    name,
+    category,
+  };
+  const signature = await signPayload(signer, method);
+  const id = await sendSignedEvent(endpoint, "sendPaymentMethodDefine", { method, signature });
+  return String(id);
+}
+
+/** Longest name the node will store — `openfiat_taxonomy::MAX_NAME_CHARS`. */
+export const MAX_METHOD_NAME_CHARS = 64;
+
+/**
+ * Why a name cannot be published, checked here before the wallet is asked
+ * to sign, or `null` if nothing local objects.
+ *
+ * # What this does and pointedly does not duplicate
+ *
+ * Only the *renderability* rules, which `docs/payment-methods.md` states
+ * verbatim as the client contract: a bounded length, no stray or doubled
+ * spaces, no whitespace that is not `U+0020`, and nothing invisible or
+ * bidirectional. They are worth checking twice because the alternative is a
+ * wallet signature prompt that ends in a refusal — the merchant pays for the
+ * round trip with a hardware confirmation.
+ *
+ * It does **not** reimplement the look-alike check. That folds a name
+ * through a confusable table against every catalogue name and alias, and a
+ * second copy here would drift from the node's the first time a rail is
+ * added — leaving this app confidently telling a merchant their name is fine
+ * while the node refuses it, or worse, the reverse. The node owns that
+ * question; {@link explainDefineRefusal} translates its answer.
+ */
+export function nameProblem(name: string): string | null {
+  const length = [...name].length;
+  if (length === 0) return "Give the rail a name.";
+  if (length > MAX_METHOD_NAME_CHARS) {
+    return `Names are at most ${MAX_METHOD_NAME_CHARS} characters — this is ${length}.`;
+  }
+  if (name !== name.trim() || name.includes("  ")) {
+    return "No leading, trailing or doubled spaces — the node refuses them rather than trimming, so the name it stores is the name you signed.";
+  }
+  // Any whitespace other than a plain space: a no-break space and an
+  // ideographic space are the same picture and a different string.
+  if (/[\s]/.test(name.replace(/ /g, ""))) {
+    return "Only ordinary spaces — a no-break or ideographic space looks identical and is not the same name.";
+  }
+  // `Cc` is the control characters, `Cf` the format ones — which is every
+  // zero-width space and joiner, the soft hyphen, the bidi overrides and
+  // isolates, the BOM and the Unicode tag block, in one class. The braille
+  // blank is the one hazard outside both, so it is named.
+  if (/[\p{Cc}\p{Cf}⠀]/u.test(name)) {
+    return "That name carries characters that render as nothing, which is how one name is made to look like another.";
+  }
+  if (!/[\p{L}\p{N}]/u.test(name)) return "A name needs at least one letter or digit.";
+  return null;
+}
+
+/**
+ * What the node's refusal of a definition means, in the merchant's terms.
+ *
+ * # One code covers two refusals, and the message says so
+ *
+ * `MALFORMED_DEFINITION` and `IMPERSONATES_KNOWN_METHOD` both map to
+ * `UNSUPPORTED_PAYMENT_METHOD` (3005) on the wire, so this cannot tell them
+ * apart and does not pretend to. {@link nameProblem} has already refused the
+ * unrenderable ones locally, which makes the look-alike case overwhelmingly
+ * the likely one — but "overwhelmingly likely" is not "known", so both are
+ * named.
+ *
+ * The look-alike half is worth spelling out rather than reporting as a
+ * spelling complaint. The node folds a name to the shape an eye sees — case,
+ * accents, Cyrillic and Greek look-alikes, fullwidth forms, `1` for `i`, `0`
+ * for `o`, separators dropped — so a merchant told only "rejected" retypes
+ * the same name with a hyphen in it and is refused again.
+ *
+ * Anything unrecognised is passed through rather than replaced with a
+ * generic apology, the same rule `explainRefusal` follows for ads.
+ */
+export function explainDefineRefusal(message: string): string {
+  if (message.includes("UNSUPPORTED_PAYMENT_METHOD")) {
+    return "The node refused that name. Most likely it reads as a rail the network already carries: it compares what the eye sees, so case, accents, spacing, hyphens, look-alike letters from other alphabets and digits standing in for letters are all the same name to it. Retyping it with a hyphen will not help — name it after your own account instead.";
+  }
+  if (message.includes("PAYMENT_METHOD_LIMIT_REACHED")) {
+    return "You have reached the 32 definitions one wallet may publish. They cannot be deleted — every node already holds them — so this is a ceiling, not a queue.";
+  }
+  if (message.includes("INVALID_SIGNATURE") || message.includes("INVALID_IDENTITY_CLAIM")) {
+    return "The node did not accept this wallet's signature. A definition can only be published by the wallet it names.";
+  }
+  return message;
 }
 
 /*
