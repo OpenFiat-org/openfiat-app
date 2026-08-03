@@ -160,109 +160,127 @@ export function LiveNetwork() {
 
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">Nodes</h2>
       <div className="mt-3">
-        <DataTable
-          minWidth={720}
-          head={
-            <tr>
-              <Th>Node</Th>
-              <Th className="w-64">Claims</Th>
-              <Th className="w-56">Observed</Th>
-              <Th right className="w-24">Latency</Th>
-              <Th right className="w-24">Status</Th>
-              <Th right className="w-24">Access</Th>
-            </tr>
-          }
-        >
-          {nodes.map((n) => {
-            const p = probes[n.id];
-            const up = p?.latencyMs != null;
-            const claims = readCapabilities(n.capabilities);
-            const observation: ChainObservation = p?.chain ?? { kind: "pending" };
-            const contradicted = claimContradicted(n.chainMode, observation);
-            return (
-              <Tr key={n.id}>
-                <Td py="py-5">
-                  <span className="font-mono text-gray-200">{n.label}</span>
-                  <span className="mt-1 block truncate font-mono text-[11px] text-gray-600" title={n.url}>
-                    {n.url}
-                  </span>
-                </Td>
-                <Td py="py-5" className="w-64">
-                  {/*
-                    * Deliberately inside Claims and not in the Node cell
-                    * beside the host. The host is observable — it is
-                    * where this page just sent a request. A name and a
-                    * logo are what the operator wrote about themselves,
-                    * and putting them in the identity column would let
-                    * them borrow the credibility of the column they sat
-                    * in.
-                    */}
-                  {(n.branding?.name || n.branding?.logoUrl) && (
-                    <span className="mb-1.5 flex items-center gap-1.5">
-                      {n.branding.logoUrl && (
-                        <img
-                          src={n.branding.logoUrl}
-                          alt=""
-                          width={16}
-                          height={16}
-                          className="h-4 w-4 shrink-0 rounded-full border border-white/10 bg-white/5 object-cover"
-                        />
-                      )}
-                      <span className="truncate text-gray-300">
-                        calls itself {n.branding.name ?? "—"}
+        {nodes.length === 0 ? (
+          /*
+           * A sentence rather than an empty table, and not only for looks.
+           * Below `lg` the header is hidden — that is what the stacked
+           * treatment does — so a table with no rows yet is a zero-height
+           * element: nothing on screen, and nothing to say why. The
+           * registry read that fills this runs at mount, so the window is
+           * real on a phone on a slow connection, and it is the state
+           * `tests/e2e/mobile.spec.ts` kept catching as a table that was
+           * present and invisible.
+           */
+          <p className="text-sm text-gray-500">
+            {checking
+              ? "Contacting the nodes this build knows about…"
+              : "No node could be listed. This build's seed is unreachable, so its registry could not be read either — which is a failure to ask, not a network with no nodes in it."}
+          </p>
+        ) : (
+          <DataTable
+            minWidth={720}
+            head={
+              <tr>
+                <Th>Node</Th>
+                <Th className="w-64">Claims</Th>
+                <Th className="w-56">Observed</Th>
+                <Th right className="w-24">Latency</Th>
+                <Th right className="w-24">Status</Th>
+                <Th right className="w-24">Access</Th>
+              </tr>
+            }
+          >
+            {nodes.map((n) => {
+              const p = probes[n.id];
+              const up = p?.latencyMs != null;
+              const claims = readCapabilities(n.capabilities);
+              const observation: ChainObservation = p?.chain ?? { kind: "pending" };
+              const contradicted = claimContradicted(n.chainMode, observation);
+              return (
+                <Tr key={n.id}>
+                  <Td py="py-5">
+                    <span className="font-mono text-gray-200">{n.label}</span>
+                    <span className="mt-1 block truncate font-mono text-[11px] text-gray-600" title={n.url}>
+                      {n.url}
+                    </span>
+                  </Td>
+                  <Td py="py-5" className="w-64">
+                    {/*
+                      * Deliberately inside Claims and not in the Node cell
+                      * beside the host. The host is observable — it is
+                      * where this page just sent a request. A name and a
+                      * logo are what the operator wrote about themselves,
+                      * and putting them in the identity column would let
+                      * them borrow the credibility of the column they sat
+                      * in.
+                      */}
+                    {(n.branding?.name || n.branding?.logoUrl) && (
+                      <span className="mb-1.5 flex items-center gap-1.5">
+                        {n.branding.logoUrl && (
+                          <img
+                            src={n.branding.logoUrl}
+                            alt=""
+                            width={16}
+                            height={16}
+                            className="h-4 w-4 shrink-0 rounded-full border border-white/10 bg-white/5 object-cover"
+                          />
+                        )}
+                        <span className="truncate text-gray-300">
+                          calls itself {n.branding.name ?? "—"}
+                        </span>
                       </span>
+                    )}
+                    {/* Every one of these is the node's own word. No ticks. */}
+                    <span className={contradicted ? "text-amber-300" : "text-gray-300"}>
+                      {chainModeClaim(n.chainMode)}
                     </span>
-                  )}
-                  {/* Every one of these is the node's own word. No ticks. */}
-                  <span className={contradicted ? "text-amber-300" : "text-gray-300"}>
-                    {chainModeClaim(n.chainMode)}
-                  </span>
-                  <span className="mt-1.5 flex flex-wrap gap-1">
-                    {claims.retention && <Chip>retention {claims.retention}</Chip>}
-                    {claims.servesContent && <Chip>serves content</Chip>}
-                    {claims.producesSnapshots && <Chip>produces snapshots</Chip>}
-                    {/* "declared" spelled out on the chip itself, not
-                        only in the column heading: a chip is read on its
-                        own. Nothing anywhere observes a node's region —
-                        deriving it from the node's own addresses was
-                        investigated under #173 and rejected. */}
-                    {n.region && <Chip>region {n.region} (declared)</Chip>}
-                    {/* A capability string this build has no reading for is
-                        shown as itself. Dropping it would hide the newest
-                        thing a node can do and keep looking correct. */}
-                    {claims.unrecognised.map((capability) => (
-                      <Chip key={capability} mono>
-                        {capability}
-                      </Chip>
-                    ))}
-                  </span>
-                  {n.capabilities.length === 0 && (
-                    <span className="mt-1 block text-[11px] text-gray-600">
-                      No registration behind this entry — it is a seed compiled into this build.
+                    <span className="mt-1.5 flex flex-wrap gap-1">
+                      {claims.retention && <Chip>retention {claims.retention}</Chip>}
+                      {claims.servesContent && <Chip>serves content</Chip>}
+                      {claims.producesSnapshots && <Chip>produces snapshots</Chip>}
+                      {/* "declared" spelled out on the chip itself, not
+                          only in the column heading: a chip is read on its
+                          own. Nothing anywhere observes a node's region —
+                          deriving it from the node's own addresses was
+                          investigated under #173 and rejected. */}
+                      {n.region && <Chip>region {n.region} (declared)</Chip>}
+                      {/* A capability string this build has no reading for is
+                          shown as itself. Dropping it would hide the newest
+                          thing a node can do and keep looking correct. */}
+                      {claims.unrecognised.map((capability) => (
+                        <Chip key={capability} mono>
+                          {capability}
+                        </Chip>
+                      ))}
                     </span>
-                  )}
-                </Td>
-                <Td py="py-5" className="w-56 text-xs text-gray-400">
-                  {checking ? "Checking…" : chainObservationLabel(observation)}
-                  {contradicted && (
-                    <span className="mt-1 block text-[11px] leading-snug text-amber-300">
-                      Claims to read Solana directly but answered with no slot.
-                    </span>
-                  )}
-                </Td>
-                <Td py="py-5" right num className="w-24 text-gray-400">
-                  {checking ? "…" : up ? `${p!.latencyMs} ms` : "—"}
-                </Td>
-                <Td py="py-5" right className="w-24">
-                  <StatusPill status={checking ? "Syncing" : up ? "Online" : "Offline"} />
-                </Td>
-                <Td py="py-5" right className="w-24">
-                  <NodeUseButton nodeId={n.id} />
-                </Td>
-              </Tr>
-            );
-          })}
-        </DataTable>
+                    {n.capabilities.length === 0 && (
+                      <span className="mt-1 block text-[11px] text-gray-600">
+                        No registration behind this entry — it is a seed compiled into this build.
+                      </span>
+                    )}
+                  </Td>
+                  <Td py="py-5" className="w-56 text-xs text-gray-400">
+                    {checking ? "Checking…" : chainObservationLabel(observation)}
+                    {contradicted && (
+                      <span className="mt-1 block text-[11px] leading-snug text-amber-300">
+                        Claims to read Solana directly but answered with no slot.
+                      </span>
+                    )}
+                  </Td>
+                  <Td py="py-5" right num className="w-24 text-gray-400">
+                    {checking ? "…" : up ? `${p!.latencyMs} ms` : "—"}
+                  </Td>
+                  <Td py="py-5" right className="w-24">
+                    <StatusPill status={checking ? "Syncing" : up ? "Online" : "Offline"} />
+                  </Td>
+                  <Td py="py-5" right className="w-24">
+                    <NodeUseButton nodeId={n.id} />
+                  </Td>
+                </Tr>
+              );
+            })}
+          </DataTable>
+        )}
         <p className="mt-3 text-xs leading-relaxed text-gray-600">
           Everything under <span className="text-gray-500">Claims</span> comes from the node&apos;s own
           registration, signed by its own key: it is what the operator configured, and nothing here
@@ -270,8 +288,10 @@ export function LiveNetwork() {
           nobody measures. <span className="text-gray-500">Observed</span>, latency and status come
           from a live request to each node when this page loads — that is the part that was checked,
           and latency is measured from your browser, so it answers &quot;is this node fast for
-          me&quot; better than any declared region could. Peer count and version are still absent
-          because no method this app calls reports them.
+          me&quot; better than any declared region could. Peer counts and versions are per node
+          rather than per row and are under{" "}
+          <span className="text-gray-500">Your access node</span> below, because they are one
+          node&apos;s view of the network rather than the network&apos;s.
         </p>
       </div>
     </>

@@ -342,6 +342,12 @@ export function searchGrouped(
  * taker would be showing them the node's internal key. This is the phrasebook
  * that turns it back into "PIX", and it is exactly parallel to
  * `nameForMint` — address in, name out, never the reverse.
+ *
+ * **This covers `builtin:` rails only.** `getReferenceData.payment_methods`
+ * is `openfiat_taxonomy::catalog()` relayed — the rails compiled into the
+ * node — and a merchant-defined `<peer id>:<digest>` is not in it. See
+ * {@link methodNamesFor}, which is what a caller holding real
+ * advertisement ids should use.
  */
 const nameCache = new Map<string, Promise<ReadonlyMap<string, string>>>();
 
@@ -357,6 +363,92 @@ export function fetchMethodNames(endpoint: string): Promise<ReadonlyMap<string, 
     });
   nameCache.set(endpoint, request);
   return request;
+}
+
+/**
+ * One id resolved by asking the node about that id alone, or `null`.
+ *
+ * Cached per endpoint and id, and only when it succeeds. A merchant's
+ * definition is immutable by construction — the id is a digest *of* the
+ * definition, so the same id can never name a different rail — which makes
+ * a hit cacheable for the life of the page with no staleness to reason
+ * about. A miss is not cached: `null` means this node has not received the
+ * definition yet, and gossip may well deliver it a moment later.
+ */
+const singleNameCache = new Map<string, Promise<string | null>>();
+
+function resolveMethodName(endpoint: string, id: string): Promise<string | null> {
+  const key = `${endpoint} ${id}`;
+  const existing = singleNameCache.get(key);
+  if (existing) return existing;
+  const request = nodeRpc<{ name: string } | null>(endpoint, "getPaymentMethod", { id })
+    .then((method) => {
+      if (!method) singleNameCache.delete(key);
+      return method?.name ?? null;
+    })
+    .catch(() => {
+      singleNameCache.delete(key);
+      // A name is decoration. Losing one must not cost a reader the row it
+      // sits on, so this resolves rather than rejects and the id shows
+      // through — see `methodLabel`.
+      return null;
+    });
+  singleNameCache.set(key, request);
+  return request;
+}
+
+/**
+ * Names for exactly the ids a caller is holding, merchant-defined ones
+ * included.
+ *
+ * # The gap this closes
+ *
+ * A merchant may define their own rail — {@link defineMerchantMethod} — and
+ * put it on a public advertisement. Every taker in the book then sees it.
+ * But {@link fetchMethodNames} builds its phrasebook from
+ * `getReferenceData`, which relays only the rails compiled into the node, so
+ * a merchant-defined id had no entry and {@link methodLabel} fell through to
+ * printing the id: `12D3KooWK9hQ7…:9f3c1a20b4d7e6f8` where "Sacco Standing
+ * Order" belonged. Truthful, and unreadable — and it appeared the day
+ * merchant-defined rails shipped, on somebody else's screen rather than the
+ * merchant's own, which is why nothing caught it.
+ *
+ * `getPaymentMethod { id }` is the node's answer for exactly this. It is
+ * asked once per unresolved id, in parallel, and never for a `builtin:` one
+ * the bulk phrasebook already covers.
+ *
+ * # Nothing here fails loudly, on purpose
+ *
+ * Every figure on an advertisement — price, limits, liquidity — comes from
+ * `getAdvertisements` and is already in hand by the time this runs. A rail
+ * that cannot be named is a cosmetic loss, so an unreachable node leaves the
+ * ids showing rather than emptying the book. That is the record's own value,
+ * not a guess about it.
+ */
+export async function methodNamesFor(
+  endpoint: string,
+  ids: Iterable<string>,
+): Promise<ReadonlyMap<string, string>> {
+  const wanted = new Set(ids);
+  const names = new Map<string, string>();
+
+  try {
+    for (const [id, name] of await fetchMethodNames(endpoint)) {
+      if (wanted.has(id)) names.set(id, name);
+    }
+  } catch {
+    // The bulk read is a shortcut, not a prerequisite: every id below can
+    // still be resolved one at a time.
+  }
+
+  const unresolved = [...wanted].filter((id) => !names.has(id));
+  const resolved = await Promise.all(
+    unresolved.map(async (id) => [id, await resolveMethodName(endpoint, id)] as const),
+  );
+  for (const [id, name] of resolved) {
+    if (name !== null) names.set(id, name);
+  }
+  return names;
 }
 
 /**

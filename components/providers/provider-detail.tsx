@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
+import { ProviderFeeQuote } from "@/components/providers/fee-quote";
 import { StatusPill } from "@/components/status-pill";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { TYPE_COLORS } from "@/lib/provider-display";
@@ -201,6 +202,17 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
           />
         </div>
       </Panel>
+
+      {/*
+        * Straight after the registration, because it is the same question
+        * the Pricing row above raises and cannot answer: the declared price
+        * is in the provider's chosen token, and a reader holding a different
+        * one has no way to compare two services from it.
+        */}
+      <ProviderFeeQuote
+        serviceId={record.service_id}
+        declaredMint={record.pricing?.token_mint ?? null}
+      />
 
       <Panel title="Reachability">
         <div className="px-4 py-4">

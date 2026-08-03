@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  fetchNodeRate,
   lookupRate,
   pricedPairs,
   type ExchangeRateRecord,
@@ -119,5 +120,63 @@ describe("which pairs are priced", () => {
       NOW,
     );
     expect(pairs).toHaveLength(1);
+  });
+});
+
+/**
+ * `fetchNodeRate` asks `getExchangeRate`, which is the node making the same
+ * three-way distinction this module used to re-derive from every record it
+ * holds. The point of the test is that the distinction survives the trip:
+ * `getMedianExchangeRate` flattens "the feed died" and "nobody prices this"
+ * into one `null`, and a client that read that would treat a temporary
+ * outage as an unsupported corridor and move on.
+ */
+describe("asking the node for one pair's rate", () => {
+  function answering(result: unknown) {
+    return vi.fn(async () =>
+      new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, result }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+  }
+
+  it("carries a current median with the expiry it is good until", async () => {
+    vi.stubGlobal("fetch", answering({ status: "current", rate: 129.46, expiresAt: NOW + 1000 }));
+    const rate = await fetchNodeRate("USDC", "KES", "http://node.invalid");
+    expect(rate).toEqual({
+      kind: "current",
+      rate: 129.46,
+      expiresAt: NOW + 1000,
+      // Not sent by this method, so not guessed. A `1` here would make a
+      // one-provider feed and a ten-provider one look identical, in the
+      // direction that flatters a thin one.
+      contributors: null,
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps a lapsed feed distinct from an unpriced pair", async () => {
+    vi.stubGlobal("fetch", answering({ status: "stale" }));
+    expect(await fetchNodeRate("AED", "USDC", "http://node.invalid")).toEqual({
+      kind: "stale",
+      // No lapse instant on the wire, and this app does not invent one:
+      // dating somebody else's feed from our own clock is a fabrication.
+      lapsedAt: null,
+    });
+
+    vi.stubGlobal("fetch", answering({ status: "noData" }));
+    expect(await fetchNodeRate("USD", "KES", "http://node.invalid")).toEqual({ kind: "no-data" });
+    vi.unstubAllGlobals();
+  });
+
+  it("never produces a number on either failing branch", async () => {
+    for (const status of ["stale", "noData"]) {
+      vi.stubGlobal("fetch", answering({ status }));
+      const rate = await fetchNodeRate("AED", "USDC", "http://node.invalid");
+      // OFS-7000 §12: expired data is not current data, however recently it
+      // lapsed. Neither branch may carry a figure a caller could render.
+      expect(rate).not.toHaveProperty("rate");
+    }
+    vi.unstubAllGlobals();
   });
 });

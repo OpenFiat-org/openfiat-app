@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AddressRisk } from "@/components/explorer/address-risk";
 import { TradingRecord } from "@/components/merchants/trading-record";
 import { formatNumber } from "@/lib/format";
 import { assetLabel, fetchAdsByMerchant, type LiveAd } from "@/lib/live-advertisements";
@@ -67,6 +68,7 @@ export function AddressProtocol({ address }: { address: string }) {
   }
 
   return (
+    <>
     <div className="grid gap-8 lg:grid-cols-[1fr_1.3fr]">
       <TradingRecord peerId={peerId} />
 
@@ -117,5 +119,22 @@ export function AddressProtocol({ address }: { address: string }) {
         )}
       </div>
     </div>
+
+    {/*
+      * Below the trading record rather than beside it, and deliberately not
+      * folded into it. A reputation figure is derived from this wallet's own
+      * completed trades; a risk record is something a third party asserted
+      * about it. Presenting them as two halves of one score would let an
+      * accusation and a track record be read as the same kind of fact.
+      */}
+    <div className="mt-8">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        Risk intelligence
+      </h3>
+      <div className="mt-3">
+        <AddressRisk peerId={peerId} />
+      </div>
+    </div>
+    </>
   );
 }

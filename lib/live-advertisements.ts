@@ -5,7 +5,7 @@ import {
 } from "@openfiat/sdk";
 import { tradingSymbol } from "@/lib/asset-display";
 import { nodeUrl } from "@/lib/node-endpoint";
-import { fetchMethodNames, methodLabel } from "@/lib/payment-catalog";
+import { methodLabel, methodNamesFor } from "@/lib/payment-catalog";
 
 /**
  * The real advertisement book, read from a node's `getAdvertisements`
@@ -353,42 +353,32 @@ export async function fetchAdvertisements(
   filter: { merchant?: string; statuses?: LiveAd["status"][] } = {},
 ): Promise<LiveAd[]> {
   const endpoint = nodeUrl();
-  const names = await methodNamesOrNull(endpoint);
-  const rows: LiveAd[] = [];
+  const collected: ProtocolAd[] = [];
   for await (const ad of advertisements.eachAdvertisement(client(), {
     filter,
     page: { limit: PAGE_SIZE },
   })) {
-    rows.push(toLiveAd(ad, names));
-    if (rows.length >= MAX_PAGES * PAGE_SIZE) break;
+    collected.push(ad);
+    if (collected.length >= MAX_PAGES * PAGE_SIZE) break;
   }
-  return rows;
+  /*
+   * After the walk, not before. The ids have to be in hand to be resolved:
+   * a merchant-defined rail is not in any bulk catalogue and is asked about
+   * by id — see `methodNamesFor`. Resolving up front is what left those ids
+   * printed raw in the book.
+   */
+  const names = await methodNamesFor(
+    endpoint,
+    collected.flatMap((ad) => ad.payment_methods),
+  );
+  return collected.map((ad) => toLiveAd(ad, names));
 }
 
 /** One advertisement, or `null` if this node has never seen that id. */
 export async function fetchAdvertisement(id: string): Promise<LiveAd | null> {
-  const names = await methodNamesOrNull(nodeUrl());
   const ad = await advertisements.getAdvertisement(client(), id);
-  return ad ? toLiveAd(ad, names) : null;
-}
-
-/**
- * The rail phrasebook, or `null`.
- *
- * Losing the names must not cost a reader the book: every figure on an
- * advertisement comes from `getAdvertisements`, and a failure to resolve
- * `builtin:pix` into "PIX" is a cosmetic loss. So this one read is allowed
- * to fail quietly, and the ids show through — which is the record's own
- * value, not a guess.
- */
-async function methodNamesOrNull(
-  endpoint: string,
-): Promise<ReadonlyMap<string, string> | null> {
-  try {
-    return await fetchMethodNames(endpoint);
-  } catch {
-    return null;
-  }
+  if (!ad) return null;
+  return toLiveAd(ad, await methodNamesFor(nodeUrl(), ad.payment_methods));
 }
 
 /**

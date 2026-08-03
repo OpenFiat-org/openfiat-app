@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PageHero } from "@/components/page-hero";
 import { LiveNetwork } from "@/components/network/live-network";
+import { NodeOperations } from "@/components/network/node-operations";
 import { NETWORK_LABEL } from "@/lib/node-endpoint";
 
 export const metadata: Metadata = {
@@ -32,6 +33,15 @@ export default function NetworkPage() {
       >
         <LiveNetwork />
       </PageHero>
+
+      {/*
+        * Below the cluster view rather than beside it, because it answers a
+        * different question. Above is "which nodes exist and can I reach
+        * them"; this is "what is the one I am talking to actually doing" —
+        * its peers, and the snapshots it holds. Merging them would present
+        * one node's discovery cache as the network's census.
+        */}
+      <NodeOperations />
 
       <p className="mt-10 text-sm text-gray-400">
         Looking for the signed event feed?{" "}

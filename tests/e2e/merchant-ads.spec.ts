@@ -95,13 +95,52 @@ async function newMerchant(page: import("@playwright/test").Page) {
   // "nothing is connected" effect clears this record on mount — so a
   // reload drops it and it has to be put back.
   const attach = async () => {
-    await page.evaluate((walletAddress) => {
-      localStorage.setItem(
-        "openfiat:wallet",
-        JSON.stringify({ wallet: "Phantom", address: walletAddress }),
-      );
-      window.dispatchEvent(new Event("openfiat:wallet-changed"));
-    }, address);
+    /*
+     * Written until it sticks, and "sticks" means it survived — not that we
+     * managed to store it.
+     *
+     * Two things race this fixture, and both end with the console sitting
+     * on "Connect a wallet to see the advertisements published under it",
+     * which is also exactly what a genuinely disconnected browser shows. So
+     * the failure has nothing on screen to identify it, and it surfaced as
+     * this spec failing at its first `toBeVisible` on roughly one full-suite
+     * run in three — never at anything the test was about. It reproduces on
+     * `HEAD` with none of the surrounding changes, so it is the fixture.
+     *
+     * 1. `page.goto` resolves at `load`; the console registers its
+     *    `openfiat:wallet-changed` listener when React hydrates, which can
+     *    be later. A single dispatch into that gap is lost.
+     * 2. The wallet adapter's own "nothing is connected" effect *clears*
+     *    the record when it mounts, so a write that landed a moment too
+     *    early is undone.
+     *
+     * Checking straight after writing — which is what this used to do —
+     * catches neither: it confirms our own store and always passes on the
+     * first tick. So each tick reads *first*, and only rewrites when the
+     * record has gone. Requiring several consecutive survivals is what
+     * distinguishes "the adapter has not cleared it yet" from "the adapter
+     * has mounted and left it alone".
+     */
+    await expect
+      .poll(
+        async () =>
+          page.evaluate((walletAddress) => {
+            const scope = window as unknown as { __e2eWalletHeld?: number };
+            if (localStorage.getItem("openfiat:wallet")) {
+              scope.__e2eWalletHeld = (scope.__e2eWalletHeld ?? 0) + 1;
+            } else {
+              scope.__e2eWalletHeld = 0;
+              localStorage.setItem(
+                "openfiat:wallet",
+                JSON.stringify({ wallet: "Phantom", address: walletAddress }),
+              );
+              window.dispatchEvent(new Event("openfiat:wallet-changed"));
+            }
+            return scope.__e2eWalletHeld;
+          }, address),
+        { timeout: 20_000, intervals: [200] },
+      )
+      .toBeGreaterThanOrEqual(5);
   };
 
   /** Publishes an advertisement for this merchant straight at the node. */

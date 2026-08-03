@@ -56,9 +56,32 @@ export interface ExchangeRateRecord {
 
 export type RateLookup =
   /** A median over at least one unexpired record, good until `expiresAt`. */
-  | { kind: "current"; rate: number; expiresAt: number; contributors: number }
+  | {
+      kind: "current";
+      rate: number;
+      expiresAt: number;
+      /**
+       * How many unexpired records the median was taken over, or `null`
+       * when the answer did not say.
+       *
+       * `null` rather than `1` or `0` for {@link fetchNodeRate}, which asks
+       * the node for the median and is told the median: the count is a fact
+       * about the node's index that only the records carry. A number here
+       * would be this app's guess at how thin a feed is, in the direction
+       * that makes a thin one look robust.
+       */
+      contributors: number | null;
+    }
   /** Published, but every record for it has lapsed. Deliberately not a rate. */
-  | { kind: "stale"; lapsedAt: number }
+  | {
+      kind: "stale";
+      /**
+       * When the last contributing record expired, or `null` when the
+       * answer did not say. Never `Date.now()` — dating somebody else's
+       * lapsed feed from this app's clock is an invention.
+       */
+      lapsedAt: number | null;
+    }
   /** No provider has ever published this pair. */
   | { kind: "no-data" };
 
@@ -142,7 +165,56 @@ export function lookupRate(
   };
 }
 
-/** One pair's rate, read fresh. */
+/**
+ * One pair's rate, asked of the node directly.
+ *
+ * # This used to be `lookupRate` over every record, and no longer needs to be
+ *
+ * The module comment above explains why: `getMedianExchangeRate` returns
+ * `Option<f64>`, so a pair nobody publishes and a pair whose every feed has
+ * lapsed came back as the same `null`. Recovering the distinction meant
+ * pulling every oracle record the node holds — some hundreds of them, for
+ * one pair — and re-deriving §11's median on this side.
+ *
+ * `getExchangeRate` is the node making that distinction itself, in the same
+ * three states this module already had names for, quoting the same reason
+ * back: "a caller ends up treating 'the feed died' as 'this pair isn't
+ * supported' and quietly moving on". So a single pair is now a single small
+ * answer.
+ *
+ * Note what it is *not*: it is not one provider's rate. It is the same §11
+ * median over every unexpired record, with the reason attached when there
+ * is no median to give.
+ *
+ * {@link fetchExchangeRateRecords} stays, and callers that need more than
+ * one pair should keep using it — the pair page derives its sideways links
+ * from the same records it reads the rate out of, and asking per pair there
+ * would be one call per market.
+ */
+export async function fetchNodeRate(
+  base: string,
+  quote: string,
+  endpoint: string = DEFAULT_NODE_URL,
+): Promise<RateLookup> {
+  const view = await rpc<
+    | { status: "current"; rate: number; expiresAt: number }
+    | { status: "stale" }
+    | { status: "noData" }
+  >(endpoint, "getExchangeRate", { base, quote });
+
+  if (view.status === "current") {
+    return {
+      kind: "current",
+      rate: view.rate,
+      expiresAt: view.expiresAt,
+      contributors: null,
+    };
+  }
+  if (view.status === "stale") return { kind: "stale", lapsedAt: null };
+  return { kind: "no-data" };
+}
+
+/** One pair's rate derived here from every record the node holds. */
 export async function fetchRate(
   base: string,
   quote: string,

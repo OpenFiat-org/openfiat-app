@@ -255,9 +255,13 @@ function Rate({
           </span>
         </p>
         <p className="mt-1 text-xs text-gray-500">
-          Median across {rate.contributors} oracle{rate.contributors === 1 ? "" : "s"} (OFS-7000
-          §11), good until {new Date(rate.expiresAt).toLocaleString()}. Advertisers price above or
-          below it, so the rate you get is the one on the offer you accept — compare below.
+          {/* Omitted rather than guessed when the answer did not carry it —
+              see `RateLookup`. The median is still the median either way. */}
+          {rate.contributors === null
+            ? "Median across every unexpired oracle record"
+            : `Median across ${rate.contributors} oracle${rate.contributors === 1 ? "" : "s"}`}{" "}
+          (OFS-7000 §11), good until {new Date(rate.expiresAt).toLocaleString()}. Advertisers price
+          above or below it, so the rate you get is the one on the offer you accept — compare below.
         </p>
       </>
     );
@@ -275,9 +279,12 @@ function Rate({
   if (rate.kind === "stale") {
     return (
       <p className="mt-3 max-w-2xl text-sm text-amber-300">
-        The {pair.label}/{pair.currency} feed has lapsed — the last record expired{" "}
-        {new Date(rate.lapsedAt).toLocaleString()}, and expired data is not a rate (OFS-7000 §12).
-        A provider publishes this pair, so a fresh reading should appear once they publish again.
+        The {pair.label}/{pair.currency} feed has lapsed
+        {rate.lapsedAt === null
+          ? ""
+          : ` — the last record expired ${new Date(rate.lapsedAt).toLocaleString()}`}
+        , and expired data is not a rate (OFS-7000 §12). A provider publishes this pair, so a fresh
+        reading should appear once they publish again.
       </p>
     );
   }

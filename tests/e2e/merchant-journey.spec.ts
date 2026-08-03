@@ -149,31 +149,45 @@ async function attachWallet(page: import("@playwright/test").Page, wallet: Keypa
     },
     { nodeUrl: NODE },
   );
-  // After first paint every time, because the wallet adapter's own "nothing
-  // is connected" effect clears this record on mount — so a reload drops it
-  // and it has to be put back. It also races that effect: writing the record
-  // before the adapter has mounted means the adapter clears it a moment
-  // later, so this repeats until the app agrees a wallet is connected.
+  /*
+   * After first paint every time, because the wallet adapter's own "nothing
+   * is connected" effect clears this record on mount — so a reload drops it
+   * and it has to be put back. It also races that effect: writing the record
+   * before the adapter has mounted means the adapter clears it a moment
+   * later.
+   *
+   * The loop below repeats until the record *survives*, which is not what it
+   * used to check. Writing and then asking whether the value is there
+   * confirms our own store and passes on the first tick every time, so the
+   * clear a moment later went undetected — and this spec failed on roughly
+   * two full-suite runs in three, always at a `toBeVisible` on the first
+   * screen and never at anything under test. Reading before writing is the
+   * difference, and requiring several consecutive survivals distinguishes
+   * "the adapter has not cleared it yet" from "the adapter has mounted and
+   * left it alone". The same fixture and the same fix as
+   * `tests/e2e/merchant-ads.spec.ts`.
+   */
   return async () => {
-    const write = async () => {
-      await page.evaluate((walletAddress) => {
-        localStorage.setItem(
-          "openfiat:wallet",
-          JSON.stringify({ wallet: "Phantom", address: walletAddress }),
-        );
-        window.dispatchEvent(new Event("openfiat:wallet-changed"));
-      }, address);
-    };
-    await write();
     await expect
       .poll(
-        async () => {
-          await write();
-          return page.evaluate(() => localStorage.getItem("openfiat:wallet") !== null);
-        },
-        { timeout: 20_000, intervals: [250] },
+        async () =>
+          page.evaluate((walletAddress) => {
+            const scope = window as unknown as { __e2eWalletHeld?: number };
+            if (localStorage.getItem("openfiat:wallet")) {
+              scope.__e2eWalletHeld = (scope.__e2eWalletHeld ?? 0) + 1;
+            } else {
+              scope.__e2eWalletHeld = 0;
+              localStorage.setItem(
+                "openfiat:wallet",
+                JSON.stringify({ wallet: "Phantom", address: walletAddress }),
+              );
+              window.dispatchEvent(new Event("openfiat:wallet-changed"));
+            }
+            return scope.__e2eWalletHeld;
+          }, address),
+        { timeout: 20_000, intervals: [200] },
       )
-      .toBe(true);
+      .toBeGreaterThanOrEqual(5);
   };
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { EarningsConsole } from "@/components/earnings/earnings-console";
+import { RewardObservations } from "@/components/earnings/reward-observations";
 import { PageHero } from "@/components/page-hero";
 
 export const metadata: Metadata = {
@@ -20,6 +21,15 @@ export default function EarningsPage() {
       <div className="mt-8">
         <EarningsConsole />
       </div>
+
+      {/*
+        * A node operator is not a registered service and has no statement
+        * to sign for, so the console above answers nothing for them. This
+        * does, and it needs no wallet: OFS-4100 §9.4 makes the observations
+        * public precisely so the schedule computed from them can be checked
+        * by anyone.
+        */}
+      <RewardObservations />
     </section>
   );
 }
