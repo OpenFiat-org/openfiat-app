@@ -9,6 +9,11 @@ So this file records the judgment for the operator- and provider-facing half of
 that diff (task #204). One line each. Disagree with any of it in a commit that
 says why, rather than quietly adding the call.
 
+That half is **24 methods**: 10 are now called, and 14 are recorded below as
+decisions not to. The commit that added this file says twenty-two and eleven —
+it is wrong, `main` is protected against rewriting a pushed message, and the
+count that matters is the one you can check against the tables underneath.
+
 The other half — governance, reviews, trade exit paths — is recorded by whoever
 took it.
 
