@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "installCommand": "git config --global url.\"https://github.com/\".insteadOf git@github.com: && corepack enable && pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build"
 }
