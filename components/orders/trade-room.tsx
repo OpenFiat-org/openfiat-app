@@ -33,6 +33,7 @@ import { CopyButton } from "@/components/copy-button";
 import { ReservationSteps } from "@/components/orders/reservation-steps";
 import { SettlementSteps } from "@/components/orders/settlement-steps";
 import { Panel } from "@/components/panel";
+import { ReviewForm } from "@/components/reviews/review-form";
 import { TradeAttachments } from "@/components/orders/trade-attachments";
 import { StatusPill } from "@/components/status-pill";
 
@@ -345,6 +346,28 @@ export function TradeRoom({
       </div>
 
       <div className="space-y-6">
+        {settlement && (
+          <Panel title="Your review">
+            <ReviewForm
+              settlementId={settlement.id}
+              counterparty={parties ? (iAmBuyer ? parties.seller : parties.buyer) : null}
+              myPeerId={myPeerId}
+              wallet={wallet}
+              // `Approved` and `Completed` both count — see
+              // `openfiat_reviews::is_settled` on why gating on `Completed`
+              // alone would make the same review visible on some nodes and
+              // invisible on others.
+              settled={settlement.state === "Approved" || settlement.state === "Completed"}
+              // Three-valued on purpose. `null` is "this wallet has not
+              // proved which trades are its own yet", which is a different
+              // answer from "the node answered and this is not one of them"
+              // — and only the second is grounds for saying there is nothing
+              // here to review.
+              isParty={mine === null ? null : trade !== null}
+            />
+          </Panel>
+        )}
+
         {parties && (
           <Panel title="Trade channel">
             <TradeChannelPanel

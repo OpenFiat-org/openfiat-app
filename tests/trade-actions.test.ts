@@ -113,7 +113,35 @@ describe("what each party can do", () => {
       side: "buyer",
       escrow: null,
     });
-    expect(kinds(situation)).toEqual(["initiate"]);
+    // And the way back out of it, which used to be "wait thirty minutes".
+    expect(kinds(situation)).toEqual(["initiate", "cancel-reservation"]);
+  });
+
+  it("lets only the requester cancel a reservation", () => {
+    // `apply_cancel` checks the `requester` field against the stored record
+    // and verifies the signature against the key that record already holds.
+    // A merchant offered the button would get a refusal that reads as the
+    // app being broken; their remedy is the window lapsing.
+    expect(
+      kinds(tradeSituation({ trade: trade("EscrowLocked", null), side: "merchant", escrow: null })),
+    ).not.toContain("cancel-reservation");
+    expect(
+      kinds(tradeSituation({ trade: trade("EscrowLocked", null), side: "observer", escrow: null })),
+    ).not.toContain("cancel-reservation");
+  });
+
+  it("stops offering the reservation cancel once a settlement exists", () => {
+    // The reservation is no longer the live record at that point, and
+    // cancelling it would leave a settlement with nothing under it.
+    expect(
+      kinds(
+        tradeSituation({
+          trade: trade("EscrowLocked", "AwaitingPayment"),
+          side: "buyer",
+          escrow,
+        }),
+      ),
+    ).not.toContain("cancel-reservation");
   });
 
   it("tells a merchant what they are waiting on before a settlement exists", () => {
@@ -132,7 +160,7 @@ describe("what each party can do", () => {
       side: "merchant",
       escrow: null,
     });
-    expect(kinds(situation)).toEqual(["lock-escrow"]);
+    expect(kinds(situation)).toEqual(["lock-escrow", "cancel-settlement"]);
   });
 
   it("does not offer a merchant a second escrow for the same reservation", () => {
@@ -146,13 +174,17 @@ describe("what each party can do", () => {
     expect(kinds(situation)).not.toContain("lock-escrow");
   });
 
-  it("refuses to advise a merchant at all when the cluster could not be read", () => {
+  it("refuses to advise a merchant on chain when the cluster could not be read", () => {
     const situation = tradeSituation({
       trade: trade("EscrowLocked", "AwaitingPayment"),
       side: "merchant",
       escrow: undefined,
     });
-    expect(situation.actions).toEqual([]);
+    // Nothing on chain — locking again would fail on an account that may
+    // already exist. Cancelling touches no account at all, so a merchant who
+    // has decided against the trade is not held up by an unreachable RPC.
+    expect(kinds(situation)).toEqual(["cancel-settlement"]);
+    expect(situation.actions.every((item) => !item.onchain)).toBe(true);
     expect(situation.waitingOn).toMatch(/could not be read/);
   });
 
@@ -314,6 +346,133 @@ describe("what each party can do", () => {
       }
     }
     expect([...onchain].sort()).toEqual(["approve", "cancel-escrow", "lock-escrow", "release"]);
-    expect([...offchain].sort()).toEqual(["declare-paid", "dispute"]);
+    expect([...offchain].sort()).toEqual([
+      "cancel-settlement",
+      "declare-paid",
+      "dispute",
+      "reject-payment",
+      "reverse-payment",
+    ]);
+  });
+
+  it("marks every exit as destructive and every step forward as not", () => {
+    // These sit in one column of otherwise identical buttons, and "cancel the
+    // trade" is one row from "confirm the payment arrived".
+    const seen = new Map<TradeActionKind, boolean>();
+    for (const state of ["AwaitingPayment", "PaymentSubmitted", "Approved"] as const) {
+      for (const side of ["buyer", "merchant"] as const) {
+        for (const escrowState of [null, escrow]) {
+          for (const item of tradeSituation({
+            trade: trade("EscrowLocked", state),
+            side,
+            escrow: escrowState,
+          }).actions) {
+            seen.set(item.kind, item.destructive === true);
+          }
+        }
+      }
+    }
+    expect([...seen].filter(([, d]) => d).map(([kind]) => kind).sort()).toEqual([
+      "cancel-escrow",
+      "cancel-settlement",
+      "reject-payment",
+      "reverse-payment",
+    ]);
+  });
+});
+
+/**
+ * The four cheap exits, each offered exactly where the node will accept it.
+ *
+ * Every one of these bounds is enforced by openfiat-core and would come back
+ * as `INVALID_SETTLEMENT_STATE` or `INVALID_IDENTITY_CLAIM` if it were
+ * offered anywhere else — a wallet prompt followed by a refusal, which reads
+ * to the person at the screen as the app being broken.
+ */
+describe("the ways out of a trade", () => {
+  it("lets either party cancel while no payment has been declared", () => {
+    for (const side of ["buyer", "merchant"] as const) {
+      expect(
+        kinds(
+          tradeSituation({ trade: trade("EscrowLocked", "AwaitingPayment"), side, escrow }),
+        ),
+      ).toContain("cancel-settlement");
+    }
+  });
+
+  it("stops offering the cancel the moment a payment is declared", () => {
+    // The `AwaitingPayment` restriction is what stops this being a theft
+    // primitive: a merchant must not be able to cancel out from under a
+    // declared payment.
+    for (const side of ["buyer", "merchant"] as const) {
+      expect(
+        kinds(
+          tradeSituation({ trade: trade("EscrowLocked", "PaymentSubmitted"), side, escrow }),
+        ),
+      ).not.toContain("cancel-settlement");
+    }
+    for (const state of ["Approved", "Completed", "Disputed"] as const) {
+      expect(
+        kinds(tradeSituation({ trade: trade("EscrowLocked", state), side: "buyer", escrow })),
+      ).not.toContain("cancel-settlement");
+    }
+  });
+
+  it("offers the reversal to the buyer only, and only while a declaration is outstanding", () => {
+    expect(
+      kinds(
+        tradeSituation({ trade: trade("EscrowLocked", "PaymentSubmitted"), side: "buyer", escrow }),
+      ),
+    ).toContain("reverse-payment");
+    expect(
+      kinds(
+        tradeSituation({
+          trade: trade("EscrowLocked", "PaymentSubmitted"),
+          side: "merchant",
+          escrow,
+        }),
+      ),
+    ).not.toContain("reverse-payment");
+    expect(
+      kinds(
+        tradeSituation({ trade: trade("EscrowLocked", "AwaitingPayment"), side: "buyer", escrow }),
+      ),
+    ).not.toContain("reverse-payment");
+  });
+
+  it("offers the rejection to the merchant only, and only after payment is declared", () => {
+    expect(
+      kinds(
+        tradeSituation({
+          trade: trade("EscrowLocked", "PaymentSubmitted"),
+          side: "merchant",
+          escrow,
+        }),
+      ),
+    ).toContain("reject-payment");
+    // There is nothing to reject before the buyer has declared payment, and
+    // a buyer cannot reject their own settlement.
+    expect(
+      kinds(
+        tradeSituation({
+          trade: trade("EscrowLocked", "AwaitingPayment"),
+          side: "merchant",
+          escrow,
+        }),
+      ),
+    ).not.toContain("reject-payment");
+    expect(
+      kinds(
+        tradeSituation({ trade: trade("EscrowLocked", "PaymentSubmitted"), side: "buyer", escrow }),
+      ),
+    ).not.toContain("reject-payment");
+  });
+
+  it("offers a stranger no exit either", () => {
+    for (const state of ["AwaitingPayment", "PaymentSubmitted"] as const) {
+      expect(
+        tradeSituation({ trade: trade("EscrowLocked", state), side: "observer", escrow }).actions,
+      ).toEqual([]);
+    }
   });
 });

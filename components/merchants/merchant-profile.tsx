@@ -19,6 +19,7 @@ import {
   type LiveAd,
 } from "@/lib/live-advertisements";
 import { fetchReviews, meanStars, type LiveReview } from "@/lib/live-reviews";
+import { Stars } from "@/components/reviews/stars";
 import { fetchMerchantName } from "@/lib/merchant-name";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { addressForPeerId } from "@/lib/peer-id";
@@ -367,10 +368,7 @@ function Reviews({ reviews, loading }: { reviews: LiveReview[]; loading: boolean
             className="rounded-md border border-white/10 px-4 py-3"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <span className="text-sm text-amber-300" aria-label={`${review.stars} of 5 stars`}>
-                {"★".repeat(review.stars)}
-                <span className="text-gray-700">{"★".repeat(5 - review.stars)}</span>
-              </span>
+              <Stars stars={review.stars} />
               <span className="text-xs text-gray-600" title={sinceLabel(review.createdOn)}>
                 {formatDateShortMs(review.createdOn)}
               </span>

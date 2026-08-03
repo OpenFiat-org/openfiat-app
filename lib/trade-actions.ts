@@ -23,18 +23,35 @@ import type { DecodedTradeEscrow } from "@/lib/onchain-decode";
  *   **merchant** as signer, `release` takes none, `cancel` takes either
  *   party.
  *
- * # What is deliberately absent
+ * # The four ways out, which used to be one
  *
- * **Cancelling the reservation off-chain.** `openfiat-reservations` has a
- * `ReservationCancel` event and the registry applies it, but no node
- * exposes a `sendReservationCancel` method — the RPC surface has
- * `sendReservationRequest` and nothing else for reservations. So a taker who
- * changes their mind waits out the 30-minute validation window, and this says
- * so rather than offering a button that has nowhere to post to.
+ * Until recently the only exit from a trade that had gone wrong was
+ * `sendDisputeOpen` — arbitrators, a filing fee and a frozen escrow to
+ * express something the protocol already modelled as a plain refusal — or
+ * waiting out the 30-minute validation window. The node now exposes all
+ * four of the cheap exits, and every one of them is offered here:
  *
- * **Rejecting a payment.** `SettlementRejected` exists in the same way and
- * has no `sendSettlementRejected` either. A merchant who did not receive the
- * money opens a dispute, which does have a method.
+ * - `sendReservationCancel` — the taker changing their mind before a
+ *   settlement exists, instead of holding a merchant's inventory for half
+ *   an hour. Only the requester may; the merchant's remedy stays the
+ *   window lapsing, which is the trade they accepted when they published.
+ * - `sendSettlementCancelled` — either party walking away, legal only from
+ *   `AwaitingPayment`. That restriction is what stops it being a theft
+ *   primitive.
+ * - `sendPaymentReversed` — the buyer taking back a mistaken "I paid",
+ *   legal only from `PaymentSubmitted`, so it can never escape a decision
+ *   the merchant has already taken.
+ * - `sendSettlementRejected` — the merchant refusing a payment they cannot
+ *   find, without paying to open a dispute. Not a ruling: a buyer who
+ *   really did pay can still dispute afterwards.
+ *
+ * # The one window nothing here can close
+ *
+ * Between a buyer's fiat leaving their bank and that buyer declaring it.
+ * `AwaitingPayment` is cancellable by *either* party, so a merchant can
+ * cancel out from under money that has genuinely moved. Declaring costs
+ * the buyer nothing and is reversible; the window is not. Every piece of
+ * copy below is written on that basis.
  */
 
 /** Which side of this trade the connected wallet is on. */
@@ -67,6 +84,14 @@ export type TradeActionKind =
   | "release"
   /** Either: `cancel_reservation`, returning the tokens to the merchant's vault. */
   | "cancel-escrow"
+  /** Taker: `sendReservationCancel`, before any settlement exists. */
+  | "cancel-reservation"
+  /** Either: `sendSettlementCancelled`, only from `AwaitingPayment`. */
+  | "cancel-settlement"
+  /** Buyer: `sendPaymentReversed`, only from `PaymentSubmitted`. */
+  | "reverse-payment"
+  /** Merchant: `sendSettlementRejected`, only from `PaymentSubmitted`. */
+  | "reject-payment"
   /** Either: `sendDisputeOpen`. */
   | "dispute";
 
@@ -77,6 +102,16 @@ export interface TradeAction {
   detail: string;
   /** Whether it moves value on chain, so the UI can mark it as such. */
   onchain: boolean;
+  /**
+   * Whether it ends the trade or takes something back, so the UI can stop
+   * it looking like the step forward it sits next to.
+   *
+   * Set here rather than inferred from the name at the call site: "cancel
+   * the trade" and "confirm the payment arrived" are one keystroke apart in
+   * a column of identical buttons, and which of them is the destructive one
+   * is a property of the protocol action, not of the styling.
+   */
+  destructive?: boolean;
 }
 
 export interface TradeSituation {
@@ -140,6 +175,35 @@ const ACTIONS: Record<TradeActionKind, Omit<TradeAction, "kind">> = {
     detail:
       "Cancels the on-chain escrow and puts the merchant's tokens back in their liquidity vault. Only possible before release.",
     onchain: true,
+    destructive: true,
+  },
+  "cancel-reservation": {
+    label: "Cancel this reservation",
+    detail:
+      "Withdraws your claim on the merchant's liquidity and frees it immediately, instead of holding it for the rest of the 30-minute window. Signed by you, sent to the node — nothing moves on chain, and only you can cancel your own reservation.",
+    onchain: false,
+    destructive: true,
+  },
+  "cancel-settlement": {
+    label: "Cancel the trade",
+    detail:
+      "Ends the settlement with nothing owed either way. Possible only while no payment has been declared — once the buyer has said they paid, neither side can walk away unilaterally.",
+    onchain: false,
+    destructive: true,
+  },
+  "reverse-payment": {
+    label: "I have not actually paid",
+    detail:
+      "Withdraws your declaration and returns the trade to awaiting payment. Only do this for a declaration made in error: it lets the merchant cancel the trade, so a payment that really has left your account must go to a dispute instead.",
+    onchain: false,
+    destructive: true,
+  },
+  "reject-payment": {
+    label: "The payment never arrived",
+    detail:
+      "Records your refusal without opening a dispute or paying a filing fee. It is your claim, not a ruling — a buyer who really did pay can still open a dispute afterwards.",
+    onchain: false,
+    destructive: true,
   },
   dispute: {
     label: "Open a dispute",
@@ -177,12 +241,16 @@ export function tradeSituation(context: TradeContext): TradeSituation {
   }
 
   if (!settlement) {
+    // `apply_cancel` requires the reservation to still be `EscrowLocked`,
+    // which the guard above has already established, and refuses anyone but
+    // the requester — who is the only party a reservation names, and so the
+    // only side this branch can be reached from as anything but an observer.
     return side === "buyer"
-      ? { actions: [action("initiate")], waitingOn: null }
+      ? { actions: [action("initiate"), action("cancel-reservation")], waitingOn: null }
       : {
           actions: [],
           waitingOn:
-            "The taker has reserved against your advertisement but has not opened the settlement yet. Until they do, there is no record naming you as the seller to act on.",
+            "The taker has reserved against your advertisement but has not opened the settlement yet. Until they do, there is no record naming you as the seller to act on — and only they can cancel their own reservation.",
         };
   }
 
@@ -195,39 +263,57 @@ export function tradeSituation(context: TradeContext): TradeSituation {
     case "AwaitingPayment": {
       if (side === "merchant") {
         if (!funded) {
+          // Cancelling is offered even when the escrow could not be read,
+          // because it touches nothing on chain: a merchant who has decided
+          // against the trade should not have to wait for a cluster to answer
+          // before they can say so.
           return unreadable
             ? {
-                actions: [],
+                actions: [action("cancel-settlement")],
                 waitingOn:
                   "The cluster could not be read, so whether this trade's escrow already exists is unknown. Locking it again would fail on an account that is already there — reload before signing anything.",
               }
-            : { actions: [action("lock-escrow")], waitingOn: null };
+            : {
+                actions: [action("lock-escrow"), action("cancel-settlement")],
+                waitingOn: null,
+              };
         }
         return {
-          actions: [action("cancel-escrow"), action("dispute")],
+          actions: [action("cancel-settlement"), action("cancel-escrow"), action("dispute")],
           waitingOn:
-            "The escrow holds your tokens. The buyer has not declared the fiat sent yet.",
+            "The escrow holds your tokens. The buyer has not declared the fiat sent yet — which is also the only window in which either of you can still walk away.",
         };
       }
       if (!funded) {
         return {
-          actions: [action("dispute")],
+          actions: [action("cancel-settlement"), action("dispute")],
           waitingOn: unreadable
             ? "Whether the merchant has locked the tokens could not be read from the cluster. Do not send any money until it can be."
             : "The merchant has not locked the tokens in escrow yet. Do not send any money until they have — there is nothing on chain backing this trade.",
         };
       }
       return {
-        actions: [action("declare-paid"), action("cancel-escrow"), action("dispute")],
+        actions: [
+          action("declare-paid"),
+          action("cancel-settlement"),
+          action("cancel-escrow"),
+          action("dispute"),
+        ],
         waitingOn: null,
       };
     }
 
     case "PaymentSubmitted":
       return side === "merchant"
-        ? { actions: [action("approve"), action("dispute")], waitingOn: null }
+        ? {
+            actions: [action("approve"), action("reject-payment"), action("dispute")],
+            waitingOn: null,
+          }
         : {
-            actions: [action("dispute")],
+            // The buyer keeps a way back out of a declaration made in error,
+            // and it is deliberately not a cancel: reversal returns the trade
+            // to `AwaitingPayment`, which re-arms the merchant's cancel.
+            actions: [action("reverse-payment"), action("dispute")],
             waitingOn:
               "The merchant has been told the payment is sent and has not confirmed it yet.",
           };

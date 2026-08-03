@@ -29,11 +29,16 @@ import {
 } from "@/lib/trade-escrow";
 import {
   approveSettlement,
+  cancelReservation,
+  cancelSettlement,
   explainTradeRefusal,
   initiateSettlement,
   openDispute,
+  rejectSettlement,
+  reversePayment,
   submitPayment,
   tradeIdentity,
+  type PaymentDiscrepancy,
 } from "@/lib/trade-flow";
 import { escrow as escrowProgram } from "@/lib/onchain-config";
 import {
@@ -64,6 +69,23 @@ import {
 
 type Phase = { kind: "idle" } | { kind: "busy"; what: string } | { kind: "note"; text: string; bad: boolean };
 
+/**
+ * `PaymentDiscrepancy`'s variants, in the words a merchant would use.
+ *
+ * The wire spellings are OFS-2300 §14's own categories and are what
+ * reputation counts; the labels are for the person choosing. `Other` is
+ * last and named so it does not read as the safe default — it is the one
+ * value that records no fault against the buyer, which makes it the wrong
+ * answer whenever a real discrepancy applies.
+ */
+const DISCREPANCIES: Array<[PaymentDiscrepancy, string]> = [
+  ["IncorrectAmount", "The amount was wrong"],
+  ["WrongReference", "The reference was wrong or missing"],
+  ["DuplicatePayment", "It was a duplicate of another payment"],
+  ["IncorrectAccount", "It was sent to the wrong account"],
+  ["Other", "Something else — no payment fault"],
+];
+
 export function TradeActions({
   trade,
   ad,
@@ -83,6 +105,8 @@ export function TradeActions({
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [reference, setReference] = useState("");
   const [reason, setReason] = useState("");
+  const [rejection, setRejection] = useState("");
+  const [discrepancy, setDiscrepancy] = useState<PaymentDiscrepancy>("IncorrectAmount");
   const [open, setOpen] = useState<TradeActionKind | null>(null);
 
   const escrowId = escrowIdFor(trade.reservation.id);
@@ -285,7 +309,45 @@ export function TradeActions({
           { signature, blockhash, lastValidBlockHeight },
           "confirmed",
         );
-        return `The tokens are back in the merchant's vault. Transaction ${signature}. The reservation itself stays on the node until its 30-minute window lapses — no node exposes a way to cancel one.`;
+        return `The tokens are back in the merchant's vault. Transaction ${signature}. The off-chain records are separate — cancel the trade as well, or the settlement stays open with no escrow behind it.`;
+      }),
+
+    "cancel-reservation": () =>
+      void run("Cancelling the reservation", async (provider, address) => {
+        await cancelReservation(tradeIdentity(provider, address), trade.reservation.id);
+        return "The reservation is cancelled and the merchant's liquidity is free again.";
+      }),
+
+    "cancel-settlement": () =>
+      void run("Cancelling the trade", async (provider, address) => {
+        const settlement = trade.settlement;
+        if (!settlement) throw new Error("There is no settlement to cancel.");
+        await cancelSettlement(tradeIdentity(provider, address), settlement.id);
+        return "The trade is cancelled. If tokens are still locked in escrow, return them to the vault as well — the two records are separate.";
+      }),
+
+    "reverse-payment": () =>
+      void run("Withdrawing the declaration", async (provider, address) => {
+        const settlement = trade.settlement;
+        if (!settlement) throw new Error("There is no declaration to withdraw.");
+        await reversePayment(tradeIdentity(provider, address), settlement.id);
+        return "Your declaration is withdrawn and the trade is awaiting payment again. The merchant can now cancel it, so send the money and declare again, or cancel yourself.";
+      }),
+
+    "reject-payment": () =>
+      void run("Recording the rejection", async (provider, address) => {
+        const settlement = trade.settlement;
+        if (!settlement) throw new Error("There is no settlement to reject.");
+        if (rejection.trim() === "") {
+          throw new Error("Say what you did or did not find — the buyer and any arbitrator read this.");
+        }
+        await rejectSettlement(
+          tradeIdentity(provider, address),
+          settlement.id,
+          rejection.trim(),
+          discrepancy,
+        );
+        return "Recorded. The buyer can still open a dispute if they believe they paid — rejecting moves the cost of escalating onto whoever is wrong, it does not decide who that is.";
       }),
 
     dispute: () =>
@@ -327,6 +389,62 @@ export function TradeActions({
           className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
         />
       </label>
+    ),
+    "reject-payment": (
+      <div className="space-y-3">
+        <label className="block">
+          <span className="block text-xs text-gray-500">What was wrong with it</span>
+          <select
+            value={discrepancy}
+            onChange={(e) => setDiscrepancy(e.target.value as PaymentDiscrepancy)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]"
+          >
+            {DISCREPANCIES.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs leading-relaxed text-gray-500">
+            This is the field reputation counts, so pick the one that actually applies. Everything
+            except &ldquo;Something else&rdquo; records a payment-accuracy fault against the buyer.
+          </span>
+        </label>
+        <label className="block">
+          <span className="block text-xs text-gray-500">In your own words</span>
+          <textarea
+            value={rejection}
+            onChange={(e) => setRejection(e.target.value)}
+            rows={3}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
+          />
+          <span className="mt-1 block text-xs leading-relaxed text-gray-500">
+            Read by the buyer and by any arbitrator they escalate to. Nothing parses it.
+          </span>
+        </label>
+      </div>
+    ),
+    "reverse-payment": (
+      <p className="text-xs leading-relaxed text-amber-300">
+        Only if you have <span className="font-semibold">not</span> actually sent the money.
+        Withdrawing your declaration returns the trade to awaiting payment, which lets the merchant
+        cancel it — so if the fiat really has left your account, this hands them a window to cancel
+        out from under it. In that case open a dispute instead.
+      </p>
+    ),
+    "cancel-settlement": (
+      <p className="text-xs leading-relaxed text-amber-300">
+        Ends the trade with nothing owed either way. If the other side has already sent the fiat but
+        has not declared it yet, this cancels out from under their money — the protocol cannot see a
+        bank transfer, only the declaration. Do not cancel a trade somebody has told you they are
+        paying.
+      </p>
+    ),
+    "cancel-reservation": (
+      <p className="text-xs leading-relaxed text-gray-500">
+        Frees the merchant&apos;s liquidity straight away instead of holding it for the rest of the
+        30-minute window. There is nothing to undo afterwards — you would place a new order.
+      </p>
     ),
   };
 
@@ -450,7 +568,11 @@ function ActionRow({
         type="button"
         onClick={() => (input && !expanded ? onToggle() : onRun())}
         disabled={busy}
-        className="mt-3 w-full rounded-md bg-brand py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
+        className={`mt-3 w-full rounded-md py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+          action.destructive
+            ? "border border-red-400/40 text-red-200 hover:bg-red-500/10 disabled:opacity-40"
+            : "bg-brand text-white hover:bg-brand-hover disabled:bg-brand/40"
+        }`}
       >
         {input && !expanded ? `${action.label}…` : action.label}
       </button>

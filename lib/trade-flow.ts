@@ -6,18 +6,18 @@ import type { WireAmount } from "@/lib/merchant-ads";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
- * The five signed events a trade is made of, as the connected wallet signs
- * them.
+ * The signed events a trade is made of — the five that move it forward and
+ * the four that end it early — as the connected wallet signs them.
  *
  * # Why these are built by hand rather than through `@openfiat/sdk`
  *
  * The same reason `lib/merchant-ads.ts` gives: the SDK's `sendX` helpers take
  * a `Keypair`, an Ed25519 secret a browser wallet never exposes and this app
  * must never ask for. A wallet offers `signMessage` and nothing else, so the
- * payload is assembled here and handed to the wallet. Only
- * `sendReservationRequest` has an SDK binding at all; the other four have
- * none in any language, so the shapes below are transcribed from
- * `openfiat-core`'s own event structs.
+ * payload is assembled here and handed to the wallet — which is true of the
+ * events the SDK does bind as much as of the ones it does not. The shapes
+ * below are transcribed from `openfiat-core`'s own event structs, which are
+ * the authority either way.
  *
  * # Key order is load-bearing, and silent when wrong
  *
@@ -263,6 +263,133 @@ export async function approveSettlement(
 }
 
 /**
+ * `openfiat_reservations::events::ReservationCancel` — id, requester,
+ * timestamp.
+ *
+ * The way out of a reservation that does not cost half an hour. Only the
+ * requester may send it, and `apply_cancel` checks that twice over: the
+ * `requester` field must match the stored record, and the signature must
+ * verify against the public key that record already holds — not against
+ * one this payload supplies, which would let anyone who can name a
+ * reservation cancel it. The merchant has no cancel of their own; their
+ * remedy is the window lapsing.
+ *
+ * Legal only from `EscrowLocked`. It releases the liquidity this
+ * reservation was holding against the advertisement, which is the whole
+ * point of offering it rather than making a taker wait.
+ */
+export async function cancelReservation(
+  who: TradeIdentity,
+  reservationId: string,
+): Promise<void> {
+  const cancel = {
+    id: reservationId,
+    requester: who.peerId,
+    timestamp: Date.now(),
+  };
+  const signature = await signPayload(who.provider, cancel);
+  await sendSignedEvent(nodeUrl(), "sendReservationCancel", { cancel, signature });
+}
+
+/**
+ * `openfiat_settlement::events::SettlementCancelled` — settlement_id,
+ * canceller, timestamp. Legal only from `AwaitingPayment`.
+ *
+ * `canceller` must be the settlement's own buyer or seller and must be the
+ * wallet signing: the node picks the verifying key by matching that field
+ * against the stored settlement, so naming somebody else fails either the
+ * party check or the signature check that follows it.
+ *
+ * The `AwaitingPayment` restriction is what stops this being a theft
+ * primitive — once the buyer has declared payment, the merchant's only
+ * exits are approval, rejection or a dispute, none of which can be taken
+ * unilaterally and silently.
+ */
+export async function cancelSettlement(
+  who: TradeIdentity,
+  settlementId: string,
+): Promise<void> {
+  const action = {
+    settlement_id: settlementId,
+    canceller: who.peerId,
+    timestamp: Date.now(),
+  };
+  const signature = await signPayload(who.provider, action);
+  await sendSignedEvent(nodeUrl(), "sendSettlementCancelled", { action, signature });
+}
+
+/**
+ * `openfiat_settlement::events::PaymentReversed` — settlement_id, buyer,
+ * timestamp. Legal only from `PaymentSubmitted`, and only for the buyer.
+ *
+ * The buyer taking back "I paid", for a declaration made in error. It
+ * clears `payment_reference` and `payment_submitted_at`, which reaches
+ * further than it looks: `openfiat-reputation` reads that field as both
+ * "this buyer made a payment" and "this merchant is on the clock to answer
+ * one", so withdrawing retracts both — the buyer is not credited with a
+ * payment they took back, and the merchant is not faulted for failing to
+ * answer it.
+ *
+ * The sharp edge, and why the UI confirms first: reversal returns the
+ * settlement to `AwaitingPayment`, which re-arms the merchant's cancel. A
+ * buyer whose fiat has genuinely left their account and who reverses
+ * anyway has handed the merchant a window to cancel the trade out from
+ * under the money. Reverse a mis-click; for a real payment, open a
+ * dispute.
+ */
+export async function reversePayment(
+  who: TradeIdentity,
+  settlementId: string,
+): Promise<void> {
+  const action = {
+    settlement_id: settlementId,
+    buyer: who.peerId,
+    timestamp: Date.now(),
+  };
+  const signature = await signPayload(who.provider, action);
+  await sendSignedEvent(nodeUrl(), "sendPaymentReversed", { action, signature });
+}
+
+/**
+ * `openfiat_settlement::events::SettlementRejected` — settlement_id,
+ * seller, reason, discrepancy, timestamp. Legal only from
+ * `PaymentSubmitted`, and only for the seller.
+ *
+ * The merchant refusing a payment they cannot find, without a dispute.
+ * `reason` is prose an arbitrator may later read and nothing parses;
+ * `discrepancy` is the field reputation actually counts, and everything
+ * except `Other` counts as a payment-accuracy fault against the buyer —
+ * which is why the UI makes the caller choose one rather than defaulting.
+ *
+ * Not the end of the road for a buyer who really did pay: a dispute may
+ * still be opened afterwards. What rejecting changes is who pays to
+ * escalate.
+ */
+export type PaymentDiscrepancy =
+  | "IncorrectAmount"
+  | "WrongReference"
+  | "DuplicatePayment"
+  | "IncorrectAccount"
+  | "Other";
+
+export async function rejectSettlement(
+  who: TradeIdentity,
+  settlementId: string,
+  reason: string,
+  discrepancy: PaymentDiscrepancy,
+): Promise<void> {
+  const action = {
+    settlement_id: settlementId,
+    seller: who.peerId,
+    reason,
+    discrepancy,
+    timestamp: Date.now(),
+  };
+  const signature = await signPayload(who.provider, action);
+  await sendSignedEvent(nodeUrl(), "sendSettlementRejected", { action, signature });
+}
+
+/**
  * `openfiat_disputes::events::DisputeOpen` — id, settlement_id, opener,
  * opener_public_key, reason, timestamp.
  *
@@ -315,8 +442,19 @@ export function explainTradeRefusal(message: string): string {
   if (message.includes("DUPLICATE_RESERVATION_ID") || message.includes("DUPLICATE_SETTLEMENT_ID")) {
     return "The node already holds a record with that id — this order was already submitted.";
   }
-  if (message.includes("INVALID_STATE_TRANSITION")) {
-    return "The trade is no longer in the state that action needs. Reload to see where it actually is.";
+  // Both spellings: `SettlementError::InvalidStateTransition` maps onto
+  // OFS-8000's `INVALID_SETTLEMENT_STATE`, which is the name that actually
+  // arrives — the other is kept because it is what several other domains
+  // answer with, and matching on only one of them is how this reads as an
+  // unexplained raw code to whoever pressed the button.
+  if (message.includes("INVALID_SETTLEMENT_STATE") || message.includes("INVALID_STATE_TRANSITION")) {
+    return "The trade is no longer in the state that action needs. Reload to see where it actually is — a cancellation is only possible before a payment is declared, and a reversal or a rejection only while one is outstanding.";
+  }
+  if (message.includes("INVALID_RESERVATION_STATE")) {
+    return "This reservation is no longer live, so there is nothing left to cancel. It was either already cancelled or its 30-minute window lapsed.";
+  }
+  if (message.includes("RESERVATION_NOT_FOUND")) {
+    return "This node has no reservation with that id. It may not have reached this node yet — try again in a moment.";
   }
   if (message.includes("SETTLEMENT_NOT_FOUND")) {
     return "This node has no settlement with that id yet. It may not have reached this node — try again in a moment.";

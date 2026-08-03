@@ -51,6 +51,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const publicSurfaces = [
     entry("/disputes", 0.6, "daily"),
     entry("/governance", 0.6, "daily"),
+    // Filing a proposal needs a wallet, but the page states what a proposal
+    // is and what it costs, which is the question somebody searching for it
+    // actually has.
+    entry("/governance/new", 0.5, "monthly"),
     entry("/network", 0.5, "daily"),
     entry("/explorer", 0.5, "daily"),
     entry("/merchants", 0.6, "weekly"),
