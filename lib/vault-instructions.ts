@@ -301,6 +301,38 @@ export function withdrawInstructions(p: WithdrawParams): VaultTransfer {
   };
 }
 
+/**
+ * Turns a wrapped-SOL account back into plain SOL, and closes it.
+ *
+ * # Why this exists outside the vault flows
+ *
+ * The deposit and withdraw paths already leave no wrapped account behind:
+ * both close it in the same transaction that opened it, so a merchant using
+ * this app never sees one. They are not the only way a wallet acquires one.
+ * Another application, a wallet's own swap, or a transaction of ours that
+ * some future change splits in two, all leave a wrapped balance sitting in a
+ * token account — money the wallet's SOL figure does not show, recoverable
+ * only by knowing what wrapping is, which is exactly the thing this app
+ * exists to spare somebody.
+ *
+ * So the balance table offers the way back. `CloseAccount` moves the whole
+ * balance to `owner` as native SOL and returns the account's rent with it;
+ * there is no partial unwrap and none is offered, because a wrapped balance
+ * is not something a user of this app has a reason to keep some of.
+ *
+ * `account` is the token account as read, not a derived address. A wallet
+ * may hold wSOL in a non-associated account — `fetchTokenBalances` returns
+ * whatever exists — and closing an address we derived instead would fail
+ * against a balance the owner can plainly see.
+ */
+export function unwrapInstructions(
+  owner: PublicKey,
+  account: PublicKey,
+  tokenProgram: PublicKey,
+): TransactionInstruction[] {
+  return [createCloseAccountInstruction(account, owner, owner, [], tokenProgram)];
+}
+
 /** How much SOL a wallet can actually put into a wSOL vault, and why not more. */
 export interface WrapCapacity {
   /** The wallet's native SOL, in lamports. */

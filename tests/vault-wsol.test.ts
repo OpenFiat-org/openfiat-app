@@ -13,6 +13,7 @@ import {
   ataFor,
   depositInstructions,
   isWrappedSol,
+  unwrapInstructions,
   withdrawInstructions,
   WRAPPED_SOL_MINT,
 } from "@/lib/vault-instructions";
@@ -284,5 +285,49 @@ describe("a withdrawal", () => {
     const closed = plan.instructions[2]!.keys[0]!.pubkey;
     expect(paidInto.equals(closed)).toBe(true);
     expect(paidInto.equals(plan.tokenAccount)).toBe(true);
+  });
+});
+
+/**
+ * The last place a user could have been left holding wrapped SOL.
+ *
+ * The two flows above never leave an account behind — each closes the one
+ * it opened, in the same transaction. A wallet can still arrive holding one
+ * from somewhere else entirely, and before this the balance table could only
+ * show it: a figure the wallet's own SOL balance does not include, in a form
+ * the owner was never asked to understand, with no way back.
+ */
+describe("unwrapping a balance this app did not create", () => {
+  it("closes the account it was given, not one derived from the mint", () => {
+    // A wallet may hold wSOL in a non-associated account. Closing a derived
+    // address instead would fail against a balance the owner can see.
+    const strandedAccount = Keypair.generate().publicKey;
+    const instructions = unwrapInstructions(MERCHANT, strandedAccount, TOKEN_PROGRAM_ID);
+
+    expect(instructions).toHaveLength(1);
+    expect(instructions[0]!.data[0]).toBe(CLOSE_ACCOUNT);
+    expect(instructions[0]!.keys[0]!.pubkey.equals(strandedAccount)).toBe(true);
+    expect(strandedAccount.equals(ataFor(MERCHANT, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID))).toBe(false);
+  });
+
+  it("returns the balance and the rent to the owner, and to nobody else", () => {
+    const account = Keypair.generate().publicKey;
+    const [close] = unwrapInstructions(MERCHANT, account, TOKEN_PROGRAM_ID);
+
+    // `CloseAccount` is (account, destination, authority). Both the lamports
+    // and the authority are the owner's — a destination that is anything
+    // else is this app sending somebody's SOL somewhere they did not ask.
+    expect(close!.keys[1]!.pubkey.equals(MERCHANT)).toBe(true);
+    expect(close!.keys[2]!.pubkey.equals(MERCHANT)).toBe(true);
+  });
+
+  it("uses the token program the account actually lives under", () => {
+    const account = Keypair.generate().publicKey;
+    expect(programs(unwrapInstructions(MERCHANT, account, TOKEN_PROGRAM_ID))).toEqual([
+      TOKEN_PROGRAM_ID.toBase58(),
+    ]);
+    expect(programs(unwrapInstructions(MERCHANT, account, TOKEN_2022_PROGRAM_ID))).toEqual([
+      TOKEN_2022_PROGRAM_ID.toBase58(),
+    ]);
   });
 });

@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PublicKey } from "@solana/web3.js";
-import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  WALLET_CHANGED_EVENT,
+  currentSigner,
+  readWalletConnection,
+  type WalletConnection,
+} from "@/lib/wallet-connection";
 import {
   fetchNativeSolBalance,
   fetchTokenBalances,
@@ -14,7 +19,8 @@ import {
   shortMint,
 } from "@/lib/live-vaults";
 import { NATIVE_SOL_TRADING_LABEL } from "@/lib/asset-display";
-import { WRAPPED_SOL_DECIMALS, isWrappedSol } from "@/lib/vault-instructions";
+import { WRAPPED_SOL_DECIMALS, isWrappedSol, unwrapInstructions } from "@/lib/vault-instructions";
+import { getConnection } from "@/lib/onchain-config";
 import { useMintNames } from "@/components/wallet/use-mint-names";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 
@@ -40,6 +46,12 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
  * So the node's `wSOL` stands on any wrapped position, native SOL gets its
  * own row saying what it is for, and the two are never added together.
  */
+/** One unwrap at a time — the button is disabled while it is in flight. */
+type UnwrapState =
+  | { phase: "idle" }
+  | { phase: "signing" }
+  | { phase: "error"; message: string };
+
 export function BalancesPanel() {
   // Names come from the node, never from a table here — see `nameForMint`.
   const mints = useMintNames();
@@ -48,6 +60,7 @@ export function BalancesPanel() {
   /** Lamports. `null` while unread — never rendered as a zero gas balance. */
   const [lamports, setLamports] = useState<bigint | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [unwrapping, setUnwrapping] = useState<UnwrapState>({ phase: "idle" });
 
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
@@ -84,6 +97,52 @@ export function BalancesPanel() {
       setLamports(null);
     }
   }, [wallet, load]);
+
+  /**
+   * Turns a stranded wrapped-SOL account back into SOL.
+   *
+   * Nothing this app does leaves one behind — every vault deposit and
+   * withdrawal wraps and unwraps inside its own transaction — but a wallet
+   * can arrive here holding one from anywhere else, and until now this
+   * screen could only show it. A balance a user can see and cannot act on,
+   * in a form they were never asked to understand, is the whole problem
+   * wrapping causes; this is the way out of it, in one signature.
+   */
+  const unwrap = useCallback(
+    async (position: TokenBalance) => {
+      if (!wallet) return;
+      const provider = currentSigner(wallet);
+      if (!provider) {
+        setUnwrapping({
+          phase: "error",
+          message: "This wallet connection can't sign — reconnect with a real wallet.",
+        });
+        return;
+      }
+      setUnwrapping({ phase: "signing" });
+      try {
+        const owner = new PublicKey(wallet.address);
+        const connection = getConnection();
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        const transaction = new Transaction({ feePayer: owner, blockhash, lastValidBlockHeight }).add(
+          ...unwrapInstructions(owner, position.address, position.tokenProgram),
+        );
+        const { signature } = await provider.signAndSendTransaction(transaction);
+        await connection.confirmTransaction(
+          { signature, blockhash, lastValidBlockHeight },
+          "confirmed",
+        );
+        setUnwrapping({ phase: "idle" });
+        void load(wallet.address);
+      } catch (err) {
+        setUnwrapping({
+          phase: "error",
+          message: err instanceof Error ? err.message : "Transaction failed or was rejected.",
+        });
+      }
+    },
+    [wallet, load],
+  );
 
   if (!wallet) {
     return <p className="text-sm text-gray-500">Connect a wallet to see what it holds.</p>;
@@ -192,9 +251,33 @@ export function BalancesPanel() {
                 * transaction and not.
                 */}
               {isWrappedSol(b.mint) && (
-                <span className="mt-0.5 block text-[11px] text-amber-300/80">
-                  Wrapped SOL, held as a token. It does not pay fees — the SOL row above does.
-                </span>
+                <>
+                  <span className="mt-0.5 block text-[11px] text-amber-300/80">
+                    Wrapped SOL, held as a token. It does not pay fees — the SOL row above does.
+                  </span>
+                  {/*
+                    * The way out, offered rather than explained. Nothing in
+                    * this app leaves a wrapped account behind, so a balance
+                    * here came from somewhere else — and telling somebody
+                    * they are holding the wrong form of their own money
+                    * without giving them a button is worse than not
+                    * mentioning it. Closes the account and returns the whole
+                    * balance, plus its rent, as SOL.
+                    */}
+                  <button
+                    type="button"
+                    onClick={() => void unwrap(b)}
+                    disabled={unwrapping.phase === "signing"}
+                    className="mt-1.5 rounded-md border border-white/15 px-2.5 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/5 disabled:opacity-50"
+                  >
+                    {unwrapping.phase === "signing" ? "Unwrapping…" : "Unwrap to SOL"}
+                  </button>
+                  {unwrapping.phase === "error" && (
+                    <span className="mt-1 block text-[11px] text-red-300">
+                      {unwrapping.message}
+                    </span>
+                  )}
+                </>
               )}
             </Td>
             <Td right num className="text-gray-200">
