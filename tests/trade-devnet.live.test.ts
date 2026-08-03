@@ -8,7 +8,14 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { getAccount, getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { keypairFromSeed, sign, type Keypair } from "@openfiat/sdk";
+import {
+  derivationMessageBytes,
+  deriveEncryptionKeypair,
+  keypairFromSeed,
+  openWithEncryptionKey,
+  sign,
+  type Keypair,
+} from "@openfiat/sdk";
 
 import { escrow, getConnection } from "@/lib/onchain-config";
 import { fetchAdvertisement } from "@/lib/live-advertisements";
@@ -34,6 +41,7 @@ import {
   submitReservation,
   tradeIdentity,
 } from "@/lib/trade-flow";
+import { counterpartyEncryptionKey, enrol } from "@/lib/channel-identity";
 import {
   encodePaymentDetails,
   fetchMyTradeChannel,
@@ -41,6 +49,7 @@ import {
   grantChannelKey,
   postChannelEntry,
   readEntries,
+  recoverChannelKey,
 } from "@/lib/trade-channel";
 import { createVaultIx, depositIx } from "@/lib/vault-instructions";
 import type { SolanaProvider } from "@/lib/wallet-connection";
@@ -281,18 +290,45 @@ describe.skipIf(!ENABLED)("a whole trade, against a real node and devnet", () =>
       const [escrowTokens] = escrow.tradeEscrowTokensPda(parties.reservationId);
       expect(await balanceOf(escrowTokens, tokenProgram)).toBe(AMOUNT);
 
-      // --- the trade channel --------------------------------------------
+      /*
+       * --- the trade channel, between two different wallets ---------------
+       *
+       * This is the part the whole feature turns on and the part that did
+       * not work. A `KeyGrant` used to be sealed to the recipient's Ed25519
+       * wallet key, and opening one needs that key's secret scalar — which a
+       * browser wallet does not have. So the merchant could seal payment
+       * details the buyer could never read, and only the merchant's own tab
+       * could open the channel at all.
+       *
+       * Everything below is therefore asserted from *both* sides
+       * separately, with the buyer's client holding nothing the merchant's
+       * produced: the buyer re-derives their key from their own wallet, and
+       * recovers the channel key from the grant the network holds.
+       */
+      const merchantEnc = await enrol(merchantWallet, merchantKey.publicKey.toBase58());
+      const buyerEnc = await enrol(buyerWallet, buyerKey.publicKey.toBase58());
+
+      // Each side is reachable by peer id alone, which is all a counterparty
+      // has before a trade. Looked up rather than passed across.
+      const buyerPublished = await counterpartyEncryptionKey(buyerKey.publicKey.toBase58());
+      const merchantPublished = await counterpartyEncryptionKey(
+        merchantKey.publicKey.toBase58(),
+      );
+      expect(buyerPublished, "the buyer's published encryption key is not on the node").not.toBeNull();
+      expect(Array.from(buyerPublished!)).toEqual(Array.from(buyerEnc.publicKey));
+      expect(Array.from(merchantPublished!)).toEqual(Array.from(merchantEnc.publicKey));
+
       const channelKey = generateChannelKey();
       await grantChannelKey(
         merchant,
         settlementId,
-        { peerId: buyer.peerId, publicKey: buyer.publicKey },
+        { peerId: buyer.peerId, encryptionKey: buyerPublished! },
         channelKey,
       );
       await grantChannelKey(
         merchant,
         settlementId,
-        { peerId: merchant.peerId, publicKey: merchant.publicKey },
+        { peerId: merchant.peerId, encryptionKey: merchantPublished! },
         channelKey,
       );
       await postChannelEntry(
@@ -327,6 +363,64 @@ describe.skipIf(!ENABLED)("a whole trade, against a real node and devnet", () =>
       // And the same channel read with no key opens nothing, rather than
       // reporting an empty conversation.
       expect(readEntries(channel, [])[0]!.sealed).toBe(true);
+
+      /*
+       * The buyer, from their own wallet, holding nothing the merchant's
+       * client produced. This is the assertion the feature exists for.
+       */
+      const buyersView = await fetchMyTradeChannel(
+        nodeUrl(),
+        settlementId,
+        buyerKey.publicKey.toBase58(),
+        buyerWallet,
+      );
+      const buyersKey = recoverChannelKey(buyersView, buyer.peerId, buyerEnc);
+      expect(buyersKey, "the buyer cannot open the grant the merchant sealed to them").not.toBeNull();
+      expect(Array.from(buyersKey!)).toEqual(Array.from(channelKey));
+      const buyersEntries = readEntries(buyersView, [buyersKey!]);
+      expect(buyersEntries[0]!.sealed).toBe(false);
+      expect(buyersEntries[0]!.text).toContain("+254700000000");
+
+      // The merchant recovers it the same way — which is what makes the
+      // channel survive a closed tab or a second device. Nothing local.
+      const merchantsRecovered = recoverChannelKey(channel, merchant.peerId, merchantEnc);
+      expect(Array.from(merchantsRecovered!)).toEqual(Array.from(channelKey));
+
+      // And a third wallet, holding the identical replica, opens neither
+      // grant. Read from the merchant's copy rather than fetched, because
+      // the node would refuse an outsider the read at all — the point here
+      // is the cryptography, not the RPC gate.
+      const outsiderKey = SolanaKeypair.generate();
+      const outsiderProtocol = await keypairFromSeed(outsiderKey.secretKey.slice(0, 32));
+      const outsiderEnc = deriveEncryptionKeypair(
+        await sign(outsiderProtocol, derivationMessageBytes()),
+      );
+      for (const grant of channel.grants) {
+        expect(
+          () => openWithEncryptionKey(outsiderEnc, grant.sealed_key),
+          "a third party opened a grant addressed to a party",
+        ).toThrow();
+      }
+      expect(
+        recoverChannelKey(channel, buyer.peerId, outsiderEnc),
+        "a third party recovered the channel key",
+      ).toBeNull();
+
+      // The buyer answers too, so the channel is a conversation rather than
+      // a broadcast — and the merchant reads it.
+      await postChannelEntry(buyer, settlementId, buyersKey!, "Message", 0, "Sent, ref above.");
+      const afterReply = await fetchMyTradeChannel(
+        nodeUrl(),
+        settlementId,
+        merchantKey.publicKey.toBase58(),
+        merchantWallet,
+      );
+      const replies = readEntries(afterReply, [channelKey]).filter(
+        (entry) => entry.author === buyer.peerId,
+      );
+      expect(replies).toHaveLength(1);
+      expect(replies[0]!.sealed).toBe(false);
+      expect(replies[0]!.text).toBe("Sent, ref above.");
 
       // --- the taker pays, the merchant approves -------------------------
       await submitPayment(buyer, settlementId, `ref-${reservationId}`);

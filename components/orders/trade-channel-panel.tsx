@@ -1,10 +1,15 @@
 "use client";
 
-import bs58 from "bs58";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
 import { PeerIdentity } from "@/components/peer-identity";
+import {
+  channelIdentity,
+  counterpartyEncryptionKey,
+  enrol,
+  type EnrolmentState,
+} from "@/lib/channel-identity";
 import { formatDateMs } from "@/lib/format";
 import { nodeUrl } from "@/lib/node-endpoint";
 import {
@@ -24,6 +29,7 @@ import {
   postChannelEntry,
   readEntries,
   recallChannelKey,
+  recoverChannelKey,
   rememberChannelKey,
   type ChannelKey,
   type ReadEntry,
@@ -39,25 +45,32 @@ import { currentSigner, type WalletConnection } from "@/lib/wallet-connection";
  * settlement, encrypted client-side under a per-trade key — so they are one
  * record type with a `kind`, and one panel.
  *
- * # What this panel can and cannot do, said once and not softened
+ * # The one step this panel asks for that nothing else does
  *
  * The channel is hybrid: one 32-byte content key per trade, and one small
- * sealed `KeyGrant` per reader. Sealing is a public-key operation, so this
- * app can address a grant to the counterparty perfectly well. **Opening one
- * needs the recipient's Ed25519 secret**, and a Solana wallet exposes
- * `signMessage` and `signTransaction` and no key material at all.
+ * sealed `KeyGrant` per reader. A grant is sealed to the recipient's
+ * published **encryption key** — not their wallet key, which a browser
+ * wallet will never surrender the secret to — so both parties must have
+ * published one before either can be reached. That is `lib/channel-identity`
+ * and it costs two wallet signatures, once, ever.
  *
- * So a browser reads a channel only under a key it generated itself and still
- * holds in this tab. A grant somebody addressed to this wallet is bytes this
- * browser cannot open, and the entries under it render as sealed — never as
- * empty, because "the merchant wrote nothing" and "the merchant wrote
- * something this client cannot read" are opposite answers and the second one
- * is the one that gets somebody's money sent to nowhere.
+ * So this panel has three states that were previously one, and it must keep
+ * them apart on screen because they call for three different actions:
  *
- * That is a real, load-bearing gap and it is stated on screen rather than
- * worked around. Closing it needs a wallet that will perform X25519 with its
- * key, or a protocol identity this client holds the secret to; neither is
- * this repository's to add.
+ * - **You have not published a key.** Nobody can seal anything to you.
+ *   One button fixes it.
+ * - **They have not published a key.** You cannot start the channel, and
+ *   nothing you do will change that — they have to open this trade once.
+ *   Saying "something went wrong" here would send a merchant hunting for a
+ *   fault on their own side.
+ * - **Both published.** Everything works, including on a device that has
+ *   never seen this trade: the grant on the network opens under the key the
+ *   wallet re-derives.
+ *
+ * An entry this client cannot open still renders as *sealed*, never as
+ * empty. "The merchant wrote nothing" and "the merchant wrote something
+ * this client cannot read" are opposite answers, and the second one is the
+ * one that gets somebody's money sent to nowhere.
  */
 export function TradeChannelPanel({
   settlement,
@@ -80,6 +93,9 @@ export function TradeChannelPanel({
 }) {
   const [channel, setChannel] = useState<WireTradeChannel | null>(null);
   const [key, setKey] = useState<ChannelKey | null>(null);
+  const [identity, setIdentity] = useState<EnrolmentState | null>(null);
+  /** `undefined` until looked up; `null` means they have published none. */
+  const [theirKey, setTheirKey] = useState<Uint8Array | null | undefined>(undefined);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState("");
@@ -105,6 +121,17 @@ export function TradeChannelPanel({
     [iAmSeller, settlement],
   );
 
+  /**
+   * Read the channel, then open as much of it as this wallet is entitled to.
+   *
+   * Three round trips, in an order that matters. The channel first, because
+   * the rest is pointless without it. Then this wallet's own encryption
+   * key — one prompt, cached for the tab — which is what turns a grant on
+   * the network into the channel key, on any device, with nothing carried
+   * over from the session that started the trade. Then the counterparty's
+   * published key, because whether they have one decides what this panel is
+   * allowed to offer.
+   */
   const read = useCallback(async () => {
     const provider = currentSigner(wallet);
     if (!wallet || !provider) {
@@ -114,44 +141,50 @@ export function TradeChannelPanel({
     setBusy(true);
     setStatus(null);
     try {
-      setChannel(await fetchMyTradeChannel(nodeUrl(), settlement.id, wallet.address, provider));
+      const fetched = await fetchMyTradeChannel(
+        nodeUrl(),
+        settlement.id,
+        wallet.address,
+        provider,
+      );
+      setChannel(fetched);
+
+      const me = await channelIdentity(provider, wallet.address);
+      setIdentity(me);
+      if (myPeerId) {
+        // The grant on the network wins over whatever this tab had cached:
+        // a counterparty may have started the channel since, and their key
+        // is the one the entries are actually under.
+        const recovered = recoverChannelKey(fetched, myPeerId, me.keypair);
+        if (recovered) {
+          rememberChannelKey(settlement.id, recovered);
+          setKey(recovered);
+        }
+      }
+      setTheirKey(await counterpartyEncryptionKey(counterparty.publicKey));
     } catch (err) {
       setStatus(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [wallet, settlement.id]);
+  }, [wallet, settlement.id, myPeerId, counterparty.publicKey]);
 
-  /**
-   * Start the channel: one key, granted to the counterparty and to yourself.
-   *
-   * The self-grant is not redundant in the protocol — it is how a client
-   * recovers the key from the network on another device. It cannot serve that
-   * purpose here, for the reason at the top of this file, and it is still
-   * sent: the record of who was let in is public and checkable, and a channel
-   * whose author never granted themselves would read as one they cannot open
-   * either.
-   */
-  const start = useCallback(async () => {
+  /** Publish this wallet's encryption key, so the other side can seal to it. */
+  const publishKey = useCallback(async () => {
     const provider = currentSigner(wallet);
     if (!wallet || !provider) return;
     setBusy(true);
     setStatus(null);
     try {
-      const who = tradeIdentity(provider, wallet.address);
-      const fresh = generateChannelKey();
-      await grantChannelKey(who, settlement.id, {
-        peerId: counterparty.peerId,
-        publicKey: bs58.decode(counterparty.publicKey),
-      }, fresh);
-      await grantChannelKey(who, settlement.id, {
-        peerId: who.peerId,
-        publicKey: who.publicKey,
-      }, fresh);
-      rememberChannelKey(settlement.id, fresh);
-      setKey(fresh);
+      await enrol(
+        provider,
+        wallet.address,
+        // A rotation supersedes the claim it replaces, so every reader agrees
+        // which key is current. A first publication has nothing to replace.
+        identity?.status === "mismatch" ? identity.publishedClaimId : null,
+      );
       setStatus(
-        "Channel key generated and granted to both parties. It is held in this tab only — closing it loses the ability to read this channel, and there is no recovery.",
+        "Your encryption key is published. Anyone you trade with can now seal payment details and messages to it, and you can open them on any device this wallet is on.",
       );
       await read();
     } catch (err) {
@@ -159,7 +192,50 @@ export function TradeChannelPanel({
     } finally {
       setBusy(false);
     }
-  }, [wallet, settlement.id, counterparty, read]);
+  }, [wallet, identity, read]);
+
+  /**
+   * Start the channel: one key, granted to the counterparty and to yourself.
+   *
+   * The self-grant is what lets this wallet read the channel on another
+   * device, or in this one after the tab is closed — it is the only copy of
+   * the key that is not local. It was always sent and could not previously
+   * be used for that, which is what made losing the tab final.
+   *
+   * Both grants are sealed to *published* keys. The counterparty's is looked
+   * up from their identity claim; sealing to their wallet key instead would
+   * produce a grant they cannot open, and this side would never know.
+   */
+  const start = useCallback(async () => {
+    const provider = currentSigner(wallet);
+    if (!wallet || !provider || !theirKey || identity?.status !== "ready") return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      const who = tradeIdentity(provider, wallet.address);
+      const fresh = generateChannelKey();
+      await grantChannelKey(
+        who,
+        settlement.id,
+        { peerId: counterparty.peerId, encryptionKey: theirKey },
+        fresh,
+      );
+      await grantChannelKey(
+        who,
+        settlement.id,
+        { peerId: who.peerId, encryptionKey: identity.keypair.publicKey },
+        fresh,
+      );
+      rememberChannelKey(settlement.id, fresh);
+      setKey(fresh);
+      setStatus("Channel key generated and granted to both parties.");
+      await read();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }, [wallet, settlement.id, counterparty.peerId, theirKey, identity, read]);
 
   const post = useCallback(
     async (kind: "PaymentDetails" | "Message", plaintext: string) => {
@@ -232,23 +308,69 @@ export function TradeChannelPanel({
             </div>
           </dl>
 
+          {identity && identity.status !== "ready" && (
+            <div
+              data-testid="enrolment-needed"
+              className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
+            >
+              {identity.status === "not-published" ? (
+                <p>
+                  You have not published an encryption key, so nobody can seal payment details or
+                  messages to you yet. Publishing one asks your wallet to sign the same message
+                  twice — the second signature is the check that your wallet signs deterministically,
+                  without which a key derived today could not be derived again.
+                </p>
+              ) : (
+                <p>
+                  Your wallet now derives a different encryption key from the one published on the
+                  network. Publishing the new one lets people reach you again and will not recover
+                  anything sealed under the old key — those grants are already replicated and cannot
+                  be re-addressed.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void publishKey()}
+                disabled={busy}
+                className="mt-2 w-full rounded-md border border-amber-400/40 py-2 text-xs font-semibold text-amber-100 hover:border-amber-300/60 disabled:opacity-50"
+              >
+                {identity.status === "not-published"
+                  ? "Publish my encryption key"
+                  : "Publish my new encryption key"}
+              </button>
+            </div>
+          )}
+
+          {theirKey === null && (
+            <p
+              data-testid="counterparty-not-enrolled"
+              className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
+            >
+              The other party has not published an encryption key yet, so there is nothing to seal a
+              channel to. They publish one the first time they open this trade. Nothing is wrong on
+              your side and nothing here will change until they do.
+            </p>
+          )}
+
           {!key && channel.grants.length === 0 && (
             <button
               type="button"
               onClick={() => void start()}
-              disabled={busy}
+              disabled={busy || !theirKey || identity?.status !== "ready"}
               className="mt-3 w-full rounded-md bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
             >
               Start the channel
             </button>
           )}
 
-          {!key && channel.grants.length > 0 && (
-            <p className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200">
-              A channel key was granted to this wallet, and this browser cannot open it. A grant is
-              sealed to your Ed25519 identity key, and opening one needs that key&apos;s secret —
-              which a Solana wallet does not expose to a web page, by design. The entries below
-              exist and are not empty; they are unreadable here.
+          {!key && channel.grants.length > 0 && identity?.status === "ready" && (
+            <p
+              data-testid="grants-unreadable"
+              className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
+            >
+              This channel has readers, and none of the grants on it are addressed to your current
+              encryption key. The entries below exist and are not empty; they are unreadable here.
+              That happens when the channel was started before you published this key.
             </p>
           )}
 

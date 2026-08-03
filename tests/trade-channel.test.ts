@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import bs58 from "bs58";
+import { deriveEncryptionKeypair, sealToEncryptionKey } from "@openfiat/sdk";
 
 import {
   channelKeyId,
@@ -10,6 +11,7 @@ import {
   openEntry,
   PADDING_BLOCK,
   readEntries,
+  recoverChannelKey,
   sealEntry,
   type EntryBinding,
   type WireTradeChannel,
@@ -241,5 +243,122 @@ describe("the author in a binding is the peer id's bytes", () => {
     expect(() =>
       openEntry(key, binding({ author: bs58.encode(nudged) }), sealed),
     ).toThrow();
+  });
+});
+
+/**
+ * Recovering the channel key from a grant.
+ *
+ * This is the function whose absence made the feature unusable: a grant was
+ * sealed to the recipient's Ed25519 wallet key, and opening one needs that
+ * key's secret scalar, which a browser wallet does not have. Every case
+ * below is a way that recovery can go wrong on a channel a hostile or merely
+ * careless counterparty helped build, and every one of them has to fail
+ * closed rather than hand back bytes that will be used as a decryption key.
+ */
+describe("recovering a channel key from the grants on the network", () => {
+  const RECIPIENT = AUTHOR;
+
+  /*
+   * Derived from a stand-in signature rather than a real wallet's. What is
+   * under test here is what `recoverChannelKey` does with a keypair, not
+   * where the keypair came from; that the derivation matches openfiat-core
+   * for a *real* signature is pinned by `@openfiat/sdk`'s own vectors
+   * against that implementation, which is the only place it can be pinned.
+   */
+  function keypairFor(seed: number) {
+    return deriveEncryptionKeypair(new Uint8Array(64).fill(seed));
+  }
+
+  function withGrants(grants: WireTradeChannel["grants"]): WireTradeChannel {
+    return { settlement_id: "settle-1", grants, entries: [] };
+  }
+
+  function grant(
+    recipient: string,
+    to: Uint8Array,
+    key: Uint8Array,
+    overrides: Partial<WireTradeChannel["grants"][number]> = {},
+  ): WireTradeChannel["grants"][number] {
+    return {
+      settlement_id: "settle-1",
+      granter: OTHER,
+      recipient,
+      role: "Party",
+      key_id: channelKeyId(key),
+      sealed_key: sealToEncryptionKey(to, key),
+      granted_at: 1_000,
+      ...overrides,
+    };
+  }
+
+  it("opens the grant the counterparty addressed to this wallet", () => {
+    const me = keypairFor(1);
+    const key = generateChannelKey();
+    const recovered = recoverChannelKey(
+      withGrants([grant(RECIPIENT, me.publicKey, key)]),
+      RECIPIENT,
+      me,
+    );
+    expect(recovered).not.toBeNull();
+    expect(Array.from(recovered!)).toEqual(Array.from(key));
+  });
+
+  it("opens nothing for a wallet the grant was not addressed to", () => {
+    const me = keypairFor(1);
+    const eavesdropper = keypairFor(2);
+    const key = generateChannelKey();
+    const channel = withGrants([grant(RECIPIENT, me.publicKey, key)]);
+    expect(recoverChannelKey(channel, RECIPIENT, eavesdropper)).toBeNull();
+  });
+
+  it("ignores grants addressed to somebody else, even ones it could open", () => {
+    // A reader must not adopt a key from a grant naming another recipient:
+    // the node derives `role` from the settlement per recipient, so reading
+    // through somebody else's grant would sidestep that check entirely.
+    const me = keypairFor(1);
+    const key = generateChannelKey();
+    expect(
+      recoverChannelKey(withGrants([grant(OTHER, me.publicKey, key)]), RECIPIENT, me),
+    ).toBeNull();
+  });
+
+  it("tries every grant addressed to this wallet, newest first", () => {
+    // Both parties may grant the same reader, and one of them sealing
+    // garbage must not lock that reader out of a channel the other opened.
+    const me = keypairFor(1);
+    const key = generateChannelKey();
+    const unopenable = grant(RECIPIENT, keypairFor(3).publicKey, key, { granted_at: 2_000 });
+    const good = grant(RECIPIENT, me.publicKey, key, { granted_at: 1_000 });
+    const recovered = recoverChannelKey(withGrants([unopenable, good]), RECIPIENT, me);
+    expect(Array.from(recovered!)).toEqual(Array.from(key));
+  });
+
+  it("refuses a grant whose contents are not 32 bytes", () => {
+    // A granter controls what goes inside a sealed box and a node cannot
+    // check it — that is what makes a sealed box useful. Returning this
+    // would hand a wrong-length key to ChaCha20-Poly1305.
+    const me = keypairFor(1);
+    const key = generateChannelKey();
+    const wrong = grant(RECIPIENT, me.publicKey, key);
+    wrong.sealed_key = sealToEncryptionKey(me.publicKey, new Uint8Array(16));
+    expect(recoverChannelKey(withGrants([wrong]), RECIPIENT, me)).toBeNull();
+  });
+
+  it("refuses a grant carrying a key that is not the one it names", () => {
+    // `key_id` is public, so a recipient can hash what they opened and
+    // compare. Without that check a granter could seal a different valid
+    // key and this client would fail to open every entry with no reason
+    // anybody could see.
+    const me = keypairFor(1);
+    const announced = generateChannelKey();
+    const substituted = grant(RECIPIENT, me.publicKey, generateChannelKey(), {
+      key_id: channelKeyId(announced),
+    });
+    expect(recoverChannelKey(withGrants([substituted]), RECIPIENT, me)).toBeNull();
+  });
+
+  it("returns null on a channel with no grants at all", () => {
+    expect(recoverChannelKey(withGrants([]), RECIPIENT, keypairFor(1))).toBeNull();
   });
 });

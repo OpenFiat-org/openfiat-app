@@ -185,6 +185,12 @@ async function seedProviders(client: Client): Promise<number> {
       supported_ofs: OFS_BY_TYPE[variantName(spec.serviceType)] ?? [1500],
       region: spec.region,
       capabilities: spec.capabilities,
+      // Between `capabilities` and `pricing`, where the Rust struct declares
+      // it: the node verifies the signature over its own re-serialization,
+      // so an omitted or misplaced key is a valid signature over the wrong
+      // bytes and comes back as INVALID_SIGNATURE. `null` is what most
+      // providers declare.
+      branding: null,
       // Left unset deliberately, and it is load-bearing: a node rejects
       // pricing with no `payout_wallet`, and these test identities have no
       // Solana address that could be paid. Absent pricing already means

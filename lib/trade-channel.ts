@@ -1,7 +1,11 @@
 import bs58 from "bs58";
 import { chacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { sha256 } from "@noble/hashes/sha2.js";
-import { seal } from "@openfiat/sdk";
+import {
+  openWithEncryptionKey,
+  sealToEncryptionKey,
+  type EncryptionKeypair,
+} from "@openfiat/sdk";
 
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { nodeUrl } from "@/lib/node-endpoint";
@@ -30,29 +34,37 @@ import { signedRead, type GatedSurface } from "@/lib/wallet-proof";
  * of the history — and, the actual point, an arbitrator opens the *original*
  * ciphertexts rather than a party's retelling of them.
  *
- * # What a browser wallet can and cannot do here, stated plainly
+ * # Who a grant is addressed to
  *
- * Sealing is a public-key operation and works: this app can address a grant
- * to the counterparty's identity key, which the settlement record already
- * carries. **Opening one cannot be done with a Solana wallet.**
- * `openfiat_crypto::open` needs the recipient's Ed25519 secret scalar to
- * complete the ECDH, and a browser wallet exposes `signMessage` and
- * `signTransaction` and no key material at all — by design, and rightly.
+ * Not the recipient's wallet key. Opening a box sealed to an Ed25519 key
+ * needs that key's secret scalar, and a Solana wallet exposes `signMessage`
+ * and `signTransaction` and no key material at all — by design, and rightly.
+ * For as long as grants were sealed that way, a grant addressed to this
+ * wallet was bytes this browser could never open, and two people with
+ * ordinary wallets could not exchange payment details. This module said so
+ * honestly at the top of the file, which did not make it work.
  *
- * The consequence is exact and is not smoothed over anywhere in this module
- * or in the screens that use it: **this app can read a channel only under a
- * key it generated itself and still holds locally.** A grant addressed to
- * this wallet by the counterparty is bytes this browser cannot open. So
- * `readChannel` reports each entry as opened or as sealed-and-unreadable, and
- * never renders an unreadable one as empty — those are opposite answers, and
- * an interface that confused them would tell a buyer their merchant sent no
- * payment details when the merchant sent them and this client cannot read
- * them.
+ * A grant is now sealed to the X25519 **encryption key** the recipient
+ * published as an identity claim — see `lib/channel-identity.ts` for where
+ * that key comes from, what it costs, and why its determinism is checked
+ * rather than assumed. Two consequences shape everything below:
  *
- * Closing that gap needs either a wallet that performs X25519 for its key, or
- * a protocol identity this client holds the secret to. Both are changes
- * outside this repository, so what is here is the honest half rather than a
- * half-honest whole.
+ * - The counterparty must have enrolled before anyone can seal to them.
+ *   {@link grantChannelKey} takes a published key, never a wallet key, and
+ *   there is deliberately no fallback: falling back to the wallet key is
+ *   precisely how a channel ends up sealed to somebody who cannot open it,
+ *   and it would be invisible to the granter, whose own copy reads fine.
+ * - The channel key no longer has to survive in browser storage.
+ *   {@link recoverChannelKey} opens the grants addressed to this wallet, so
+ *   a new device — or the same one after a refresh — reads the whole
+ *   channel. The self-grant that was previously sent and unusable is what
+ *   makes that work, which is what it was always for.
+ *
+ * {@link readEntries} still reports each entry as opened or as
+ * sealed-and-unreadable, and never renders an unreadable one as empty:
+ * those are opposite answers, and an interface that confused them would
+ * tell a buyer their merchant sent no payment details when the merchant
+ * sent them and this client could not read them.
  */
 
 /** `openfiat_tradechannel::key::KEY_ID_DOMAIN`. */
@@ -253,11 +265,13 @@ export function openEntry(
  *
  * `sessionStorage` rather than `localStorage`: a channel key opens a trade's
  * payment details and its whole conversation, and leaving one in a shared
- * machine's persistent storage after the tab closes is the disclosure this
- * crate exists to prevent, one layer out. The cost is real and is stated in
- * the UI — closing the tab loses the ability to read a channel this browser
- * started, and there is no recovery, because recovering it would mean opening
- * a grant, which a browser wallet cannot do.
+ * machine's persistent storage after the tab closes is the disclosure the
+ * protocol exists to prevent, one layer out.
+ *
+ * This is now a cache rather than the only copy. Losing it costs a wallet
+ * prompt, not the channel: {@link recoverChannelKey} opens the grant the
+ * network holds. It is kept because the alternative is a signature prompt
+ * on every navigation for a key the tab already had.
  */
 const keyStorageKey = (settlementId: string) => `openfiat:channel-key:${settlementId}`;
 
@@ -285,15 +299,22 @@ export function recallChannelKey(settlementId: string): ChannelKey | null {
  * `role` is deliberately absent from the event: the node derives it from the
  * settlement and the dispute record, both of which it can check for itself.
  *
- * Sealed to `recipientPublicKey`, which must be the key the *settlement*
- * records for that peer — not one the caller looked up elsewhere. The node
- * checks that the recipient is a party or a joined arbitrator and refuses
- * anyone else with `RECIPIENT_NOT_PERMITTED`.
+ * `recipient.encryptionKey` is the X25519 key that peer published as an
+ * `EncryptionKey` identity claim — the only key they can prove they hold
+ * the secret to, and therefore the only one worth sealing to. It must have
+ * been read from that claim; there is no fallback to their wallet key, and
+ * adding one would silently reintroduce the unopenable grant this replaced.
+ *
+ * `recipient.peerId` still comes from the settlement, because that is what
+ * the node checks: it verifies the recipient is a party or a joined
+ * arbitrator and refuses anyone else with `RECIPIENT_NOT_PERMITTED`. The two
+ * halves come from different records on purpose — the settlement says who
+ * may read, the claim says how to reach them.
  */
 export async function grantChannelKey(
   who: TradeIdentity,
   settlementId: string,
-  recipient: { peerId: string; publicKey: Uint8Array },
+  recipient: { peerId: string; encryptionKey: Uint8Array },
   key: ChannelKey,
 ): Promise<void> {
   const grant = {
@@ -301,11 +322,53 @@ export async function grantChannelKey(
     granter: who.peerId,
     recipient: recipient.peerId,
     key_id: channelKeyId(key),
-    sealed_key: seal(recipient.publicKey, key),
+    sealed_key: sealToEncryptionKey(recipient.encryptionKey, key),
     timestamp: Date.now(),
   };
   const signature = await signPayload(who.provider, grant);
   await sendSignedEvent(nodeUrl(), "sendTradeChannelKeyGrant", { grant, signature });
+}
+
+/**
+ * The channel key this wallet holds a grant for, or `null` if none of the
+ * grants on the channel are addressed to it or open under its key.
+ *
+ * This is the function whose absence made the whole feature unusable. Every
+ * grant addressed to this peer is tried, newest first, because both parties
+ * may legitimately grant the same reader and one of them sealing the wrong
+ * bytes must not lock that reader out of a channel the other opened for
+ * them.
+ *
+ * A grant that opens to something other than 32 bytes is skipped rather
+ * than returned: the granter controls what goes inside a sealed box, and a
+ * node cannot check it — that is what makes a sealed box useful. `key_id`
+ * is checked against what actually opened for the same reason, so a
+ * granter who sealed a *different* valid key cannot make this client
+ * silently fail to decrypt every entry.
+ */
+export function recoverChannelKey(
+  channel: WireTradeChannel,
+  myPeerId: string,
+  keypair: EncryptionKeypair,
+): ChannelKey | null {
+  const mine = channel.grants
+    .filter((grant) => grant.recipient === myPeerId)
+    .sort((a, b) => b.granted_at - a.granted_at);
+  for (const grant of mine) {
+    let opened: Uint8Array;
+    try {
+      opened = openWithEncryptionKey(keypair, grant.sealed_key);
+    } catch {
+      // Addressed to this peer but sealed to a different encryption key —
+      // an older one this wallet has rotated away from, most likely. Not an
+      // error; the next grant may well open.
+      continue;
+    }
+    if (opened.length !== 32) continue;
+    if (channelKeyId(opened).join(",") !== grant.key_id.join(",")) continue;
+    return opened;
+  }
+  return null;
 }
 
 /**
