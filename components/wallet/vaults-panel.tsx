@@ -13,6 +13,7 @@ import {
 } from "@/lib/live-vaults";
 import { useMintNames } from "@/components/wallet/use-mint-names";
 import { isWrappedSol } from "@/lib/vault-instructions";
+import { tradingSymbol } from "@/lib/asset-display";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
 
@@ -157,8 +158,15 @@ export function VaultsPanel() {
             return (
               <Tr key={v.address.toBase58()}>
                 <Td py="py-5">
+                  {/* `SOL` for the native mint, because a vault denominated
+                      in it is funded and emptied in plain SOL — the wrapping
+                      happens inside the deposit and the withdrawal. The line
+                      below says what it is actually held as, which is why
+                      that line exists. See `lib/asset-display.ts`. */}
                   {naming.kind === "named" && (
-                    <span className="block font-medium text-gray-200">{naming.symbol}</span>
+                    <span className="block font-medium text-gray-200">
+                      {tradingSymbol(v.mint.toBase58(), naming.symbol)}
+                    </span>
                   )}
                   <a
                     href={`https://explorer.solana.com/address/${v.mint.toBase58()}?cluster=devnet`}

@@ -110,6 +110,36 @@ describe("the boundary the rename must not cross", () => {
   });
 
   /*
+   * A merchant's liquidity vault is on the trading side of the line: it is
+   * funded with plain SOL and paid out as plain SOL, because the deposit
+   * and the withdrawal each wrap and unwrap inside their own transaction.
+   * The vaults panel still says what the vault is *held* as underneath,
+   * which is the sentence that makes the two consistent rather than
+   * contradictory.
+   */
+  it("calls a vault denominated in the native mint SOL, and says what it holds", () => {
+    const vaults = readFileSync("components/wallet/vaults-panel.tsx", "utf8");
+    expect(vaults).toContain("tradingSymbol(v.mint.toBase58(), naming.symbol)");
+    expect(vaults).toMatch(/Held as wrapped SOL/);
+
+    // The withdraw form's vault picker, for the same reason: what it pays
+    // out is SOL.
+    const withdraw = readFileSync("components/wallet/withdraw-form.tsx", "utf8");
+    expect(withdraw).toContain("tradingSymbol(v.mint.toBase58(), naming.symbol)");
+  });
+
+  /*
+   * The explorer is on the other side of it. A token account there is a
+   * fact about an address on chain, and the mint it holds is wSOL — the
+   * page is for checking what is really there, so it says what is really
+   * there.
+   */
+  it("leaves the explorer's account view on the node's name", () => {
+    const explorer = readFileSync("components/explorer/address-onchain.tsx", "utf8");
+    expect(explorer).not.toContain("tradingSymbol");
+  });
+
+  /*
    * Both sides of every book filter have to be the node's spelling. If one
    * of these ever reads a display name the market for the native mint goes
    * silently empty — an advertisement page with no advertisements on it,

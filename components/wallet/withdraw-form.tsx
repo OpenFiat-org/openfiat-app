@@ -12,6 +12,7 @@ import {
   type WalletConnection,
 } from "@/lib/wallet-connection";
 import { getConnection } from "@/lib/onchain-config";
+import { tradingSymbol } from "@/lib/asset-display";
 import {
   fetchVaultsByMerchant,
   formatBaseUnits,
@@ -333,9 +334,12 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
               // characters would be the one place truncation could cost
               // somebody the wrong token.
               const naming = nameForMint(v.mint, mints);
+              // Named through `tradingSymbol`, so the option a merchant picks
+              // reads `SOL` — which is what this form pays out, since it
+              // unwraps in the same transaction. See `lib/asset-display.ts`.
               const label =
                 naming.kind === "named"
-                  ? `${naming.symbol} (${shortMint(v.mint)})`
+                  ? `${tradingSymbol(v.mint.toBase58(), naming.symbol)} (${shortMint(v.mint)})`
                   : v.mint.toBase58();
               return (
                 <option key={v.address.toBase58()} value={v.mint.toBase58()}>

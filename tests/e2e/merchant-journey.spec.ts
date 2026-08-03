@@ -232,8 +232,21 @@ test.describe("the merchant journey", () => {
     expect(available).toBeGreaterThan(0n);
 
     const merchant = bs58.encode(peerIdFromPublicKey(wallet!.publicKey.toBytes()));
-    const before = await rpc<{ advertisements: unknown[] }>("getAdvertisements", { merchant });
-    const countBefore = before.advertisements.length;
+    /*
+     * The ids this merchant already has, not how many.
+     *
+     * A count was the obvious assertion and it is the wrong one: this wallet
+     * accumulates a real advertisement on every run, `getAdvertisements`
+     * answers a page rather than the whole book, and once the page is full
+     * "one more than before" is a comparison between two numbers that are
+     * both the page size. The identity of the advertisement this run posted
+     * is the thing under test anyway, and it survives paging, eviction and
+     * whatever the previous fifty runs left behind.
+     */
+    const before = await rpc<{ advertisements: Array<{ id: string }> }>("getAdvertisements", {
+      merchant,
+    });
+    const idsBefore = new Set(before.advertisements.map((ad) => ad.id));
 
     const reconnect = await attachWallet(page, wallet!);
     await page.goto("/ads/new");
@@ -339,12 +352,15 @@ test.describe("the merchant journey", () => {
         pricing: { Fixed?: { price: { base_units: number; decimals: number } } };
       }>;
     }>("getAdvertisements", { merchant });
-    expect(after.advertisements.length).toBe(countBefore + 1);
 
     // Newest by `created_at`, not last in the list: `getAdvertisements`
     // makes no ordering promise, and this wallet accumulates advertisements
     // across runs.
     const posted = [...after.advertisements].sort((a, b) => b.created_at - a.created_at)[0]!;
+    // And it is genuinely new. Without this the assertions below would pass
+    // against a previous run's advertisement if this run's publish had
+    // silently done nothing.
+    expect(idsBefore.has(posted.id), "the node has no advertisement this run created").toBe(false);
     expect(posted.asset_mint).toBe(WSOL.toBase58());
     expect(posted.fiat_currency).toBe("KES");
     expect(posted.direction).toBe("Sell");
