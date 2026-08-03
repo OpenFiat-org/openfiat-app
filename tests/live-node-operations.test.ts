@@ -18,7 +18,7 @@ vi.mock("@/lib/node-rpc", () => ({
   NodeRpcError: class extends Error {},
 }));
 
-const { exchangeRecord, fetchPeers } = await import("@/lib/live-peers");
+const { contentProof, exchangeRecord, fetchPeers } = await import("@/lib/live-peers");
 const { fetchSnapshotState, formatBytes, replayGap } = await import("@/lib/live-snapshots");
 const { base58Peer, fetchRewardObservations, formatBps } = await import("@/lib/live-rewards");
 
@@ -120,6 +120,45 @@ describe("getPeers", () => {
     // tried yet, and a ratio would turn that into a verdict.
     expect(exchangeRecord(view.peers.find((p) => p.peerId === "b")!)).toBe("4 ok · 1 failed");
     expect(exchangeRecord(view.peers.find((p) => p.peerId !== "b")!)).toBeNull();
+  });
+
+  it("keeps a proven retrieval, an absent proof, and an older node apart", async () => {
+    nodeRpc.mockResolvedValueOnce({
+      self_peer_id: "12D3KooWSelf",
+      announced_addresses: [],
+      content_proof_window: {
+        epoch: 20_669,
+        epoch_start_millis: 1_785_734_400_000,
+        epoch_end_millis: 1_785_820_800_000,
+      },
+      peers: [
+        peer({ peer_id: "proven", served_content: true }),
+        peer({ peer_id: "unproven", served_content: false }),
+      ],
+    });
+
+    const view = await fetchPeers("http://node.invalid");
+    const byId = (id: string) => view.peers.find((p) => p.peerId === id)!;
+    expect(contentProof(byId("proven"))).toBe("served content (verified)");
+    // Not "failed": the node records passes only, so this is the absence
+    // of a proof and never a bad mark against the peer.
+    expect(contentProof(byId("unproven"))).toBe("no proof this epoch");
+    expect(view.contentProofWindow?.epochEndMillis).toBe(1_785_820_800_000);
+  });
+
+  it("does not turn a node that reports no proofs into a table of unproven peers", async () => {
+    // A node predating the field omits it entirely. Defaulting that to
+    // `false` would show every peer on the network as having failed to
+    // prove anything, which is a statement about the node being asked.
+    nodeRpc.mockResolvedValueOnce({
+      self_peer_id: "12D3KooWSelf",
+      announced_addresses: [],
+      peers: [peer()],
+    });
+
+    const view = await fetchPeers("http://node.invalid");
+    expect(contentProof(view.peers[0])).toBeNull();
+    expect(view.contentProofWindow).toBeUndefined();
   });
 });
 
