@@ -51,7 +51,10 @@ export function CurrencyPaymentMethods({ currency }: { currency: string }) {
             ad.fiatCurrency.toUpperCase() === currency.toUpperCase(),
         );
         if (cancelled) return;
-        setMethods([...new Set(ads.flatMap((ad) => ad.paymentMethods))].sort());
+        // Labels, not ids: this sentence is read by a visitor deciding
+        // whether their rail is served here, and `builtin:pix` answers
+        // nothing.
+        setMethods([...new Set(ads.flatMap((ad) => ad.paymentMethodLabels))].sort());
         setMerchants(new Set(ads.map((ad) => ad.merchantPeerId)).size);
       } catch {
         if (!cancelled) setError(true);

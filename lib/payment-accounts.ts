@@ -1,3 +1,5 @@
+import type { PaymentMethodCategory } from "@openfiat/sdk";
+
 import type { PaymentField } from "@/lib/types";
 
 /**
@@ -21,8 +23,26 @@ export type AccountShape = "mobile" | "local-bank" | "international-bank" | "han
 
 export interface SavedPaymentAccount {
   id: string;
-  /** A method name from the registry. */
+  /**
+   * The catalogue **id** of the rail — `builtin:mpesa-kenya`.
+   *
+   * An id and not a name, because this is matched against an
+   * advertisement's `payment_methods`, and those are ids: the node refuses
+   * `"M-Pesa"` and accepts `"builtin:mpesa-kenya"`. An account saved by an
+   * earlier build holds a name here and will therefore match nothing —
+   * which shows up as "none of your saved accounts uses a method this
+   * advertiser accepts", and is fixed by saving it again. That is a real
+   * cost, and the alternative was an account that silently never matched.
+   */
   method: string;
+  /**
+   * The node's name for that id at the time it was saved.
+   *
+   * Kept so a saved account still reads as "M-Pesa Kenya (Safaricom)" when
+   * no node can be reached. It is a cached label and never a key: matching
+   * always goes through `method`.
+   */
+  methodName?: string;
   /** ISO country code this account is held in. */
   countryCode: string;
   /** Currency it receives. */
@@ -31,26 +51,40 @@ export interface SavedPaymentAccount {
   fields: PaymentField[];
 }
 
-/** Which fields a method needs, so the form asks for the right things. */
-export function shapeFor(method: string): AccountShape {
-  const m = method.toLowerCase();
-  if (/cash/.test(m)) return "cash";
-  if (
-    /m-?pesa|pochi|airtel|tigo|vodafone|mtn|telebirr|gcash|maya|easypaisa|jazzcash|bkash|nagad|gopay|ovo|momo|wave|orange money|ecocash|zain|esewa|khalti|wing|mobile money/.test(
-      m,
-    )
-  ) {
-    return "mobile";
+/**
+ * Which fields a rail needs, so the form asks for the right things.
+ *
+ * # The split comes from the node's category, not from a word list
+ *
+ * This used to be four regexes over the method's *name* — some eighty
+ * alternations covering `m-?pesa|pochi|airtel|…` — which had to be extended
+ * by hand every time the network gained a rail, and quietly produced a bank
+ * form for anything it had not heard of. `getReferenceData` labels every
+ * method `MobileMoney`, `BankTransfer`, `Fintech` or `Cash`, which is
+ * exactly this question already answered, so that is what decides it.
+ *
+ * One split the category does not make is local versus international bank —
+ * both are `BankTransfer`, and the fields differ (IBAN and SWIFT against
+ * account number and branch). That is decided on the id, which is stable and
+ * the node's, rather than on a display name that is neither.
+ */
+export function shapeFor(category: PaymentMethodCategory | null, id = ""): AccountShape {
+  switch (category) {
+    case "Cash":
+      return "cash";
+    case "MobileMoney":
+      return "mobile";
+    case "Fintech":
+      return "handle";
+    case "BankTransfer":
+      return /sepa|swift|wire|iban/.test(id.toLowerCase()) ? "international-bank" : "local-bank";
+    default:
+      // No category yet — the form has not been given a rail, or the node
+      // could not be asked. A bank shape asks for the most fields, so
+      // nothing a merchant types into it is thrown away when the real shape
+      // arrives.
+      return "local-bank";
   }
-  if (/sepa|wire|swift|ach/.test(m)) return "international-bank";
-  if (
-    /wise|revolut|skrill|paypal|zelle|alipay|wechat|line pay|jkopay|payme|kaspi|idram|payme|click|qpay|yappy|lynk|wipay|tpago|mercado|benefitpay|thawani|d17|baridimob|tigo money/.test(
-      m,
-    )
-  ) {
-    return "handle";
-  }
-  return "local-bank";
 }
 
 const LABELS: Record<AccountShape, string[]> = {
@@ -61,9 +95,12 @@ const LABELS: Record<AccountShape, string[]> = {
   cash: ["Your name", "City or meeting area"],
 };
 
-/** Empty field set for a method, in the order the form should ask. */
-export function blankFields(method: string): PaymentField[] {
-  return LABELS[shapeFor(method)].map((label) => ({ label, value: "" }));
+/** Empty field set for a rail, in the order the form should ask. */
+export function blankFields(
+  category: PaymentMethodCategory | null,
+  id = "",
+): PaymentField[] {
+  return LABELS[shapeFor(category, id)].map((label) => ({ label, value: "" }));
 }
 
 /*
@@ -82,9 +119,13 @@ export function blankFields(method: string): PaymentField[] {
 /**
  * Accounts usable for a given advertisement.
  *
- * An international ad accepts any method, so everything qualifies. Otherwise the
- * account's method has to be one the merchant actually accepts — nominating an
- * account they cannot pay into wastes the payment window.
+ * `adMethods` are catalogue ids, and so is `account.method`; comparing a
+ * name against an id here would match nothing and read as "you have no
+ * account for this rail".
+ *
+ * An international ad accepts any method, so everything qualifies. Otherwise
+ * the account's rail has to be one the merchant actually accepts —
+ * nominating an account they cannot pay into wastes the payment window.
  */
 export function accountsFor(
   accounts: SavedPaymentAccount[],

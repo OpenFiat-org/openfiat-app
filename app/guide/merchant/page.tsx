@@ -98,7 +98,14 @@ export default function MerchantGuidePage() {
           ))}
         </ul>
 
+        {/* This page explains; `/become-a-merchant` reads where you actually
+            stand — the bond against the chain's own minimum, and whether you
+            have an account to be paid into. An article was the whole answer
+            to "how do I start" until that screen existed. */}
         <div className="mt-10 flex flex-wrap gap-6 border-t border-white/10 pt-6 text-sm">
+          <Link href="/become-a-merchant" className="text-brand hover:text-brand-hover">
+            Check where you stand →
+          </Link>
           <Link href="/ads/new" className="text-brand hover:text-brand-hover">
             Post your first advertisement →
           </Link>

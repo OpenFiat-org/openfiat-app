@@ -338,9 +338,12 @@ export function OrderPanel({
               onChange={(e) => setMethod(e.target.value)}
               className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
             >
-              {ad.paymentMethods.map((m) => (
-                <option key={m} value={m}>
-                  {m}
+              {/* Valued by catalogue id — the thing the advertisement
+                  carries and the thing a saved account is matched against —
+                  and labelled with the node's name for it. */}
+              {ad.paymentMethods.map((id, i) => (
+                <option key={id} value={id}>
+                  {ad.paymentMethodLabels[i] ?? id}
                 </option>
               ))}
             </select>

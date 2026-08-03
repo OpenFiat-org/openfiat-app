@@ -1,12 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  COUNTRIES,
-  COUNTRIES_BY_SLUG,
-  countriesByCurrency,
-  currenciesFor,
-  getCountry,
-  searchCountries,
-} from "@/lib/data/countries";
 import { CATEGORY_RULES, PROPOSAL_STAKE_DEPOSIT_OPEN } from "@/lib/governance";
 import { connectableNodes, defaultNode, resolveNodeSelection } from "@/lib/node-preference";
 import { STAKING_ROLES, roleByKey, unbondingLabel } from "@/lib/staking-roles";
@@ -14,90 +6,19 @@ import { OPEN_PRICE_USDC, PRESALE_BUCKET_OPEN, PUBLIC_SALE_PRICE_USDC, SALE_PHAS
 import qr from "qrcode-generator";
 import { normalisePair } from "@/lib/pairs";
 
-describe("countries registry", () => {
-  it("has global coverage (~250 entries)", () => {
-    expect(COUNTRIES.length).toBeGreaterThanOrEqual(240);
-  });
-
-  it("every entry has code, name, slug, flag, and currency fields", () => {
-    for (const c of COUNTRIES) {
-      expect(c.code).toMatch(/^[A-Z0-9]{2,}$/);
-      expect(c.name.length).toBeGreaterThan(0);
-      expect(c.slug).toMatch(/^[a-z0-9-]+$/);
-      expect(c.flag.length).toBeGreaterThan(0);
-      expect(c.flag).toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
-      expect(c.currencyCode).toMatch(/^[A-Z]{3,4}$/);
-      expect(c.currencyName.length).toBeGreaterThan(0);
-      expect(c.currencySymbol.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("codes and slugs are unique", () => {
-    expect(new Set(COUNTRIES.map((c) => c.code)).size).toBe(COUNTRIES.length);
-    expect(new Set(COUNTRIES.map((c) => c.slug)).size).toBe(COUNTRIES.length);
-  });
-
-  it("partially-recognized states are present and marked isRecognized: false", () => {
-    for (const slug of ["palestine", "kosovo", "vatican-city", "western-sahara", "somaliland", "transnistria"]) {
-      const c = COUNTRIES_BY_SLUG.get(slug);
-      expect(c, slug).toBeDefined();
-      expect(c!.isRecognized).toBe(false);
-    }
-  });
-
-  it("Taiwan is listed, on the same footing as Hong Kong and Macau", () => {
-    // This assertion previously required Taiwan to be absent. It is listed now
-    // on an explicit product decision. `isRecognized: false` records
-    // non-UN-membership and nothing else — the same value Hong Kong and Macau
-    // carry — and the flag is never used to hide or relabel an entry.
-    const tw = COUNTRIES_BY_SLUG.get("taiwan");
-    expect(tw).toBeDefined();
-    expect(tw!.currencyCode).toBe("TWD");
-    expect(tw!.isRecognized).toBe(false);
-    expect(COUNTRIES_BY_SLUG.get("hong-kong")?.isRecognized).toBe(false);
-  });
-
-  /*
-   * Two tests here asserted that Taiwan, Hong Kong and Macau had local
-   * payment rails, against `paymentMethodsForCurrency` in `lib/data/ads.ts`.
-   * That map is gone: which rails a currency's merchants take is a fact
-   * about the advertisement book, and the country pages read it from there.
-   * What this table is still the authority for — that these territories are
-   * listed at all, with their own currencies and slugs — is asserted above.
-   */
-  it("records countries that trade in more than one currency", () => {
-    // A single currencyCode per country is wrong where it matters most: in a
-    // dollarised economy the USD leg is often the larger P2P market, and
-    // offering only the local currency hides it.
-    for (const slug of ["zimbabwe", "lebanon", "cambodia", "panama"]) {
-      const c = COUNTRIES_BY_SLUG.get(slug);
-      expect(c, slug).toBeDefined();
-      expect(c?.altCurrencies, slug).toContain("USD");
-      expect(currenciesFor(c!)[0], slug).toBe(c!.currencyCode);
-      expect(currenciesFor(c!).length, slug).toBeGreaterThan(1);
-    }
-    // Palestine's entry noted "JOD also used" in prose with nowhere structured
-    // to put it.
-    expect(COUNTRIES_BY_SLUG.get("palestine")?.altCurrencies).toContain("JOD");
-  });
-
-  it("never repeats a country's primary currency in its alternates", () => {
-    for (const c of COUNTRIES) {
-      const all = currenciesFor(c);
-      expect(new Set(all).size, c.name).toBe(all.length);
-    }
-  });
-
-  it("lookups work", () => {
-    expect(getCountry("KE")?.name).toBe("Kenya");
-    expect(getCountry("ke")?.currencyCode).toBe("KES");
-    expect(countriesByCurrency("EUR").some((c) => c.name === "Germany")).toBe(true);
-    expect(countriesByCurrency("EUR").some((c) => c.name === "Kosovo")).toBe(true);
-    expect(searchCountries("kenya").some((c) => c.code === "KE")).toBe(true);
-    expect(searchCountries("KES").some((c) => c.code === "KE")).toBe(true);
-    expect(searchCountries("palestine")[0]?.slug).toBe("palestine");
-  });
-});
+/*
+ * The "countries registry" suite that stood here tested
+ * `lib/data/countries.ts` — 253 rows of countries, currencies, currency
+ * names, symbols and an `isRecognized` flag, compiled into this app. It
+ * asserted things like "every entry has a currency name" and "Zimbabwe lists
+ * USD as an alternate", which are properties of a table this repository was
+ * writing about the world, checked against itself.
+ *
+ * The table is gone. Which countries exist, what they trade in and which
+ * second currencies circulate is `getReferenceData`'s answer, and the only
+ * local part left is the slug — a pure function of the name, tested in
+ * `tests/countries.test.ts` together with the resolution built on it.
+ */
 
 describe("pair landing pages", () => {
   /*
@@ -120,8 +41,14 @@ describe("pair landing pages", () => {
 
   /** A node that answers `getReferenceData` with `mints`, as the real one does. */
   function nodeNaming(symbols: string[] | undefined) {
+    // `ok: true` because the app checks it. A stub that omitted it made
+    // every call look like an HTTP error and sent `normalisePair` down its
+    // node-unreachable path, where every ticker resolves — so these tests
+    // were passing against silence rather than against an answer.
     vi.stubGlobal("fetch", () =>
       Promise.resolve({
+        ok: true,
+        status: 200,
         json: () =>
           Promise.resolve({
             result: { mints: symbols?.map((symbol) => ({ mint: `mint-${symbol}`, symbol })) },
@@ -247,6 +174,7 @@ describe("sitemap coverage", () => {
       "/guide/buy",
       "/guide/sell",
       "/guide/merchant",
+      "/become-a-merchant",
       "/disputes",
       "/governance",
       "/network",
@@ -272,15 +200,22 @@ describe("sitemap coverage", () => {
     }
   });
 
-  it("lists every country, and every extra currency it trades in", async () => {
+  /*
+   * The country routes used to be asserted against `lib/data/countries.ts`,
+   * which meant the sitemap was checked against the same table it was built
+   * from — a test that could only ever pass. They come from the node now, so
+   * what is worth asserting is the failure mode: with no node reachable
+   * (`fetch` is stubbed to reject above), the sitemap emits no country routes
+   * rather than inventing any, and still emits everything that does not
+   * depend on a node.
+   *
+   * `tests/e2e/flow-audit.spec.ts` walks the real routes against a real node.
+   */
+  it("emits no country routes when no node can be reached, and invents none", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
-    const listed = new Set((await sitemap()).map((e) => new URL(e.url).pathname));
-    for (const c of COUNTRIES) {
-      expect(listed.has(`/country/${c.slug}`), c.slug).toBe(true);
-      for (const alt of c.altCurrencies ?? []) {
-        expect(listed.has(`/country/${c.slug}/${alt.toLowerCase()}`), `${c.slug}/${alt}`).toBe(true);
-      }
-    }
+    const listed = (await sitemap()).map((e) => new URL(e.url).pathname);
+    expect(listed.filter((path) => path.startsWith("/country/"))).toEqual([]);
+    expect(listed).toContain("/countries");
   });
 
   it("has no duplicate entries", async () => {

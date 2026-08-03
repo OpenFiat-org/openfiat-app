@@ -312,7 +312,7 @@ function AdRow({ ad }: { ad: LiveAd }) {
           <span className="text-gray-600">None named</span>
         ) : (
           <span className="flex flex-col gap-1">
-            {ad.paymentMethods.map((method) => (
+            {ad.paymentMethodLabels.map((method) => (
               <span key={method} className="border-l-2 border-amber-400/60 pl-1.5">
                 {method}
               </span>

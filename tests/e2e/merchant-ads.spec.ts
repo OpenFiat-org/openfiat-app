@@ -77,7 +77,10 @@ test("a merchant pauses, reactivates and re-terms their own advertisement", asyn
     max_trade: amount(500),
     initial_liquidity: amount(1_000),
     pricing: { Fixed: { price: { base_units: 129_000_000, decimals: 6 } } },
-    payment_methods: ["M-Pesa"],
+    // A catalogue id, not a display name: the node validates
+    // `payment_methods` against its own catalogue and answers
+    // `UNSUPPORTED_PAYMENT_METHOD` for "M-Pesa". See `lib/payment-catalog.ts`.
+    payment_methods: ["builtin:mpesa-kenya"],
     timestamp: Date.now(),
   };
   const createSig = bs58.encode(

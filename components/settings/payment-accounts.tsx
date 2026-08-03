@@ -8,8 +8,12 @@ import {
   readAccounts,
   writeAccounts,
 } from "@/lib/payment-accounts";
-import { flagForCountry, useReferenceData } from "@/lib/reference";
+import { flagForCountry } from "@/lib/countries";
+import { useReferenceData } from "@/lib/reference";
+import { groupedMethods } from "@/lib/payment-catalog";
+import { useCountryPaymentMethods } from "@/components/use-country-methods";
 import { CopyButton } from "@/components/copy-button";
+import { CountrySelect } from "@/components/p2p/country-select";
 import { Panel } from "@/components/panel";
 
 const inputCls =
@@ -24,7 +28,7 @@ const labelCls = "block text-xs text-gray-500";
  * instead — which puts them in the trade log for anyone reading it later, and
  * loses the per-field copy the buyer needs.
  *
- * # Both dropdowns read the node
+ * # Both dropdowns read the node, and the rails follow the country
  *
  * The method list came from `lib/data/payment-methods.ts` and the country
  * list from `lib/data/countries.ts` — two tables compiled into the bundle,
@@ -32,6 +36,13 @@ const labelCls = "block text-xs text-gray-500";
  * merchant could nominate an account on a rail the network does not carry,
  * and it meant adding a payment method needed a release of this app before
  * anybody could hold an account on it.
+ *
+ * The methods are now ordered by the country the account is held in, through
+ * `getPaymentMethods`. Alphabetical over all 84 put "Airtel Money" above
+ * "M-Pesa Kenya (Safaricom)" for a Kenyan account and "Alipay" above "PIX"
+ * for a Brazilian one; the node knows which rails each country uses and says
+ * so. Choosing the country first is therefore not a formality here — it is
+ * what makes the second dropdown answerable.
  *
  * There is no fallback list when the node cannot be reached, deliberately —
  * see `lib/reference.ts`. An empty dropdown reads as "the network supports
@@ -43,19 +54,19 @@ export function PaymentAccounts() {
   const [accounts, setAccounts] = useState<SavedPaymentAccount[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [adding, setAdding] = useState(false);
-  // Empty until the node answers. A default rail written here would be this
-  // app naming a payment method again, and the previous default
-  // ("M-Pesa Kenya (Safaricom)") was a string only the deleted table used.
-  const [method, setMethod] = useState("");
+  // The selected rail's catalogue **id**, empty until one is chosen. An id
+  // because that is what an advertisement carries and what this account has
+  // to be matched against — see `SavedPaymentAccount.method`.
+  const [methodId, setMethodId] = useState("");
   const [countryCode, setCountryCode] = useState("");
-  const [fields, setFields] = useState(blankFields(""));
+  const [fields, setFields] = useState(blankFields(null));
 
+  const catalogue = useCountryPaymentMethods(countryCode || null);
+  // Grouped, so the country's own rails come first and everything else
+  // follows — the node's ordering, kept rather than re-sorted alphabetically.
   const methods = useMemo(
-    () =>
-      reference.status === "ready"
-        ? [...reference.data.payment_methods].sort((a, b) => a.name.localeCompare(b.name))
-        : [],
-    [reference],
+    () => (catalogue.status === "ready" ? groupedMethods(catalogue.data) : []),
+    [catalogue],
   );
   const countries = useMemo(
     () =>
@@ -86,24 +97,44 @@ export function PaymentAccounts() {
    * only the deleted table ever used.
    */
   function startAdding() {
-    setMethod(methods[0]?.name ?? "");
-    setCountryCode(countries[0]?.code ?? "");
-    setFields(blankFields(methods[0]?.name ?? ""));
+    // No method is pre-chosen: the rails depend on the country, and the
+    // country is the merchant's to pick. The previous default was the
+    // literal "M-Pesa Kenya (Safaricom)" — a string only a deleted table
+    // ever used — and then the node's alphabetically-first entry, which was
+    // no more relevant to anybody.
+    setCountryCode("");
+    setMethodId("");
+    setFields(blankFields(null));
     setAdding(true);
   }
 
+  function chooseCountry(next: string) {
+    setCountryCode(next);
+    // The rail list is about to change under it, so a method chosen for the
+    // previous country is cleared rather than left standing.
+    setMethodId("");
+    setFields(blankFields(null));
+  }
+
+  /** The node's row for the selected id, or `undefined` before one is picked. */
+  const chosen = methods.find((entry) => entry.method.id === methodId)?.method;
+
   function chooseMethod(next: string) {
-    setMethod(next);
-    // Field shapes differ per rail, so switching method starts a fresh set
-    // rather than keeping labels that no longer apply.
-    setFields(blankFields(next));
+    setMethodId(next);
+    // Which fields a rail needs comes from the node's own category for it,
+    // so switching rail starts a fresh set rather than keeping labels that
+    // no longer apply.
+    const row = methods.find((entry) => entry.method.id === next)?.method;
+    setFields(blankFields(row?.category ?? null, next));
   }
 
   function save() {
     const country = countries.find((c) => c.code === countryCode);
     const account: SavedPaymentAccount = {
       id: `acct-${Date.now().toString(36)}`,
-      method,
+      method: methodId,
+      // Cached for display only. Matching goes through the id above.
+      methodName: chosen?.name,
       countryCode,
       // The node's own currency for that country. There is no "USD" fallback
       // any more: a country the node did not list is not one this form can
@@ -113,10 +144,14 @@ export function PaymentAccounts() {
     };
     setAccounts((prev) => [...prev, account]);
     setAdding(false);
-    setFields(blankFields(method));
+    setFields(blankFields(null));
   }
 
-  const ready = fields.every((f) => f.value.trim().length > 0);
+  const ready =
+    methodId.trim().length > 0 &&
+    countryCode.trim().length > 0 &&
+    fields.length > 0 &&
+    fields.every((f) => f.value.trim().length > 0);
 
   return (
     <Panel title={`Payment accounts${accounts.length ? ` — ${accounts.length}` : ""}`}>
@@ -138,7 +173,12 @@ export function PaymentAccounts() {
               return (
                 <li key={a.id} className="py-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-white">{a.method}</span>
+                    {/* The name saved with it, or the id itself. An id on
+                        screen is the value the account actually carries,
+                        which beats inventing a name for it. */}
+                    <span className="text-sm font-medium text-white" title={a.method}>
+                      {a.methodName ?? a.method}
+                    </span>
                     <span className="text-xs text-gray-500">
                       {flagForCountry(a.countryCode)} {country?.name ?? a.countryCode} ·{" "}
                       {a.currencyCode}
@@ -176,39 +216,59 @@ export function PaymentAccounts() {
         {adding ? (
           <div className="mt-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
+              {/* Country first, because it decides what the method list can
+                  usefully offer. */}
+              <div>
+                <label className={labelCls} htmlFor="acct-country">
+                  Held in
+                </label>
+                <CountrySelect
+                  id="acct-country"
+                  value={countryCode}
+                  onChange={chooseCountry}
+                  countries={countries}
+                  className={inputCls}
+                />
+              </div>
               <div>
                 <label className={labelCls} htmlFor="acct-method">
                   Method
                 </label>
                 <select
                   id="acct-method"
-                  value={method}
+                  value={methodId}
                   onChange={(e) => chooseMethod(e.target.value)}
+                  disabled={catalogue.status !== "ready"}
                   className={inputCls}
                 >
-                  {methods.map((m) => (
-                    <option key={m.name} value={m.name}>
+                  <option value="">
+                    {catalogue.status === "loading"
+                      ? "Asking your node…"
+                      : catalogue.status === "error"
+                        ? "Could not load payment methods"
+                        : "Select a method"}
+                  </option>
+                  {methods.map(({ method: m, group }) => (
+                    <option key={m.id} value={m.id}>
+                      {group === "suggested" && countryCode ? "★ " : ""}
                       {m.name}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className={labelCls} htmlFor="acct-country">
-                  Held in
-                </label>
-                <select
-                  id="acct-country"
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  className={inputCls}
-                >
-                  {countries.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name} — {c.currency}
-                    </option>
-                  ))}
-                </select>
+                {catalogue.status === "error" && (
+                  <button
+                    type="button"
+                    onClick={catalogue.retry}
+                    className="mt-1 text-[11px] text-brand underline hover:text-white"
+                  >
+                    Try again
+                  </button>
+                )}
+                {catalogue.status === "ready" && countryCode && (
+                  <p className="mt-1 text-[11px] text-gray-600">
+                    ★ marks the rails your node associates with this country.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -248,7 +308,9 @@ export function PaymentAccounts() {
               </button>
               {!ready && (
                 <span className="text-xs text-amber-300">
-                  Fill every field — a partial account cannot be paid into.
+                  {countryCode && methodId
+                    ? "Fill every field — a partial account cannot be paid into."
+                    : "Choose where the account is held, then which rail it is on."}
                 </span>
               )}
             </div>

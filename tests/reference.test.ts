@@ -11,13 +11,8 @@
  */
 import { describe, expect, it } from "vitest";
 import type { ReferenceData } from "@openfiat/sdk";
-import {
-  currencyOptions,
-  flagForCountry,
-  isSuggestedMethod,
-  mintFor,
-  searchPaymentMethods,
-} from "@/lib/reference";
+import { flagForCountry } from "@/lib/countries";
+import { assetOptions, currencyOptions, mintFor } from "@/lib/reference";
 
 const NODE_ANSWER: ReferenceData = {
   revision: "9f2c4a1b7e0d3856",
@@ -111,42 +106,12 @@ describe("currency options built from a node's answer", () => {
   });
 });
 
-describe("payment method type-ahead over a node's list", () => {
-  const methods = NODE_ANSWER.payment_methods;
-
-  it("finds methods by name and by alias", () => {
-    expect(searchPaymentMethods(methods, "mp")).toContain("M-Pesa Kenya (Safaricom)");
-    expect(searchPaymentMethods(methods, "mp")).toContain("Mpesa Pochi la Biashara");
-    expect(searchPaymentMethods(methods, "pochi")).toEqual(["Mpesa Pochi la Biashara"]);
-    expect(searchPaymentMethods(methods, "").length).toBeGreaterThan(0);
-  });
-
-  it("does not confuse Hong Kong's FPS with the UK's Faster Payments", () => {
-    // Different rails, different central banks, same abbreviation. A Hong
-    // Kong merchant handed the UK entry would be advertising a system
-    // they cannot receive on. The aliases that make this work are the
-    // node's; this asserts the search honours them.
-    expect(searchPaymentMethods(methods, "fps")).toContain("FPS (Faster Payment System)");
-    expect(searchPaymentMethods(methods, "fps")).not.toContain("Faster Payments (UK)");
-    expect(searchPaymentMethods(methods, "faster payments uk")).toContain("Faster Payments (UK)");
-  });
-
-  it("keeps a method the user added findable, after the node's own", () => {
-    // The node's list is a suggestion, not a permission — a merchant on a
-    // rail nobody has heard of has to be able to name it and go on using
-    // it.
-    expect(searchPaymentMethods(methods, "zapcash", ["ZapCash"])).toEqual(["ZapCash"]);
-    expect(searchPaymentMethods(methods, "", ["ZapCash"]).at(-1)).toBe("ZapCash");
-  });
-
-  it("tells a node-suggested method apart from one the user typed in", () => {
-    expect(isSuggestedMethod(methods, "Cash in Person")).toBe(true);
-    expect(isSuggestedMethod(methods, "ZapCash")).toBe(false);
-    // And with no answer yet, nothing is claimed either way — the caller
-    // is what must not badge on an empty list. See `MethodPicker`.
-    expect(isSuggestedMethod([], "Cash in Person")).toBe(false);
-  });
-});
+/*
+ * The payment-method type-ahead moved to `tests/payment-catalog.test.ts`
+ * with the code it tests. It searched `getReferenceData`'s flat 84-entry
+ * list; the pickers search `getPaymentMethods { country }`, which puts a
+ * country's own rails first and carries which group each came from.
+ */
 
 describe("mints", () => {
   it("resolves a mint by address, which is the only thing that identifies one", () => {
@@ -163,5 +128,27 @@ describe("mints", () => {
     // Not an error: an unknown mint is an address with no nickname, and
     // the honest thing to show is the address.
     expect(mintFor(NODE_ANSWER, "NotAMintAddress1111111111111111111111111111")).toBeUndefined();
+  });
+});
+
+describe("asset options", () => {
+  it("offers every named mint with the node's own symbol and precision", () => {
+    // Precision is the load-bearing half. The wizard used to read it off the
+    // merchant's liquidity vault, which meant no vault, no advertisement —
+    // and a wrong one publishes limits off by a factor of a thousand.
+    expect(assetOptions(NODE_ANSWER)).toEqual([
+      { mint: "So11111111111111111111111111111111111111112", symbol: "wSOL", decimals: 9 },
+      { mint: "C4rSGhdxWhSFQuFcAxQti1JvBxriwHJoHtJjfhs5p24Y", symbol: "USDT", decimals: 6 },
+    ]);
+  });
+
+  it("drops a mint the node has no name for, rather than offering its address as one", () => {
+    // A row with no name can only be chosen by its address, which is the
+    // thing the picker exists to stop anybody having to do.
+    const unnamed = {
+      ...NODE_ANSWER,
+      mints: [...NODE_ANSWER.mints, { mint: "NotNamed11111111111111111111111111111111111", symbol: "", decimals: 6 }],
+    };
+    expect(assetOptions(unnamed).map((a) => a.symbol)).toEqual(["wSOL", "USDT"]);
   });
 });

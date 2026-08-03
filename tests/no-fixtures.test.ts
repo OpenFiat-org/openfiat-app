@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -36,14 +36,17 @@ import { describe, expect, it } from "vitest";
  *  - `lib/reputation.ts`, `lib/tiers.ts`, `lib/merchant-profile.ts` — a
  *    scoring function and a tier ladder the protocol does not define.
  *
- * # What is deliberately still allowed
+ * # And `lib/data/countries.ts` went too
  *
- * `lib/data/countries.ts`. It is not data about the network: it maps
- * countries to the slugs `/country/[slug]` is built from, which
- * `generateStaticParams` and `app/sitemap.ts` need at build time, when there
- * is no node to ask and a URL scheme is this app's own affair. What the
- * network *supports* — currencies, rails, mints — comes from
- * `getReferenceData`, and no picker reads this table.
+ * It was the last survivor, kept on the argument that it was not data about
+ * the network — it mapped countries to the slugs `/country/[slug]` is built
+ * from, which `generateStaticParams` and `app/sitemap.ts` need at build
+ * time. The argument did not survive noticing that a slug is
+ * `slugify(name)`, a pure function of a name the node already sends. So the
+ * whole `lib/data` directory is gone; see `lib/countries.ts`.
+ *
+ * `tests/no-hardcoded-reference.test.ts` is what stops the shape coming
+ * back under a different filename.
  */
 
 const FORBIDDEN_MODULES = [
@@ -55,6 +58,7 @@ const FORBIDDEN_MODULES = [
   "@/lib/data/governance",
   "@/lib/data/network",
   "@/lib/data/payment-methods",
+  "@/lib/data/countries",
   "@/lib/reputation",
   "@/lib/tiers",
   "@/lib/merchant-profile",
@@ -91,10 +95,11 @@ describe("no fixture module survives", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("lib/data holds only the country routing table", () => {
-    // If a second file appears here, it is a fixture unless somebody argues
-    // otherwise in this test.
-    expect(readdirSync("lib/data").sort()).toEqual(["countries.ts"]);
+  it("lib/data does not exist at all", () => {
+    // Every file that was ever in it was a copy of something a node or a
+    // chain answers. If the directory comes back, it is a fixture unless
+    // somebody argues otherwise in this test.
+    expect(existsSync("lib/data")).toBe(false);
   });
 
   it("no module manufactures an address or a signature", () => {

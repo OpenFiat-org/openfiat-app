@@ -12,7 +12,7 @@ export default function AdsPage() {
     <section>
       <PageHero
         title="My Ads"
-        description="Publishing advertisements requires a published merchant profile and an OPEN merchant bond. There is no identity check — the bond is what is at risk if you do not settle."
+        description="Edit, pause or take down what you have on offer. There is no identity check — the OPEN merchant bond is what is at risk if you do not settle, and Become a merchant reads yours against the chain's own minimum."
       />
       <div className="mt-8">
         <MerchantConsole />

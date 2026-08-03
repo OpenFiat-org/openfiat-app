@@ -273,7 +273,7 @@ export function TradeRoom({ trade, ad }: { trade: Trade; ad: LiveAd | null }) {
               />
               <Row
                 label="Payment methods"
-                value={ad.paymentMethods.join(", ") || "—"}
+                value={ad.paymentMethodLabels.join(", ") || "—"}
               />
             </div>
           </Panel>

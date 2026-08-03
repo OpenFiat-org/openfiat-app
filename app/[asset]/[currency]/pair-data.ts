@@ -42,7 +42,7 @@ export interface PairData {
 }
 
 export const loadPairData = cache(async (pair: PairSlug): Promise<PairData> => {
-  const countries = countriesUsing(pair.currency);
+  const countries = await countriesUsing(pair.currency);
 
   let records;
   try {

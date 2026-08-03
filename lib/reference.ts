@@ -167,32 +167,17 @@ export const PREFERRED_CURRENCY_CODES = [
   "KES", "NGN", "USD", "EUR", "GBP", "INR", "BRL", "ZAR", "PHP", "IDR",
 ] as const;
 
-/** Regional-indicator pair for an ISO 3166-1 alpha-2 code. */
-function flagEmoji(iso2: string): string {
-  return String.fromCodePoint(
-    ...iso2
-      .toUpperCase()
-      .split("")
-      .map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65),
-  );
-}
-
-/**
- * Territories with no flag of their own in Unicode, or none that renders.
+/*
+ * `flagEmoji`, `FLAG_SUBSTITUTE` and `flagForCountry` moved to
+ * `lib/countries.ts`.
  *
- * Presentation, and it stays in this app: the node's table carries codes
- * and names, and "which flag to draw for Somaliland" is not a protocol
- * question. The choices here are the ones a person would recognise —
- * Somaliland shows Somalia's, Northern Cyprus Türkiye's, Transnistria
- * Moldova's — rather than a blank square that reads as a broken font.
+ * Not a tidy-up: this module calls `useState` and `useEffect`, so anything
+ * importing it is a client module, and the country pages — server
+ * components that prerender — need a flag. Next refuses the import outright.
+ * A flag is a pure function of a country code with no React in it, so it
+ * belongs beside the other country rendering rather than behind a hook.
  */
-const FLAG_SUBSTITUTE: Record<string, string> = { XS: "SO", XNC: "TR", XTR: "MD" };
-
-/** Flag for a country code, or a neutral flag when none can be derived. */
-export function flagForCountry(code: string): string {
-  const iso = FLAG_SUBSTITUTE[code.toUpperCase()] ?? code.toUpperCase();
-  return /^[A-Z]{2}$/.test(iso) ? flagEmoji(iso) : "🏳️";
-}
+import { flagEmoji, flagForCountry } from "@/lib/countries";
 
 /**
  * Flags for currencies no single country owns. Without these the euro
@@ -278,45 +263,18 @@ export function currencyOptions(data: ReferenceData): CurrencyOption[] {
 
 // ── Payment methods ───────────────────────────────────────────────────
 
-/** A payment method the node suggested, as the picker needs it. */
-export type SuggestedMethod = ReferenceData["payment_methods"][number];
-
-/**
- * Substring match over name and aliases, case-insensitive, with
- * locally-added methods appended after the node's own.
+/*
+ * `searchPaymentMethods` and `isSuggestedMethod` used to live here, over
+ * `getReferenceData`'s flat 84-entry list.
  *
- * `custom` exists because the node's list is a suggestion and not a
- * permission — a merchant who trades a rail no build has heard of has to
- * be able to name it, so the picker lets them type one and this keeps it
- * findable afterwards.
+ * They have moved to `lib/payment-catalog.ts` and become `searchGrouped`,
+ * because the flat list turned out to be the wrong input. It is the node's
+ * whole catalogue in no particular order, so a merchant in Nairobi scrolled
+ * past Alipay and Zelle to reach M-Pesa. `getPaymentMethods { country }`
+ * answers with that country's own rails first, and the group a rail came
+ * from is part of what the picker shows — which a function returning bare
+ * strings cannot carry.
  */
-export function searchPaymentMethods(
-  methods: readonly SuggestedMethod[],
-  query: string,
-  custom: readonly string[] = [],
-  cap = 8,
-): string[] {
-  const suggested = methods.map((m) => m.name);
-  const all = [...suggested, ...custom.filter((c) => !suggested.includes(c))];
-  const q = query.trim().toLowerCase();
-  if (!q) return all.slice(0, cap);
-  const aliasHit = new Set(
-    methods
-      .filter(
-        (m) => m.name.toLowerCase().includes(q) || m.aliases.some((a) => a.toLowerCase().includes(q)),
-      )
-      .map((m) => m.name),
-  );
-  return all.filter((name) => aliasHit.has(name) || name.toLowerCase().includes(q)).slice(0, cap);
-}
-
-/** Whether the node named this method, as opposed to a user having added it. */
-export function isSuggestedMethod(
-  methods: readonly SuggestedMethod[],
-  name: string,
-): boolean {
-  return methods.some((m) => m.name === name);
-}
 
 // ── Mints ─────────────────────────────────────────────────────────────
 
@@ -335,4 +293,39 @@ export function isSuggestedMethod(
  */
 export function mintFor(data: ReferenceData, address: string) {
   return data.mints.find((m) => m.mint === address);
+}
+
+/**
+ * A token as a picker offers it.
+ *
+ * The node's own row, not a shape this app builds — deliberately. A record
+ * pairing a mint address with a name is exactly what
+ * `tests/exchange-assets.test.tsx` forbids, and it is right to: a name this
+ * app attached to an address is how a merchant deposits into the wrong
+ * token. Aliasing the node's row means the pairing is the node's assertion
+ * and this app is only passing it along, with nothing of its own to drift.
+ *
+ * `decimals` is load-bearing rather than decoration. Every amount the
+ * protocol carries is base units plus decimals, so a screen that assumed six
+ * for a mint that uses nine would publish limits a thousand times smaller
+ * than the ones typed, and nothing downstream would notice. It used to be
+ * read off the merchant's own liquidity vault, which meant a merchant could
+ * not post an advertisement until they had opened one.
+ */
+export type AssetOption = ReferenceData["mints"][number];
+
+/**
+ * The tokens a picker may offer, from the node's mint table.
+ *
+ * A mint with no symbol is dropped. It is a real answer on the node's side —
+ * an address with no nickname — but this list exists so that a person can
+ * choose a token by name, and a row with no name is a row that can only be
+ * chosen by its address, which is the thing being removed.
+ *
+ * Not a permission list. What can actually be escrowed is decided by the
+ * escrow program's on-chain allowlist, which governance can change, and the
+ * two sets are not guaranteed equal in either direction.
+ */
+export function assetOptions(data: Pick<ReferenceData, "mints">): AssetOption[] {
+  return data.mints.filter((mint) => !!mint.symbol);
 }

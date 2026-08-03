@@ -91,7 +91,7 @@ describe("what the wallet is asked to sign", () => {
     await updateAdvertisementTerms(who, "ad-1", {
       minTrade: 5,
       maxTrade: 500,
-      paymentMethods: ["M-Pesa", "Bank Transfer"],
+      paymentMethods: ["builtin:mpesa-kenya", "builtin:bank-transfer"],
       decimals: 6,
     });
 
@@ -99,7 +99,9 @@ describe("what the wallet is asked to sign", () => {
     expect(Object.keys(update)).toEqual(TERMS_KEYS);
     // Payment methods keep the merchant's order. Sorting them would be a
     // different byte string and therefore a different signature.
-    expect(update.payment_methods).toEqual(["M-Pesa", "Bank Transfer"]);
+    // Catalogue ids, not display names: the node validates against its own
+    // catalogue and answers `UNSUPPORTED_PAYMENT_METHOD` for "M-Pesa".
+    expect(update.payment_methods).toEqual(["builtin:mpesa-kenya", "builtin:bank-transfer"]);
     expect(posted[0].method).toBe("sendAdvertisementTermsUpdate");
   });
 
@@ -114,7 +116,7 @@ describe("what the wallet is asked to sign", () => {
       initialLiquidity: 1000,
       decimals: 6,
       pricing: { Floating: { oracle_provider: "any", premium_bps: 150, price_decimals: 2 } },
-      paymentMethods: ["M-Pesa"],
+      paymentMethods: ["builtin:mpesa-kenya"],
     });
 
     expect(Object.keys(JSON.parse(signed[0]) as object)).toEqual(CREATE_KEYS);
@@ -129,7 +131,7 @@ describe("what the wallet is asked to sign", () => {
     await updateAdvertisementTerms(who, "ad-1", {
       minTrade: 5,
       maxTrade: 500,
-      paymentMethods: ["M-Pesa"],
+      paymentMethods: ["builtin:mpesa-kenya"],
       decimals: 6,
     });
 

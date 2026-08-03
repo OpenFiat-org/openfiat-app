@@ -90,6 +90,12 @@ export function CurrencyCombobox({
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
         aria-expanded={open}
+        aria-haspopup="listbox"
+        /* A stable accessible name that still carries the current value. The
+           trigger's own text is a flag, a code and an arrow, so without this
+           a screen reader announced "🏳️ ▾" — and with nothing selected it
+           announced nothing at all. */
+        aria-label={`Fiat currency: ${isInternational ? "International" : value || "none selected"}`}
         className={`relative flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-gray-200 transition-colors ${
           open ? "border-brand/60 bg-brand/[0.06] text-white" : "border-white/10 hover:border-white/25"
         }`}
@@ -110,7 +116,12 @@ export function CurrencyCombobox({
               * already says everything the flag would.
               */}
             <span>{selected?.flag ?? "🏳️"}</span>
-            <span className="font-medium">{value}</span>
+            {/* A label when nothing is chosen. The ad wizard starts with no
+                currency selected — nothing here has the standing to pick one
+                for a merchant — and without this the trigger was a flag and
+                an arrow with no words in it, which is unreachable by name for
+                a screen reader and unreadable for everybody else. */}
+            <span className="font-medium">{value || "Select a currency"}</span>
             <span className="text-xs text-gray-500">{selected?.name ?? ""}</span>
           </>
         )}
@@ -140,7 +151,11 @@ export function CurrencyCombobox({
                 className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
               />
             </div>
-            <ul className="scrollbar-dark max-h-80 divide-y divide-white/5 overflow-y-auto rounded-b-lg">
+            <ul
+              role="listbox"
+              aria-label="Fiat currencies"
+              className="scrollbar-dark max-h-80 divide-y divide-white/5 overflow-y-auto rounded-b-lg"
+            >
               {showInternational && (
                 <li>
                   <button

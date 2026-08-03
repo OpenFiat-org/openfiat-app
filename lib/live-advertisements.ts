@@ -4,6 +4,7 @@ import {
   type AdvertisementView as ProtocolAd,
 } from "@openfiat/sdk";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { fetchMethodNames, methodLabel } from "@/lib/payment-catalog";
 
 /**
  * The real advertisement book, read from a node's `getAdvertisements`
@@ -121,7 +122,25 @@ export interface LiveAd {
    * ten with nothing on screen to show it. See `lib/merchant-ads.ts`.
    */
   assetDecimals: number;
+  /**
+   * Catalogue ids, exactly as the record carries them — `builtin:pix`.
+   *
+   * Ids and not names, because that is what `AdvertisementCreate` carries
+   * and what the node validates against: it answers
+   * `UNSUPPORTED_PAYMENT_METHOD` for `"PIX"` and accepts `"builtin:pix"`.
+   * Filter and compare on these.
+   */
   paymentMethods: string[];
+  /**
+   * What to *show* for each of the above, in the same order.
+   *
+   * Resolved from the node's catalogue at fetch time, falling back to the id
+   * where the node has no entry for it. Rendering the ids raw put
+   * `builtin:pix` in front of takers; naming them here rather than at each
+   * of the nine display sites keeps one answer to "what is this rail
+   * called", the way `assetSymbol` does for a mint.
+   */
+  paymentMethodLabels: string[];
   /**
    * `Deleted` is in this union because the node really can return it.
    *
@@ -201,7 +220,10 @@ function client(): Client {
  * function distinguishes a correct mapping from one that always reports
  * "no price".
  */
-export function toLiveAd(ad: ProtocolAd): LiveAd {
+export function toLiveAd(
+  ad: ProtocolAd,
+  methodNames: ReadonlyMap<string, string> | null = null,
+): LiveAd {
   const peerId = ad.merchant;
   const pricing = ad.pricing as
     | { Fixed: { price: { base_units: number; decimals: number } } }
@@ -247,6 +269,7 @@ export function toLiveAd(ad: ProtocolAd): LiveAd {
     availableLiquidity: toWhole(ad.available_liquidity),
     assetDecimals: ad.min_trade.decimals,
     paymentMethods: ad.payment_methods,
+    paymentMethodLabels: ad.payment_methods.map((id) => methodLabel(id, methodNames)),
     status: ad.status as LiveAd["status"],
     createdAt: ad.created_at,
     updatedAt: ad.updated_at,
@@ -276,12 +299,14 @@ const PAGE_SIZE = 100;
 export async function fetchAdvertisements(
   filter: { merchant?: string; statuses?: LiveAd["status"][] } = {},
 ): Promise<LiveAd[]> {
+  const endpoint = nodeUrl();
+  const names = await methodNamesOrNull(endpoint);
   const rows: LiveAd[] = [];
   for await (const ad of advertisements.eachAdvertisement(client(), {
     filter,
     page: { limit: PAGE_SIZE },
   })) {
-    rows.push(toLiveAd(ad));
+    rows.push(toLiveAd(ad, names));
     if (rows.length >= MAX_PAGES * PAGE_SIZE) break;
   }
   return rows;
@@ -289,8 +314,28 @@ export async function fetchAdvertisements(
 
 /** One advertisement, or `null` if this node has never seen that id. */
 export async function fetchAdvertisement(id: string): Promise<LiveAd | null> {
+  const names = await methodNamesOrNull(nodeUrl());
   const ad = await advertisements.getAdvertisement(client(), id);
-  return ad ? toLiveAd(ad) : null;
+  return ad ? toLiveAd(ad, names) : null;
+}
+
+/**
+ * The rail phrasebook, or `null`.
+ *
+ * Losing the names must not cost a reader the book: every figure on an
+ * advertisement comes from `getAdvertisements`, and a failure to resolve
+ * `builtin:pix` into "PIX" is a cosmetic loss. So this one read is allowed
+ * to fail quietly, and the ids show through — which is the record's own
+ * value, not a guess.
+ */
+async function methodNamesOrNull(
+  endpoint: string,
+): Promise<ReadonlyMap<string, string> | null> {
+  try {
+    return await fetchMethodNames(endpoint);
+  } catch {
+    return null;
+  }
 }
 
 /**

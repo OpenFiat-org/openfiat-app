@@ -7,9 +7,8 @@ import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-adverti
 import { fetchNamedAssets } from "@/lib/pairs";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { WalletAvatar } from "@/components/wallet-avatar";
-import { COUNTRIES_BY_SLUG } from "@/lib/data/countries";
 import {
-  readMarketSlug,
+  preferredCurrency,
   writeMarketSlug,
   writePreferredCurrency,
 } from "@/lib/market-preference";
@@ -161,24 +160,29 @@ export function P2PExchange({
     void load();
   }, [load]);
 
-  // Apply the remembered market after mount (landing page only).
+  /*
+   * Apply the remembered market after mount (landing page only).
+   *
+   * This used to read a country slug and invert it to a currency through a
+   * 253-row table compiled into this app — the exchange's one remaining
+   * reason to know the countries of the world. The preference is stored as a
+   * currency now, which is the only part of it this screen ever wanted.
+   */
   useEffect(() => {
     if (!rememberPreference) return;
-    try {
-      const saved = readMarketSlug();
-      if (!saved) return;
-      const country = COUNTRIES_BY_SLUG.get(saved);
-      if (country) setFiat(country.currencyCode);
-    } catch {
-      /* localStorage unavailable */
-    }
+    const saved = preferredCurrency();
+    if (saved) setFiat(saved);
   }, [rememberPreference]);
 
-  // Remember the last-browsed country page as the preferred market.
+  // Remember the last-browsed country page as the preferred market — both
+  // halves of it, because the two are no longer derivable from each other:
+  // the slug is what the country pages link by, the currency is what this
+  // screen opens on.
   useEffect(() => {
     if (!savePreference) return;
     writeMarketSlug(savePreference);
-  }, [savePreference]);
+    writePreferredCurrency(initialFiat);
+  }, [savePreference, initialFiat]);
 
   function chooseFiat(code: string) {
     setFiat(code);
@@ -196,12 +200,21 @@ export function P2PExchange({
     [BOOK],
   );
 
+  /**
+   * The rails on offer in this currency, as `{ id, label }`.
+   *
+   * Keyed by id and labelled by name, because an advertisement carries
+   * `builtin:pix` and a taker reads "PIX". Filtering on the label would fail
+   * the moment two nodes phrase one rail differently; showing the id would
+   * put the node's internal key in a dropdown.
+   */
   const methodOptions = useMemo(() => {
-    const set = new Set<string>();
+    const byId = new Map<string, string>();
     for (const ad of BOOK) {
-      if (ad.fiatCurrency === fiat) ad.paymentMethods.forEach((m) => set.add(m));
+      if (ad.fiatCurrency !== fiat) continue;
+      ad.paymentMethods.forEach((id, i) => byId.set(id, ad.paymentMethodLabels[i] ?? id));
     }
-    return [...set];
+    return [...byId].map(([id, label]) => ({ id, label }));
   }, [BOOK, fiat]);
 
   const rows = useMemo(() => {
@@ -360,7 +373,7 @@ export function P2PExchange({
           <select value={method} onChange={(e) => setMethod(e.target.value)} className={selectCls}>
             <option value="">All payment methods</option>
             {methodOptions.map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>
         )}
@@ -423,7 +436,7 @@ export function P2PExchange({
                     </p>
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                       <Link
-                        href="/guide/merchant"
+                        href="/become-a-merchant"
                         className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
                       >
                         Become a merchant
@@ -541,9 +554,13 @@ function AdRow({
       </Td>
       <Td py="py-6">
         <div className="flex max-w-60 flex-wrap gap-x-3 gap-y-1.5">
-          {ad.paymentMethods.map((m) => (
-            <span key={m} className="border-l-2 border-amber-400/60 pl-1.5 text-xs text-gray-400">
-              {m}
+          {ad.paymentMethods.map((id, i) => (
+            <span
+              key={id}
+              title={id}
+              className="border-l-2 border-amber-400/60 pl-1.5 text-xs text-gray-400"
+            >
+              {ad.paymentMethodLabels[i] ?? id}
             </span>
           ))}
         </div>

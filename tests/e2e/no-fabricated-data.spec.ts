@@ -33,6 +33,26 @@ interface Ad {
   status: string;
 }
 
+/**
+ * The node's `id -> name` phrasebook for payment rails.
+ *
+ * An advertisement carries catalogue ids — `builtin:mpesa-kenya` — and every
+ * screen shows the node's *name* for them, because printing the id at a
+ * reader is showing them the node's internal key. So a page assertion has to
+ * go through this rather than through the record's raw value.
+ */
+async function railNames(): Promise<Map<string, string>> {
+  const res = await fetch(`${NODE}/rpc`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getReferenceData", params: {} }),
+  });
+  const body = (await res.json()) as {
+    result: { payment_methods: Array<{ id: string; name: string }> };
+  };
+  return new Map(body.result.payment_methods.map((m) => [m.id, m.name]));
+}
+
 async function book(): Promise<Ad[]> {
   const res = await fetch(`${NODE}/rpc`, {
     method: "POST",
@@ -100,9 +120,13 @@ test("a merchant profile reads the node, and scores nothing", async ({ page }) =
 
   const text = await textOf(page, `/merchants/${peer}`);
 
-  // The wallet's real pair and rail, off the book.
+  // The wallet's real pair and rail, off the book — the rail by the node's
+  // name for it, which is what the page must show.
+  const names = await railNames();
   expect(has(text, live[0]!.fiat_currency)).toBe(true);
-  for (const method of live[0]!.payment_methods) expect(has(text, method)).toBe(true);
+  for (const id of live[0]!.payment_methods) {
+    expect(has(text, names.get(id) ?? id), `rail "${id}" missing from the profile`).toBe(true);
+  }
 
   // The protocol defines no composite score, no tier and no star ladder —
   // `getReputation` returns counters and never serialises a tier. The fixture
@@ -194,9 +218,12 @@ test("a country page asks the book which rails are on offer", async ({ page }) =
   const text = await textOf(page, "/country/kenya");
 
   if (kes.length > 0) {
-    // The rails on the page must be the ones merchants actually named.
-    for (const method of [...new Set(kes.flatMap((a) => a.payment_methods))]) {
-      expect(has(text, method), `rail "${method}" from the book missing from the page`).toBe(true);
+    // The rails on the page must be the ones merchants actually named, shown
+    // by the node's name rather than by the id the record carries.
+    const names = await railNames();
+    for (const id of [...new Set(kes.flatMap((a) => a.payment_methods))]) {
+      const label = names.get(id) ?? id;
+      expect(has(text, label), `rail "${label}" from the book missing from the page`).toBe(true);
     }
   } else {
     expect(has(text, "no wallet is currently advertising")).toBe(true);

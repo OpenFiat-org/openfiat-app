@@ -31,7 +31,8 @@ function ad(overrides: Partial<LiveAd> = {}): LiveAd {
     maxTrade: 1000,
     availableLiquidity: 5000,
     assetDecimals: 6,
-    paymentMethods: ["M-Pesa"],
+    paymentMethods: ["builtin:mpesa-kenya"],
+    paymentMethodLabels: ["M-Pesa Kenya (Safaricom)"],
     status: "Active",
     createdAt: 1_000,
     updatedAt: 2_000,
@@ -108,9 +109,9 @@ describe("merchantsFrom", () => {
 
   it("collects pairs and payment methods across advertisements without duplicates", () => {
     const [row] = merchantsFrom([
-      ad({ fiatCurrency: "KES", paymentMethods: ["M-Pesa", "Bank transfer"] }),
-      ad({ fiatCurrency: "KES", paymentMethods: ["M-Pesa"] }),
-      ad({ assetSymbol: "USDC", fiatCurrency: "NGN", paymentMethods: ["Bank transfer"] }),
+      ad({ fiatCurrency: "KES", paymentMethodLabels: ["M-Pesa", "Bank transfer"] }),
+      ad({ fiatCurrency: "KES", paymentMethodLabels: ["M-Pesa"] }),
+      ad({ assetSymbol: "USDC", fiatCurrency: "NGN", paymentMethodLabels: ["Bank transfer"] }),
       /*
        * A mint this node has no name for. It still makes a pair — the
        * merchant really is advertising it — and the pair is named by the
@@ -118,13 +119,21 @@ describe("merchantsFrom", () => {
        * or labelling it "Unknown", would make this list disagree with the
        * book it was built from.
        */
-      ad({ assetMint: "MintNoNodeHasNamed1111111111111111111111111", assetSymbol: null, fiatCurrency: "KES" }),
+      ad({
+        assetMint: "MintNoNodeHasNamed1111111111111111111111111",
+        assetSymbol: null,
+        fiatCurrency: "KES",
+        paymentMethodLabels: ["M-Pesa"],
+      }),
     ]);
     expect(row.pairs).toEqual([
       "MintNoNodeHasNamed1111111111111111111111111/KES",
       "USDC/NGN",
       "USDT/KES",
     ]);
+    // The node's *names* for the rails, resolved from the ids the records
+    // carry. A directory row reading `builtin:pix` would be showing a
+    // reader the node's internal key.
     expect(row.paymentMethods).toEqual(["Bank transfer", "M-Pesa"]);
   });
 

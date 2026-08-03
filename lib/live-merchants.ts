@@ -121,7 +121,11 @@ export interface MerchantRow {
    * has no name — never a ticker this app inferred.
    */
   pairs: string[];
-  /** Every payment method named across their advertisements, sorted. */
+  /**
+   * Every payment rail named across their advertisements, as the node names
+   * them — resolved from the catalogue ids the records carry, so a directory
+   * row reads "PIX" rather than `builtin:pix`.
+   */
   paymentMethods: string[];
   /** Their earliest advertisement's `created_at`. */
   firstAdvertisedAt: number;
@@ -195,7 +199,7 @@ export function merchantsFrom(ads: LiveAd[]): MerchantRow[] {
       // A merchant advertising a token nobody has nicknamed still trades a
       // pair, and it is listed as the address rather than dropped.
       pairs: unique(sorted.map((ad) => `${assetLabel(ad)}/${ad.fiatCurrency}`)),
-      paymentMethods: unique(sorted.flatMap((ad) => ad.paymentMethods)),
+      paymentMethods: unique(sorted.flatMap((ad) => ad.paymentMethodLabels)),
       firstAdvertisedAt: Math.min(...sorted.map((ad) => ad.createdAt)),
       lastUpdatedAt: Math.max(...sorted.map((ad) => ad.updatedAt)),
     });

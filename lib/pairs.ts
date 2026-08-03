@@ -1,8 +1,8 @@
 import { cache } from "react";
 import type { ReferenceData } from "@openfiat/sdk";
 
-import { COUNTRIES } from "@/lib/data/countries";
 import { DEFAULT_NODE_URL } from "@/lib/node-endpoint";
+import { nodeRpc } from "@/lib/node-rpc";
 
 /**
  * Asset/fiat pairs that get their own landing page — /usdt/kes, /usdc/ngn.
@@ -93,9 +93,9 @@ function looksLikeAPair(asset: string, currency: string): boolean {
  * Not `@openfiat/sdk`'s `reference.getReferenceData`: the package published
  * `types` pointing at `src` and `import` pointing at a `dist` built before
  * that namespace existed, so the call type-checked and threw a `TypeError`
- * at runtime. The packaging is being fixed (openfiat-sdks #190) and this
- * should collapse into that one call afterwards, together with
- * `lib/live-vaults.ts`'s `fetchMintNames` and `lib/reference.ts`'s loader.
+ * at runtime. The `dist` has caught up since, and collapsing this onto that
+ * one call together with `lib/live-vaults.ts`'s `fetchMintNames` remains the
+ * right end state; the envelope handling is at least shared now.
  *
  * The *type* is imported from the SDK regardless. A type-only import is
  * erased at compile time, so it cannot depend on a runtime export that is
@@ -103,24 +103,8 @@ function looksLikeAPair(asset: string, currency: string): boolean {
  * is what keeps this from becoming another copy of somebody else's table.
  * `Partial` because a node built before the mint table simply omits it.
  */
-async function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
-  const res = await fetch(`${endpoint.replace(/\/$/, "")}/rpc`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getReferenceData", params: {} }),
-    // Stated rather than left to a framework default. The whole point of
-    // asking is that the node is the authority, and a cached answer is this
-    // app quietly becoming the authority again for as long as the entry
-    // lives. Within one server render `namedAssetsForRender` still collapses
-    // this to a single call.
-    cache: "no-store",
-  });
-  const body = (await res.json()) as {
-    result?: Partial<ReferenceData>;
-    error?: { message: string };
-  };
-  if (body.error) throw new Error(body.error.message);
-  return body.result ?? {};
+function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
+  return nodeRpc<Partial<ReferenceData>>(endpoint, "getReferenceData");
 }
 
 /**
@@ -213,9 +197,32 @@ export async function normalisePair(
   };
 }
 
-/** Countries where this is the primary currency — a fact about the world. */
-export function countriesUsing(currency: string): string[] {
-  return COUNTRIES.filter((country) => country.currencyCode === currency).map(
-    (country) => country.name,
-  );
+/**
+ * Countries where this is the primary currency, as the node lists them.
+ *
+ * This used to filter a 253-row table compiled into this app, under a
+ * comment calling it "a fact about the world, not a claim about this
+ * network". The distinction was real and the conclusion was not: the node
+ * publishes the same fact, one build of this app disagreeing with it helps
+ * nobody, and `lib/data/countries.ts` is gone.
+ *
+ * An empty list when the node cannot be reached, and the pair page renders
+ * nothing rather than a wrong list — the sentence it feeds is a nicety, not
+ * a number anybody trades on.
+ */
+export async function countriesUsing(
+  currency: string,
+  endpoint: string = DEFAULT_NODE_URL,
+): Promise<string[]> {
+  try {
+    const { countries } = await namedReferenceForRender(endpoint);
+    return (countries ?? [])
+      .filter((country) => country.currency === currency)
+      .map((country) => country.name);
+  } catch {
+    return [];
+  }
 }
+
+/** `fetchReferenceData`, memoised for one server render — see `namedAssetsForRender`. */
+const namedReferenceForRender = cache(fetchReferenceData);

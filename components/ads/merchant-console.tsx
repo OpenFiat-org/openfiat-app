@@ -233,7 +233,7 @@ export function MerchantConsole() {
               </Td>
               <Td className="whitespace-nowrap text-xs text-gray-400">
                 <span className="flex items-center gap-1.5" title={ad.paymentMethods.join(", ")}>
-                  {ad.paymentMethods[0] ?? "—"}
+                  {ad.paymentMethodLabels[0] ?? "—"}
                   {ad.paymentMethods.length > 1 && (
                     <span className="shrink-0 rounded border border-white/10 px-1.5 py-0.5 text-[11px] text-gray-500">
                       +{ad.paymentMethods.length - 1}

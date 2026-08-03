@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { COUNTRIES, currenciesFor } from "@/lib/data/countries";
+import { countryViews, currenciesFor } from "@/lib/countries";
+import { referenceForRender } from "@/lib/server-reference";
 import { fetchPricedPairs } from "@/lib/live-oracle";
 
 const BASE = "https://app.openfiat.network";
@@ -42,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/guide/buy", 0.8, "monthly"),
     entry("/guide/sell", 0.8, "monthly"),
     entry("/guide/merchant", 0.8, "monthly"),
+    entry("/become-a-merchant", 0.8, "monthly"),
   ];
 
   // Public, and worth indexing: they show how the protocol behaves rather than
@@ -72,8 +74,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/settings",
   ].map((path) => entry(path, 0.2, "monthly"));
 
-  // One page per country, plus one per additional currency it trades in.
-  const countryRoutes = COUNTRIES.flatMap((c) => [
+  /*
+   * One page per country, plus one per additional currency it trades in.
+   *
+   * Read from the node rather than from a table in this repository. Those
+   * routes used to be generated from `lib/data/countries.ts`, whose 253 rows
+   * and hand-kept second currencies were this app's own copy of the world —
+   * so the sitemap submitted `/country/zimbabwe/usd` to search engines on
+   * the strength of a line somebody typed here, and would have kept
+   * submitting a country the network had dropped.
+   *
+   * A build that cannot reach a node emits none of these. That is the same
+   * trade the pair routes below already make: a sitemap missing routes
+   * recovers on the next build, whereas one asserting routes nobody verified
+   * does not.
+   */
+  const reference = await referenceForRender();
+  const countryRoutes = (reference ? countryViews(reference) : []).flatMap((c) => [
     entry(`/country/${c.slug}`, 0.9, "daily"),
     ...currenciesFor(c)
       .slice(1)

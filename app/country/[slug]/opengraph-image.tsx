@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
-import { COUNTRIES_BY_SLUG } from "@/lib/data/countries";
+
+import { countryBySlug } from "@/lib/countries";
+import { referenceForRender } from "@/lib/server-reference";
 import { BRAND, OG_SIZE, flagPlateLetters } from "@/lib/og";
 
 export const size = OG_SIZE;
@@ -17,11 +19,19 @@ export const alt = "OpenFiat P2P market";
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const country = COUNTRIES_BY_SLUG.get(slug);
+  /*
+   * The country comes from the node, like everywhere else. A node that
+   * cannot be reached leaves `country` undefined, and the card falls back to
+   * the global wording below — which is the one honest thing an OpenGraph
+   * image can do, since it has no state in which to say "could not load".
+   */
+  const reference = await referenceForRender();
+  const country = reference ? countryBySlug(reference, slug) : undefined;
 
   const name = country?.name ?? "Global";
-  const code = country?.currencyCode ?? "";
-  const currencyName = country?.currencyName ?? "";
+  const code = country?.currency ?? "";
+  const currencyName =
+    (country && reference?.currencies.find((c) => c.code === country.currency)?.name) ?? "";
 
   return new ImageResponse(
     (

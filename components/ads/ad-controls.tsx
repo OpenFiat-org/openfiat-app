@@ -237,7 +237,18 @@ export function AdTermsDialog({
           <div>
             <span className="text-xs font-medium text-gray-300">Payment methods</span>
             <div className="mt-1.5">
-              <MethodPicker selected={methods} onChange={setMethods} />
+              {/* No country here: an advertisement carries a currency and
+                  no country, and this dialog is editing one that already
+                  exists. The merchant's own peer id is passed instead, so
+                  the node puts the rails they already advertise at the top —
+                  which is what somebody re-terming an ad is most likely to
+                  reach for. */}
+              <MethodPicker
+                selected={methods}
+                onChange={setMethods}
+                country={null}
+                merchant={ad.merchantPeerId}
+              />
             </div>
           </div>
 

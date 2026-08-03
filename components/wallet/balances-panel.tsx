@@ -99,16 +99,38 @@ export function BalancesPanel() {
         return (
           <Tr key={`${b.mint.toBase58()}-${b.tokenProgram.toBase58()}`}>
             <Td>
-              {naming.kind === "named" && (
-                <span className="block font-medium text-gray-200">{naming.symbol}</span>
-              )}
-              {/* No name, no truncation: with nothing above it, `shortMint`
-                  would identify a token by eight characters. */}
+              {/*
+               * Three headings for three answers, and never the address as
+               * one of them. A row whose first line was a base58 string read
+               * as a token called `Ge7q…`, which is what "unknown tokens in
+               * my balance" turned out to mean.
+               *
+               * `unnamed` is the node saying it has no name for this mint —
+               * an ordinary answer, so the row says so in words. `unasked`
+               * and `asking` are facts about this app's connection and are
+               * labelled as such, because rendering either as "unrecognised"
+               * would turn a failed request into a finding about somebody's
+               * token. Nothing here invents a name.
+               */}
+              <span
+                className={`block font-medium ${naming.kind === "named" ? "text-gray-200" : "text-gray-500"}`}
+              >
+                {naming.kind === "named"
+                  ? naming.symbol
+                  : naming.kind === "unnamed"
+                    ? "Unrecognised mint"
+                    : naming.kind === "asking"
+                      ? "Reading token names…"
+                      : "Name unavailable"}
+              </span>
+              {/* The address, in full when there is no name above it to
+                  identify the token by: `shortMint` would otherwise leave a
+                  reader identifying a token by eight characters. */}
               <span
                 className={
                   naming.kind === "named"
                     ? "mt-0.5 block font-mono text-[11px] text-gray-500"
-                    : "block font-mono text-[11px] text-gray-400 [overflow-wrap:anywhere]"
+                    : "mt-0.5 block font-mono text-[11px] text-gray-400 [overflow-wrap:anywhere]"
                 }
                 title={b.mint.toBase58()}
               >

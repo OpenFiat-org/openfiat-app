@@ -131,7 +131,7 @@ export function NewTradeReview({
           <SummaryRow label="Limits" value={<TradeLimits ad={ad} />} />
           <SummaryRow
             label="Payment methods"
-            value={ad.paymentMethods.join(", ") || "—"}
+            value={ad.paymentMethodLabels.join(", ") || "—"}
           />
           <SummaryRow label="Status" value={ad.status} />
         </div>

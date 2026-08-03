@@ -1,113 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import bs58 from "bs58";
-import { formatNumber, shortAddress } from "@/lib/format";
-import { DEVNET_SETTLEMENT_MINT } from "@/lib/onchain-config";
+
+import {
+  AD_DRAFT_KEY,
+  AD_STEPS,
+  EMPTY_AD_DRAFT,
+  MAX_PAYMENT_METHODS,
+  PREMIUM_LIMIT_PCT,
+  completeThrough,
+  parseDraft,
+  priceDecimalsFor,
+  stepProblems,
+  type AdDraft,
+} from "@/lib/ad-draft";
+import { assetOptions, useReferenceData, type AssetOption } from "@/lib/reference";
+import { formatNumber } from "@/lib/format";
 import { formatBaseUnits } from "@/lib/live-vaults";
-import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
-import { useVaultBacking, vaultCovers, type VaultBacking } from "@/components/wallet/use-vault-backing";
-import { currentSigner } from "@/lib/wallet-connection";
 import { explainRefusal, publishAdvertisement, toWireAmount } from "@/lib/merchant-ads";
-import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
+import { peerIdForPublicKey } from "@/lib/arbitration";
+import {
+  WALLET_CHANGED_EVENT,
+  currentSigner,
+  readWalletConnection,
+  type WalletConnection,
+} from "@/lib/wallet-connection";
+import { useVaultBacking, vaultCovers, type VaultBacking } from "@/components/wallet/use-vault-backing";
+import { AssetPicker } from "@/components/ads/asset-picker";
 import { MethodPicker } from "@/components/ads/method-picker";
-
-/**
- * Whether `value` could be a mint at all: base58 decoding to exactly 32
- * bytes, which is the same thing the node checks before it will accept an
- * advertisement.
- *
- * It deliberately does not check membership of any list. The settlement
- * allowlist lives on chain and governance can change it, so a client
- * refusing an address for being absent from a list compiled last month would
- * block a trade the protocol allows. Enforcement belongs where the funds
- * move; this only catches a typo before it becomes a signature.
- */
-function isMintAddress(value: string): boolean {
-  try {
-    return bs58.decode(value.trim()).length === 32;
-  } catch {
-    return false;
-  }
-}
-
-const DRAFT_KEY = "openfiat:ad-draft";
-const STEPS = ["Market", "Pricing", "Limits", "Payment methods", "Review"] as const;
-
-interface Draft {
-  step: number;
-  direction: "Buy" | "Sell";
-  /**
-   * The mint the merchant will be paid in.
-   *
-   * This was a ticker off a fixed list, and an advertisement no longer has
-   * anywhere to put one: OFS-2100 carries `asset_mint` and no asset name,
-   * because a ticker on a record is a label its author chose and is tied to
-   * the token the escrow moves by nothing at all. What a buyer reads is
-   * resolved from this address by the node that serves them, so this screen
-   * chooses an identity and never a name.
-   */
-  mint: string;
-  fiat: string;
-  /**
-   * The precision a floating price is quoted in — the fiat currency's, so
-   * 2 for KES/NGN/USD and 0 for JPY.
-   *
-   * Declared by the merchant because nothing else on the record carries
-   * it: the limits are in the asset, and a floating advertisement has no
-   * fixed price to borrow the precision from. Inferring it from the
-   * currency code would mean shipping a currency table that silently
-   * mis-rounds every currency missing from it.
-   */
-  priceDecimals: string;
-  pricingType: "Fixed" | "Floating";
-  price: string;
-  premium: string;
-  min: string;
-  max: string;
-  minRep: string;
-  liquidity: string;
-  methods: string[];
-}
-
-const DEFAULT_DRAFT: Draft = {
-  step: 1,
-  direction: "Sell",
-  mint: DEVNET_SETTLEMENT_MINT,
-  fiat: "KES",
-  priceDecimals: "2",
-  pricingType: "Floating",
-  price: "132.00",
-  premium: "0.8",
-  // In the token, like `liquidity` — these were 5,000 and 250,000, which
-  // are KES figures against a 10,000-unit vault: a starting draft that
-  // offered to sell twenty-five times what it held.
-  min: "10",
-  max: "5000",
-  minRep: "",
-  liquidity: "10000",
-  methods: ["M-Pesa Kenya (Safaricom)"],
-};
+import { PricePosition } from "@/components/ads/price-position";
+import { CurrencyCombobox } from "@/components/p2p/currency-combobox";
+import { CountrySelect } from "@/components/p2p/country-select";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm tabular-nums text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]";
 const labelCls = "mb-1 block text-xs text-gray-500";
 
 /**
- * Binance-style multi-step post-advertisement wizard. Flat (no boxed panel),
- * per-step validation, OPEN-bond gating, and draft persistence to
- * localStorage["openfiat:ad-draft"].
+ * Post an advertisement, in the order every P2P desk asks for it.
  *
- * Publishing is real. It used to end at a green tick reading
- * "Advertisement published (simulated)" — the draft was cleared and
- * nothing was ever sent, so the first step of the merchant journey was
- * the one thing in it that could not fail. It now signs an
- * `AdvertisementCreate` with the connected wallet and submits it to the
- * selected node; the id in the confirmation is the id the network has.
+ * # What this rebuild changed
+ *
+ * The steps are Binance's — ad type and asset, price, amount and limits,
+ * payment methods, review and confirm — for the reason set out in
+ * `lib/ad-draft.ts`: a merchant has done this before, and reordering the
+ * same five decisions teaches them nothing.
+ *
+ * The asset is chosen from the node's mint table, not typed. The field it
+ * replaces had the placeholder "Base58 mint address", and the merchant was
+ * expected to produce a 32-byte public key from memory. The old comment
+ * defending that was right that a ticker is a label and a mint is an
+ * identity — and wrong that the two could therefore not be shown together.
+ * The node publishes the mapping and the buyer's node applies it; applying
+ * it before the signature instead of after changes nothing except who has
+ * to know base58.
+ *
+ * The asset's *precision* comes from that same table. It used to be read off
+ * the merchant's own liquidity vault, which meant a merchant could not post
+ * an advertisement at all until they had opened one — the vault lookup was
+ * load-bearing for a number the node already publishes.
+ *
+ * Publishing is real: the draft is signed by the connected wallet and
+ * submitted to the selected node, and the id in the confirmation is the id
+ * the network has.
  */
 export function AdWizard() {
-  const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
+  const [draft, setDraft] = useState<AdDraft>(EMPTY_AD_DRAFT);
   const [loaded, setLoaded] = useState(false);
   const [resumed, setResumed] = useState(false);
   const [published, setPublished] = useState<string | null>(null);
@@ -115,8 +75,8 @@ export function AdWizard() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
 
-  // The merchant half of the vault key. Read post-mount and kept in sync,
-  // the same way `components/wallet/vaults-panel.tsx` does it.
+  const reference = useReferenceData();
+
   useEffect(() => {
     const update = () => setWallet(readWalletConnection());
     update();
@@ -124,144 +84,111 @@ export function AdWizard() {
     return () => window.removeEventListener(WALLET_CHANGED_EVENT, update);
   }, []);
 
-  // Restore draft on mount (SSR renders the default step 1 — no hydration flash).
+  // Restored post-mount, so the server render and the first client render
+  // agree on the empty draft and there is no hydration flash.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = localStorage.getItem(AD_DRAFT_KEY);
       if (saved) {
-        setDraft({ ...DEFAULT_DRAFT, ...(JSON.parse(saved) as Draft) });
+        setDraft(parseDraft(saved));
         setResumed(true);
       }
     } catch {
-      /* localStorage unavailable */
+      /* localStorage unavailable, or a draft this build cannot read */
     }
     setLoaded(true);
   }, []);
 
-  // Persist on every change.
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      localStorage.setItem(AD_DRAFT_KEY, JSON.stringify(draft));
     } catch {
       /* localStorage unavailable */
     }
   }, [draft, loaded]);
 
-  function patch(p: Partial<Draft>) {
+  function patch(p: Partial<AdDraft>) {
     setDraft((d) => ({ ...d, ...p }));
   }
 
   function discard() {
-    setDraft(DEFAULT_DRAFT);
+    setDraft(EMPTY_AD_DRAFT);
     setResumed(false);
     try {
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(AD_DRAFT_KEY);
     } catch {
       /* localStorage unavailable */
     }
   }
 
-  const { step, direction, mint, fiat, priceDecimals, pricingType, price, premium, min, max, minRep, liquidity, methods } = draft;
+  const { step } = draft;
 
-  /*
-   * There is no indicative price on this screen any more.
+  /**
+   * The node's row for the selected mint.
    *
-   * It was `fxPerUsd(fiat)` — the fiat's rate against the US dollar — shown
-   * as what the chosen asset would fetch. That only worked because the
-   * ticker was doing the arithmetic silently: "USDT" was read as a promise
-   * that one unit is one dollar. A mint address makes no such promise, and
-   * this app has no way to learn it from one. Every rate on this network is
-   * published by an oracle against a symbol the node resolves, which is a
-   * read this wizard does not make.
-   *
-   * So the number is gone rather than kept with an assumption attached. A
-   * merchant who wants a reference has the live oracle rates on /network and
-   * the real book on the exchange.
+   * Resolved on every render rather than stored in the draft, deliberately.
+   * A precision copied into localStorage last week is a precision that
+   * survives the node changing its mind about a mint, and every amount on
+   * the record is scaled by it — a stale `6` against a nine-decimal token
+   * publishes limits a thousand times too small.
    */
-  const premiumNum = Number(premium) || 0;
-  const mintValid = isMintAddress(mint);
+  const asset: AssetOption | null = useMemo(() => {
+    if (reference.status !== "ready" || !draft.mint) return null;
+    return assetOptions(reference.data).find((option) => option.mint === draft.mint) ?? null;
+  }, [reference, draft.mint]);
 
-  // Per-step validation
-  const minNum = Number(min) || 0;
-  const maxNum = Number(max) || 0;
-  const liqNum = Number(liquidity) || 0;
+  const merchantPeerId = useMemo(() => {
+    if (!wallet) return null;
+    try {
+      return peerIdForPublicKey(bs58.decode(wallet.address));
+    } catch {
+      return null;
+    }
+  }, [wallet]);
+
+  const problems = stepProblems(draft, asset);
+
   /*
    * The vault-backing check, against the merchant's real `LiquidityVault`.
    *
-   * It used to read a `VAULTS` fixture keyed by asset ticker and refuse any
-   * advertised liquidity above the figure it found — a gate that looked like
-   * a safety check and enforced nothing, because the numbers were invented
-   * and identical for every visitor. It was then removed entirely, because
-   * a ticker maps to no mint and there was nothing to key a real read on.
-   *
-   * Both halves of the key exist now: the mint is what this screen collects,
-   * and the merchant is the connected wallet. No name is involved in either.
+   * It blocks only on evidence of a shortfall — a vault that exists and
+   * holds less than the total on offer, or no vault at all, both of which
+   * the chain asserted. `loading`, `error` and `unkeyed` are not findings
+   * about anybody's balance and never read as one: an unreachable RPC
+   * saying "insufficient" would be a lie in the direction that costs a
+   * merchant a trade.
    */
-  const backing = useVaultBacking(wallet?.address ?? null, mintValid ? mint.trim() : null);
-  const cover = backing.kind === "found" ? vaultCovers(backing.vault, liquidity) : null;
-
-  /*
-   * Blocking only on evidence, and only on evidence of a shortfall.
-   *
-   * `found` with too little available, and `none` (no vault at all, so
-   * nothing is available) are both things the chain asserted, and
-   * advertising liquidity that is not there is the oversell this gate
-   * exists to stop. `loading`, `error` and `unkeyed` are not findings about
-   * the merchant's balance and must never read as one — an unreachable RPC
-   * saying "insufficient" would be a lie in the direction that costs
-   * somebody a trade.
-   */
-  const backingShortfall =
-    liqNum > 0 && (backing.kind === "none" || (cover !== null && !cover.covered));
-
-  const stepValid: Record<number, boolean> = {
-    1: mintValid,
-    2:
-      (pricingType === "Floating" ? premiumNum >= -5 && premiumNum <= 5 : Number(price) > 0) &&
-      Number.isInteger(Number(priceDecimals)) &&
-      Number(priceDecimals) >= 0 &&
-      Number(priceDecimals) <= 12,
-    3: minNum > 0 && maxNum >= minNum && liqNum > 0 && !backingShortfall,
-    4: methods.length >= 1,
-    5: true,
-  };
-  const stepErrors: Record<number, string[]> = {
-    1: mintValid ? [] : ["Enter a mint address: base58, decoding to 32 bytes."],
-    2: [
-      ...(pricingType === "Floating" && (premiumNum < -5 || premiumNum > 5) ? ["Premium must be between -5% and +5%."] : []),
-      ...(pricingType === "Fixed" && !(Number(price) > 0) ? ["Enter a fixed price greater than 0."] : []),
-      ...(Number.isInteger(Number(priceDecimals)) &&
-      Number(priceDecimals) >= 0 &&
-      Number(priceDecimals) <= 12
-        ? []
-        : ["Price decimals must be a whole number between 0 and 12."]),
-    ],
-    3: [
-      ...(minNum <= 0 ? ["Min trade must be greater than 0."] : []),
-      ...(maxNum < minNum ? ["Max trade must be ≥ min trade."] : []),
-      ...(liqNum <= 0 ? ["Liquidity must be greater than 0."] : []),
-      ...(backing.kind === "none" && liqNum > 0
-        ? [`This wallet has no vault for ${shortAddress(mint)}, so nothing backs this advertisement. Open one with a deposit first.`]
-        : []),
-      ...(cover !== null && !cover.covered
+  const backing = useVaultBacking(wallet?.address ?? null, draft.mint || null);
+  const cover = backing.kind === "found" ? vaultCovers(backing.vault, draft.totalAmount) : null;
+  const total = Number(draft.totalAmount) || 0;
+  const backingProblems =
+    total <= 0
+      ? []
+      : backing.kind === "none"
         ? [
-            `Your vault has ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} available — less than the ${formatNumber(liqNum)} advertised.`,
+            "This wallet has no liquidity vault for that token, so nothing backs this advertisement — every reservation against it would fail. Open one from Wallet → Deposit first.",
           ]
-        : []),
-    ],
-    4: methods.length === 0 ? ["Select at least one payment method."] : [],
-    5: [],
+        : cover !== null && !cover.covered
+          ? [
+              `Your vault holds ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} available, less than the ${formatNumber(total)} on offer here.`,
+            ]
+          : [];
+
+  const stepErrors: Record<number, string[]> = {
+    ...problems,
+    3: [...problems[3]!, ...backingProblems],
   };
+  const stepDone = (n: number) => (stepErrors[n] ?? []).length === 0;
 
   /**
    * Signs the advertisement and submits it.
    *
-   * The asset's precision comes from the merchant's own vault for this
-   * mint, read from the chain — never a default. Every amount on the
-   * record is base units plus decimals, so guessing six for a token that
-   * uses nine would publish limits a thousand times smaller than the ones
-   * on screen, and nothing downstream would notice.
+   * Every amount is base units plus the node's decimals for this mint. The
+   * price carries its own precision — the one the merchant typed for a fixed
+   * price, the one they declared for a floating one — because a fiat price
+   * and an asset amount are scaled by different things and sharing a
+   * `decimals` between them would misprice one of the two.
    */
   async function publish() {
     const signer = currentSigner(wallet);
@@ -269,9 +196,9 @@ export function AdWizard() {
       setPublishError("Connect a wallet before publishing — it is what signs the advertisement.");
       return;
     }
-    if (backing.kind !== "found") {
+    if (!asset) {
       setPublishError(
-        "The token's precision comes from your vault for this mint, and that lookup has not answered. Open the vault first.",
+        "The token's precision comes from your node's mint table, and that answer is not in hand. Reload once the node is reachable.",
       );
       return;
     }
@@ -281,33 +208,33 @@ export function AdWizard() {
       const id = await publishAdvertisement(
         { provider: signer, publicKey: bs58.decode(wallet.address) },
         {
-          assetMint: mint.trim(),
-          direction,
-          fiatCurrency: fiat,
-          minTrade: minNum,
-          maxTrade: maxNum,
-          initialLiquidity: liqNum,
-          decimals: backing.vault.decimals,
+          assetMint: asset.mint,
+          direction: draft.direction,
+          fiatCurrency: draft.fiat,
+          minTrade: Number(draft.minOrder),
+          maxTrade: Number(draft.maxOrder),
+          initialLiquidity: total,
+          decimals: asset.decimals,
           pricing:
-            pricingType === "Fixed"
-              ? { Fixed: { price: toWireAmount(Number(price), Number(priceDecimals) || 2) } }
+            draft.pricingType === "Fixed"
+              ? { Fixed: { price: toWireAmount(Number(draft.price), priceDecimalsFor(draft)) } }
               : {
                   Floating: {
                     // "any", like every record the protocol crate itself
-                    // builds. The field is a merchant's declared
-                    // preference and the resolver does not read it — it
-                    // takes the median of every current record for the
-                    // pair. A provider picker here would be a control
-                    // that changes nothing.
+                    // builds. The field is a merchant's declared preference
+                    // and the resolver does not read it — it takes the
+                    // median of every current record for the pair. A
+                    // provider picker here would be a control that changes
+                    // nothing.
                     oracle_provider: "any",
-                    premium_bps: Math.round(premiumNum * 100),
-                    price_decimals: Number(priceDecimals) || 2,
+                    premium_bps: Math.round(Number(draft.premium) * 100),
+                    price_decimals: priceDecimalsFor(draft),
                   },
                 },
-          paymentMethods: methods,
+          paymentMethods: draft.methods,
         },
       );
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(AD_DRAFT_KEY);
       setPublished(id);
     } catch (err) {
       setPublishError(explainRefusal(err instanceof Error ? err.message : String(err)));
@@ -320,18 +247,25 @@ export function AdWizard() {
     return (
       <div className="border-y border-white/5 py-14 text-center">
         <p className="text-2xl text-emerald-400">✓</p>
-        <h2 className="mt-3 text-lg font-semibold text-white">Advertisement published</h2>
+        <h2 className="mt-3 text-lg font-semibold text-white">Advertisement posted</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-          {direction} <span className="font-mono">{shortAddress(mint)}</span> for {fiat} · {pricingType === "Fixed" ? `Fixed ${price}` : `Floating ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`} ·
-          limits {formatNumber(minNum)}–{formatNumber(maxNum)} <span className="font-mono">{shortAddress(mint)}</span>.
+          {draft.direction} {asset?.symbol ?? "your token"} for {draft.fiat} ·{" "}
+          {draft.pricingType === "Fixed"
+            ? `Fixed ${draft.price}`
+            : `Floating ${Number(draft.premium) >= 0 ? "+" : ""}${draft.premium}%`}{" "}
+          · orders {formatNumber(Number(draft.minOrder))}–{formatNumber(Number(draft.maxOrder))}{" "}
+          {asset?.symbol ?? ""}.
         </p>
         <p className="mx-auto mt-3 max-w-md font-mono text-xs text-gray-500">{published}</p>
         <p className="mx-auto mt-2 max-w-md text-xs text-gray-500">
           Signed by your wallet and accepted by the node, which gossips it to the rest of the
-          network. Pause, edit or take it down from My Ads.
+          network. Edit it, pause it or take it down from My Ads.
         </p>
-        <Link href="/ads" className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
-          Back to My Ads
+        <Link
+          href="/ads"
+          className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+        >
+          Go to My Ads
         </Link>
       </div>
     );
@@ -339,12 +273,12 @@ export function AdWizard() {
 
   return (
     <div>
-      {/* Wizard header: steps + OPEN balance + draft state */}
+      {/* Step rail */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-white/5 pb-5">
         <ol className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {STEPS.map((label, i) => {
+          {AD_STEPS.map((label, i) => {
             const n = i + 1;
-            const done = n < step;
+            const done = n < step && stepDone(n);
             const current = n === step;
             return (
               <li key={label} className="flex items-center gap-2">
@@ -359,42 +293,45 @@ export function AdWizard() {
                 >
                   {done ? "✓" : n}
                 </span>
-                <span className={`text-sm ${current ? "font-medium text-white" : "text-gray-500"}`}>{label}</span>
+                <span className={`text-sm ${current ? "font-medium text-white" : "text-gray-500"}`}>
+                  {label}
+                </span>
               </li>
             );
           })}
         </ol>
-        <div className="ml-auto flex items-center gap-4">
-          {resumed && (
-            <span className="flex items-center gap-2 text-xs text-amber-300">
-              Draft restored
-              <button onClick={discard} className="text-gray-400 underline hover:text-white">
-                Discard draft
-              </button>
-            </span>
-          )}
-          {/* The real OPEN balance is in the header badge, read from the
-              connected wallet's token account. This used to print a constant
-              and contradict it. */}
-        </div>
+        {resumed && (
+          <span className="ml-auto flex items-center gap-2 text-xs text-amber-300">
+            Draft restored
+            <button onClick={discard} className="text-gray-400 underline hover:text-white">
+              Discard draft
+            </button>
+          </span>
+        )}
       </div>
 
-      {/* Step body — flat sections, hairline dividers, no boxed panel */}
       <div className="py-8">
         {step === 1 && (
           <div className="space-y-8">
             <div>
-              <p className={labelCls}>Direction</p>
+              <p className={labelCls}>I want to</p>
               <div className="grid max-w-md grid-cols-2 gap-3">
                 {(["Sell", "Buy"] as const).map((d) => (
                   <button
                     key={d}
                     onClick={() => patch({ direction: d })}
+                    aria-pressed={draft.direction === d}
                     className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
-                      direction === d ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
+                      draft.direction === d
+                        ? "border-brand/50 bg-brand/10 text-white"
+                        : "border-white/10 text-gray-400 hover:text-white"
                     }`}
                   >
-                    <span className={`font-semibold ${d === "Sell" ? "text-orange-400" : "text-emerald-400"}`}>{d}</span>
+                    <span
+                      className={`font-semibold ${d === "Sell" ? "text-orange-400" : "text-emerald-400"}`}
+                    >
+                      {d}
+                    </span>
                     <span className="mt-0.5 block text-xs text-gray-500">
                       {d === "Sell" ? "You sell crypto for fiat" : "You buy crypto with fiat"}
                     </span>
@@ -403,71 +340,16 @@ export function AdWizard() {
               </div>
             </div>
             <div>
-              <label className={labelCls} htmlFor="asset-mint">
-                Token you will be paid in
-              </label>
-              {/*
-               * A mint address, typed, not a ticker chosen from a list.
-               *
-               * The list used to be USDT / USDC / USD1 / SOL, and an
-               * advertisement now has nowhere to put any of those words. It
-               * carries `asset_mint`, because the token a buyer receives has
-               * to be the token the escrow moves, and only an address ties
-               * the two together — a ticker is a label the merchant picked.
-               *
-               * Offering tickers here and mapping them to addresses behind
-               * the field would rebuild exactly that gap one screen earlier,
-               * with this app choosing the meaning of "USDC" on the
-               * merchant's behalf. So the field is the address, and the
-               * chips below only fill in mints this app already names
-               * elsewhere, each shown with the address it stands for.
-               */}
-              <input
-                id="asset-mint"
-                value={mint}
-                onChange={(e) => patch({ mint: e.target.value })}
-                spellCheck={false}
-                autoComplete="off"
-                placeholder="Base58 mint address"
-                className={`${inputCls} max-w-xl font-mono`}
+              <p className={labelCls}>Asset</p>
+              <AssetPicker
+                value={draft.mint}
+                onChange={(option) => patch({ mint: option.mint })}
+                walletAddress={wallet?.address ?? null}
               />
-              {/*
-               * One quick-fill, not a menu of the mints this app knows.
-               *
-               * `KNOWN_DEVNET_MINTS` also contains OPEN, and OPEN is *not* on
-               * the escrow settlement allowlist — OFS-4100 holds it back
-               * until the public sale. That list exists for the vault screens,
-               * where opening a vault in OPEN is a reasonable thing to do.
-               * Offering it here would invite a merchant to advertise a token
-               * no escrow can pay a buyer in, which is a worse mistake for
-               * being made with the protocol's own familiar name.
-               */}
-              <div className="mt-2">
-              <button
-                onClick={() => patch({ mint: DEVNET_SETTLEMENT_MINT })}
-                className={`rounded-md border px-3 py-2 text-left text-xs transition-colors ${
-                  mint.trim() === DEVNET_SETTLEMENT_MINT
-                    ? "border-brand/50 bg-brand/10 text-white"
-                    : "border-white/10 text-gray-400 hover:text-white"
-                }`}
-              >
-                <span className="block font-medium">Use the devnet settlement stablecoin</span>
-                <span className="mt-0.5 block break-all font-mono text-[11px] text-gray-600">
-                  {DEVNET_SETTLEMENT_MINT}
-                </span>
-              </button>
-              </div>
-              <p className="mt-2 max-w-xl text-[11px] leading-relaxed text-gray-600">
-                Any mint is accepted here. What can actually be escrowed is decided by the
-                escrow program on chain, which governance can change — so this screen does not
-                keep its own copy of that list and does not refuse an address for being absent
-                from one. The name a buyer reads is resolved from this address by the node
-                serving them; nothing you type here becomes that name.
-              </p>
             </div>
             <div>
-              <p className={labelCls}>Fiat currency (country / currency)</p>
-              <CurrencyCombobox value={fiat} onChange={(code) => patch({ fiat: code })} />
+              <p className={labelCls}>Fiat currency</p>
+              <CurrencyCombobox value={draft.fiat} onChange={(code) => patch({ fiat: code })} />
             </div>
           </div>
         )}
@@ -475,146 +357,215 @@ export function AdWizard() {
         {step === 2 && (
           <div className="max-w-xl space-y-6">
             <div>
-              <p className={labelCls}>Pricing model</p>
+              <p className={labelCls}>Price type</p>
               <div className="grid grid-cols-2 gap-3">
-                {(["Floating", "Fixed"] as const).map((p) => (
+                {(["Fixed", "Floating"] as const).map((p) => (
                   <button
                     key={p}
                     onClick={() => patch({ pricingType: p })}
+                    aria-pressed={draft.pricingType === p}
                     className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
-                      pricingType === p ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
+                      draft.pricingType === p
+                        ? "border-brand/50 bg-brand/10 text-white"
+                        : "border-white/10 text-gray-400 hover:text-white"
                     }`}
                   >
                     <span className="font-medium">{p}</span>
                     <span className="mt-0.5 block text-xs text-gray-500">
-                      {p === "Floating" ? "Oracle mid ± your premium" : "One locked price"}
+                      {p === "Fixed"
+                        ? "One price, until you change it"
+                        : "Tracks the oracle mid, refreshed continuously"}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
-            {pricingType === "Fixed" ? (
+
+            {draft.pricingType === "Fixed" ? (
               <div>
-                <label className={labelCls} title={mint}>
-                  Price ({fiat} per unit of {shortAddress(mint)})
+                <label className={labelCls} htmlFor="ad-price">
+                  Price — {draft.fiat || "fiat"} per {asset?.symbol ?? "unit"}
                 </label>
-                <input value={price} onChange={(e) => patch({ price: e.target.value })} type="number" className={inputCls} />
+                <input
+                  id="ad-price"
+                  value={draft.price}
+                  onChange={(e) => patch({ price: e.target.value })}
+                  inputMode="decimal"
+                  className={inputCls}
+                />
+                <p className="mt-1.5 text-[11px] text-gray-600">
+                  Signed at exactly the precision you type: {priceDecimalsFor(draft)} decimal
+                  place{priceDecimalsFor(draft) === 1 ? "" : "s"}. A fixed price does not move
+                  until you edit it from My Ads.
+                </p>
               </div>
             ) : (
-              <div>
-                <label className={labelCls}>Premium (%, -5 to +5)</label>
-                <input value={premium} onChange={(e) => patch({ premium: e.target.value })} type="number" step="0.1" className={inputCls} />
-              </div>
+              <>
+                <div>
+                  <label className={labelCls} htmlFor="ad-premium">
+                    Price margin (%, −{PREMIUM_LIMIT_PCT} to +{PREMIUM_LIMIT_PCT})
+                  </label>
+                  <input
+                    id="ad-premium"
+                    value={draft.premium}
+                    onChange={(e) => patch({ premium: e.target.value })}
+                    inputMode="decimal"
+                    className={inputCls}
+                  />
+                  <p className="mt-1.5 text-[11px] text-gray-600">
+                    Applied over the median of every current oracle record for this pair. 0 tracks
+                    the mid exactly.
+                  </p>
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="ad-price-decimals">
+                    Price decimals for {draft.fiat || "this currency"}
+                  </label>
+                  <input
+                    id="ad-price-decimals"
+                    value={draft.priceDecimals}
+                    onChange={(e) => patch({ priceDecimals: e.target.value })}
+                    type="number"
+                    min={0}
+                    max={12}
+                    className={inputCls}
+                  />
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
+                    How many places the resolved price is quoted to — 2 for most currencies, 0 for
+                    ones with no subunit in daily use. Asked rather than inferred: a floating ad
+                    carries no typed price to take it from, and a currency-to-decimals table here
+                    would mis-round every currency missing from it.
+                  </p>
+                </div>
+              </>
             )}
-            {/*
-              * Asked, not inferred. A floating advertisement carries no
-              * fixed price to borrow a precision from, and the limits are
-              * in the asset rather than in the fiat — so the record has a
-              * field for this and the merchant is the one who fills it.
-              * A currency-to-decimals table here would round every
-              * currency it had not heard of to whatever the default was.
-              */}
-            <div>
-              <label className={labelCls}>Price decimals for {fiat}</label>
-              <input
-                value={priceDecimals}
-                onChange={(e) => patch({ priceDecimals: e.target.value })}
-                type="number"
-                min={0}
-                max={12}
-                className={inputCls}
+
+            {/* Bybit shows an estimated ranking as a price is typed. We have
+                the whole book over one call, so this is a count rather than
+                an estimate — and it says so when it could not read it. */}
+            <div className="border-l-2 border-white/10 pl-3">
+              <PricePosition
+                assetSymbol={asset?.symbol ?? null}
+                fiat={draft.fiat}
+                direction={draft.direction}
+                pricingType={draft.pricingType}
+                price={Number(draft.price) || 0}
+                premium={Number(draft.premium) || 0}
               />
-              <p className="mt-1.5 text-[11px] text-gray-600">
-                How many decimal places the resolved price is quoted to. 2 for most currencies,
-                0 for ones with no subunit in daily use.
-              </p>
             </div>
-            {/* No indicative price — see the note where it used to be
-                computed. A number here needed the ticker to stand in for "one
-                unit is one dollar", and a mint says nothing of the kind. */}
-            <p className="max-w-xl text-xs leading-relaxed text-gray-500">
-              There is no reference price on this screen. The one that used to be here read a
-              fiat/USD table and assumed the token you picked was worth a dollar, which the
-              ticker implied and a mint address does not. Live oracle rates are on{" "}
-              <Link href="/network" className="text-gray-400 underline hover:text-white">
-                Network
-              </Link>
-              , and what merchants are actually quoting is on the exchange.
-            </p>
           </div>
         )}
 
         {step === 3 && (
           <div className="max-w-xl space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              {/* In the token, not in the fiat currency. OFS-2100's
-                  `min_trade`/`max_trade` are `Amount`s denominated in the
-                  asset, the same unit as the liquidity field below — these
-                  labels said `({fiat})` and would have had a merchant type
-                  a KES figure into a field the protocol reads as USDC. */}
-              <div>
-                <label className={labelCls} title={mint}>Min trade ({shortAddress(mint)})</label>
-                <input value={min} onChange={(e) => patch({ min: e.target.value })} type="number" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls} title={mint}>Max trade ({shortAddress(mint)})</label>
-                <input value={max} onChange={(e) => patch({ max: e.target.value })} type="number" className={inputCls} />
-              </div>
-            </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className={labelCls} title={mint}>
-                  Liquidity ({shortAddress(mint)})
+                <label className={labelCls} htmlFor="ad-total">
+                  Total trading amount ({asset?.symbol ?? "asset"})
                 </label>
-                <VaultBackingStatus backing={backing} liquidity={liquidity} />
+                <VaultBackingStatus backing={backing} amount={draft.totalAmount} />
               </div>
-              <input value={liquidity} onChange={(e) => patch({ liquidity: e.target.value })} type="number" className={inputCls} />
-              <p className="mt-1.5 text-[11px] text-gray-600">
-                Checked against your on-chain liquidity vault for this mint — the merchant half of
-                the key is your connected wallet, the mint half is the address above. Compared
-                against the vault&rsquo;s <span className="text-gray-500">available</span>{" "}
-                balance, which is the only figure a reservation can draw on; a vault&rsquo;s lifetime total
-                includes tokens that have already settled and left.{" "}
+              <input
+                id="ad-total"
+                value={draft.totalAmount}
+                onChange={(e) => patch({ totalAmount: e.target.value })}
+                inputMode="decimal"
+                className={inputCls}
+              />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
+                Checked against your on-chain liquidity vault for this mint, against its{" "}
+                <span className="text-gray-500">available</span> balance — the only figure a
+                reservation can draw on. A vault&rsquo;s lifetime total includes tokens that have
+                already settled and left.{" "}
                 <Link href="/wallet" className="text-gray-400 underline hover:text-white">
-                  Your vault balances
+                  Your vaults
                 </Link>{" "}
                 are on the Wallet page.
               </p>
             </div>
-
-            {/* Counterparty floor. Advisory rather than enforced — see the
-                field's note in lib/types.ts — so the copy says what it does and
-                what it does not do. */}
-            <div>
-              <label className={labelCls} htmlFor="min-rep">
-                Minimum counterparty reputation
-              </label>
-              <select
-                id="min-rep"
-                value={minRep}
-                onChange={(e) => patch({ minRep: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">Trade with anyone</option>
-                <option value="60">60+ — exclude poor records</option>
-                <option value="70">70+ — established counterparties</option>
-                <option value="80">80+ — strong records only</option>
-                <option value="90">90+ — very restrictive</option>
-              </select>
-              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-                This client will not let anyone below your floor open an order,
-                and tells them why. It is a preference, not a protocol rule —
-                nothing on chain enforces it, and a high floor excludes every new
-                participant, which costs you volume.
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls} htmlFor="ad-min">
+                  Minimum order ({asset?.symbol ?? "asset"})
+                </label>
+                <input
+                  id="ad-min"
+                  value={draft.minOrder}
+                  onChange={(e) => patch({ minOrder: e.target.value })}
+                  inputMode="decimal"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="ad-max">
+                  Maximum order ({asset?.symbol ?? "asset"})
+                </label>
+                <input
+                  id="ad-max"
+                  value={draft.maxOrder}
+                  onChange={(e) => patch({ maxOrder: e.target.value })}
+                  inputMode="decimal"
+                  className={inputCls}
+                />
+              </div>
             </div>
+            {/* In the asset, not in the fiat. OFS-2100's `min_trade` and
+                `max_trade` are `Amount`s denominated in the asset, the same
+                unit as the total above — labelling them in fiat would have a
+                merchant type a KES figure into a field the protocol reads as
+                USDC. */}
+            <p className="text-[11px] leading-relaxed text-gray-600">
+              All three are in {asset?.symbol ?? "the asset"}, not in {draft.fiat || "fiat"} — that
+              is the unit the record carries them in.
+            </p>
           </div>
         )}
 
         {step === 4 && (
-          <div className="max-w-xl">
-            <p className={labelCls}>Payment methods buyers can pay you with</p>
-            <MethodPicker selected={methods} onChange={(m) => patch({ methods: m })} />
+          <div className="max-w-xl space-y-6">
+            <div>
+              <label className={labelCls} htmlFor="ad-country">
+                Where you settle fiat
+              </label>
+              <CountrySelect
+                id="ad-country"
+                value={draft.country}
+                onChange={(code) => patch({ country: code })}
+                countries={reference.status === "ready" ? reference.data.countries : []}
+                className={inputCls}
+                placeholder="Any country — show every rail"
+              />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
+                Only used to order the suggestions below: your node knows which rails that country
+                actually uses. It is not part of the advertisement — the record carries payment
+                methods and a currency, and no country.
+              </p>
+            </div>
+            <div>
+              <p className={labelCls}>
+                Payment methods buyers can pay you with (up to {MAX_PAYMENT_METHODS})
+              </p>
+              <MethodPicker
+                selected={draft.methods}
+                onChange={(m) => patch({ methods: m })}
+                country={draft.country || null}
+                merchant={merchantPeerId}
+              />
+            </div>
+            {/*
+              * Binance's next field here is a payment time limit, and it is
+              * not collected because there is nowhere to put it: a
+              * reservation's `expires_at` is set by the node, and
+              * `AdvertisementCreate` carries no window. A dropdown offering
+              * 15/30/60 minutes would be a control that changes nothing,
+              * which is what the old "minimum counterparty reputation"
+              * selector on this wizard was.
+              */}
+            <p className="border-l-2 border-white/10 pl-3 text-[11px] leading-relaxed text-gray-500">
+              There is no payment-time-limit setting here. On Binance a merchant picks one; on this
+              protocol the payment window belongs to the reservation and is set by the node, so an
+              advertisement has no field for it and this screen does not pretend to offer one.
+            </p>
           </div>
         )}
 
@@ -622,19 +573,33 @@ export function AdWizard() {
           <div className="max-w-xl">
             <dl className="divide-y divide-white/5 border-y border-white/5">
               {[
-                ["Direction", direction === "Sell" ? "Sell (you sell crypto)" : "Buy (you buy crypto)"],
+                [
+                  "Ad type",
+                  draft.direction === "Sell"
+                    ? "Sell — you sell crypto for fiat"
+                    : "Buy — you buy crypto with fiat",
+                ],
+                ["Asset", asset ? `${asset.symbol} · ${asset.decimals} decimals` : "—"],
                 // In full, not shortened: this is the last screen before a
                 // merchant commits, and the address is the only thing that
                 // says which token they will actually be paid in.
-                ["Token (mint)", mint],
-                ["Fiat", fiat],
-                ["Pricing", pricingType === "Fixed" ? `Fixed ${price} ${fiat}` : `Floating oracle mid ${premiumNum >= 0 ? "+" : ""}${premiumNum}%`],
-                // In the token being advertised, like the liquidity below —
-                // not in the fiat currency two rows up.
-                ["Limits", `${formatNumber(minNum)} – ${formatNumber(maxNum)} ${mint}`],
-                ["Liquidity", `${formatNumber(liqNum)} ${mint}`],
-                ["Payment methods", methods.join(" · ")],
-                ["Merchant bond", "Not verified by this screen"],
+                ["Mint", draft.mint],
+                ["Fiat currency", draft.fiat],
+                [
+                  "Price",
+                  draft.pricingType === "Fixed"
+                    ? `Fixed — ${draft.price} ${draft.fiat}`
+                    : `Floating — oracle mid ${Number(draft.premium) >= 0 ? "+" : ""}${draft.premium}%`,
+                ],
+                [
+                  "Total on offer",
+                  `${formatNumber(total)} ${asset?.symbol ?? ""}`.trim(),
+                ],
+                [
+                  "Order limits",
+                  `${formatNumber(Number(draft.minOrder))} – ${formatNumber(Number(draft.maxOrder))} ${asset?.symbol ?? ""}`.trim(),
+                ],
+                ["Payment methods", draft.methods.join(" · ")],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
                   <dt className="shrink-0 text-gray-500">{label}</dt>
@@ -646,32 +611,30 @@ export function AdWizard() {
               ))}
             </dl>
             {/*
-              * This used to assert "5,000 OPEN (already bonded)" and warn
-              * against a hardcoded balance — two invented numbers that also
-              * disagreed with `lib/data/staking.ts`'s own merchant minimum.
-              * The bond is real and lives in the staking program; this
-              * screen does not read it, so it does not claim to.
+              * What this screen does not check, said once and plainly. It
+              * used to assert "5,000 OPEN (already bonded)" — a number
+              * nothing had read, which also disagreed with the app's own
+              * stale merchant minimum.
               */}
-            <p className="mt-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-4 py-3 text-sm text-amber-200">
-              This wizard does not check your merchant bond or your vault balance, so it cannot tell you
-              whether this advertisement would be publishable. Your bonded stake is on{" "}
-              <Link href="/staking" className="font-medium text-amber-100 underline">
-                Staking
+            <p className="mt-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-4 py-3 text-sm leading-relaxed text-amber-200">
+              This screen does not read your merchant bond, so it cannot tell you whether the node
+              will accept this. Check where you stand on{" "}
+              <Link href="/become-a-merchant" className="font-medium text-amber-100 underline">
+                Become a merchant
               </Link>
-              , and your real vault balances are on{" "}
-              <Link href="/wallet" className="font-medium text-amber-100 underline">
-                Wallet
-              </Link>
-              .
+              . Your vault backing for this token{" "}
+              {backingProblems.length === 0 ? "was checked on the previous step" : "is short — see step 3"}.
             </p>
           </div>
         )}
 
-        {/* Per-step errors */}
-        {stepErrors[step].length > 0 && (
+        {(stepErrors[step] ?? []).length > 0 && (
           <ul className="mt-4 max-w-xl space-y-1.5">
-            {stepErrors[step].map((err) => (
-              <li key={err} className="border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-1.5 text-xs text-amber-200">
+            {stepErrors[step]!.map((err) => (
+              <li
+                key={err}
+                className="border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-1.5 text-xs text-amber-200"
+              >
                 {err}
               </li>
             ))}
@@ -679,8 +642,7 @@ export function AdWizard() {
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center gap-3 border-t border-white/5 pt-6">
+      <div className="flex flex-wrap items-center gap-3 border-t border-white/5 pt-6">
         {step > 1 && (
           <button
             onClick={() => patch({ step: step - 1 })}
@@ -689,10 +651,10 @@ export function AdWizard() {
             ← Back
           </button>
         )}
-        {step < STEPS.length ? (
+        {step < AD_STEPS.length ? (
           <button
-            onClick={() => stepValid[step] && patch({ step: step + 1 })}
-            disabled={!stepValid[step]}
+            onClick={() => stepDone(step) && patch({ step: step + 1 })}
+            disabled={!stepDone(step)}
             className="rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continue →
@@ -700,17 +662,19 @@ export function AdWizard() {
         ) : (
           <button
             onClick={() => void publish()}
-            disabled={!stepValid[5] || publishing}
+            disabled={!completeThrough(stepErrors, AD_STEPS.length) || publishing || !wallet}
             className="rounded-md bg-emerald-600 px-6 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {publishing ? "Signing…" : "Publish Advertisement"}
+            {publishing ? "Signing…" : "Confirm to post"}
           </button>
         )}
         {publishError ? (
           <p className="text-[11px] text-red-300">{publishError}</p>
         ) : (
           <p className="text-[11px] text-gray-600">
-            Publishing costs one wallet signature. The draft above is local until then.
+            {wallet
+              ? "Posting costs one wallet signature. Everything above is local until then."
+              : "Connect a wallet to post — it is what signs the advertisement."}
           </p>
         )}
       </div>
@@ -719,18 +683,20 @@ export function AdWizard() {
 }
 
 /**
- * What the vault lookup found, next to the liquidity field.
+ * What the vault lookup found, next to the total-amount field.
  *
- * Five outcomes, five sentences. The two that mean "you are advertising
- * more than you hold" are red and block the step; the three that mean "no
- * finding" are grey and block nothing. Nothing here ever renders an
- * unanswered lookup as a shortfall — see `useVaultBacking`.
+ * Five outcomes, five sentences. The two that mean "you are advertising more
+ * than you hold" are red and block the step; the three that mean "no
+ * finding" are grey and block nothing. Nothing here renders an unanswered
+ * lookup as a shortfall — see `useVaultBacking`.
  */
-function VaultBackingStatus({ backing, liquidity }: { backing: VaultBacking; liquidity: string }) {
+function VaultBackingStatus({ backing, amount }: { backing: VaultBacking; amount: string }) {
   const base = "text-xs";
   switch (backing.kind) {
     case "unkeyed":
-      return <span className={`${base} text-gray-500`}>Connect a wallet and enter a mint to check backing</span>;
+      return (
+        <span className={`${base} text-gray-500`}>Connect a wallet and pick an asset to check backing</span>
+      );
     case "loading":
       return <span className={`${base} text-gray-500`}>Checking your vault…</span>;
     case "error":
@@ -740,9 +706,9 @@ function VaultBackingStatus({ backing, liquidity }: { backing: VaultBacking; liq
         </span>
       );
     case "none":
-      return <span className={`${base} text-red-300`}>No vault for this mint on this wallet</span>;
+      return <span className={`${base} text-red-300`}>No vault for this token on this wallet</span>;
     case "found": {
-      const cover = vaultCovers(backing.vault, liquidity);
+      const cover = vaultCovers(backing.vault, amount);
       const available = formatBaseUnits(backing.vault.available, backing.vault.decimals);
       if (cover === null) {
         // The typed amount has more precision than the mint has decimals, so
@@ -750,7 +716,7 @@ function VaultBackingStatus({ backing, liquidity }: { backing: VaultBacking; liq
         return <span className={`${base} text-gray-500`}>{available} available in your vault</span>;
       }
       return cover.covered ? (
-        <span className={`${base} text-emerald-400`}>Backed — {available} available in your vault</span>
+        <span className={`${base} text-emerald-400`}>Backed — {available} available</span>
       ) : (
         <span className={`${base} text-red-300`}>Only {available} available in your vault</span>
       );

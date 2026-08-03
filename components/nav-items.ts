@@ -51,6 +51,12 @@ export const ACCOUNT_MENU: MenuSection[] = [
     items: [
       { label: "Orders", href: "/orders", marker: "⇄", description: "Trade history & active escrow" },
       { label: "My Ads", href: "/ads", marker: "◫", description: "Merchant console & liquidity" },
+      {
+        label: "Become a merchant",
+        href: "/become-a-merchant",
+        marker: "◪",
+        description: "The bond, a payment account, and where you stand on each",
+      },
       { label: "Wallet", href: "/wallet", marker: "◈", description: "Balances & liquidity vaults" },
       { label: "Staking", href: "/staking", marker: "◎", description: "Bond OPEN as a merchant, node, or arbitrator" },
       { label: "Arbitrate", href: "/arbitrate", marker: "⚖", description: "Work a dispute case and cast your ruling" },
