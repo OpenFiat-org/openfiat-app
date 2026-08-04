@@ -8,6 +8,7 @@ import {
   updateAdvertisementTerms,
   type MerchantIdentity,
 } from "@/lib/merchant-ads";
+import { NodeRpcError } from "@/lib/node-rpc";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -159,17 +160,61 @@ describe("toWireAmount", () => {
   });
 });
 
+/** A refusal shaped as the node sends it: identity in `data`, not in the message. */
+function refusal(name: string, code: number, retryable?: boolean) {
+  return new NodeRpcError("sendAdvertisementStatusSet", name, -32000, {
+    ofsErrorCode: code,
+    ofsErrorName: name,
+    ofsRetryable: retryable,
+  });
+}
+
 describe("explainRefusal", () => {
   it("says what a merchant can act on", () => {
-    expect(explainRefusal("ADVERTISEMENT_NOT_FOUND")).toMatch(/cannot be brought back/);
-    expect(explainRefusal("INSUFFICIENT_AVAILABLE_LIQUIDITY")).toMatch(/no liquidity/);
-    expect(explainRefusal("INVALID_ADVERTISEMENT")).toMatch(/payment method/);
-    expect(explainRefusal("INVALID_SIGNATURE")).toMatch(/wallet that published it/);
+    expect(explainRefusal(refusal("ADVERTISEMENT_NOT_FOUND", 3000, false))).toMatch(
+      /cannot be brought back/,
+    );
+    expect(
+      explainRefusal(refusal("INSUFFICIENT_AVAILABLE_LIQUIDITY", 4004, true)),
+    ).toMatch(/no liquidity/);
+    expect(explainRefusal(refusal("INVALID_ADVERTISEMENT", 3003, false))).toMatch(
+      /payment method/,
+    );
+  });
+
+  /*
+   * These shared one sentence about a failed signature, and only one of
+   * them is about a signature. `Unauthorized` at the node arrives as
+   * `INVALID_IDENTITY_CLAIM` — a wallet that is simply not the publisher —
+   * so a merchant editing somebody else's advertisement was told their
+   * wallet had signed badly.
+   */
+  it("separates a wallet that may not act from a signature that did not verify", () => {
+    const notThePublisher = explainRefusal(refusal("INVALID_IDENTITY_CLAIM", 2001, false));
+    const badSignature = explainRefusal(refusal("INVALID_SIGNATURE", 1003, false));
+
+    expect(notThePublisher).not.toBe(badSignature);
+    expect(notThePublisher).toMatch(/wallet that published it/);
+    expect(badSignature).toMatch(/different key/);
   });
 
   it("passes an unrecognised failure through untouched", () => {
     // A message nobody wrote beats one that fits every failure: the whole
     // value of the node's own wording is that it is specific.
-    expect(explainRefusal("connection refused")).toBe("connection refused");
+    expect(explainRefusal(new Error("connection refused"))).toBe("connection refused");
+  });
+
+  /*
+   * A code newer than this build still has to leave the merchant knowing
+   * whether pressing publish again is worth doing. The app holds no copy of
+   * the registry, so that judgement can only come from the node.
+   */
+  it("relays the node's own retryability for a code it does not recognise", () => {
+    expect(explainRefusal(refusal("SOME_FUTURE_CODE", 9999, true))).toMatch(
+      /can succeed if you try it again/,
+    );
+    expect(explainRefusal(refusal("ANOTHER_FUTURE_CODE", 9998, false))).toMatch(
+      /will not change this/,
+    );
   });
 });

@@ -5,6 +5,7 @@ import {
   buildReveal,
   clearSalt,
   commitmentFor,
+  explainArbitrationRefusal,
   hasCommitted,
   hasJoined,
   hasRevealed,
@@ -16,6 +17,7 @@ import {
   ONCHAIN_OUTCOME_BYTE,
   saveSalt,
 } from "@/lib/arbitration";
+import { NodeRpcError } from "@/lib/node-rpc";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 
 const who = { publicKey: new Uint8Array(32).fill(7), peerId: "peer-alice" };
@@ -180,5 +182,48 @@ describe("case state", () => {
     expect(isJoinable(open)).toBe(true);
     expect(isJoinable({ ...open, status: "CaseLocked" })).toBe(false);
     expect(isJoinable({ ...open, arbitrators_seated: 3 })).toBe(false);
+  });
+});
+
+describe("explainArbitrationRefusal", () => {
+  const refusal = (name: string, code: number, retryable?: boolean) =>
+    new NodeRpcError("sendVoteCommit", name, -32000, {
+      ofsErrorCode: code,
+      ofsErrorName: name,
+      ofsRetryable: retryable,
+    });
+
+  /*
+   * A full panel and an out-of-phase commit land on `INVALID_DISPUTE_STATE`
+   * (6005) and used to land on `DISPUTE_CLOSED` (6002). The console showed
+   * the bare name either way, so an arbitrator whose case was about to be
+   * heard read "closed" and stopped watching it. These two must never say
+   * the same thing.
+   */
+  it("separates a case that is over from one this wallet is merely early for", () => {
+    const over = explainArbitrationRefusal(refusal("DISPUTE_CLOSED", 6002, false));
+    const early = explainArbitrationRefusal(refusal("INVALID_DISPUTE_STATE", 6005, false));
+
+    expect(over).not.toBe(early);
+    expect(early).toMatch(/keep watching/i);
+  });
+
+  /*
+   * `INVALID_IDENTITY_CLAIM` is "you are not seated on this case". The
+   * console reported it as a raw name next to `INVALID_SIGNATURE`, and the
+   * two call for completely different responses.
+   */
+  it("separates a wallet that may not act from a signature that did not verify", () => {
+    const notSeated = explainArbitrationRefusal(refusal("INVALID_IDENTITY_CLAIM", 2001, false));
+    const badSignature = explainArbitrationRefusal(refusal("INVALID_SIGNATURE", 1003, false));
+
+    expect(notSeated).not.toBe(badSignature);
+    expect(notSeated).toMatch(/not a signature problem/i);
+  });
+
+  it("relays the node's retryability for a code this build does not know", () => {
+    expect(explainArbitrationRefusal(refusal("SOME_FUTURE_CODE", 9999, true))).toMatch(
+      /can succeed if you try it again/i,
+    );
   });
 });

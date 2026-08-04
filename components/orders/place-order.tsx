@@ -8,8 +8,8 @@ import { assetLabel, type LiveAd } from "@/lib/live-advertisements";
 import { formatCrypto } from "@/lib/format";
 import { toWireAmount } from "@/lib/merchant-ads";
 import { releasableMint } from "@/lib/trade-escrow";
+import { explainTradeRefusal } from "@/lib/trade-refusal";
 import {
-  explainTradeRefusal,
   initiateSettlement,
   newReservationId,
   submitReservation,
@@ -118,7 +118,10 @@ export function PlaceOrder({
       setReservationId(id);
     } catch (err) {
       setPhase("error");
-      setMessage(explainTradeRefusal(err instanceof Error ? err.message : String(err)));
+      // The whole error, not its message: which advertisement failure this
+      // is — price moved, liquidity gone, amount out of limits — is in the
+      // node's `error.data` and nowhere else.
+      setMessage(explainTradeRefusal(err, "reserve"));
       return;
     }
 
@@ -138,7 +141,8 @@ export function PlaceOrder({
       setPhase("error");
       setMessage(
         `Your reservation was accepted, but opening the settlement failed: ${explainTradeRefusal(
-          err instanceof Error ? err.message : String(err),
+          err,
+          "initiate",
         )} You can finish it from the trade room.`,
       );
       return;

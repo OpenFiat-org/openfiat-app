@@ -189,7 +189,7 @@ export function NodeVotePanel({
       onVoted();
     } catch (err) {
       setNote({
-        text: explainGovernanceRefusal(err instanceof Error ? err.message : String(err)),
+        text: explainGovernanceRefusal(err),
         bad: true,
       });
     } finally {

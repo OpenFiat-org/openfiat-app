@@ -10,6 +10,7 @@ import {
   buildReveal,
   clearSalt,
   commitmentFor,
+  explainArbitrationRefusal,
   hasCommitted,
   hasJoined,
   hasRevealed,
@@ -133,7 +134,7 @@ export function ArbitrationConsole() {
       setNote(await fn());
       await refresh();
     } catch (err) {
-      setNote(err instanceof Error ? `Failed: ${err.message}` : "Failed.");
+      setNote(`Failed: ${explainArbitrationRefusal(err)}`);
     } finally {
       setBusy(null);
     }

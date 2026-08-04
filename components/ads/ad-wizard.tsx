@@ -247,7 +247,7 @@ export function AdWizard() {
       localStorage.removeItem(AD_DRAFT_KEY);
       setPublished(id);
     } catch (err) {
-      setPublishError(explainRefusal(err instanceof Error ? err.message : String(err)));
+      setPublishError(explainRefusal(err));
     } finally {
       setPublishing(false);
     }

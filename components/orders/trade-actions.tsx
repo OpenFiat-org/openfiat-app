@@ -27,11 +27,11 @@ import {
   tokenProgramForMint,
   type EscrowParties,
 } from "@/lib/trade-escrow";
+import { explainTradeRefusal } from "@/lib/trade-refusal";
 import {
   approveSettlement,
   cancelReservation,
   cancelSettlement,
-  explainTradeRefusal,
   initiateSettlement,
   openDispute,
   rejectSettlement,
@@ -127,8 +127,19 @@ export function TradeActions({
 
   const { actions, waitingOn } = tradeSituation({ trade, side, escrow });
 
+  /**
+   * `kind` is carried through only so a refusal can be explained in terms
+   * of the button that was pressed. `INVALID_SETTLEMENT_STATE` is one code
+   * for every illegal transition, so "too late to cancel" and "the merchant
+   * has already answered your declaration" arrive identically and are only
+   * separable by knowing which was attempted.
+   */
   const run = useCallback(
-    async (what: string, work: (provider: SolanaProvider, address: string) => Promise<string>) => {
+    async (
+      kind: TradeActionKind,
+      what: string,
+      work: (provider: SolanaProvider, address: string) => Promise<string>,
+    ) => {
       const provider = currentSigner(wallet);
       if (!wallet || !provider) {
         setPhase({
@@ -148,7 +159,7 @@ export function TradeActions({
       } catch (err) {
         setPhase({
           kind: "note",
-          text: explainTradeRefusal(err instanceof Error ? err.message : String(err)),
+          text: explainTradeRefusal(err, kind),
           bad: true,
         });
       }
@@ -188,7 +199,7 @@ export function TradeActions({
 
   const handlers: Record<TradeActionKind, () => void> = {
     initiate: () =>
-      void run("Opening the settlement", async (provider, address) => {
+      void run("initiate", "Opening the settlement", async (provider, address) => {
         if (!ad) {
           throw new Error(
             "This trade's advertisement could not be read, and the settlement has to name the merchant's own public key from it.",
@@ -205,7 +216,7 @@ export function TradeActions({
       }),
 
     "lock-escrow": () =>
-      void run("Locking the escrow", async (provider, address) => {
+      void run("lock-escrow", "Locking the escrow", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to lock an escrow against.");
         const buyerAddress = addressForPeerId(settlement.buyer);
@@ -227,7 +238,7 @@ export function TradeActions({
       }),
 
     "declare-paid": () =>
-      void run("Recording the payment", async (provider, address) => {
+      void run("declare-paid", "Recording the payment", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to declare a payment on.");
         await submitPayment(
@@ -239,7 +250,7 @@ export function TradeActions({
       }),
 
     approve: () =>
-      void run("Approving", async (provider, address) => {
+      void run("approve", "Approving", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to approve.");
         // The node first: it is the record every party reads, and an
@@ -264,7 +275,7 @@ export function TradeActions({
       }),
 
     release: () =>
-      void run("Releasing", async (provider, address) => {
+      void run("release", "Releasing", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to release.");
         if (!provider.signTransaction) {
@@ -290,7 +301,7 @@ export function TradeActions({
       }),
 
     "cancel-escrow": () =>
-      void run("Returning the tokens", async (provider, address) => {
+      void run("cancel-escrow", "Returning the tokens", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no escrow to cancel.");
         const merchantAddress = addressForPeerId(settlement.seller);
@@ -313,13 +324,13 @@ export function TradeActions({
       }),
 
     "cancel-reservation": () =>
-      void run("Cancelling the reservation", async (provider, address) => {
+      void run("cancel-reservation", "Cancelling the reservation", async (provider, address) => {
         await cancelReservation(tradeIdentity(provider, address), trade.reservation.id);
         return "The reservation is cancelled and the merchant's liquidity is free again.";
       }),
 
     "cancel-settlement": () =>
-      void run("Cancelling the trade", async (provider, address) => {
+      void run("cancel-settlement", "Cancelling the trade", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to cancel.");
         await cancelSettlement(tradeIdentity(provider, address), settlement.id);
@@ -327,7 +338,7 @@ export function TradeActions({
       }),
 
     "reverse-payment": () =>
-      void run("Withdrawing the declaration", async (provider, address) => {
+      void run("reverse-payment", "Withdrawing the declaration", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no declaration to withdraw.");
         await reversePayment(tradeIdentity(provider, address), settlement.id);
@@ -335,7 +346,7 @@ export function TradeActions({
       }),
 
     "reject-payment": () =>
-      void run("Recording the rejection", async (provider, address) => {
+      void run("reject-payment", "Recording the rejection", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to reject.");
         if (rejection.trim() === "") {
@@ -351,7 +362,7 @@ export function TradeActions({
       }),
 
     dispute: () =>
-      void run("Opening the dispute", async (provider, address) => {
+      void run("dispute", "Opening the dispute", async (provider, address) => {
         const settlement = trade.settlement;
         if (!settlement) throw new Error("There is no settlement to dispute.");
         if (reason.trim() === "") throw new Error("Say what went wrong — an arbitrator reads this.");

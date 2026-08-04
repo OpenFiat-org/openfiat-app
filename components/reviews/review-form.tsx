@@ -140,7 +140,7 @@ export function ReviewForm({
       setNote({ text: "Published. It is gossiped to the rest of the network from here.", bad: false });
     } catch (err) {
       setNote({
-        text: explainReviewRefusal(err instanceof Error ? err.message : String(err)),
+        text: explainReviewRefusal(err),
         bad: true,
       });
     } finally {

@@ -100,7 +100,7 @@ export function NewProposalForm() {
       });
       router.push(`/governance/proposal/${encodeURIComponent(created)}`);
     } catch (err) {
-      setError(explainGovernanceRefusal(err instanceof Error ? err.message : String(err)));
+      setError(explainGovernanceRefusal(err));
       setBusy(false);
     }
   }

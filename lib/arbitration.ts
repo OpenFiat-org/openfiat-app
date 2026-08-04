@@ -1,5 +1,7 @@
 import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
+import { explainNodeRefusal, type RefusalCopy } from "@/lib/node-refusal";
+import { NodeRpcError, type NodeErrorData } from "@/lib/node-rpc";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -149,7 +151,20 @@ export async function signPayload(
   return bs58.encode(signature);
 }
 
-/** Submit an already-signed event as an OFS-8200 `sendX` call. */
+/**
+ * Submit an already-signed event as an OFS-8200 `sendX` call.
+ *
+ * A refusal comes back as a `NodeRpcError` rather than a bare `Error`, and
+ * that matters more here than on any read. Every write in this app goes
+ * through this one function — cancel, reject, reverse, approve, dispute —
+ * so what it throws away is thrown away for all of them. It used to throw
+ * `new Error(body.error.message)`, which kept the OFS-8000 name only
+ * because the node happens to put the name in `message`, and dropped
+ * `data` entirely: the numeric code and the node's retryability judgement
+ * never reached the caller. Refusals that mean opposite things — "no such
+ * settlement" and "too late, it has moved on" — arrived indistinguishable
+ * to anything that did not resort to matching on prose.
+ */
 export async function sendSignedEvent(
   endpoint: string,
   method: string,
@@ -161,9 +176,51 @@ export async function sendSignedEvent(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: { data } }),
   });
-  const body = (await res.json()) as { result?: unknown; error?: { message: string } };
-  if (body.error) throw new Error(body.error.message);
+  const body = (await res.json()) as {
+    result?: unknown;
+    error?: { message: string; code?: number; data?: NodeErrorData };
+  };
+  if (body.error) {
+    throw new NodeRpcError(method, body.error.message, body.error.code, body.error.data);
+  }
   return body.result;
+}
+
+/**
+ * What a refusal means to an arbitrator working a case.
+ *
+ * The console used to render `Failed: ${err.message}`, which for a domain
+ * failure is the bare OFS-8000 name and nothing else — `INVALID_DISPUTE_STATE`
+ * on screen, to someone who wanted to know whether they had lost the seat.
+ *
+ * Two of these are worth reading twice. `INVALID_DISPUTE_STATE` (6005) is
+ * where a full panel and an out-of-phase commit now land; both used to be
+ * `DISPUTE_CLOSED`, which told an arbitrator the case was over when it was
+ * about to be heard. And `INVALID_IDENTITY_CLAIM` (2001) is what a node
+ * answers to "you are not seated on this case" — an authorization refusal
+ * that says nothing about the signature.
+ */
+const ARBITRATION_REFUSALS: RefusalCopy = {
+  DISPUTE_NOT_FOUND:
+    "This node holds no dispute with that id. Reload the docket — the case may have been opened against a different node.",
+  DISPUTE_CLOSED:
+    "This case has been decided. It takes no further joins, commitments or reveals; reload to see the ruling.",
+  DISPUTE_TIMEOUT:
+    "This case's window has expired, so nothing further can be recorded against it.",
+  INVALID_DISPUTE_STATE:
+    "The case is live but not at the phase that action needs — the panel filled a moment ago, or the phase has not opened yet. Keep watching it rather than treating it as over.",
+  INVALID_EVIDENCE:
+    "The revealed vote does not match the commitment this wallet made, so it was discarded rather than counted. The salt in this browser belongs to a different vote than the one being revealed.",
+  DISPUTE_ALREADY_OPEN:
+    "A dispute is already open on that settlement, and only one may be. Work the existing case.",
+  INVALID_IDENTITY_CLAIM:
+    "The node refused this wallet for that action: it is not seated on this case, or is not a party to the trade behind it. This is not a signature problem.",
+  INVALID_SIGNATURE:
+    "The node did not accept this wallet's signature. The signature verified against a different key than the one the payload names.",
+};
+
+export function explainArbitrationRefusal(error: unknown): string {
+  return explainNodeRefusal(error, ARBITRATION_REFUSALS);
 }
 
 export interface ArbitratorIdentity {

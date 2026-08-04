@@ -79,7 +79,7 @@ export function AdStatusControl({
       await setAdvertisementStatus(who, ad.id, status);
       onDone();
     } catch (err) {
-      setError(explainRefusal(err instanceof Error ? err.message : String(err)));
+      setError(explainRefusal(err));
     } finally {
       setPending(null);
     }
@@ -185,7 +185,7 @@ export function AdTermsDialog({
       });
       onSaved();
     } catch (err) {
-      setError(explainRefusal(err instanceof Error ? err.message : String(err)));
+      setError(explainRefusal(err));
     } finally {
       setSaving(false);
     }

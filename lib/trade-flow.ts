@@ -414,56 +414,7 @@ export async function openDispute(
   return String(id);
 }
 
-/**
- * What the node's refusals mean, in the words of the person who pressed the
- * button.
- *
- * The RPC surface answers with OFS-8000 names, which are exact and say
- * nothing to a trader. Anything unrecognised is passed through untouched
- * rather than replaced with a generic apology — a message somebody wrote
- * beats one that fits every failure.
- */
-export function explainTradeRefusal(message: string): string {
-  if (message.includes("PRICE_DISAGREEMENT")) {
-    return "The node did not accept this price for that advertisement. It re-derives the price from the ad's own terms, so a quote that has since moved has to be re-read before ordering.";
-  }
-  if (message.includes("INSUFFICIENT_LIQUIDITY") || message.includes("INSUFFICIENT_AVAILABLE_LIQUIDITY")) {
-    return "This advertisement no longer has enough liquidity for that amount — somebody else reserved against it first.";
-  }
-  if (message.includes("INVALID_AMOUNT")) {
-    return "That amount is outside this advertisement's own minimum and maximum.";
-  }
-  if (message.includes("ADVERTISEMENT_NOT_FOUND")) {
-    return "This advertisement is no longer active on the node, so nothing can be reserved against it.";
-  }
-  if (message.includes("TIMESTAMP_TOO_FAR_AHEAD")) {
-    return "The node refused this request's timestamp as too far ahead of its own clock. Check this device's clock and try again.";
-  }
-  if (message.includes("DUPLICATE_RESERVATION_ID") || message.includes("DUPLICATE_SETTLEMENT_ID")) {
-    return "The node already holds a record with that id — this order was already submitted.";
-  }
-  // Both spellings: `SettlementError::InvalidStateTransition` maps onto
-  // OFS-8000's `INVALID_SETTLEMENT_STATE`, which is the name that actually
-  // arrives — the other is kept because it is what several other domains
-  // answer with, and matching on only one of them is how this reads as an
-  // unexplained raw code to whoever pressed the button.
-  if (message.includes("INVALID_SETTLEMENT_STATE") || message.includes("INVALID_STATE_TRANSITION")) {
-    return "The trade is no longer in the state that action needs. Reload to see where it actually is — a cancellation is only possible before a payment is declared, and a reversal or a rejection only while one is outstanding.";
-  }
-  if (message.includes("INVALID_RESERVATION_STATE")) {
-    return "This reservation is no longer live, so there is nothing left to cancel. It was either already cancelled or its 30-minute window lapsed.";
-  }
-  if (message.includes("RESERVATION_NOT_FOUND")) {
-    return "This node has no reservation with that id. It may not have reached this node yet — try again in a moment.";
-  }
-  if (message.includes("SETTLEMENT_NOT_FOUND")) {
-    return "This node has no settlement with that id yet. It may not have reached this node — try again in a moment.";
-  }
-  if (message.includes("UNAUTHORIZED")) {
-    return "The node refused this wallet for that action: only the buyer can declare payment, and only the merchant can approve it.";
-  }
-  if (message.includes("INVALID_SIGNATURE") || message.includes("INVALID_IDENTITY_CLAIM")) {
-    return "The node did not accept this wallet's signature. Only the wallet that is party to this trade can act on it.";
-  }
-  return message;
-}
+// Turning a refusal into words a trader can act on is `lib/trade-refusal.ts`.
+// It used to live here, and it is a different job from building the bytes a
+// wallet signs: it needs the whole error object rather than a message,
+// because everything specific about a refusal is in the node's `error.data`.

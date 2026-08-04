@@ -1,6 +1,7 @@
 import bs58 from "bs58";
 
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
+import { explainNodeRefusal, type RefusalCopy } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
 import type { TradeIdentity } from "@/lib/trade-flow";
 
@@ -124,24 +125,19 @@ export async function publishReview(
   return String(id);
 }
 
-/**
- * What the node's refusals mean to somebody who just pressed "publish".
- *
- * Anything unrecognised passes through untouched — a message somebody
- * wrote beats one that fits every failure.
- */
-export function explainReviewRefusal(message: string): string {
-  if (message.includes("INVALID_IDENTITY_CLAIM")) {
-    return "The node refused: this wallet was not a party to that trade, so it is not entitled to review it. Only the buyer and the seller of a settled trade may, one review each.";
-  }
-  if (message.includes("RESOURCE_ALREADY_EXISTS")) {
-    return "This node already holds a newer review of that trade by this wallet, so the one on file is the one that stands. Reload to see it.";
-  }
-  if (message.includes("INVALID_PARAMETER")) {
-    return `The node refused the review's shape. A comment is at most ${MAX_COMMENT_CHARS} characters and may not contain control or text-direction characters.`;
-  }
-  if (message.includes("INVALID_SIGNATURE")) {
-    return "The node did not accept this wallet's signature over the review.";
-  }
-  return message;
+const REVIEW_REFUSALS: RefusalCopy = {
+  INVALID_IDENTITY_CLAIM:
+    "The node refused: this wallet was not a party to that trade, so it is not entitled to review it. Only the buyer and the seller of a settled trade may, one review each.",
+  RESOURCE_ALREADY_EXISTS:
+    "This node already holds a newer review of that trade by this wallet, so the one on file is the one that stands. Reload to see it.",
+  INVALID_PARAMETER: `The node refused the review's shape. A comment is at most ${MAX_COMMENT_CHARS} characters and may not contain control or text-direction characters.`,
+  SETTLEMENT_NOT_FOUND:
+    "This node holds no settlement with that id, so there is no trade here to review. The usual cause is being connected to a different node than the one the trade ran on — check the node in Settings.",
+  INVALID_SIGNATURE:
+    "The node did not accept this wallet's signature over the review. The signature verified against a different key than the one the review names.",
+};
+
+/** What a refusal means to somebody who just pressed "publish". */
+export function explainReviewRefusal(error: unknown): string {
+  return explainNodeRefusal(error, REVIEW_REFUSALS);
 }
