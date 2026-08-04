@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PublicKey } from "@solana/web3.js";
 import { Panel } from "@/components/panel";
 import { shortSig } from "@/lib/format";
-import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connection";
+import {
+  currentSigner,
+  readWalletConnection,
+  WALLET_CHANGED_EVENT,
+  type WalletConnection,
+} from "@/lib/wallet-connection";
 import { requestFaucetDrip, FaucetRequestError, type FaucetAssetSymbol } from "@/lib/faucet-client";
 
 const inputCls =
@@ -25,29 +29,37 @@ const ASSET_OPTIONS: Array<{ symbol: FaucetAssetSymbol; label: string; why: stri
 
 type RequestState =
   | { phase: "idle" }
+  | { phase: "signing" }
   | { phase: "requesting" }
   | { phase: "done"; signature: string; amounts: Partial<Record<FaucetAssetSymbol, number>> }
   | { phase: "error"; message: string };
 
-/** Requests SOL, mock USDC, mock USDT and OPEN from `openfiat-faucet` (a
- *  separate, non-protocol service — see NEXT_PUBLIC_FAUCET_URL in
- *  lib/faucet-config.ts) to any Solana address, defaulting to the connected
- *  wallet's own address. All four are selected by default: that is the set a
- *  newcomer needs to complete onboarding, and deselecting SOL or OPEN is the
- *  choice that strands them later. */
+/**
+ * Requests SOL, mock USDC, mock USDT and OPEN from `openfiat-faucet` (a
+ * separate, non-protocol service — see NEXT_PUBLIC_FAUCET_URL in
+ * lib/faucet-config.ts) for the **connected wallet**.
+ *
+ * It used to accept any address typed into a box. It cannot any more: the
+ * faucet now requires a signature over a challenge it issues, so a grant only
+ * goes to a wallet whose holder is present to sign. That is the point rather
+ * than a side effect — funding addresses nobody could prove they held was how
+ * a script could cycle through wallets and drain the finite OPEN stash while
+ * the per-wallet daily cap counted them all as strangers.
+ *
+ * All four assets are selected by default: that is the set a newcomer needs to
+ * complete onboarding, and deselecting SOL or OPEN is the choice that strands
+ * them later.
+ */
 export function FaucetForm() {
-  const [address, setAddress] = useState("");
+  const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [selected, setSelected] = useState<FaucetAssetSymbol[]>(["SOL", "USDC", "USDT", "OPEN"]);
   const [state, setState] = useState<RequestState>({ phase: "idle" });
 
   useEffect(() => {
-    const fillFromWallet = () => {
-      const wallet = readWalletConnection();
-      if (wallet) setAddress((current) => current || wallet.address);
-    };
-    fillFromWallet();
-    window.addEventListener(WALLET_CHANGED_EVENT, fillFromWallet);
-    return () => window.removeEventListener(WALLET_CHANGED_EVENT, fillFromWallet);
+    const sync = () => setWallet(readWalletConnection());
+    sync();
+    window.addEventListener(WALLET_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(WALLET_CHANGED_EVENT, sync);
   }, []);
 
   function toggleAsset(symbol: FaucetAssetSymbol) {
@@ -56,23 +68,26 @@ export function FaucetForm() {
     );
   }
 
-  // Client-side check is a courtesy (fast, friendly feedback) — the faucet
-  // service re-validates from scratch and is the only check that matters
-  // for safety; see openfiat-faucet/src/validate.ts.
-  const addressLooksValid = (() => {
-    try {
-      return new PublicKey(address.trim()).toBase58().length > 0;
-    } catch {
-      return false;
-    }
-  })();
-
-  const canSubmit = addressLooksValid && selected.length > 0 && state.phase !== "requesting";
+  const busy = state.phase === "signing" || state.phase === "requesting";
+  const canSubmit = wallet !== null && selected.length > 0 && !busy;
 
   async function handleSubmit() {
-    setState({ phase: "requesting" });
+    if (!wallet) return;
+    const signer = currentSigner(wallet);
+    if (!signer) {
+      setState({
+        phase: "error",
+        message: "Your wallet is not available to sign. Reconnect it and try again.",
+      });
+      return;
+    }
+    // Two phases so the button can say which one the user is waiting on: the
+    // wallet prompt is theirs to act on, the request afterwards is not.
+    setState({ phase: "signing" });
     try {
-      const result = await requestFaucetDrip(address.trim(), selected);
+      const result = await requestFaucetDrip(wallet.address, signer, selected, () =>
+        setState({ phase: "requesting" }),
+      );
       setState({ phase: "done", signature: result.signature, amounts: result.amounts });
     } catch (err) {
       const message =
@@ -120,23 +135,20 @@ export function FaucetForm() {
     <Panel title="Request test tokens">
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6">
-          <label htmlFor="faucet-address" className={labelCls}>
-            Solana address
-          </label>
-          <input
-            id="faucet-address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Paste any devnet wallet address"
-            className={inputCls}
-          />
-          {address.length > 0 && !addressLooksValid && (
-            <p className="mt-1.5 text-xs text-amber-300">Not a valid Solana address.</p>
+          <p className={labelCls}>Wallet</p>
+          {wallet ? (
+            <>
+              <p className={`${inputCls} truncate`}>{wallet.address}</p>
+              <p className="mt-1.5 text-[11px] text-gray-600">
+                Tokens go to the wallet you have connected. You will be asked to sign a short message
+                proving you control it — no transaction is created, and nothing leaves your wallet.
+              </p>
+            </>
+          ) : (
+            <p className="rounded-md border border-white/10 px-3 py-2 text-sm text-gray-400">
+              Connect a wallet to request test tokens.
+            </p>
           )}
-          <p className="mt-1.5 text-[11px] text-gray-600">
-            Pre-filled from your connected wallet if one is connected — paste a different address to fund
-            another wallet instead.
-          </p>
         </div>
 
         <div className="px-4 py-6">
@@ -171,7 +183,13 @@ export function FaucetForm() {
             disabled={!canSubmit}
             className="w-full rounded-md bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {state.phase === "requesting" ? "Requesting…" : "Send test tokens"}
+            {state.phase === "signing"
+              ? "Check your wallet…"
+              : state.phase === "requesting"
+                ? "Requesting…"
+                : wallet
+                  ? "Sign and send test tokens"
+                  : "Connect a wallet first"}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-600">
             Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable.
