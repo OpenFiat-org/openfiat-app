@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { createPrivateKey, sign as edSign } from "node:crypto";
 
 /**
  * Step 1 of the onboarding journey, driven through the real UI against the
@@ -22,7 +23,23 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
  *
  * Balances are read from devnet afterwards rather than trusting the UI's
  * own success message, which is just the service's response echoed back.
+ *
+ * # The wallet is real; only the extension is not
+ *
+ * The faucet now issues a challenge and dispenses only against a signature
+ * over it, so there is no longer an address box to type into — a grant goes
+ * to the connected wallet or to nobody. The injected provider here signs with
+ * the same fresh keypair using real Ed25519, in Node, so the secret never
+ * enters the page. That means the faucet's signature check is genuinely
+ * exercised: a client that signed the wrong bytes would be refused by the
+ * service, not waved through by a stub.
  */
+
+/** PKCS8 DER prefix for an Ed25519 private key. A Solana keyfile's first 32
+ *  bytes are the seed, and this fixed header is the whole of what
+ *  `createPrivateKey` needs beyond it — which is why this needs no Ed25519
+ *  library the app does not already depend on. */
+const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 
 const DEVNET_RPC = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 const OPEN_MINT = new PublicKey("29w8TroBTYoaqrXBDcpv5L54VZRA8Kf7kU5U1cakvFdj");
@@ -50,10 +67,48 @@ test("a brand-new wallet gets SOL, USDC, USDT and OPEN through the faucet page",
 
   // Never reused. See the header: a pre-funded address would let this pass
   // without the faucet doing anything.
-  const recipient = Keypair.generate().publicKey;
+  const wallet = Keypair.generate();
+  const recipient = wallet.publicKey;
   const connection = new Connection(DEVNET_RPC, "confirmed");
 
   expect(await connection.getBalance(recipient), "fresh wallet must start empty").toBe(0);
+
+  // Signing happens in Node so the secret never reaches the page — the same
+  // split the governance and stake journeys use.
+  await page.exposeFunction("__e2eSign", (bytes: number[]) =>
+    Array.from(
+      edSign(
+        null,
+        Buffer.from(Uint8Array.from(bytes)),
+        createPrivateKey({
+          key: Buffer.concat([PKCS8_ED25519_PREFIX, Buffer.from(wallet.secretKey.subarray(0, 32))]),
+          format: "der",
+          type: "pkcs8",
+        }),
+      ),
+    ),
+  );
+  await page.addInitScript(
+    ({ address }) => {
+      const provider = {
+        isPhantom: true,
+        connect: async () => ({ publicKey: { toString: () => address } }),
+        signMessage: async (message: Uint8Array) => ({
+          signature: Uint8Array.from(
+            await (window as unknown as { __e2eSign(b: number[]): Promise<number[]> }).__e2eSign(
+              Array.from(message),
+            ),
+          ),
+        }),
+      };
+      Object.defineProperty(window, "phantom", { value: { solana: provider }, writable: true });
+      localStorage.setItem(
+        "openfiat:wallet",
+        JSON.stringify({ wallet: "Phantom", address }),
+      );
+    },
+    { address: recipient.toBase58() },
+  );
 
   await page.goto("/faucet");
 
@@ -66,8 +121,37 @@ test("a brand-new wallet gets SOL, USDC, USDT and OPEN through the faucet page",
     ).toBeVisible();
   }
 
-  await page.getByPlaceholder(/devnet wallet address/i).fill(recipient.toBase58());
-  await page.getByRole("button", { name: /send test tokens/i }).click();
+  // The wallet provider clears a connection record it does not recognise when
+  // it mounts, so a single write racing that mount is silently undone. Rewrite
+  // until it survives several consecutive checks — the same approach the
+  // governance journey uses, and for the same reason.
+  await expect
+    .poll(
+      async () =>
+        page.evaluate((address) => {
+          const scope = window as unknown as { __e2eWalletHeld?: number };
+          if (localStorage.getItem("openfiat:wallet")) {
+            scope.__e2eWalletHeld = (scope.__e2eWalletHeld ?? 0) + 1;
+          } else {
+            scope.__e2eWalletHeld = 0;
+            localStorage.setItem(
+              "openfiat:wallet",
+              JSON.stringify({ wallet: "Phantom", address }),
+            );
+            window.dispatchEvent(new Event("openfiat:wallet-changed"));
+          }
+          return scope.__e2eWalletHeld;
+        }, recipient.toBase58()),
+      { timeout: 20_000, intervals: [200] },
+    )
+    .toBeGreaterThanOrEqual(5);
+
+  // The address is the connected wallet's, not something typed in — the
+  // challenge is what removed that box, and showing the address is how a
+  // user confirms where the tokens are going.
+  await expect(page.getByText(recipient.toBase58(), { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /sign and send test tokens/i }).click();
 
   await expect(page.getByText(/^Sent$/)).toBeVisible({ timeout: 90_000 });
 
@@ -96,8 +180,8 @@ test("a brand-new wallet gets SOL, USDC, USDT and OPEN through the faucet page",
   expect(usdt, "mock USDT").toBeGreaterThan(0);
   expect(open, "OPEN — without it no role can be staked").toBeGreaterThan(0);
 
-  // The whole point of the 12,000 drip: it must clear the NodeOperator
-  // (1,000) and Arbitrator (10,000) minimums this cluster actually enforces,
-  // or onboarding cannot reach the roles it advertises.
-  expect(open, "OPEN drip must clear the 10,000 arbitrator minimum").toBeGreaterThanOrEqual(10_000);
+  // The whole point of the 12,000 drip: it must clear every role minimum
+  // this cluster actually enforces — the highest is NotificationProvider at
+  // 5,000 — or onboarding cannot reach the roles it advertises.
+  expect(open, "OPEN drip must clear the highest role minimum").toBeGreaterThanOrEqual(5_000);
 });
