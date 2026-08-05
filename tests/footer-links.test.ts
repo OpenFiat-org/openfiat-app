@@ -55,24 +55,29 @@ describe("footer links", () => {
     const hrefs = allLinks.map((link) => link.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
     for (const column of FOOTER_COLUMNS) {
-      expect(column.title.trim()).toBeTruthy();
+      expect(column.titleKey.trim()).toBeTruthy();
       expect(column.links.length).toBeGreaterThan(0);
     }
   });
 
   it("uses the same column headings as openfiat.network", () => {
-    // The site carries one more, Project, for pages about the project itself.
-    expect(FOOTER_COLUMNS.map((column) => column.title)).toEqual([
-      "Protocol",
-      "Participate",
-      "Network",
-      "Community",
+    // Headings are message keys now; the English strings live in messages/en.json
+    // under the `footer` namespace. The site carries one more, Project, for
+    // pages about the project itself.
+    expect(FOOTER_COLUMNS.map((column) => column.titleKey)).toEqual([
+      "protocol",
+      "participate",
+      "network",
+      "community",
     ]);
   });
 
   it("labels every link", () => {
+    // A link is labelled either by a message key (translated) or by a literal
+    // (a brand name like GitHub that reads the same in every language) — never
+    // neither, or it renders blank.
     for (const link of allLinks) {
-      expect(link.label.trim(), link.href).toBeTruthy();
+      expect((link.labelKey ?? link.label ?? "").trim(), link.href).toBeTruthy();
     }
   });
 });

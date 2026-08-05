@@ -63,11 +63,20 @@ describe("message catalogues", () => {
       expect(orphans, `keys not present in en.json: ${orphans.join(", ")}`).toEqual([]);
     });
 
-    it(`${code}: the nav namespace is all-or-nothing, never half-translated`, () => {
-      const localeNav = localeKeys.filter((k) => k.startsWith("nav."));
-      if (localeNav.length === 0) return; // untranslated locale — fine, falls back
-      const enNav = [...enKeys].filter((k) => k.startsWith("nav."));
-      expect(new Set(localeNav)).toEqual(new Set(enNav));
+    it(`${code}: every namespace it touches is complete, never half-translated`, () => {
+      // For each top-level namespace this locale provides any key in, it must
+      // provide *all* of that namespace's keys — otherwise a reader sees half a
+      // menu (or footer) in their language and half in English, which looks
+      // broken rather than merely untranslated. A namespace the locale omits
+      // entirely is fine: the whole thing falls back to English.
+      const namespaces = new Set(localeKeys.map((k) => k.split(".")[0]));
+      for (const ns of namespaces) {
+        const localeNs = localeKeys.filter((k) => k.startsWith(`${ns}.`));
+        const enNs = [...enKeys].filter((k) => k.startsWith(`${ns}.`));
+        expect(new Set(localeNs), `namespace "${ns}" incomplete in ${code}`).toEqual(
+          new Set(enNs),
+        );
+      }
     });
   }
 });

@@ -11,6 +11,15 @@
  * Every destination has been checked. Internal hrefs each have a route under
  * `app/`; external ones were requested and answered. Nothing is listed
  * because it is planned — `tests/footer-links.test.ts` enforces both halves.
+ *
+ * # Labels are keys
+ *
+ * Each column and each translatable link carries a message key under the
+ * `footer` namespace; `components/footer.tsx` renders it via `useTranslations`.
+ * The platform links in Community (GitHub, Discord, Reddit) carry no key — a
+ * brand name is the same in every language, and translating it would be
+ * inventing a second name for it. The route, the icon, and whether a link is
+ * external are language-independent and stay here.
  */
 
 /** The public site. Deep links omit the locale; its middleware adds one. */
@@ -19,7 +28,11 @@ export const SITE_URL = "https://openfiat.network";
 export type IconKey = "github" | "discussions" | "discord" | "reddit";
 
 export type FooterLink = {
-  label: string;
+  /** Message key under the `footer` namespace, or absent for a brand name
+   *  (GitHub, Discord, Reddit) that reads the same in every language. */
+  labelKey?: string;
+  /** Used verbatim when there is no `labelKey` — a brand/platform name. */
+  label?: string;
   href: string;
   /** Leaves the app: opens in a new tab and shows an outbound arrow. */
   external?: boolean;
@@ -27,43 +40,43 @@ export type FooterLink = {
   icon?: IconKey;
 };
 
-export const FOOTER_COLUMNS: { title: string; links: FooterLink[] }[] = [
+export const FOOTER_COLUMNS: { titleKey: string; links: FooterLink[] }[] = [
   {
     // The rules this interface obeys are written down on the site, not here.
-    title: "Protocol",
+    titleKey: "protocol",
     links: [
-      { label: "How it works", href: `${SITE_URL}/how-it-works`, external: true },
-      { label: "Whitepaper", href: `${SITE_URL}/whitepaper`, external: true },
-      { label: "Specifications", href: `${SITE_URL}/specs`, external: true },
-      { label: "Documentation", href: "https://docs.openfiat.network", external: true },
-      { label: "Trust & safety", href: `${SITE_URL}/trust`, external: true },
-      { label: "Fees", href: `${SITE_URL}/fees`, external: true },
-      { label: "Governance", href: "/governance" },
+      { labelKey: "howItWorks", href: `${SITE_URL}/how-it-works`, external: true },
+      { labelKey: "whitepaper", href: `${SITE_URL}/whitepaper`, external: true },
+      { labelKey: "specifications", href: `${SITE_URL}/specs`, external: true },
+      { labelKey: "documentation", href: "https://docs.openfiat.network", external: true },
+      { labelKey: "trustSafety", href: `${SITE_URL}/trust`, external: true },
+      { labelKey: "fees", href: `${SITE_URL}/fees`, external: true },
+      { labelKey: "governance", href: "/governance" },
     ],
   },
   {
-    title: "Participate",
+    titleKey: "participate",
     links: [
-      { label: "Guide", href: "/guide" },
-      { label: "How to buy", href: "/guide/buy" },
-      { label: "How to sell", href: "/guide/sell" },
-      { label: "Become a merchant", href: "/guide/merchant" },
-      { label: "Countries", href: "/countries" },
-      { label: "Staking", href: "/staking" },
+      { labelKey: "guide", href: "/guide" },
+      { labelKey: "howToBuy", href: "/guide/buy" },
+      { labelKey: "howToSell", href: "/guide/sell" },
+      { labelKey: "becomeMerchant", href: "/guide/merchant" },
+      { labelKey: "countries", href: "/countries" },
+      { labelKey: "staking", href: "/staking" },
     ],
   },
   {
-    title: "Network",
+    titleKey: "network",
     links: [
-      { label: "Explorer", href: "/explorer" },
-      { label: "Nodes & peers", href: "/network" },
+      { labelKey: "explorer", href: "/explorer" },
+      { labelKey: "nodesPeers", href: "/network" },
       // Merchants sits next to Providers, not next to the guides: both are
       // directories of who is on the network, read from the same node, and
       // someone looking for one is usually looking for the other.
-      { label: "Merchants", href: "/merchants" },
-      { label: "Providers", href: "/providers" },
-      { label: "Faucet", href: "/faucet" },
-      { label: "Run a node", href: `${SITE_URL}/run-a-node`, external: true },
+      { labelKey: "merchants", href: "/merchants" },
+      { labelKey: "providers", href: "/providers" },
+      { labelKey: "faucet", href: "/faucet" },
+      { labelKey: "runANode", href: `${SITE_URL}/run-a-node`, external: true },
     ],
   },
   {
@@ -73,32 +86,17 @@ export const FOOTER_COLUMNS: { title: string; links: FooterLink[] }[] = [
      * — a footer link to a handle nobody owns is an invitation to whoever
      * registers it first.
      */
-    title: "Community",
+    titleKey: "community",
     links: [
+      { label: "GitHub", href: "https://github.com/OpenFiat-org", external: true, icon: "github" },
       {
-        label: "GitHub",
-        href: "https://github.com/OpenFiat-org",
-        external: true,
-        icon: "github",
-      },
-      {
-        label: "Discussions",
+        labelKey: "discussions",
         href: "https://github.com/OpenFiat-org/openfiat-specs/discussions",
         external: true,
         icon: "discussions",
       },
-      {
-        label: "Discord",
-        href: "https://discord.gg/Ybwn3PMkQ",
-        external: true,
-        icon: "discord",
-      },
-      {
-        label: "Reddit",
-        href: "https://www.reddit.com/r/openfiat/",
-        external: true,
-        icon: "reddit",
-      },
+      { label: "Discord", href: "https://discord.gg/Ybwn3PMkQ", external: true, icon: "discord" },
+      { label: "Reddit", href: "https://www.reddit.com/r/openfiat/", external: true, icon: "reddit" },
     ],
   },
 ];

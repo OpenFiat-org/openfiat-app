@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 import { NodeChip } from "@/components/access-node";
@@ -12,13 +13,13 @@ const linkClass =
 /** The same micro-label the nav uses for its mega-menu sections. */
 const headingClass = "text-xs font-semibold uppercase tracking-wider text-gray-400";
 
-function FooterLinkItem({ link }: { link: FooterLink }) {
+function FooterLinkItem({ link, label }: { link: FooterLink; label: string }) {
   const Icon = link.icon ? FOOTER_ICONS[link.icon] : null;
 
   const body = (
     <>
       {Icon && <Icon />}
-      <span>{link.label}</span>
+      <span>{label}</span>
       {link.external && (
         <span aria-hidden="true" className="text-gray-600">
           ↗
@@ -58,7 +59,8 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
  * is left states the one thing true everywhere — this is devnet, so nothing
  * here is worth anything — and leaves provenance to each route.
  */
-export function Footer() {
+export async function Footer() {
+  const t = await getTranslations("footer");
   return (
     <footer className="mt-16 border-t border-white/10">
       <div className="mx-auto max-w-7xl px-4 py-10">
@@ -74,10 +76,7 @@ export function Footer() {
               />
               <span className="text-base font-semibold text-white">OpenFiat</span>
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-gray-500">
-              A decentralized marketplace for stablecoins and local fiat. No operator holds your
-              money, and no company can suspend you.
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-gray-500">{t("tagline")}</p>
             <a
               href={SITE_URL}
               target="_blank"
@@ -93,15 +92,19 @@ export function Footer() {
 
           <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
             {FOOTER_COLUMNS.map((column) => {
-              const headingId = `footer-${column.title.toLowerCase()}`;
+              const headingId = `footer-${column.titleKey}`;
               return (
-                <nav key={column.title} aria-labelledby={headingId} className="min-w-0">
+                <nav key={column.titleKey} aria-labelledby={headingId} className="min-w-0">
                   <h2 id={headingId} className={headingClass}>
-                    {column.title}
+                    {t(column.titleKey)}
                   </h2>
                   <ul className="mt-4 space-y-2.5">
                     {column.links.map((link) => (
-                      <FooterLinkItem key={link.href} link={link} />
+                      <FooterLinkItem
+                        key={link.href}
+                        link={link}
+                        label={link.labelKey ? t(link.labelKey) : (link.label ?? "")}
+                      />
                     ))}
                   </ul>
                 </nav>
@@ -114,9 +117,9 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5">
           <p className="text-xs text-gray-500">
-            © 2026 OpenFiat — decentralized P2P stablecoin protocol. Running on {NETWORK_LABEL} (
-            {SOLANA_CLUSTER})
-            {TOKENS_ARE_WORTHLESS ? "; tokens and balances here have no value." : "."}
+            © 2026 OpenFiat — {t("protocolLine")}.{" "}
+            {t("runningOn", { network: NETWORK_LABEL, cluster: SOLANA_CLUSTER })}
+            {TOKENS_ARE_WORTHLESS ? `; ${t("noValue")}.` : "."}
           </p>
           <NodeChip />
         </div>
