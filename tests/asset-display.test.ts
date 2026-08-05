@@ -149,7 +149,7 @@ describe("the boundary the rename must not cross", () => {
     const book = readFileSync("lib/live-advertisements.ts", "utf8");
     expect(book).toContain("ad.assetSymbol === symbol");
 
-    const pairData = readFileSync("app/[asset]/[currency]/pair-data.ts", "utf8");
+    const pairData = readFileSync("app/[locale]/[asset]/[currency]/pair-data.ts", "utf8");
     expect(pairData).toContain("ad.assetSymbol === pair.asset");
 
     const exchange = readFileSync("components/p2p/exchange.tsx", "utf8");

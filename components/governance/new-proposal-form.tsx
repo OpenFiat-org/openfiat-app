@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 
 import { PROPOSAL_CATEGORIES, type ProposalCategory } from "@/lib/live-proposals";

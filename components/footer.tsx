@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { NodeChip } from "@/components/access-node";
 import { FOOTER_ICONS } from "@/components/footer-icons";

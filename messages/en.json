@@ -1,0 +1,12 @@
+{
+  "$comment": "English is the source catalogue. Every user-facing string in the app is extracted into namespaced keys here (per-route + shared namespaces), and every other locale is a translation of this file, falling back to it per-key for anything not yet translated. This starts intentionally small: the routing/provider foundation (phase B1) lands first, and the ~1,000-1,500-string extraction (phase B2) fills it in. Keeping the catalogue live from the start means the provider, the completeness test, and the language switcher all have something real to run against before the bulk extraction.",
+  "common": {
+    "connectWallet": "Connect wallet",
+    "loading": "Loading…",
+    "retry": "Try again"
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "changeLanguage": "Change language"
+  }
+}

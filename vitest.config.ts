@@ -3,7 +3,17 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
+    alias: {
+      // `@/i18n/navigation` wraps next-intl's `createNavigation`, which imports
+      // `next/navigation` in a way that resolves only inside a running Next
+      // server — not under vitest. Point tests at an inert stub so rendering a
+      // component that links or routes doesn't fail at import time. Must precede
+      // the `@` catch-all: aliases are matched in order.
+      "@/i18n/navigation": fileURLToPath(
+        new URL("./tests/mocks/i18n-navigation.tsx", import.meta.url),
+      ),
+      "@": fileURLToPath(new URL(".", import.meta.url)),
+    },
     /*
      * `@openfiat/sdk` is a git dependency, so pnpm stores it in a
      * directory whose name contains the commit hash after a `#`:

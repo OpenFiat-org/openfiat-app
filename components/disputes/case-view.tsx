@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
 import { peerIdForAddress } from "@/lib/peer-id";

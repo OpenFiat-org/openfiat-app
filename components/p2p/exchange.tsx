@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeDirection } from "@/lib/types";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";

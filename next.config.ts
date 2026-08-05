@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Wires the request-scoped i18n config (locale + messages) into every render.
+// Points at the non-default location of that file; see i18n/request.ts.
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 // This app is served from app.openfiat.network — that's DNS/hosting
 // configuration, not application code, so no domain-specific logic lives here.
@@ -22,4 +27,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

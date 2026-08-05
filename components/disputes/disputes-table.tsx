@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useMyDisputes } from "@/components/disputes/use-my-disputes";
 import { fetchDisputes, type Dispute, type PublicDispute } from "@/lib/live-disputes";

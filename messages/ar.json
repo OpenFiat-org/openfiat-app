@@ -1,0 +1,3 @@
+{
+  "$comment": "Translation catalogue for ar. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+}

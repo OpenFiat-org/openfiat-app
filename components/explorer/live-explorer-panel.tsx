@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { deriveStatus, TRADE_STATUS_LABEL, type PublicTrade } from "@/lib/live-trades";
 
 import { formatDate, formatNumber } from "@/lib/format";

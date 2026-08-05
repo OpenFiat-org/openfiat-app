@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { fetchAllProposals } from "@/lib/live-governance";
 import type { DecodedProposal } from "@/lib/onchain-decode";

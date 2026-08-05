@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { FOOTER_COLUMNS, SITE_URL } from "@/components/footer-links";
 
-const appDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "app");
+// Routes live under the locale segment since the i18n retrofit: a footer link
+// to `/foo` is served by `app/[locale]/foo/page.tsx`, not `app/foo/page.tsx`.
+const appDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "app", "[locale]");
 const allLinks = FOOTER_COLUMNS.flatMap((column) => column.links);
 
 /**

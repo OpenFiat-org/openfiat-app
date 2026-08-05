@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
 import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/provider-display";
