@@ -9,6 +9,7 @@ import { AppWalletProvider } from "@/components/wallet/wallet-provider";
 import { Footer } from "@/components/footer";
 import { localeDir } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
+import { SITE_ORIGIN, alternatesFor, localePath } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono", display: "swap" });
@@ -30,36 +31,51 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm
  * Per-locale titles/descriptions and `hreflang` alternates are layered on in a
  * later phase; this base metadata is inherited by every route as before.
  */
-export const metadata: Metadata = {
-  metadataBase: new URL("https://app.openfiat.network"),
-  title: { default: "OpenFiat — P2P Stablecoin Exchange", template: "%s · OpenFiat" },
-  description:
-    "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
-  icons: {
-    icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
-  manifest: "/site.webmanifest",
-  openGraph: {
-    type: "website",
-    siteName: "OpenFiat",
-    locale: "en",
-    url: "/",
-    title: "OpenFiat — P2P Stablecoin Exchange",
+/**
+ * Base metadata, now per-locale: `og:locale` reflects the active language and
+ * the home page carries its full `hreflang` set, so a link shared from `/es`
+ * previews as Spanish and search engines learn the site's home exists in all
+ * 27 languages. Inherited by every route; a route with its own
+ * `generateMetadata` (the country pages) layers its canonical over this.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    metadataBase: new URL(SITE_ORIGIN),
+    title: { default: "OpenFiat — P2P Stablecoin Exchange", template: "%s · OpenFiat" },
     description:
       "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "OpenFiat — P2P Stablecoin Exchange",
-    description:
-      "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by Solana programs; disputes decided by staked arbitrators.",
-  },
-};
+    icons: {
+      icon: [
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+        { url: "/favicon.ico", sizes: "any" },
+      ],
+      apple: "/apple-touch-icon.png",
+    },
+    manifest: "/site.webmanifest",
+    alternates: alternatesFor("", locale),
+    openGraph: {
+      type: "website",
+      siteName: "OpenFiat",
+      locale,
+      url: localePath("", locale),
+      title: "OpenFiat — P2P Stablecoin Exchange",
+      description:
+        "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "OpenFiat — P2P Stablecoin Exchange",
+      description:
+        "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by Solana programs; disputes decided by staked arbitrators.",
+    },
+  };
+}
 
 /**
  * Pre-render one copy of the tree per locale at build time. Without this every

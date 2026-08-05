@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { PROVIDER_TYPES } from "@/lib/provider-display";
 import { PageHero } from "@/components/page-hero";
 import { Panel } from "@/components/panel";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: "Register a service",
   description:
     "Register as an OpenFiat service provider — notification gateway, price oracle, snapshot provider, risk intelligence, merchant gateway or public API node. Permissionless: a signed registration event, no application and no approval.",
-  alternates: { canonical: "/providers/register" },
-};
+    alternates: alternatesFor("/providers/register", locale),
+  };
+}
 
 /** OFS-1500 §5. What you need before you can sign a registration. */
 const IDENTITY = [

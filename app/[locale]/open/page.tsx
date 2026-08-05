@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { OPEN_PRICE_USDC, SALE_PHASES } from "@/lib/sale-terms";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { BuyOpen } from "@/components/open/buy-open";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: "OPEN Token — Presale",
   description:
     "Buy OPEN in the official presale: the utility and governance token of the OpenFiat protocol — merchant bonds, node and arbitrator staking, governance voting, and protocol fees.",
-  alternates: { canonical: "/open" },
-};
+    alternates: alternatesFor("/open", locale),
+  };
+}
 
 /**
  * What OPEN is for.

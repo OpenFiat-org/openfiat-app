@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 import { countryViews, currenciesFor } from "@/lib/countries";
 import { referenceForRender } from "@/lib/server-reference";
 import { fetchPricedPairs } from "@/lib/live-oracle";
+import { SITE_ORIGIN, hreflangLanguages } from "@/lib/seo";
 
-const BASE = "https://app.openfiat.network";
+const BASE = SITE_ORIGIN;
 const LAST_UPDATED = new Date("2026-07-28");
 
 type Frequency = "daily" | "weekly" | "monthly";
@@ -25,11 +26,17 @@ type Frequency = "daily" | "weekly" | "monthly";
  * nothing.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // One entry per canonical (default-locale) URL, each carrying the full set of
+  // `hreflang` alternates for all 27 locales plus x-default. This is the
+  // compact form Google accepts — declaring every translation on the canonical
+  // entry — rather than emitting 27 separate <url>s per route, which would make
+  // this sitemap 27× larger to say the same thing.
   const entry = (path: string, priority: number, changeFrequency: Frequency) => ({
-    url: `${BASE}${path}`,
+    url: `${BASE}${path || ""}`,
     lastModified: LAST_UPDATED,
     changeFrequency,
     priority,
+    alternates: { languages: hreflangLanguages(path) },
   });
 
   const primary = [

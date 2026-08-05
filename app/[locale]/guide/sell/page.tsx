@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { PageHero } from "@/components/page-hero";
 import { StepList } from "@/components/guide/step-list";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: { absolute: "How to Sell Crypto for Fiat — Fiat Off-Ramp | OpenFiat" },
   // See `app/guide/buy/page.tsx` on why this names no tokens and no rails.
   description:
     "Fiat off-ramp made simple: sell stablecoins peer-to-peer and cash out through local payment methods on the OpenFiat P2P exchange — escrow-protected on Solana.",
-  alternates: { canonical: "/guide/sell" },
-};
+    alternates: alternatesFor("/guide/sell", locale),
+  };
+}
 
 const STEPS: Array<[string, string]> = [
   ["Choose Sell", "Pick the token you want to sell and the fiat currency you want to receive. Both lists come from your access node, not from this page."],

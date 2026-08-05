@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { PageHero } from "@/components/page-hero";
 import { Panel } from "@/components/panel";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: "How to Buy & Sell on OpenFiat P2P",
   description:
     "Step-by-step P2P trading guide: place an order, pay the seller within the time limit, and receive crypto from Solana-enforced escrow — plus safety tips.",
-  alternates: { canonical: "/guide" },
-};
+    alternates: alternatesFor("/guide", locale),
+  };
+}
 
 const GLOSSARY: Array<[string, string]> = [
   ["Advertiser (Merchant)", "A verified user who posts buy/sell offers with their own price, limits, and payment methods."],

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 
 import { countryBySlug, countryViews, currenciesFor, flagForCountry } from "@/lib/countries";
 import { localizedCurrencyName } from "@/lib/display-names";
+import { alternatesFor } from "@/lib/seo";
 
 import { referenceForRender } from "@/lib/server-reference";
 import { CurrencyPaymentMethods } from "@/components/p2p/currency-payment-methods";
@@ -45,22 +46,30 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const reference = await referenceForRender();
-  const country = reference ? countryBySlug(reference, slug) : undefined;
+  const country = reference ? countryBySlug(reference, slug, locale) : undefined;
   if (!country) return {};
-  const currencyName =
-    reference?.currencies.find((c) => c.code === country.currency)?.name ?? country.currency;
+  const currencyName = localizedCurrencyName(
+    country.currency,
+    reference?.currencies.find((c) => c.code === country.currency)?.name ?? country.currency,
+    locale,
+  );
   return {
-    title: { absolute: `Buy & Sell Stablecoins in ${country.name} — P2P Exchange | OpenFiat` },
+    // Localized name in the title/description, since a search result is exactly
+    // where a reader searching in their own language needs to recognize the
+    // market. The surrounding copy is English until phase B4 translates it.
+    title: { absolute: `Buy & Sell Stablecoins in ${country.displayName} — P2P Exchange | OpenFiat` },
     // No payment rails and no asset tickers here. Both used to be stated —
     // "Pay with M-Pesa, Equity Bank, KCB", "USDT, USDC, USD1, and SOL" — out
     // of a hand-written table, on all 253 country pages, whether or not a
     // single advertisement existed. A description is the one piece of a page
     // that travels without it, so it must not contain a claim the page
     // itself would have to hedge.
-    description: `Buy and sell stablecoins with ${currencyName} (${country.currency}) in ${country.name}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
-    alternates: { canonical: `/country/${country.slug}` },
+    description: `Buy and sell stablecoins with ${currencyName} (${country.currency}) in ${country.displayName}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
+    // Self-referential canonical for this locale plus the full hreflang set, so
+    // search engines learn this page exists in all 27 languages.
+    alternates: alternatesFor(`/country/${country.slug}`, locale),
   };
 }
 

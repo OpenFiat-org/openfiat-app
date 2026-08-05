@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import type { ReferenceData } from "@openfiat/sdk";
@@ -16,6 +17,7 @@ import { CurrencyPaymentMethods } from "@/components/p2p/currency-payment-method
 import { P2PExchange } from "@/components/p2p/exchange";
 
 interface Params {
+  locale: string;
   slug: string;
   currency: string;
 }
@@ -33,7 +35,7 @@ interface Params {
  * Which countries have a second currency is the node's answer now, from
  * `alt_currencies`, and no longer a hand-kept map in this repository.
  */
-export async function generateStaticParams(): Promise<Params[]> {
+export async function generateStaticParams(): Promise<{ slug: string; currency: string }[]> {
   const reference = await referenceForRender();
   if (!reference) return [];
   return countryViews(reference).flatMap((country) =>
@@ -62,7 +64,7 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug, currency } = await params;
+  const { slug, currency, locale } = await params;
   const reference = await referenceForRender();
   const found = reference ? resolve(reference, slug, currency) : null;
   if (!found) return {};
@@ -73,7 +75,7 @@ export async function generateMetadata({
     },
     // See `app/country/[slug]/page.tsx` on why no rails and no tickers.
     description: `Buy and sell stablecoins with ${code} in ${country.name}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
-    alternates: { canonical: `/country/${country.slug}/${code.toLowerCase()}` },
+    alternates: alternatesFor(`/country/${country.slug}/${code.toLowerCase()}`, locale),
   };
 }
 

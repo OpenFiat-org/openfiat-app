@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { PageHero } from "@/components/page-hero";
 import { StepList } from "@/components/guide/step-list";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: { absolute: "How to Become a Merchant — Post Ads on OpenFiat P2P | OpenFiat" },
   description:
     "Become an OpenFiat merchant: bond OPEN, fund a liquidity vault, and publish advertisements buyers and sellers can trade against. No application and no approval — the bond is the qualification.",
-  alternates: { canonical: "/guide/merchant" },
-};
+    alternates: alternatesFor("/guide/merchant", locale),
+  };
+}
 
 const STEPS: Array<[string, string]> = [
   [

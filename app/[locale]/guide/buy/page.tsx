@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { PageHero } from "@/components/page-hero";
 import { StepList } from "@/components/guide/step-list";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
   title: { absolute: "How to Buy Crypto with Fiat — Fiat On-Ramp | OpenFiat" },
   /*
    * No asset tickers and no payment rails in this description.
@@ -18,8 +25,9 @@ export const metadata: Metadata = {
    */
   description:
     "Fiat on-ramp made simple: buy stablecoins peer-to-peer with local payment methods on the OpenFiat P2P exchange — escrow-protected on Solana.",
-  alternates: { canonical: "/guide/buy" },
-};
+    alternates: alternatesFor("/guide/buy", locale),
+  };
+}
 
 const STEPS: Array<[string, string]> = [
   ["Choose Buy + asset + your currency + payment method", "The asset pills, the currency list and the payment-method filter are all read from your access node and from the live book — so they show what is genuinely on offer where you are, rather than a list written into this page."],

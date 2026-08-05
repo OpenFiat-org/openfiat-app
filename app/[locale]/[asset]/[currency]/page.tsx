@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 
@@ -11,6 +12,7 @@ import { normalisePair } from "@/lib/pairs";
 import { loadPairData } from "./pair-data";
 
 interface Params {
+  locale: string;
   asset: string;
   currency: string;
 }
@@ -44,12 +46,12 @@ interface Params {
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const { asset, currency } = await params;
+  const { asset, currency, locale } = await params;
   const pair = await normalisePair(asset, currency);
   if (!pair) return {};
 
   const { rate, advertisers, methods } = await loadPairData(pair);
-  const canonical = { alternates: { canonical: `/${pair.slug}` } };
+  const canonical = { alternates: alternatesFor(`/${pair.slug}`, locale) };
 
   // No rate, no number in the description. A meta description is the one
   // string that outlives the page in a search result, so a figure here that
