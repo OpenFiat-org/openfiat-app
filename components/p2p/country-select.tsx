@@ -3,7 +3,9 @@
 import { useMemo } from "react";
 import type { ReferenceData } from "@openfiat/sdk";
 
+import { useLocale } from "next-intl";
 import { flagForCountry } from "@/lib/countries";
+import { localizedCountryName } from "@/lib/display-names";
 
 /**
  * A country, chosen from the node's list.
@@ -35,12 +37,19 @@ export function CountrySelect({
   className?: string;
   placeholder?: string;
 }) {
+  const locale = useLocale();
   // Sorted by name here rather than taken in the node's order, which is
   // grouped by region — useful on a map, unhelpful in a dropdown somebody is
   // scanning for one name.
   const sorted = useMemo(
-    () => [...countries].sort((a, b) => a.name.localeCompare(b.name)),
-    [countries],
+    () =>
+      [...countries].sort((a, b) =>
+        localizedCountryName(a.code, a.name, locale).localeCompare(
+          localizedCountryName(b.code, b.name, locale),
+          locale,
+        ),
+      ),
+    [countries, locale],
   );
 
   return (
@@ -53,7 +62,7 @@ export function CountrySelect({
       <option value="">{placeholder}</option>
       {sorted.map((country) => (
         <option key={country.code} value={country.code}>
-          {flagForCountry(country.code)} {country.name} — {country.currency}
+          {flagForCountry(country.code)} {localizedCountryName(country.code, country.name, locale)} — {country.currency}
         </option>
       ))}
     </select>

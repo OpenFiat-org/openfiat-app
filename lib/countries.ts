@@ -1,4 +1,5 @@
 import type { ReferenceData } from "@openfiat/sdk";
+import { localizedCountryName } from "@/lib/display-names";
 
 /**
  * Countries, as URL segments and as rows on a page — both derived from the
@@ -41,7 +42,13 @@ import type { ReferenceData } from "@openfiat/sdk";
 /** The country rows this app renders, resolved against the node's answer. */
 export interface CountryView {
   code: string;
+  /** The node's own (English) name. Canonical: the slug, all search, and every
+   *  match are computed from this, so it never varies by locale. */
   name: string;
+  /** The name to *show*, localized to the active locale via CLDR — equal to
+   *  `name` for English and for pseudo-codes the CLDR has no entry for. Display
+   *  only; never used to slug, search, or match. */
+  displayName: string;
   /** `slugify(name)` — this app's own URL scheme, and the only local part. */
   slug: string;
   /** ISO 4217 (or local pseudo-code) primary currency, from the node. */
@@ -67,11 +74,22 @@ export function countrySlug(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Every country the node listed, slugged, in the node's own order. */
-export function countryViews(data: Pick<ReferenceData, "countries">): CountryView[] {
+/**
+ * Every country the node listed, slugged, in the node's own order.
+ *
+ * `locale` localizes only the `displayName`; pass the active route locale where
+ * one is available (a server component reads it with `getLocale()`), or omit it
+ * at build time — `app/sitemap.ts` and `generateStaticParams` need slugs, which
+ * come from the canonical `name` and do not depend on locale.
+ */
+export function countryViews(
+  data: Pick<ReferenceData, "countries">,
+  locale = "en",
+): CountryView[] {
   return data.countries.map((country) => ({
     code: country.code,
     name: country.name,
+    displayName: localizedCountryName(country.code, country.name, locale),
     slug: countrySlug(country.name),
     currency: country.currency,
     altCurrencies: [...country.alt_currencies].filter((code) => code !== country.currency),
@@ -82,8 +100,9 @@ export function countryViews(data: Pick<ReferenceData, "countries">): CountryVie
 export function countryBySlug(
   data: Pick<ReferenceData, "countries">,
   slug: string,
+  locale = "en",
 ): CountryView | undefined {
-  return countryViews(data).find((country) => country.slug === slug);
+  return countryViews(data, locale).find((country) => country.slug === slug);
 }
 
 /** Every currency a country trades in, primary first. */
@@ -109,6 +128,10 @@ export function searchCountries(
   return countries.filter(
     (country) =>
       country.name.toLowerCase().includes(q) ||
+      // The localized name too, so a reader who sees "Alemania" can search for
+      // it — matching only the canonical English name would make the search box
+      // work in a language the page is no longer written in.
+      country.displayName.toLowerCase().includes(q) ||
       country.code.toLowerCase() === q ||
       country.slug.includes(q) ||
       country.currency.toLowerCase().includes(q) ||

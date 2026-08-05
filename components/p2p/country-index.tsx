@@ -1,9 +1,11 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { countryViews, flagForCountry, searchCountries } from "@/lib/countries";
+import { localizedCurrencyName } from "@/lib/display-names";
 import { useReferenceData } from "@/lib/reference";
 import { PageHero } from "@/components/page-hero";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -25,10 +27,11 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
 export function CountryIndex() {
   const [query, setQuery] = useState("");
   const reference = useReferenceData();
+  const locale = useLocale();
 
   const countries = useMemo(
-    () => (reference.status === "ready" ? countryViews(reference.data) : []),
-    [reference],
+    () => (reference.status === "ready" ? countryViews(reference.data, locale) : []),
+    [reference, locale],
   );
   const described = useMemo(
     () =>
@@ -121,14 +124,19 @@ export function CountryIndex() {
                     className="font-medium text-gray-200 hover:text-brand-hover"
                   >
                     <span className="mr-2">{flagForCountry(c.code)}</span>
-                    {c.name}
+                    {c.displayName}
                   </Link>
                 </Td>
                 <Td className="font-medium text-gray-300">{c.currency}</Td>
-                {/* The node's own name for the code, or nothing. A currency
-                    it listed against a country but did not describe is shown
-                    by its code alone rather than given a name here. */}
-                <Td className="text-xs text-gray-500">{described.get(c.currency)?.name ?? "—"}</Td>
+                {/* The currency's name, localized from its code where the CLDR
+                    knows it, falling back to the node's own name. A currency the
+                    node listed but did not describe, and that is not an ISO
+                    code, is shown by its code alone rather than given a name. */}
+                <Td className="text-xs text-gray-500">
+                  {described.has(c.currency)
+                    ? localizedCurrencyName(c.currency, described.get(c.currency)!.name, locale)
+                    : "—"}
+                </Td>
                 <Td right>
                   <Link
                     href={`/country/${c.slug}`}

@@ -146,7 +146,12 @@ export function useReferenceData(): ReferenceState {
 
 export interface CurrencyOption {
   code: string;
+  /** The node's own (English) name, or the code if the node did not describe
+   *  it. Canonical: search matches on this. */
   name: string;
+  /** The name to *show*, localized to the active locale via CLDR — equal to
+   *  `name` for English and for node pseudo-codes the CLDR cannot name. */
+  displayName: string;
   symbol: string;
   flag: string;
   /** Up to three countries that trade in it, for recognition in a list. */
@@ -178,6 +183,7 @@ export const PREFERRED_CURRENCY_CODES = [
  * belongs beside the other country rendering rather than behind a hook.
  */
 import { flagEmoji, flagForCountry } from "@/lib/countries";
+import { localizedCurrencyName } from "@/lib/display-names";
 
 /**
  * Flags for currencies no single country owns. Without these the euro
@@ -204,7 +210,7 @@ const SUPRANATIONAL_FLAG: Record<string, string> = {
  * the larger of its two — never appears under that country's name when
  * somebody searches for the country.
  */
-export function currencyOptions(data: ReferenceData): CurrencyOption[] {
+export function currencyOptions(data: ReferenceData, locale = "en"): CurrencyOption[] {
   const described = new Map(data.currencies.map((c) => [c.code, c]));
 
   /**
@@ -235,12 +241,14 @@ export function currencyOptions(data: ReferenceData): CurrencyOption[] {
       return;
     }
     const currency = described.get(code);
+    // A code the node listed against a country but did not describe stands for
+    // itself rather than being dropped — a currency with no name is still one
+    // somebody trades in.
+    const name = currency?.name ?? code;
     byCode.set(code, {
       code,
-      // A code the node listed against a country but did not describe
-      // stands for itself rather than being dropped — a currency with no
-      // name is still one somebody trades in.
-      name: currency?.name ?? code,
+      name,
+      displayName: localizedCurrencyName(code, name, locale),
       symbol: currency?.symbol ?? code,
       flag: SUPRANATIONAL_FLAG[code] ?? flagForCountry(issuer.get(code) ?? ""),
       countries: [countryName],

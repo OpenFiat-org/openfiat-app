@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { INTERNATIONAL_MARKET } from "@/lib/types";
 import { currencyOptions, useReferenceData } from "@/lib/reference";
@@ -48,12 +49,13 @@ export function CurrencyCombobox({
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const state = useReferenceData();
+  const locale = useLocale();
 
   // Rebuilt only when a new answer arrives, not on every keystroke: this
   // walks 253 countries to fold them into ~160 currency rows.
   const all = useMemo(
-    () => (state.status === "ready" ? currencyOptions(state.data) : []),
-    [state],
+    () => (state.status === "ready" ? currencyOptions(state.data, locale) : []),
+    [state, locale],
   );
 
   const options = useMemo(() => {
@@ -71,6 +73,7 @@ export function CurrencyCombobox({
       (o) =>
         o.code.toLowerCase().includes(q) ||
         o.name.toLowerCase().includes(q) ||
+        o.displayName.toLowerCase().includes(q) ||
         o.countries.some((c) => c.toLowerCase().includes(q)),
     );
   }, [all, query, priorityCodes]);
@@ -122,7 +125,7 @@ export function CurrencyCombobox({
                 an arrow with no words in it, which is unreachable by name for
                 a screen reader and unreadable for everybody else. */}
             <span className="font-medium">{value || "Select a currency"}</span>
-            <span className="text-xs text-gray-500">{selected?.name ?? ""}</span>
+            <span className="text-xs text-gray-500">{selected?.displayName ?? ""}</span>
           </>
         )}
         <span className="text-gray-600">▾</span>
@@ -189,7 +192,7 @@ export function CurrencyCombobox({
                     <span className="text-base">{o.flag}</span>
                     <span className="w-12 font-medium text-white">{o.code}</span>
                     <span className="min-w-0 flex-1 truncate text-gray-400">
-                      {o.name}
+                      {o.displayName}
                       <span className="text-gray-600"> — {o.countries.join(", ")}</span>
                     </span>
                     <span className="text-xs text-gray-600">{o.symbol}</span>

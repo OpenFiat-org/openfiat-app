@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 
 import { countryBySlug, countryViews, currenciesFor, flagForCountry } from "@/lib/countries";
+import { localizedCurrencyName } from "@/lib/display-names";
 
 import { referenceForRender } from "@/lib/server-reference";
 import { CurrencyPaymentMethods } from "@/components/p2p/currency-payment-methods";
 import { P2PExchange } from "@/components/p2p/exchange";
 
 interface Params {
+  locale: string;
   slug: string;
 }
 
@@ -29,7 +31,10 @@ interface Params {
  * to a list: a 404 is this app stating "there is no such country", and a
  * failed request is no grounds for stating it.
  */
-export async function generateStaticParams(): Promise<Params[]> {
+// Only this segment's own param. Next composes `locale` from the parent
+// `[locale]` layout's `generateStaticParams`, so returning `locale` here too
+// would be both redundant and the wrong shape.
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const reference = await referenceForRender();
   if (!reference) return [];
   return countryViews(reference).map((country) => ({ slug: country.slug }));
@@ -60,7 +65,7 @@ export async function generateMetadata({
 }
 
 export default async function CountryP2PPage({ params }: { params: Promise<Params> }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const reference = await referenceForRender();
 
   /*
@@ -88,7 +93,7 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
     );
   }
 
-  const country = countryBySlug(reference, slug);
+  const country = countryBySlug(reference, slug, locale);
   if (!country) {
     return (
       <section>
@@ -103,8 +108,11 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
     );
   }
 
-  const currencyName =
-    reference.currencies.find((c) => c.code === country.currency)?.name ?? country.currency;
+  const currencyName = localizedCurrencyName(
+    country.currency,
+    reference.currencies.find((c) => c.code === country.currency)?.name ?? country.currency,
+    locale,
+  );
   const alternates = currenciesFor(country).slice(1);
 
   return (
@@ -113,10 +121,10 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
         ← All countries
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-white">
-        P2P Exchange in {country.name} {flagForCountry(country.code)}
+        P2P Exchange in {country.displayName} {flagForCountry(country.code)}
       </h1>
       <p className="mt-1 max-w-3xl text-sm text-gray-400">
-        Buy and sell stablecoins with {currencyName} ({country.currency}) in {country.name}. Escrow
+        Buy and sell stablecoins with {currencyName} ({country.currency}) in {country.displayName}. Escrow
         is locked on Solana before you pay and released only after fiat receipt is verified;
         OpenFiat never takes custody of your {country.currency}.
       </p>
