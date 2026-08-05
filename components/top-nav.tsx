@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
 import { MobileConnectNote } from "@/components/wallet/mobile-connect-note";
 import { NetworkBadge } from "@/components/network-badge";
 import { MobileNav } from "@/components/mobile-nav";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import {
   ACCOUNT_MENU,
   ECOSYSTEM_MENU,
@@ -19,6 +21,7 @@ import { NETWORK_LABEL, TOKENS_ARE_WORTHLESS } from "@/lib/node-endpoint";
 
 export function TopNav() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0e14]/95 backdrop-blur">
@@ -45,12 +48,12 @@ export function TopNav() {
           * `lg` the same destinations are in `MobileNav`'s sheet.
           */}
         <nav className="hidden flex-1 flex-nowrap items-center gap-x-0.5 lg:flex">
-          {MAIN_LINKS.map(([label, href]) => (
+          {MAIN_LINKS.map(({ key, href }) => (
             <NavLink key={href} href={href} active={isActiveRoute(pathname, href)}>
-              {label}
+              {t(key)}
             </NavLink>
           ))}
-          <NavMenu label="Ecosystem" sections={ECOSYSTEM_MENU} width="w-80" />
+          <NavMenu label={t("ecosystem")} sections={ECOSYSTEM_MENU} width="w-80" />
         </nav>
 
         {/* `flex-1 justify-end` below `lg`, where there is no nav to push
@@ -66,7 +69,12 @@ export function TopNav() {
             <NetworkBadge />
           </div>
           <div className="hidden lg:block">
-            <NavMenu label="My Account" sections={ACCOUNT_MENU} width="w-[36rem]" align="right" />
+            <NavMenu label={t("myAccount")} sections={ACCOUNT_MENU} width="w-[36rem]" align="right" />
+          </div>
+          {/* From `lg` up, beside the account menu. On smaller widths the same
+              control lives in the mobile sheet, so it is never lost. */}
+          <div className="hidden lg:block">
+            <LanguageSwitcher />
           </div>
           {/* Never hidden. Every actionable surface in this app needs a
               connected wallet, so this is the one control that survives at
@@ -133,6 +141,7 @@ function NavMenu({
   align?: "left" | "right";
 }) {
   const pathname = usePathname();
+  const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const routes = sections.flatMap((s) => s.items.map((i) => i.href));
@@ -176,10 +185,10 @@ function NavMenu({
         >
           <div className={`grid gap-x-6 ${sections.length > 1 ? "grid-cols-2" : ""}`}>
             {sections.map((section, i) => (
-              <div key={section.title ?? i}>
-                {section.title && (
+              <div key={section.titleKey ?? i}>
+                {section.titleKey && (
                   <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {section.title}
+                    {t(section.titleKey)}
                   </p>
                 )}
                 <ul className="space-y-0.5">
@@ -199,9 +208,9 @@ function NavMenu({
                           </span>
                           <span>
                             <span className={`block text-sm font-medium ${itemActive ? "text-brand-hover" : "text-white"}`}>
-                              {item.label}
+                              {t(item.key)}
                             </span>
-                            <span className="block text-xs text-gray-500">{item.description}</span>
+                            <span className="block text-xs text-gray-500">{t(`${item.key}Desc`)}</span>
                           </span>
                         </Link>
                       </li>

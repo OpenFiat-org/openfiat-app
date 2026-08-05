@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for ja. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for ja. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "ウォレットを接続",
+    "loading": "読み込み中…",
+    "retry": "再試行"
+  },
+  "languageSwitcher": {
+    "label": "言語",
+    "changeLanguage": "言語を変更"
+  },
+  "nav": {
+    "ecosystem": "エコシステム",
+    "myAccount": "アカウント",
+    "sectionAccount": "アカウント",
+    "sectionTrust": "信頼",
+    "exchange": "P2P取引所",
+    "countries": "国",
+    "disputes": "紛争",
+    "governance": "ガバナンス",
+    "explorer": "エクスプローラー",
+    "explorerDesc": "アドレス、取引、プロトコルイベントを検索",
+    "network": "ネットワーク",
+    "networkDesc": "ノード、ピア、イベントストリーム",
+    "providers": "プロバイダー",
+    "providersDesc": "通知、オラクル、リスクインテリジェンス",
+    "faucet": "フォーセット",
+    "faucetDesc": "devnetでのテスト用にSOL、モックUSDC/USDT、OPENを取得",
+    "orders": "注文",
+    "ordersDesc": "取引履歴とアクティブなエスクロー",
+    "ads": "広告",
+    "adsDesc": "マーチャントコンソールと流動性",
+    "becomeMerchant": "マーチャントになる",
+    "becomeMerchantDesc": "保証金、支払いアカウント、それぞれの状況",
+    "wallet": "ウォレット",
+    "walletDesc": "残高と流動性ボールト",
+    "staking": "ステーキング",
+    "stakingDesc": "マーチャント、ノード、または仲裁者としてOPENをロック",
+    "arbitrate": "仲裁",
+    "arbitrateDesc": "紛争案件を処理し、裁定を下す",
+    "earnings": "収益",
+    "earningsDesc": "ノード、オラクル、ゲートウェイが獲得した額",
+    "settings": "設定",
+    "settingsDesc": "環境設定と通知",
+    "identity": "アイデンティティ",
+    "identityDesc": "検証レベル L0–L3",
+    "reputation": "評判",
+    "reputationDesc": "あなたのティアと評価軸",
+    "counterparties": "取引相手",
+    "counterpartiesDesc": "誰とどのくらいの頻度で取引しているか"
+  }
 }

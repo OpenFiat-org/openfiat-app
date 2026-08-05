@@ -1,5 +1,5 @@
 {
-  "$comment": "English is the source catalogue. Every user-facing string in the app is extracted into namespaced keys here (per-route + shared namespaces), and every other locale is a translation of this file, falling back to it per-key for anything not yet translated. This starts intentionally small: the routing/provider foundation (phase B1) lands first, and the ~1,000-1,500-string extraction (phase B2) fills it in. Keeping the catalogue live from the start means the provider, the completeness test, and the language switcher all have something real to run against before the bulk extraction.",
+  "$comment": "English is the source catalogue. Every other locale is a translation of this file and falls back to it per-key (see i18n/request.ts), so a string not yet translated renders in English rather than as a raw key. Namespaces are extracted surface by surface: nav + languageSwitcher first (they appear on every page), the rest as each surface is migrated off inline strings.",
   "common": {
     "connectWallet": "Connect wallet",
     "loading": "Loading…",
@@ -8,5 +8,49 @@
   "languageSwitcher": {
     "label": "Language",
     "changeLanguage": "Change language"
+  },
+  "nav": {
+    "ecosystem": "Ecosystem",
+    "myAccount": "My Account",
+    "sectionAccount": "Account",
+    "sectionTrust": "Trust",
+
+    "exchange": "P2P Exchange",
+    "countries": "Countries",
+    "disputes": "Disputes",
+    "governance": "Governance",
+
+    "explorer": "Explorer",
+    "explorerDesc": "Search addresses, trades & protocol events",
+    "network": "Network",
+    "networkDesc": "Nodes, peers & event stream",
+    "providers": "Providers",
+    "providersDesc": "Notifications, oracles & risk intelligence",
+    "faucet": "Faucet",
+    "faucetDesc": "Get SOL, mock USDC/USDT and OPEN for testing on devnet",
+
+    "orders": "Orders",
+    "ordersDesc": "Trade history & active escrow",
+    "ads": "My Ads",
+    "adsDesc": "Merchant console & liquidity",
+    "becomeMerchant": "Become a merchant",
+    "becomeMerchantDesc": "The bond, a payment account, and where you stand on each",
+    "wallet": "Wallet",
+    "walletDesc": "Balances & liquidity vaults",
+    "staking": "Staking",
+    "stakingDesc": "Bond OPEN as a merchant, node, or arbitrator",
+    "arbitrate": "Arbitrate",
+    "arbitrateDesc": "Work a dispute case and cast your ruling",
+    "earnings": "Earnings",
+    "earningsDesc": "What your node, oracle or gateway has earned",
+    "settings": "Settings",
+    "settingsDesc": "Preferences & notifications",
+
+    "identity": "Identity",
+    "identityDesc": "Verification levels L0–L3",
+    "reputation": "Reputation",
+    "reputationDesc": "Your tier & dimensions",
+    "counterparties": "Counterparties",
+    "counterpartiesDesc": "Who you trade with, and how often"
   }
 }

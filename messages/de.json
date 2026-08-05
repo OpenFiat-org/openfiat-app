@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for de. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for de. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Wallet verbinden",
+    "loading": "Wird geladen…",
+    "retry": "Erneut versuchen"
+  },
+  "languageSwitcher": {
+    "label": "Sprache",
+    "changeLanguage": "Sprache ändern"
+  },
+  "nav": {
+    "ecosystem": "Ökosystem",
+    "myAccount": "Mein Konto",
+    "sectionAccount": "Konto",
+    "sectionTrust": "Vertrauen",
+    "exchange": "P2P-Börse",
+    "countries": "Länder",
+    "disputes": "Streitfälle",
+    "governance": "Governance",
+    "explorer": "Explorer",
+    "explorerDesc": "Adressen, Trades und Protokollereignisse durchsuchen",
+    "network": "Netzwerk",
+    "networkDesc": "Knoten, Peers und Ereignis-Stream",
+    "providers": "Anbieter",
+    "providersDesc": "Benachrichtigungen, Orakel und Risiko-Intelligenz",
+    "faucet": "Faucet",
+    "faucetDesc": "SOL, Test-USDC/USDT und OPEN zum Testen im Devnet erhalten",
+    "orders": "Aufträge",
+    "ordersDesc": "Handelsverlauf und aktives Treuhandkonto",
+    "ads": "Meine Anzeigen",
+    "adsDesc": "Händlerkonsole und Liquidität",
+    "becomeMerchant": "Händler werden",
+    "becomeMerchantDesc": "Die Kaution, ein Zahlungskonto und Ihr Stand bei beiden",
+    "wallet": "Wallet",
+    "walletDesc": "Guthaben und Liquiditäts-Vaults",
+    "staking": "Staking",
+    "stakingDesc": "OPEN als Händler, Knoten oder Schiedsrichter binden",
+    "arbitrate": "Schlichten",
+    "arbitrateDesc": "Einen Streitfall bearbeiten und Ihr Urteil abgeben",
+    "earnings": "Erträge",
+    "earningsDesc": "Was Ihr Knoten, Orakel oder Gateway verdient hat",
+    "settings": "Einstellungen",
+    "settingsDesc": "Präferenzen und Benachrichtigungen",
+    "identity": "Identität",
+    "identityDesc": "Verifizierungsstufen L0–L3",
+    "reputation": "Reputation",
+    "reputationDesc": "Ihre Stufe und Dimensionen",
+    "counterparties": "Gegenparteien",
+    "counterpartiesDesc": "Mit wem Sie handeln und wie oft"
+  }
 }

@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -11,6 +12,7 @@ import {
   isActiveRoute,
   type MenuSection,
 } from "@/components/nav-items";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 /**
  * The navigation below `lg`, as a sheet.
@@ -56,12 +58,13 @@ const DESKTOP_MIN_WIDTH = 1024;
  * group, so the heading has to be supplied here.
  */
 const GROUPS: MenuSection[] = [
-  { title: "Ecosystem", items: ECOSYSTEM_MENU.flatMap((s) => s.items) },
+  { titleKey: "ecosystem", items: ECOSYSTEM_MENU.flatMap((s) => s.items) },
   ...ACCOUNT_MENU,
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
   const [top, setTop] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -131,7 +134,7 @@ export function MobileNav() {
     >
       <nav aria-label="Main" className="px-4 pt-3 pb-12">
         <ul>
-          {MAIN_LINKS.map(([label, href]) => {
+          {MAIN_LINKS.map(({ key, href }) => {
             const active = isActiveRoute(pathname, href);
             return (
               <li key={href}>
@@ -145,17 +148,17 @@ export function MobileNav() {
                       : "border-transparent text-gray-300 hover:bg-white/[0.04] hover:text-white"
                   }`}
                 >
-                  {label}
+                  {t(key)}
                 </Link>
               </li>
             );
           })}
         </ul>
 
-        {GROUPS.map((section) => (
-          <div key={section.title} className="mt-5 border-t border-white/5 pt-4">
+        {GROUPS.map((section, i) => (
+          <div key={section.titleKey ?? i} className="mt-5 border-t border-white/5 pt-4">
             <p className="pb-1 pl-4 text-[11px] font-semibold tracking-[0.14em] text-gray-500 uppercase">
-              {section.title}
+              {section.titleKey ? t(section.titleKey) : ""}
             </p>
             <ul>
               {section.items.map((item) => {
@@ -177,9 +180,9 @@ export function MobileNav() {
                         <span
                           className={`block text-sm font-medium ${active ? "text-brand-hover" : "text-white"}`}
                         >
-                          {item.label}
+                          {t(item.key)}
                         </span>
-                        <span className="block text-xs text-gray-500">{item.description}</span>
+                        <span className="block text-xs text-gray-500">{t(`${item.key}Desc`)}</span>
                       </span>
                     </Link>
                   </li>
@@ -188,6 +191,12 @@ export function MobileNav() {
             </ul>
           </div>
         ))}
+
+        {/* Below `lg` the desktop bar's switcher is hidden, so the sheet is
+            where a phone reader changes language. */}
+        <div className="mt-6 border-t border-white/5 pt-4">
+          <LanguageSwitcher />
+        </div>
       </nav>
     </div>
   );

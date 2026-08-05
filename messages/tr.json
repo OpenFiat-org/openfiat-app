@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for tr. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for tr. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Cüzdanı bağla",
+    "loading": "Yükleniyor…",
+    "retry": "Yeniden dene"
+  },
+  "languageSwitcher": {
+    "label": "Dil",
+    "changeLanguage": "Dili değiştir"
+  },
+  "nav": {
+    "ecosystem": "Ekosistem",
+    "myAccount": "Hesabım",
+    "sectionAccount": "Hesap",
+    "sectionTrust": "Güven",
+    "exchange": "P2P Borsa",
+    "countries": "Ülkeler",
+    "disputes": "Anlaşmazlıklar",
+    "governance": "Yönetişim",
+    "explorer": "Gezgin",
+    "explorerDesc": "Adresleri, işlemleri ve protokol olaylarını arayın",
+    "network": "Ağ",
+    "networkDesc": "Düğümler, eşler ve olay akışı",
+    "providers": "Sağlayıcılar",
+    "providersDesc": "Bildirimler, kâhinler ve risk istihbaratı",
+    "faucet": "Musluk",
+    "faucetDesc": "Devnet'te test için SOL, sahte USDC/USDT ve OPEN alın",
+    "orders": "Emirler",
+    "ordersDesc": "İşlem geçmişi ve aktif emanet",
+    "ads": "İlanlarım",
+    "adsDesc": "Satıcı konsolu ve likidite",
+    "becomeMerchant": "Satıcı olun",
+    "becomeMerchantDesc": "Teminat, bir ödeme hesabı ve her birindeki durumunuz",
+    "wallet": "Cüzdan",
+    "walletDesc": "Bakiyeler ve likidite kasaları",
+    "staking": "Staking",
+    "stakingDesc": "Satıcı, düğüm veya hakem olarak OPEN kilitleyin",
+    "arbitrate": "Hakemlik",
+    "arbitrateDesc": "Bir anlaşmazlık davasını inceleyin ve kararınızı verin",
+    "earnings": "Kazançlar",
+    "earningsDesc": "Düğümünüzün, kâhininizin veya ağ geçidinizin kazandığı",
+    "settings": "Ayarlar",
+    "settingsDesc": "Tercihler ve bildirimler",
+    "identity": "Kimlik",
+    "identityDesc": "Doğrulama seviyeleri L0–L3",
+    "reputation": "İtibar",
+    "reputationDesc": "Seviyeniz ve boyutlarınız",
+    "counterparties": "Karşı taraflar",
+    "counterpartiesDesc": "Kiminle, ne sıklıkla işlem yaptığınız"
+  }
 }

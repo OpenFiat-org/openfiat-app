@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for hi. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for hi. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "वॉलेट कनेक्ट करें",
+    "loading": "लोड हो रहा है…",
+    "retry": "पुनः प्रयास करें"
+  },
+  "languageSwitcher": {
+    "label": "भाषा",
+    "changeLanguage": "भाषा बदलें"
+  },
+  "nav": {
+    "ecosystem": "पारिस्थितिकी तंत्र",
+    "myAccount": "मेरा खाता",
+    "sectionAccount": "खाता",
+    "sectionTrust": "विश्वास",
+    "exchange": "P2P एक्सचेंज",
+    "countries": "देश",
+    "disputes": "विवाद",
+    "governance": "शासन",
+    "explorer": "एक्सप्लोरर",
+    "explorerDesc": "पते, ट्रेड और प्रोटोकॉल इवेंट खोजें",
+    "network": "नेटवर्क",
+    "networkDesc": "नोड, पीयर और इवेंट स्ट्रीम",
+    "providers": "प्रदाता",
+    "providersDesc": "सूचनाएँ, ऑरेकल और जोखिम आसूचना",
+    "faucet": "फ़ॉसेट",
+    "faucetDesc": "devnet पर परीक्षण के लिए SOL, मॉक USDC/USDT और OPEN प्राप्त करें",
+    "orders": "ऑर्डर",
+    "ordersDesc": "ट्रेड इतिहास और सक्रिय एस्क्रो",
+    "ads": "मेरे विज्ञापन",
+    "adsDesc": "मर्चेंट कंसोल और तरलता",
+    "becomeMerchant": "मर्चेंट बनें",
+    "becomeMerchantDesc": "बॉन्ड, एक भुगतान खाता, और प्रत्येक पर आपकी स्थिति",
+    "wallet": "वॉलेट",
+    "walletDesc": "शेष राशि और तरलता वॉल्ट",
+    "staking": "स्टेकिंग",
+    "stakingDesc": "मर्चेंट, नोड या मध्यस्थ के रूप में OPEN बॉन्ड करें",
+    "arbitrate": "मध्यस्थता",
+    "arbitrateDesc": "एक विवाद मामले पर काम करें और अपना निर्णय दें",
+    "earnings": "कमाई",
+    "earningsDesc": "आपके नोड, ऑरेकल या गेटवे ने क्या कमाया है",
+    "settings": "सेटिंग्स",
+    "settingsDesc": "प्राथमिकताएँ और सूचनाएँ",
+    "identity": "पहचान",
+    "identityDesc": "सत्यापन स्तर L0–L3",
+    "reputation": "प्रतिष्ठा",
+    "reputationDesc": "आपका स्तर और आयाम",
+    "counterparties": "प्रतिपक्ष",
+    "counterpartiesDesc": "आप किसके साथ, और कितनी बार व्यापार करते हैं"
+  }
 }

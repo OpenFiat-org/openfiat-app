@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for es. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for es. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Conectar billetera",
+    "loading": "Cargando…",
+    "retry": "Reintentar"
+  },
+  "languageSwitcher": {
+    "label": "Idioma",
+    "changeLanguage": "Cambiar idioma"
+  },
+  "nav": {
+    "ecosystem": "Ecosistema",
+    "myAccount": "Mi cuenta",
+    "sectionAccount": "Cuenta",
+    "sectionTrust": "Confianza",
+    "exchange": "Intercambio P2P",
+    "countries": "Países",
+    "disputes": "Disputas",
+    "governance": "Gobernanza",
+    "explorer": "Explorador",
+    "explorerDesc": "Busca direcciones, operaciones y eventos del protocolo",
+    "network": "Red",
+    "networkDesc": "Nodos, pares y flujo de eventos",
+    "providers": "Proveedores",
+    "providersDesc": "Notificaciones, oráculos e inteligencia de riesgo",
+    "faucet": "Grifo",
+    "faucetDesc": "Obtén SOL, USDC/USDT de prueba y OPEN para pruebas en devnet",
+    "orders": "Órdenes",
+    "ordersDesc": "Historial de operaciones y depósitos en garantía activos",
+    "ads": "Mis anuncios",
+    "adsDesc": "Consola de comerciante y liquidez",
+    "becomeMerchant": "Hazte comerciante",
+    "becomeMerchantDesc": "La fianza, una cuenta de pago y tu estado en cada una",
+    "wallet": "Billetera",
+    "walletDesc": "Saldos y bóvedas de liquidez",
+    "staking": "Staking",
+    "stakingDesc": "Bloquea OPEN como comerciante, nodo o árbitro",
+    "arbitrate": "Arbitrar",
+    "arbitrateDesc": "Trabaja un caso de disputa y emite tu fallo",
+    "earnings": "Ganancias",
+    "earningsDesc": "Lo que ha ganado tu nodo, oráculo o pasarela",
+    "settings": "Ajustes",
+    "settingsDesc": "Preferencias y notificaciones",
+    "identity": "Identidad",
+    "identityDesc": "Niveles de verificación L0–L3",
+    "reputation": "Reputación",
+    "reputationDesc": "Tu nivel y dimensiones",
+    "counterparties": "Contrapartes",
+    "counterpartiesDesc": "Con quién operas y con qué frecuencia"
+  }
 }

@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for ru. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for ru. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Подключить кошелёк",
+    "loading": "Загрузка…",
+    "retry": "Повторить"
+  },
+  "languageSwitcher": {
+    "label": "Язык",
+    "changeLanguage": "Изменить язык"
+  },
+  "nav": {
+    "ecosystem": "Экосистема",
+    "myAccount": "Мой аккаунт",
+    "sectionAccount": "Аккаунт",
+    "sectionTrust": "Доверие",
+    "exchange": "P2P-обмен",
+    "countries": "Страны",
+    "disputes": "Споры",
+    "governance": "Управление",
+    "explorer": "Обозреватель",
+    "explorerDesc": "Поиск адресов, сделок и событий протокола",
+    "network": "Сеть",
+    "networkDesc": "Узлы, пиры и поток событий",
+    "providers": "Поставщики",
+    "providersDesc": "Уведомления, оракулы и анализ рисков",
+    "faucet": "Кран",
+    "faucetDesc": "Получите SOL, тестовые USDC/USDT и OPEN для тестирования в devnet",
+    "orders": "Ордера",
+    "ordersDesc": "История сделок и активное эскроу",
+    "ads": "Мои объявления",
+    "adsDesc": "Консоль продавца и ликвидность",
+    "becomeMerchant": "Стать продавцом",
+    "becomeMerchantDesc": "Залог, платёжный счёт и ваш статус по каждому",
+    "wallet": "Кошелёк",
+    "walletDesc": "Балансы и хранилища ликвидности",
+    "staking": "Стейкинг",
+    "stakingDesc": "Заблокируйте OPEN как продавец, узел или арбитр",
+    "arbitrate": "Арбитраж",
+    "arbitrateDesc": "Разберите спорное дело и вынесите решение",
+    "earnings": "Доходы",
+    "earningsDesc": "Сколько заработал ваш узел, оракул или шлюз",
+    "settings": "Настройки",
+    "settingsDesc": "Предпочтения и уведомления",
+    "identity": "Личность",
+    "identityDesc": "Уровни верификации L0–L3",
+    "reputation": "Репутация",
+    "reputationDesc": "Ваш уровень и параметры",
+    "counterparties": "Контрагенты",
+    "counterpartiesDesc": "С кем вы торгуете и как часто"
+  }
 }

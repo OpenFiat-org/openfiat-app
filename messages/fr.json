@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for fr. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for fr. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Connecter le portefeuille",
+    "loading": "Chargement…",
+    "retry": "Réessayer"
+  },
+  "languageSwitcher": {
+    "label": "Langue",
+    "changeLanguage": "Changer de langue"
+  },
+  "nav": {
+    "ecosystem": "Écosystème",
+    "myAccount": "Mon compte",
+    "sectionAccount": "Compte",
+    "sectionTrust": "Confiance",
+    "exchange": "Échange P2P",
+    "countries": "Pays",
+    "disputes": "Litiges",
+    "governance": "Gouvernance",
+    "explorer": "Explorateur",
+    "explorerDesc": "Rechercher adresses, transactions et événements du protocole",
+    "network": "Réseau",
+    "networkDesc": "Nœuds, pairs et flux d'événements",
+    "providers": "Fournisseurs",
+    "providersDesc": "Notifications, oracles et renseignement sur les risques",
+    "faucet": "Robinet",
+    "faucetDesc": "Obtenez SOL, USDC/USDT de test et OPEN pour tester sur le devnet",
+    "orders": "Ordres",
+    "ordersDesc": "Historique des transactions et séquestre actif",
+    "ads": "Mes annonces",
+    "adsDesc": "Console marchand et liquidité",
+    "becomeMerchant": "Devenir marchand",
+    "becomeMerchantDesc": "La caution, un compte de paiement, et où vous en êtes sur chacun",
+    "wallet": "Portefeuille",
+    "walletDesc": "Soldes et coffres de liquidité",
+    "staking": "Staking",
+    "stakingDesc": "Bloquez des OPEN en tant que marchand, nœud ou arbitre",
+    "arbitrate": "Arbitrer",
+    "arbitrateDesc": "Traitez un litige et rendez votre décision",
+    "earnings": "Revenus",
+    "earningsDesc": "Ce qu'ont gagné votre nœud, oracle ou passerelle",
+    "settings": "Paramètres",
+    "settingsDesc": "Préférences et notifications",
+    "identity": "Identité",
+    "identityDesc": "Niveaux de vérification L0–L3",
+    "reputation": "Réputation",
+    "reputationDesc": "Votre niveau et vos dimensions",
+    "counterparties": "Contreparties",
+    "counterpartiesDesc": "Avec qui vous échangez, et à quelle fréquence"
+  }
 }

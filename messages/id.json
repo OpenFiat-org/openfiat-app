@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for id. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for id. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Hubungkan dompet",
+    "loading": "Memuat…",
+    "retry": "Coba lagi"
+  },
+  "languageSwitcher": {
+    "label": "Bahasa",
+    "changeLanguage": "Ubah bahasa"
+  },
+  "nav": {
+    "ecosystem": "Ekosistem",
+    "myAccount": "Akun saya",
+    "sectionAccount": "Akun",
+    "sectionTrust": "Kepercayaan",
+    "exchange": "Bursa P2P",
+    "countries": "Negara",
+    "disputes": "Sengketa",
+    "governance": "Tata kelola",
+    "explorer": "Penjelajah",
+    "explorerDesc": "Cari alamat, transaksi & peristiwa protokol",
+    "network": "Jaringan",
+    "networkDesc": "Node, peer & aliran peristiwa",
+    "providers": "Penyedia",
+    "providersDesc": "Notifikasi, oracle & intelijen risiko",
+    "faucet": "Faucet",
+    "faucetDesc": "Dapatkan SOL, USDC/USDT tiruan, dan OPEN untuk pengujian di devnet",
+    "orders": "Pesanan",
+    "ordersDesc": "Riwayat transaksi & escrow aktif",
+    "ads": "Iklan saya",
+    "adsDesc": "Konsol pedagang & likuiditas",
+    "becomeMerchant": "Jadi pedagang",
+    "becomeMerchantDesc": "Jaminan, akun pembayaran, dan posisi Anda di masing-masing",
+    "wallet": "Dompet",
+    "walletDesc": "Saldo & brankas likuiditas",
+    "staking": "Staking",
+    "stakingDesc": "Kunci OPEN sebagai pedagang, node, atau arbiter",
+    "arbitrate": "Arbitrase",
+    "arbitrateDesc": "Tangani kasus sengketa dan berikan putusan Anda",
+    "earnings": "Penghasilan",
+    "earningsDesc": "Yang telah diperoleh node, oracle, atau gateway Anda",
+    "settings": "Pengaturan",
+    "settingsDesc": "Preferensi & notifikasi",
+    "identity": "Identitas",
+    "identityDesc": "Tingkat verifikasi L0–L3",
+    "reputation": "Reputasi",
+    "reputationDesc": "Tingkat & dimensi Anda",
+    "counterparties": "Rekanan",
+    "counterpartiesDesc": "Dengan siapa Anda bertransaksi, dan seberapa sering"
+  }
 }

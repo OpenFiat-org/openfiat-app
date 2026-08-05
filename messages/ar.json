@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for ar. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for ar. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "ربط المحفظة",
+    "loading": "جارٍ التحميل…",
+    "retry": "إعادة المحاولة"
+  },
+  "languageSwitcher": {
+    "label": "اللغة",
+    "changeLanguage": "تغيير اللغة"
+  },
+  "nav": {
+    "ecosystem": "المنظومة",
+    "myAccount": "حسابي",
+    "sectionAccount": "الحساب",
+    "sectionTrust": "الثقة",
+    "exchange": "تبادل P2P",
+    "countries": "البلدان",
+    "disputes": "النزاعات",
+    "governance": "الحوكمة",
+    "explorer": "المستكشف",
+    "explorerDesc": "ابحث عن العناوين والصفقات وأحداث البروتوكول",
+    "network": "الشبكة",
+    "networkDesc": "العُقد والأقران وتدفق الأحداث",
+    "providers": "المزوّدون",
+    "providersDesc": "الإشعارات والأوراكل واستخبارات المخاطر",
+    "faucet": "الصنبور",
+    "faucetDesc": "احصل على SOL وUSDC/USDT تجريبية وOPEN للاختبار على devnet",
+    "orders": "الأوامر",
+    "ordersDesc": "سجل الصفقات والضمان النشط",
+    "ads": "إعلاناتي",
+    "adsDesc": "لوحة التاجر والسيولة",
+    "becomeMerchant": "كن تاجرًا",
+    "becomeMerchantDesc": "الضمان وحساب دفع وموقفك من كلٍّ منهما",
+    "wallet": "المحفظة",
+    "walletDesc": "الأرصدة وخزائن السيولة",
+    "staking": "الرهن (Staking)",
+    "stakingDesc": "اربط OPEN كتاجر أو عُقدة أو مُحكِّم",
+    "arbitrate": "التحكيم",
+    "arbitrateDesc": "اعمل على قضية نزاع وأصدر حكمك",
+    "earnings": "الأرباح",
+    "earningsDesc": "ما كسبته عُقدتك أو الأوراكل أو البوابة",
+    "settings": "الإعدادات",
+    "settingsDesc": "التفضيلات والإشعارات",
+    "identity": "الهوية",
+    "identityDesc": "مستويات التحقق L0–L3",
+    "reputation": "السمعة",
+    "reputationDesc": "مستواك وأبعادك",
+    "counterparties": "الأطراف المقابلة",
+    "counterpartiesDesc": "مع من تتداول، وكم مرة"
+  }
 }

@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for pt-BR. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for pt-BR. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "Conectar carteira",
+    "loading": "Carregando…",
+    "retry": "Tentar novamente"
+  },
+  "languageSwitcher": {
+    "label": "Idioma",
+    "changeLanguage": "Mudar idioma"
+  },
+  "nav": {
+    "ecosystem": "Ecossistema",
+    "myAccount": "Minha conta",
+    "sectionAccount": "Conta",
+    "sectionTrust": "Confiança",
+    "exchange": "Câmbio P2P",
+    "countries": "Países",
+    "disputes": "Disputas",
+    "governance": "Governança",
+    "explorer": "Explorador",
+    "explorerDesc": "Pesquise endereços, negociações e eventos do protocolo",
+    "network": "Rede",
+    "networkDesc": "Nós, pares e fluxo de eventos",
+    "providers": "Provedores",
+    "providersDesc": "Notificações, oráculos e inteligência de risco",
+    "faucet": "Torneira",
+    "faucetDesc": "Obtenha SOL, USDC/USDT de teste e OPEN para testar na devnet",
+    "orders": "Ordens",
+    "ordersDesc": "Histórico de negociações e custódia ativa",
+    "ads": "Meus anúncios",
+    "adsDesc": "Console do comerciante e liquidez",
+    "becomeMerchant": "Torne-se comerciante",
+    "becomeMerchantDesc": "A garantia, uma conta de pagamento e sua situação em cada uma",
+    "wallet": "Carteira",
+    "walletDesc": "Saldos e cofres de liquidez",
+    "staking": "Staking",
+    "stakingDesc": "Bloqueie OPEN como comerciante, nó ou árbitro",
+    "arbitrate": "Arbitrar",
+    "arbitrateDesc": "Trabalhe um caso de disputa e profira sua decisão",
+    "earnings": "Ganhos",
+    "earningsDesc": "O que seu nó, oráculo ou gateway ganhou",
+    "settings": "Configurações",
+    "settingsDesc": "Preferências e notificações",
+    "identity": "Identidade",
+    "identityDesc": "Níveis de verificação L0–L3",
+    "reputation": "Reputação",
+    "reputationDesc": "Seu nível e dimensões",
+    "counterparties": "Contrapartes",
+    "counterpartiesDesc": "Com quem você negocia e com que frequência"
+  }
 }

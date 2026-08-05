@@ -1,3 +1,52 @@
 {
-  "$comment": "Translation catalogue for zh-Hans. Empty for now: every key falls back to messages/en.json (see i18n/request.ts) so this locale ships today with the Intl-driven layer (country/currency/number/date names) live and its UI strings in English until translated. Phase B4 fills this in."
+  "$comment": "Translation catalogue for zh-Hans. Any key not present here falls back to messages/en.json (see i18n/request.ts). Proper nouns — OpenFiat, SOL, USDC, USDT, OPEN, L0-L3 — are intentionally left untranslated.",
+  "common": {
+    "connectWallet": "连接钱包",
+    "loading": "加载中…",
+    "retry": "重试"
+  },
+  "languageSwitcher": {
+    "label": "语言",
+    "changeLanguage": "切换语言"
+  },
+  "nav": {
+    "ecosystem": "生态系统",
+    "myAccount": "我的账户",
+    "sectionAccount": "账户",
+    "sectionTrust": "信任",
+    "exchange": "P2P 交易所",
+    "countries": "国家/地区",
+    "disputes": "争议",
+    "governance": "治理",
+    "explorer": "浏览器",
+    "explorerDesc": "搜索地址、交易和协议事件",
+    "network": "网络",
+    "networkDesc": "节点、对等节点和事件流",
+    "providers": "服务商",
+    "providersDesc": "通知、预言机和风险情报",
+    "faucet": "水龙头",
+    "faucetDesc": "获取 SOL、模拟 USDC/USDT 和 OPEN 以在 devnet 上测试",
+    "orders": "订单",
+    "ordersDesc": "交易历史和活跃托管",
+    "ads": "我的广告",
+    "adsDesc": "商户控制台和流动性",
+    "becomeMerchant": "成为商户",
+    "becomeMerchantDesc": "保证金、一个支付账户，以及你在各项上的状态",
+    "wallet": "钱包",
+    "walletDesc": "余额和流动性金库",
+    "staking": "质押",
+    "stakingDesc": "作为商户、节点或仲裁员质押 OPEN",
+    "arbitrate": "仲裁",
+    "arbitrateDesc": "处理争议案件并作出裁决",
+    "earnings": "收益",
+    "earningsDesc": "你的节点、预言机或网关的收入",
+    "settings": "设置",
+    "settingsDesc": "偏好设置和通知",
+    "identity": "身份",
+    "identityDesc": "验证级别 L0–L3",
+    "reputation": "声誉",
+    "reputationDesc": "你的等级和维度",
+    "counterparties": "交易对手",
+    "counterpartiesDesc": "你与谁交易，以及交易的频率"
+  }
 }
