@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Connect wallet",
     "loading": "Loading…",
-    "retry": "Try again"
+    "retry": "Try again",
+    "you": "You"
   },
   "languageSwitcher": {
     "label": "Language",
@@ -2536,5 +2537,10 @@
     "enterHostError": "Enter a host:port address, e.g. p2p.mynode.example:9000",
     "reachableMsg": "✓ reachable — {ms} ms",
     "customFooter": "Sends a real getHealth request to the address above before switching."
+  },
+  "siteMeta": {
+    "title": "OpenFiat — P2P Stablecoin Exchange",
+    "description": "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
+    "twitterDescription": "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by Solana programs; disputes decided by staked arbitrators."
   }
 }

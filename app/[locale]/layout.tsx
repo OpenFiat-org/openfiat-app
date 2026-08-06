@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import "../globals.css";
 import { TopNav } from "@/components/top-nav";
 import { AppWalletProvider } from "@/components/wallet/wallet-provider";
@@ -44,11 +44,11 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "siteMeta" });
   return {
     metadataBase: new URL(SITE_ORIGIN),
-    title: { default: "OpenFiat — P2P Stablecoin Exchange", template: "%s · OpenFiat" },
-    description:
-      "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
+    title: { default: t("title"), template: "%s · OpenFiat" },
+    description: t("description"),
     icons: {
       icon: [
         { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
@@ -64,15 +64,13 @@ export async function generateMetadata({
       siteName: "OpenFiat",
       locale,
       url: localePath("", locale),
-      title: "OpenFiat — P2P Stablecoin Exchange",
-      description:
-        "Buy and sell stablecoins for local fiat on OpenFiat — the decentralized P2P marketplace protocol with escrow enforced by Solana programs.",
+      title: t("title"),
+      description: t("description"),
     },
     twitter: {
       card: "summary_large_image",
-      title: "OpenFiat — P2P Stablecoin Exchange",
-      description:
-        "Buy and sell stablecoins for local fiat, peer to peer. Escrow enforced by Solana programs; disputes decided by staked arbitrators.",
+      title: t("title"),
+      description: t("twitterDescription"),
     },
   };
 }

@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Hubungkan dompet",
     "loading": "Memuat…",
-    "retry": "Coba lagi"
+    "retry": "Coba lagi",
+    "you": "Anda"
   },
   "languageSwitcher": {
     "label": "Bahasa",
@@ -2536,5 +2537,10 @@
     "enterHostError": "Masukkan alamat host:port, mis. p2p.mynode.example:9000",
     "reachableMsg": "✓ terjangkau — {ms} ms",
     "customFooter": "Mengirim permintaan getHealth nyata ke alamat di atas sebelum beralih."
+  },
+  "siteMeta": {
+    "title": "OpenFiat — Bursa Stablecoin P2P",
+    "description": "Beli dan jual stablecoin dengan fiat lokal di OpenFiat — protokol pasar P2P terdesentralisasi dengan escrow yang ditegakkan oleh program Solana.",
+    "twitterDescription": "Beli dan jual stablecoin dengan fiat lokal, peer-to-peer. Escrow ditegakkan oleh program Solana; sengketa diputuskan oleh arbiter yang di-stake."
   }
 }

@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "连接钱包",
     "loading": "加载中…",
-    "retry": "重试"
+    "retry": "重试",
+    "you": "你"
   },
   "languageSwitcher": {
     "label": "语言",
@@ -2536,5 +2537,10 @@
     "enterHostError": "输入 host:port 地址，例如 p2p.mynode.example:9000",
     "reachableMsg": "✓ 可达 — {ms} 毫秒",
     "customFooter": "切换前会向上方地址发送一次真实的 getHealth 请求。"
+  },
+  "siteMeta": {
+    "title": "OpenFiat — 稳定币 P2P 交易所",
+    "description": "在 OpenFiat 上用本地法币买卖稳定币——去中心化的 P2P 市场协议，由 Solana 程序强制托管。",
+    "twitterDescription": "用本地法币点对点买卖稳定币。由 Solana 程序强制托管；争议由质押的仲裁员裁定。"
   }
 }

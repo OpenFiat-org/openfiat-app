@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Connecter le portefeuille",
     "loading": "Chargement…",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "you": "Vous"
   },
   "languageSwitcher": {
     "label": "Langue",
@@ -2536,5 +2537,10 @@
     "enterHostError": "Saisissez une adresse hôte:port, p. ex. p2p.mynode.example:9000",
     "reachableMsg": "✓ joignable — {ms} ms",
     "customFooter": "Envoie une vraie requête getHealth à l'adresse ci-dessus avant de changer."
+  },
+  "siteMeta": {
+    "title": "OpenFiat — Échange P2P de stablecoins",
+    "description": "Achetez et vendez des stablecoins contre du fiat local sur OpenFiat — le protocole de marché P2P décentralisé avec séquestre imposé par des programmes Solana.",
+    "twitterDescription": "Achetez et vendez des stablecoins contre du fiat local, de pair à pair. Séquestre imposé par des programmes Solana ; litiges tranchés par des arbitres avec stake."
   }
 }

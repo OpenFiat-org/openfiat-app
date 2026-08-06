@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { shortPeerId } from "@/lib/peer-id";
 
@@ -25,7 +26,8 @@ export function PeerIdentity({
   isYou?: boolean;
   size?: number;
 }) {
-  if (isYou) return <>You</>;
+  const t = useTranslations("common");
+  if (isYou) return <>{t("you")}</>;
   const short = shortPeerId(peer);
   return (
     <span className="inline-flex items-center gap-2">

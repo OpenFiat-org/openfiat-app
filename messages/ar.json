@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "ربط المحفظة",
     "loading": "جارٍ التحميل…",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "you": "أنت"
   },
   "languageSwitcher": {
     "label": "اللغة",
@@ -2536,5 +2537,10 @@
     "enterHostError": "أدخل عنوان host:port، مثل p2p.mynode.example:9000",
     "reachableMsg": "✓ قابل للوصول — {ms} مِلّي",
     "customFooter": "يرسل طلب getHealth حقيقيًا إلى العنوان أعلاه قبل التبديل."
+  },
+  "siteMeta": {
+    "title": "OpenFiat — تبادل العملات المستقرّة P2P",
+    "description": "اشترِ وبِع العملات المستقرّة مقابل نقود ورقية محلية على OpenFiat — بروتوكول سوق P2P لامركزي بضمان حجز تفرضه برامج Solana.",
+    "twitterDescription": "اشترِ وبِع العملات المستقرّة مقابل نقود ورقية محلية، من نِدٍّ لِنِدٍّ. ضمان بحجز تفرضه برامج Solana؛ النزاعات يبتّها محكّمون مرهونون."
   }
 }

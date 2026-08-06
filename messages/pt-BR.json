@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Conectar carteira",
     "loading": "Carregando…",
-    "retry": "Tentar novamente"
+    "retry": "Tentar novamente",
+    "you": "Você"
   },
   "languageSwitcher": {
     "label": "Idioma",
@@ -2536,5 +2537,10 @@
     "enterHostError": "Digite um endereço host:porta, ex. p2p.mynode.example:9000",
     "reachableMsg": "✓ alcançável — {ms} ms",
     "customFooter": "Envia uma requisição getHealth real ao endereço acima antes de trocar."
+  },
+  "siteMeta": {
+    "title": "OpenFiat — Câmbio P2P de stablecoins",
+    "description": "Compre e venda stablecoins por fiduciário local na OpenFiat — o protocolo de mercado P2P descentralizado com custódia garantida por programas da Solana.",
+    "twitterDescription": "Compre e venda stablecoins por fiduciário local, entre pares. Custódia garantida por programas da Solana; disputas decididas por árbitros com stake."
   }
 }
