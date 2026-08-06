@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 
@@ -8,7 +9,7 @@ import { StatusPill } from "@/components/status-pill";
 import { formatNumber } from "@/lib/format";
 import { fetchStakeAccount, fetchStakingConfig } from "@/lib/live-staking";
 import type { DecodedStakingConfig } from "@/lib/onchain-decode";
-import { STAKING_ROLES, toOpen, unbondingLabel } from "@/lib/staking-roles";
+import { STAKING_ROLES, toOpen } from "@/lib/staking-roles";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
 
 /**
@@ -36,6 +37,14 @@ import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connect
  * does carry per role, takes its place.
  */
 export function StakingRolesPanel() {
+  const t = useTranslations("staking");
+  /** A lock period in words, localized. The config holds 24h, 3d and 7d. */
+  const unbondLabel = (seconds: bigint): string => {
+    const hours = Number(seconds) / 3600;
+    if (hours < 48) return t("unbondHours", { count: Math.round(hours) });
+    const days = hours / 24;
+    return t("unbondDays", { count: Number.isInteger(days) ? days : Number(days.toFixed(1)) });
+  };
   const [config, setConfig] = useState<DecodedStakingConfig | null>(null);
   const [positions, setPositions] = useState<Record<string, number>>({});
   const [wallet, setWallet] = useState<string | null>(null);
@@ -60,9 +69,7 @@ export function StakingRolesPanel() {
         if (cancelled) return;
         setConfig(live);
         if (!live) {
-          setError(
-            "No staking config exists on this cluster — nothing has set the requirements yet.",
-          );
+          setError(t("noConfig"));
         }
 
         if (wallet) {
@@ -82,8 +89,8 @@ export function StakingRolesPanel() {
           setConfig(null);
           setError(
             err instanceof Error
-              ? `Couldn't read the staking config: ${err.message}`
-              : "Couldn't read the staking config from the chain.",
+              ? t("readErrorMsg", { message: err.message })
+              : t("readErrorGeneric"),
           );
         }
       } finally {
@@ -94,14 +101,14 @@ export function StakingRolesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [wallet]);
+  }, [wallet, t]);
 
   return (
     <div>
       {error && <p className="mb-3 text-xs text-amber-300">{error}</p>}
       {!wallet && (
         <p className="mb-3 text-xs text-gray-500">
-          Connect a wallet to see what you have staked for each role.
+          {t("connectPromptRoles")}
         </p>
       )}
       <div className="divide-y divide-white/5 border-y border-white/5">
@@ -114,13 +121,16 @@ export function StakingRolesPanel() {
             <div key={role.key} className="flex flex-wrap items-center gap-x-8 gap-y-3 py-6">
               <div className="min-w-64 flex-1">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-medium text-white">{role.title}</h3>
-                  <StatusPill status={active ? "Online" : "Not started"} />
+                  <h3 className="font-medium text-white">{t(`role.${role.key}.title`)}</h3>
+                  <StatusPill
+                    status={active ? "Online" : "Not started"}
+                    label={active ? t("statusActive") : t("statusNotStarted")}
+                  />
                 </div>
-                <p className="mt-1 max-w-xl text-sm text-gray-400">{role.requirement}</p>
+                <p className="mt-1 max-w-xl text-sm text-gray-400">{t(`role.${role.key}.requirement`)}</p>
               </div>
               <div className="text-sm">
-                <p className="text-xs text-gray-500">Minimum</p>
+                <p className="text-xs text-gray-500">{t("minimum")}</p>
                 <p className="mt-0.5 tabular-nums text-gray-200">
                   {loading
                     ? "…"
@@ -130,7 +140,7 @@ export function StakingRolesPanel() {
                 </p>
               </div>
               <div className="text-sm">
-                <p className="text-xs text-gray-500">You staked</p>
+                <p className="text-xs text-gray-500">{t("youStaked")}</p>
                 <p
                   className={`mt-0.5 tabular-nums ${active ? "text-emerald-300" : "text-gray-500"}`}
                 >
@@ -138,27 +148,25 @@ export function StakingRolesPanel() {
                 </p>
               </div>
               <div className="text-sm">
-                <p className="text-xs text-gray-500">Unbonding</p>
+                <p className="text-xs text-gray-500">{t("unbonding")}</p>
                 <p className="mt-0.5 text-gray-300">
-                  {loading ? "…" : unbonding === undefined ? "—" : unbondingLabel(unbonding)}
+                  {loading ? "…" : unbonding === undefined ? "—" : unbondLabel(unbonding)}
                 </p>
               </div>
               <Link
                 href={`/staking/stake?role=${role.key}`}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
               >
-                Stake
+                {t("stakeBtn")}
               </Link>
             </div>
           );
         })}
       </div>
       <p className="mt-4 max-w-3xl text-xs leading-relaxed text-gray-500">
-        Minimums and unbonding periods are read from the deployed{" "}
-        <code className="text-gray-400">StakingConfig</code> account, one of
-        each per role — they are governance-updatable, so neither is a constant
-        in this app. A dash means the account could not be read; it never means
-        zero.
+        {t.rich("rolesFootnote", {
+          code: (chunks) => <code className="text-gray-400">{chunks}</code>,
+        })}
       </p>
     </div>
   );

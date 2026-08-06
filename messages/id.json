@@ -969,5 +969,90 @@
     "signSend": "Tanda tangani dan kirim token uji",
     "connectFirst": "Hubungkan dompet dulu",
     "rateLimited": "Jumlah tetap per permintaan, dibatasi lajunya per dompet dan per alamat IP — tidak dapat disesuaikan pengguna."
+  },
+  "staking": {
+    "metaTitle": "Staking",
+    "metaDescription": "Ikat OPEN untuk peran protokol Anda — pedagang, operator node, arbiter, atau penyedia layanan.",
+    "heroTitle": "Staking",
+    "heroDescription": "OPEN mengamankan lapisan koordinasi: setiap peran protokol diikat. Stake untuk peran Anda — pedagang, operator node, arbiter, atau salah satu dari empat peran penyedia layanan. Ikatan ditegakkan oleh program openfiat-staking asli di Solana devnet.",
+    "stakeByRole": "Stake berdasarkan peran",
+    "unstakingFootnote": "Membatalkan stake adalah <code>request_unstake</code>, lalu <code>withdraw_unstaked</code> setelah masa jeda peran itu berlalu — periodenya ada di tabel di atas, satu per peran. Imbalan terakumulasi sebagai <code>pending_rewards</code> dan dapat diklaim via <code>claim_rewards</code> — belum terhubung ke antarmuka halaman ini, dan jadwal yang mengisi bidang itu milik cranker off-chain, tidak dipublikasikan di mana pun yang dapat dibaca aplikasi ini.",
+    "stakeMetaTitle": "Stake OPEN",
+    "stakeMetaDescription": "Ikat OPEN untuk sebuah peran protokol — pedagang, operator node, arbiter, atau penyedia layanan.",
+    "stakeHeroTitle": "Stake OPEN",
+    "stakeHeroIntro": "Ikat OPEN untuk peran protokol Anda. Ikatan ditegakkan oleh program staking di Solana.",
+    "noConfig": "Tidak ada konfigurasi staking di klaster ini — belum ada yang menetapkan persyaratannya.",
+    "noConfigShort": "Tidak ada konfigurasi staking di klaster ini.",
+    "readErrorMsg": "Tidak dapat membaca konfigurasi staking: {message}",
+    "readErrorGeneric": "Tidak dapat membaca konfigurasi staking dari chain.",
+    "connectPromptRoles": "Hubungkan dompet untuk melihat apa yang telah Anda stake untuk setiap peran.",
+    "statusActive": "Online",
+    "statusNotStarted": "Belum dimulai",
+    "minimum": "Minimum",
+    "youStaked": "Anda stake",
+    "unbonding": "Unbonding",
+    "stakeBtn": "Stake",
+    "rolesFootnote": "Minimum dan periode unbonding dibaca dari akun <code>StakingConfig</code> yang di-deploy, satu masing-masing per peran — keduanya dapat diperbarui tata kelola, jadi tidak ada yang merupakan konstanta di aplikasi ini. Tanda hubung berarti akun tidak dapat dibaca; ia tidak pernah berarti nol.",
+    "unbondHours": "{count, plural, other {# jam}}",
+    "unbondDays": "{count, plural, other {# hari}}",
+    "signerError": "Koneksi dompet ini tidak dapat menandatangani — hubungkan ulang dengan ekstensi asli.",
+    "noOpenAccount": "Anda belum memiliki akun token OPEN — Anda perlu OPEN di dompet Anda sebelum bisa stake.",
+    "txFailed": "Transaksi gagal atau ditolak.",
+    "stakeBonded": "Stake diikat",
+    "bondedSummary": "{amount} OPEN diikat sebagai {role}. Dikonfirmasi di devnet.",
+    "bondedSummaryNode": "{amount} OPEN diikat sebagai {role} untuk {nodeId}. Dikonfirmasi di devnet.",
+    "backToStaking": "Kembali ke staking",
+    "panelBond": "Ikat OPEN",
+    "roleLabel": "Peran",
+    "minUnread": "minimum belum terbaca",
+    "minValue": "min {n} OPEN",
+    "nodeIdLabel": "ID node yang Anda operasikan",
+    "nodeIdPlaceholder": "mis. node-ke-full-02",
+    "nodeIdNote": "Dicatat di sini hanya untuk tampilan — program staking sendiri tidak memiliki bidang per node.",
+    "amountLabel": "Jumlah (OPEN)",
+    "minBondUnread": "Ikatan minimum belum terbaca",
+    "minBondValue": "Ikatan minimum {n} OPEN",
+    "setMin": "Setel min",
+    "belowMin": "Di bawah minimum {n} OPEN untuk {role}.",
+    "unbondUnread": "Periode unbonding tidak dapat dibaca dari chain.",
+    "unbondCooldown": "Membatalkan stake memulai masa jeda {label} untuk peran ini.",
+    "merchantLockNote": "Ikatan pedagang tetap terkunci selama Anda memiliki iklan aktif, reservasi, atau escrow yang belum diselesaikan.",
+    "connectToStake": "Hubungkan dompet untuk stake.",
+    "readingMin": "Membaca minimum dari chain…",
+    "confirmInWallet": "Konfirmasi di dompet…",
+    "confirmingDevnet": "Mengonfirmasi di devnet…",
+    "bondBtnAmount": "Ikat {amount} OPEN sebagai {role}",
+    "bondBtnNoAmount": "Ikat OPEN sebagai {role}",
+    "realTxNote": "Mengirim transaksi asli ke program openfiat-staking di Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "Ikatan pedagang",
+        "requirement": "Diperlukan untuk memublikasikan iklan. OFS-4100 §4 menskalakan persyaratan dengan posisi yang diambil; program menegakkan batas bawahnya."
+      },
+      "arbitrator": {
+        "title": "Ikatan arbiter",
+        "requirement": "Kelayakan untuk kursi sengketa. Kursi adalah undian per kasus atas stake yang memenuhi syarat, bukan siapa cepat — jadi penghalangnya adalah jumlah stake independen, yang tidak dapat dihargai oleh minimum per dompet mana pun."
+      },
+      "node": {
+        "title": "Stake operator node",
+        "requirement": "Stake terhadap node yang Anda operasikan."
+      },
+      "notification-provider": {
+        "title": "Stake penyedia notifikasi",
+        "requirement": "Stake pendaftaran untuk gateway notifikasi OFS-1500."
+      },
+      "oracle-provider": {
+        "title": "Stake penyedia oracle",
+        "requirement": "Stake pendaftaran untuk oracle harga OFS-1500."
+      },
+      "risk-provider": {
+        "title": "Stake intelijen risiko",
+        "requirement": "Stake pendaftaran untuk layanan intelijen risiko OFS-1500."
+      },
+      "snapshot-provider": {
+        "title": "Stake penyedia snapshot",
+        "requirement": "Stake pendaftaran untuk penyedia snapshot OFS-1500."
+      }
+    }
   }
 }

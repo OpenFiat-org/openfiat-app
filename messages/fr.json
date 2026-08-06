@@ -969,5 +969,90 @@
     "signSend": "Signer et envoyer les jetons de test",
     "connectFirst": "Connectez d'abord un portefeuille",
     "rateLimited": "Montant fixe par demande, limité par portefeuille et par adresse IP — non ajustable par l'utilisateur."
+  },
+  "staking": {
+    "metaTitle": "Staking",
+    "metaDescription": "Déposez de l'OPEN pour votre rôle dans le protocole — commerçant, opérateur de nœud, arbitre ou fournisseur de services.",
+    "heroTitle": "Staking",
+    "heroDescription": "L'OPEN sécurise la couche de coordination : chaque rôle du protocole est cautionné. Stakez pour votre rôle — commerçant, opérateur de nœud, arbitre ou l'un des quatre rôles de fournisseur de services. Les cautions sont appliquées par le vrai programme openfiat-staking sur Solana devnet.",
+    "stakeByRole": "Staker par rôle",
+    "unstakingFootnote": "Le retrait du stake est <code>request_unstake</code>, puis <code>withdraw_unstaked</code> une fois le délai de ce rôle écoulé — les périodes sont dans le tableau ci-dessus, une par rôle. Les récompenses s'accumulent en <code>pending_rewards</code> et sont réclamables via <code>claim_rewards</code> — pas encore relié à l'interface de cette page, et le calendrier qui remplit ce champ est celui d'un cranker hors chaîne, publié nulle part que cette app puisse lire.",
+    "stakeMetaTitle": "Staker de l'OPEN",
+    "stakeMetaDescription": "Déposez de l'OPEN pour un rôle du protocole — commerçant, opérateur de nœud, arbitre ou fournisseur de services.",
+    "stakeHeroTitle": "Staker de l'OPEN",
+    "stakeHeroIntro": "Déposez de l'OPEN pour votre rôle dans le protocole. Les cautions sont appliquées par le programme de staking sur Solana.",
+    "noConfig": "Aucune config de staking n'existe sur ce cluster — rien n'a encore fixé les exigences.",
+    "noConfigShort": "Aucune config de staking n'existe sur ce cluster.",
+    "readErrorMsg": "Impossible de lire la config de staking : {message}",
+    "readErrorGeneric": "Impossible de lire la config de staking depuis la chaîne.",
+    "connectPromptRoles": "Connectez un portefeuille pour voir ce que vous avez staké pour chaque rôle.",
+    "statusActive": "En ligne",
+    "statusNotStarted": "Non démarré",
+    "minimum": "Minimum",
+    "youStaked": "Vous avez staké",
+    "unbonding": "Déliaison",
+    "stakeBtn": "Staker",
+    "rolesFootnote": "Les minimums et les périodes de déliaison sont lus depuis le compte <code>StakingConfig</code> déployé, un de chaque par rôle — ils sont modifiables par la gouvernance, donc aucun n'est une constante dans cette app. Un tiret signifie que le compte n'a pas pu être lu ; il ne signifie jamais zéro.",
+    "unbondHours": "{count, plural, one {# heure} other {# heures}}",
+    "unbondDays": "{count, plural, one {# jour} other {# jours}}",
+    "signerError": "Cette connexion de portefeuille ne peut pas signer — reconnectez-vous avec une vraie extension.",
+    "noOpenAccount": "Vous n'avez pas encore de compte de jetons OPEN — il vous faut de l'OPEN dans votre portefeuille avant de pouvoir staker.",
+    "txFailed": "La transaction a échoué ou a été rejetée.",
+    "stakeBonded": "Stake déposé",
+    "bondedSummary": "{amount} OPEN déposés en tant que {role}. Confirmé sur devnet.",
+    "bondedSummaryNode": "{amount} OPEN déposés en tant que {role} pour {nodeId}. Confirmé sur devnet.",
+    "backToStaking": "Retour au staking",
+    "panelBond": "Déposer de l'OPEN",
+    "roleLabel": "Rôle",
+    "minUnread": "minimum non lu",
+    "minValue": "min {n} OPEN",
+    "nodeIdLabel": "ID du nœud que vous exploitez",
+    "nodeIdPlaceholder": "p. ex. node-ke-full-02",
+    "nodeIdNote": "Enregistré ici pour l'affichage uniquement — le programme de staking lui-même n'a pas de champ par nœud.",
+    "amountLabel": "Montant (OPEN)",
+    "minBondUnread": "Caution minimale non lue",
+    "minBondValue": "Caution minimale {n} OPEN",
+    "setMin": "Mettre le min",
+    "belowMin": "En dessous du minimum de {n} OPEN pour {role}.",
+    "unbondUnread": "La période de déliaison n'a pas pu être lue depuis la chaîne.",
+    "unbondCooldown": "Le retrait du stake démarre un délai de {label} pour ce rôle.",
+    "merchantLockNote": "Les cautions de commerçant restent verrouillées tant que vous avez des annonces actives, des réservations ou un séquestre non réglé.",
+    "connectToStake": "Connectez un portefeuille pour staker.",
+    "readingMin": "Lecture du minimum depuis la chaîne…",
+    "confirmInWallet": "Confirmez dans le portefeuille…",
+    "confirmingDevnet": "Confirmation sur devnet…",
+    "bondBtnAmount": "Déposer {amount} OPEN en tant que {role}",
+    "bondBtnNoAmount": "Déposer de l'OPEN en tant que {role}",
+    "realTxNote": "Soumet une vraie transaction au programme openfiat-staking sur Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "Caution de commerçant",
+        "requirement": "Requise pour publier des annonces. OFS-4100 §4 fait varier l'exigence avec la position prise ; le programme applique le plancher."
+      },
+      "arbitrator": {
+        "title": "Caution d'arbitre",
+        "requirement": "Éligibilité aux sièges de litige. Les sièges sont un tirage par affaire sur les stakes qualifiants, pas au premier arrivé — la barrière est donc le nombre de stakes indépendants, qu'aucun minimum par portefeuille ne peut valoriser."
+      },
+      "node": {
+        "title": "Stake d'opérateur de nœud",
+        "requirement": "Stakez contre un nœud que vous exploitez."
+      },
+      "notification-provider": {
+        "title": "Stake de fournisseur de notifications",
+        "requirement": "Stake d'enregistrement pour une passerelle de notification OFS-1500."
+      },
+      "oracle-provider": {
+        "title": "Stake de fournisseur d'oracle",
+        "requirement": "Stake d'enregistrement pour un oracle de prix OFS-1500."
+      },
+      "risk-provider": {
+        "title": "Stake de renseignement de risque",
+        "requirement": "Stake d'enregistrement pour un service de renseignement de risque OFS-1500."
+      },
+      "snapshot-provider": {
+        "title": "Stake de fournisseur de snapshots",
+        "requirement": "Stake d'enregistrement pour un fournisseur de snapshots OFS-1500."
+      }
+    }
   }
 }

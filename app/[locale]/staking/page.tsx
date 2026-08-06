@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { StakingRolesPanel } from "@/components/staking/staking-roles-panel";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Staking",
-  description: "Bond OPEN for your protocol role — merchant, node operator, arbitrator, or service provider.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "staking" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 export default function StakingPage() {
+  const t = useTranslations("staking");
   return (
     <section>
       <PageHero
         variant="bloom"
-        title="Staking"
-        description="OPEN secures the coordination layer: every protocol role is bonded. Stake for your role — merchant, node operator, arbitrator, or one of the four service-provider roles. Bonds are enforced by the real openfiat-staking program on Solana devnet."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
       {/*
         * A metric strip stating "Unstake cooldown — 7 days" used to sit
@@ -32,19 +40,15 @@ export default function StakingPage() {
         * minimum.
         */}
 
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">Stake by role</h2>
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">{t("stakeByRole")}</h2>
       <div className="mt-3">
         <StakingRolesPanel />
       </div>
 
       <p className="mt-6 border-l-2 border-white/15 px-4 py-2 text-sm text-gray-400">
-        Unstaking is <code className="text-gray-300">request_unstake</code>, then{" "}
-        <code className="text-gray-300">withdraw_unstaked</code> once that role&apos;s cooldown
-        elapses — the periods are in the table above, one per role. Rewards accrue as{" "}
-        <code className="text-gray-300">pending_rewards</code> and are claimable via{" "}
-        <code className="text-gray-300">claim_rewards</code> — not yet wired to this page&apos;s UI,
-        and the schedule that fills that field is an off-chain cranker&apos;s, published nowhere this
-        app can read.
+        {t.rich("unstakingFootnote", {
+          code: (chunks) => <code className="text-gray-300">{chunks}</code>,
+        })}
       </p>
     </section>
   );

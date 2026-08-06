@@ -969,5 +969,90 @@
     "signSend": "Assinar e enviar tokens de teste",
     "connectFirst": "Conecte uma carteira primeiro",
     "rateLimited": "Quantidade fixa por solicitação, com limite de taxa por carteira e por endereço IP — não ajustável pelo usuário."
+  },
+  "staking": {
+    "metaTitle": "Staking",
+    "metaDescription": "Faça bond de OPEN para o seu papel no protocolo — comerciante, operador de nó, árbitro ou provedor de serviços.",
+    "heroTitle": "Staking",
+    "heroDescription": "OPEN protege a camada de coordenação: todo papel do protocolo exige um bond. Faça stake para o seu papel — comerciante, operador de nó, árbitro ou um dos quatro papéis de provedor de serviços. Os bonds são impostos pelo programa real openfiat-staking na Solana devnet.",
+    "stakeByRole": "Fazer stake por papel",
+    "unstakingFootnote": "Desfazer o stake é <code>request_unstake</code>, depois <code>withdraw_unstaked</code> quando o cooldown daquele papel terminar — os períodos estão na tabela acima, um por papel. As recompensas acumulam como <code>pending_rewards</code> e podem ser resgatadas via <code>claim_rewards</code> — ainda não conectado à interface desta página, e o cronograma que preenche esse campo é de um cranker off-chain, publicado em nenhum lugar que este app possa ler.",
+    "stakeMetaTitle": "Fazer stake de OPEN",
+    "stakeMetaDescription": "Faça bond de OPEN para um papel do protocolo — comerciante, operador de nó, árbitro ou provedor de serviços.",
+    "stakeHeroTitle": "Fazer stake de OPEN",
+    "stakeHeroIntro": "Faça bond de OPEN para o seu papel no protocolo. Os bonds são impostos pelo programa de staking na Solana.",
+    "noConfig": "Nenhuma config de staking existe neste cluster — nada definiu os requisitos ainda.",
+    "noConfigShort": "Nenhuma config de staking existe neste cluster.",
+    "readErrorMsg": "Não foi possível ler a config de staking: {message}",
+    "readErrorGeneric": "Não foi possível ler a config de staking a partir da chain.",
+    "connectPromptRoles": "Conecte uma carteira para ver o que você fez stake em cada papel.",
+    "statusActive": "Online",
+    "statusNotStarted": "Não iniciado",
+    "minimum": "Mínimo",
+    "youStaked": "Você fez stake",
+    "unbonding": "Unbonding",
+    "stakeBtn": "Fazer stake",
+    "rolesFootnote": "Os mínimos e os períodos de unbonding são lidos da conta <code>StakingConfig</code> implantada, um de cada por papel — são atualizáveis por governança, então nenhum é uma constante neste app. Um traço significa que a conta não pôde ser lida; nunca significa zero.",
+    "unbondHours": "{count, plural, one {# hora} other {# horas}}",
+    "unbondDays": "{count, plural, one {# dia} other {# dias}}",
+    "signerError": "Esta conexão de carteira não pode assinar — reconecte com uma extensão real.",
+    "noOpenAccount": "Você ainda não tem uma conta de token OPEN — você precisa de OPEN na sua carteira antes de fazer stake.",
+    "txFailed": "A transação falhou ou foi rejeitada.",
+    "stakeBonded": "Stake feito",
+    "bondedSummary": "{amount} OPEN em bond como {role}. Confirmado na devnet.",
+    "bondedSummaryNode": "{amount} OPEN em bond como {role} para {nodeId}. Confirmado na devnet.",
+    "backToStaking": "Voltar ao staking",
+    "panelBond": "Fazer bond de OPEN",
+    "roleLabel": "Papel",
+    "minUnread": "mínimo não lido",
+    "minValue": "mín {n} OPEN",
+    "nodeIdLabel": "ID do nó que você opera",
+    "nodeIdPlaceholder": "ex.: node-ke-full-02",
+    "nodeIdNote": "Registrado aqui apenas para exibição — o programa de staking em si não tem um campo por nó.",
+    "amountLabel": "Quantia (OPEN)",
+    "minBondUnread": "Bond mínimo não lido",
+    "minBondValue": "Bond mínimo {n} OPEN",
+    "setMin": "Definir mín",
+    "belowMin": "Abaixo do mínimo de {n} OPEN para {role}.",
+    "unbondUnread": "O período de unbonding não pôde ser lido da chain.",
+    "unbondCooldown": "Desfazer o stake inicia um cooldown de {label} para este papel.",
+    "merchantLockNote": "Bonds de comerciante ficam bloqueados enquanto você tiver anúncios ativos, reservas ou custódia não liquidada.",
+    "connectToStake": "Conecte uma carteira para fazer stake.",
+    "readingMin": "Lendo o mínimo da chain…",
+    "confirmInWallet": "Confirme na carteira…",
+    "confirmingDevnet": "Confirmando na devnet…",
+    "bondBtnAmount": "Fazer bond de {amount} OPEN como {role}",
+    "bondBtnNoAmount": "Fazer bond de OPEN como {role}",
+    "realTxNote": "Envia uma transação real ao programa openfiat-staking na Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "Bond de comerciante",
+        "requirement": "Necessário para publicar anúncios. OFS-4100 §4 escala o requisito com a posição tomada; o programa impõe o piso."
+      },
+      "arbitrator": {
+        "title": "Bond de árbitro",
+        "requirement": "Elegibilidade para assentos de disputa. Os assentos são um sorteio por caso sobre stakes qualificados, não por ordem de chegada — então a barreira é o número de stakes independentes, que nenhum mínimo por carteira consegue precificar."
+      },
+      "node": {
+        "title": "Stake de operador de nó",
+        "requirement": "Faça stake contra um nó que você opera."
+      },
+      "notification-provider": {
+        "title": "Stake de provedor de notificações",
+        "requirement": "Stake de registro para um gateway de notificação OFS-1500."
+      },
+      "oracle-provider": {
+        "title": "Stake de provedor de oráculo",
+        "requirement": "Stake de registro para um oráculo de preços OFS-1500."
+      },
+      "risk-provider": {
+        "title": "Stake de inteligência de risco",
+        "requirement": "Stake de registro para um serviço de inteligência de risco OFS-1500."
+      },
+      "snapshot-provider": {
+        "title": "Stake de provedor de snapshots",
+        "requirement": "Stake de registro para um provedor de snapshots OFS-1500."
+      }
+    }
   }
 }

@@ -969,5 +969,90 @@
     "signSend": "وقّع وأرسِل رموز الاختبار",
     "connectFirst": "اربط محفظة أولًا",
     "rateLimited": "مبلغ ثابت لكل طلب، بحدّ معدّل لكل محفظة ولكل عنوان IP — غير قابل للتعديل من المستخدم."
+  },
+  "staking": {
+    "metaTitle": "الرهن",
+    "metaDescription": "ارهَن OPEN لدورك في البروتوكول — تاجر أو مُشغّل عقدة أو محكّم أو مزوّد خدمة.",
+    "heroTitle": "الرهن",
+    "heroDescription": "يؤمّن OPEN طبقة التنسيق: كل دور في البروتوكول مرهون. ارهَن لدورك — تاجر أو مُشغّل عقدة أو محكّم أو أحد أدوار مزوّدي الخدمة الأربعة. تُفرَض الرهون عبر برنامج openfiat-staking الحقيقي على Solana devnet.",
+    "stakeByRole": "الرهن حسب الدور",
+    "unstakingFootnote": "إلغاء الرهن هو <code>request_unstake</code>، ثم <code>withdraw_unstaked</code> بعد انقضاء فترة تهدئة ذلك الدور — الفترات في الجدول أعلاه، واحدة لكل دور. تتراكم المكافآت كـ <code>pending_rewards</code> ويمكن المطالبة بها عبر <code>claim_rewards</code> — لم تُوصَل بعد بواجهة هذه الصفحة، والجدول الذي يملأ ذلك الحقل يخصّ cranker خارج السلسلة، ولم يُنشَر في أي مكان يمكن لهذا التطبيق قراءته.",
+    "stakeMetaTitle": "ارهَن OPEN",
+    "stakeMetaDescription": "ارهَن OPEN لدور في البروتوكول — تاجر أو مُشغّل عقدة أو محكّم أو مزوّد خدمة.",
+    "stakeHeroTitle": "ارهَن OPEN",
+    "stakeHeroIntro": "ارهَن OPEN لدورك في البروتوكول. تُفرَض الرهون عبر برنامج الرهن على Solana.",
+    "noConfig": "لا توجد إعدادات رهن على هذا العنقود — لم يضبط أحدٌ المتطلّبات بعد.",
+    "noConfigShort": "لا توجد إعدادات رهن على هذا العنقود.",
+    "readErrorMsg": "تعذّرت قراءة إعدادات الرهن: {message}",
+    "readErrorGeneric": "تعذّرت قراءة إعدادات الرهن من السلسلة.",
+    "connectPromptRoles": "اربط محفظة لترى ما رهنته لكل دور.",
+    "statusActive": "متصل",
+    "statusNotStarted": "لم يبدأ",
+    "minimum": "الحد الأدنى",
+    "youStaked": "رهنتَ",
+    "unbonding": "فكّ الرهن",
+    "stakeBtn": "ارهَن",
+    "rolesFootnote": "تُقرأ الحدود الدنيا وفترات فكّ الرهن من حساب <code>StakingConfig</code> المنشور، واحد من كلٍّ لكل دور — وهي قابلة للتحديث بالحوكمة، فلا شيء منها ثابت في هذا التطبيق. الشرطة تعني تعذّر قراءة الحساب؛ ولا تعني صفرًا أبدًا.",
+    "unbondHours": "{count, plural, zero {# ساعة} one {ساعة واحدة} two {ساعتان} few {# ساعات} many {# ساعة} other {# ساعة}}",
+    "unbondDays": "{count, plural, zero {# يوم} one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+    "signerError": "لا يمكن لاتصال المحفظة هذا التوقيع — أعد الربط بامتداد حقيقي.",
+    "noOpenAccount": "ليس لديك حساب رمز OPEN بعد — تحتاج OPEN في محفظتك قبل أن ترهَن.",
+    "txFailed": "فشلت المعاملة أو رُفِضت.",
+    "stakeBonded": "تم الرهن",
+    "bondedSummary": "رُهِن {amount} OPEN بصفتك {role}. مؤكَّد على devnet.",
+    "bondedSummaryNode": "رُهِن {amount} OPEN بصفتك {role} من أجل {nodeId}. مؤكَّد على devnet.",
+    "backToStaking": "العودة إلى الرهن",
+    "panelBond": "ارهَن OPEN",
+    "roleLabel": "الدور",
+    "minUnread": "الحد الأدنى غير مقروء",
+    "minValue": "الأدنى {n} OPEN",
+    "nodeIdLabel": "معرّف العقدة التي تُشغّلها",
+    "nodeIdPlaceholder": "مثلاً node-ke-full-02",
+    "nodeIdNote": "مُسجَّل هنا للعرض فقط — برنامج الرهن نفسه لا يملك حقلًا لكل عقدة.",
+    "amountLabel": "المبلغ (OPEN)",
+    "minBondUnread": "الرهن الأدنى غير مقروء",
+    "minBondValue": "الرهن الأدنى {n} OPEN",
+    "setMin": "ضع الأدنى",
+    "belowMin": "دون الحد الأدنى {n} OPEN لـ {role}.",
+    "unbondUnread": "تعذّرت قراءة فترة فكّ الرهن من السلسلة.",
+    "unbondCooldown": "يبدأ إلغاء الرهن فترة تهدئة قدرها {label} لهذا الدور.",
+    "merchantLockNote": "تبقى رهون التاجر مقفلة ما دام لديك إعلانات نشِطة أو حجوزات أو ضمان غير مُسوّى.",
+    "connectToStake": "اربط محفظة للرهن.",
+    "readingMin": "جارٍ قراءة الحد الأدنى من السلسلة…",
+    "confirmInWallet": "أكّد في المحفظة…",
+    "confirmingDevnet": "جارٍ التأكيد على devnet…",
+    "bondBtnAmount": "ارهَن {amount} OPEN بصفتك {role}",
+    "bondBtnNoAmount": "ارهَن OPEN بصفتك {role}",
+    "realTxNote": "يرسل معاملة حقيقية إلى برنامج openfiat-staking على Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "رهن التاجر",
+        "requirement": "مطلوب لنشر الإعلانات. يقيس OFS-4100 §4 المتطلّب مع الحجم المتّخَذ؛ ويفرض البرنامج الحد الأدنى."
+      },
+      "arbitrator": {
+        "title": "رهن المحكّم",
+        "requirement": "الأهلية لمقاعد النزاعات. المقاعد سحب لكل قضية على الرهون المؤهّلة، لا وفق الأسبقية — فالحاجز هو عدد الرهون المستقلّة، وهو ما لا يستطيع أي حد أدنى لكل محفظة تسعيره."
+      },
+      "node": {
+        "title": "رهن مُشغّل العقدة",
+        "requirement": "ارهَن مقابل عقدة تُشغّلها."
+      },
+      "notification-provider": {
+        "title": "رهن مزوّد الإشعارات",
+        "requirement": "رهن تسجيل لبوابة إشعارات OFS-1500."
+      },
+      "oracle-provider": {
+        "title": "رهن مزوّد الأوراكل",
+        "requirement": "رهن تسجيل لأوراكل أسعار OFS-1500."
+      },
+      "risk-provider": {
+        "title": "رهن معلومات المخاطر",
+        "requirement": "رهن تسجيل لخدمة معلومات مخاطر OFS-1500."
+      },
+      "snapshot-provider": {
+        "title": "رهن مزوّد اللقطات",
+        "requirement": "رهن تسجيل لمزوّد لقطات OFS-1500."
+      }
+    }
   }
 }

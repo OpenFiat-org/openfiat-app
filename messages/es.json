@@ -969,5 +969,90 @@
     "signSend": "Firmar y enviar tokens de prueba",
     "connectFirst": "Conecta una billetera primero",
     "rateLimited": "Cantidad fija por solicitud, con límite de frecuencia por billetera y por dirección IP — no ajustable por el usuario."
+  },
+  "staking": {
+    "metaTitle": "Staking",
+    "metaDescription": "Deposita OPEN para tu rol del protocolo: comerciante, operador de nodo, árbitro o proveedor de servicios.",
+    "heroTitle": "Staking",
+    "heroDescription": "OPEN asegura la capa de coordinación: cada rol del protocolo requiere un depósito. Deposita para tu rol: comerciante, operador de nodo, árbitro o uno de los cuatro roles de proveedor de servicios. Los depósitos los hace cumplir el programa real openfiat-staking en Solana devnet.",
+    "stakeByRole": "Depositar por rol",
+    "unstakingFootnote": "Retirar el depósito es <code>request_unstake</code> y luego <code>withdraw_unstaked</code> una vez transcurrido el enfriamiento de ese rol — los periodos están en la tabla de arriba, uno por rol. Las recompensas se acumulan como <code>pending_rewards</code> y se reclaman con <code>claim_rewards</code> — aún no conectado a la interfaz de esta página, y el calendario que llena ese campo es el de un cranker fuera de la cadena, publicado en ningún lugar que esta app pueda leer.",
+    "stakeMetaTitle": "Depositar OPEN",
+    "stakeMetaDescription": "Deposita OPEN para un rol del protocolo: comerciante, operador de nodo, árbitro o proveedor de servicios.",
+    "stakeHeroTitle": "Depositar OPEN",
+    "stakeHeroIntro": "Deposita OPEN para tu rol del protocolo. Los depósitos los hace cumplir el programa de staking en Solana.",
+    "noConfig": "No existe configuración de staking en este clúster — aún nada ha fijado los requisitos.",
+    "noConfigShort": "No existe configuración de staking en este clúster.",
+    "readErrorMsg": "No se pudo leer la configuración de staking: {message}",
+    "readErrorGeneric": "No se pudo leer la configuración de staking desde la cadena.",
+    "connectPromptRoles": "Conecta una billetera para ver lo que has depositado en cada rol.",
+    "statusActive": "En línea",
+    "statusNotStarted": "Sin iniciar",
+    "minimum": "Mínimo",
+    "youStaked": "Depositaste",
+    "unbonding": "Desvinculación",
+    "stakeBtn": "Depositar",
+    "rolesFootnote": "Los mínimos y los periodos de desvinculación se leen de la cuenta <code>StakingConfig</code> desplegada, uno de cada por rol — son actualizables por gobernanza, así que ninguno es una constante en esta app. Un guion significa que la cuenta no se pudo leer; nunca significa cero.",
+    "unbondHours": "{count, plural, one {# hora} other {# horas}}",
+    "unbondDays": "{count, plural, one {# día} other {# días}}",
+    "signerError": "Esta conexión de billetera no puede firmar — reconecta con una extensión real.",
+    "noOpenAccount": "Aún no tienes una cuenta de token OPEN — necesitas OPEN en tu billetera antes de poder depositar.",
+    "txFailed": "La transacción falló o fue rechazada.",
+    "stakeBonded": "Depósito realizado",
+    "bondedSummary": "{amount} OPEN depositados como {role}. Confirmado en devnet.",
+    "bondedSummaryNode": "{amount} OPEN depositados como {role} para {nodeId}. Confirmado en devnet.",
+    "backToStaking": "Volver al staking",
+    "panelBond": "Depositar OPEN",
+    "roleLabel": "Rol",
+    "minUnread": "mínimo no leído",
+    "minValue": "mín {n} OPEN",
+    "nodeIdLabel": "ID del nodo que operas",
+    "nodeIdPlaceholder": "p. ej. node-ke-full-02",
+    "nodeIdNote": "Registrado aquí solo para mostrar — el programa de staking en sí no tiene un campo por nodo.",
+    "amountLabel": "Cantidad (OPEN)",
+    "minBondUnread": "Depósito mínimo no leído",
+    "minBondValue": "Depósito mínimo {n} OPEN",
+    "setMin": "Poner mín",
+    "belowMin": "Por debajo del mínimo de {n} OPEN para {role}.",
+    "unbondUnread": "No se pudo leer el periodo de desvinculación desde la cadena.",
+    "unbondCooldown": "Retirar el depósito inicia un enfriamiento de {label} para este rol.",
+    "merchantLockNote": "Los depósitos de comerciante quedan bloqueados mientras tengas anuncios activos, reservas o custodia sin liquidar.",
+    "connectToStake": "Conecta una billetera para depositar.",
+    "readingMin": "Leyendo el mínimo desde la cadena…",
+    "confirmInWallet": "Confirma en la billetera…",
+    "confirmingDevnet": "Confirmando en devnet…",
+    "bondBtnAmount": "Depositar {amount} OPEN como {role}",
+    "bondBtnNoAmount": "Depositar OPEN como {role}",
+    "realTxNote": "Envía una transacción real al programa openfiat-staking en Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "Depósito de comerciante",
+        "requirement": "Requerido para publicar anuncios. OFS-4100 §4 escala el requisito con la posición tomada; el programa hace cumplir el mínimo."
+      },
+      "arbitrator": {
+        "title": "Depósito de árbitro",
+        "requirement": "Elegibilidad para asientos de disputa. Los asientos son un sorteo por caso sobre depósitos que califican, no por orden de llegada — así que la barrera es el número de depósitos independientes, que ningún mínimo por billetera puede fijar."
+      },
+      "node": {
+        "title": "Depósito de operador de nodo",
+        "requirement": "Deposita contra un nodo que operas."
+      },
+      "notification-provider": {
+        "title": "Depósito de proveedor de notificaciones",
+        "requirement": "Depósito de registro para una puerta de enlace de notificaciones OFS-1500."
+      },
+      "oracle-provider": {
+        "title": "Depósito de proveedor de oráculo",
+        "requirement": "Depósito de registro para un oráculo de precios OFS-1500."
+      },
+      "risk-provider": {
+        "title": "Depósito de inteligencia de riesgo",
+        "requirement": "Depósito de registro para un servicio de inteligencia de riesgo OFS-1500."
+      },
+      "snapshot-provider": {
+        "title": "Depósito de proveedor de snapshots",
+        "requirement": "Depósito de registro para un proveedor de snapshots OFS-1500."
+      }
+    }
   }
 }

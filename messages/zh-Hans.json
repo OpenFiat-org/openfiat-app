@@ -969,5 +969,90 @@
     "signSend": "签名并发送测试代币",
     "connectFirst": "请先连接钱包",
     "rateLimited": "每次请求金额固定，按钱包和 IP 地址限速——不可由用户调整。"
+  },
+  "staking": {
+    "metaTitle": "质押",
+    "metaDescription": "为你的协议角色质押 OPEN——商家、节点运营者、仲裁员或服务提供方。",
+    "heroTitle": "质押",
+    "heroDescription": "OPEN 保障协调层的安全：每个协议角色都需质押。为你的角色质押——商家、节点运营者、仲裁员或四种服务提供方角色之一。质押由 Solana devnet 上真实的 openfiat-staking 程序强制执行。",
+    "stakeByRole": "按角色质押",
+    "unstakingFootnote": "取消质押是 <code>request_unstake</code>，然后在该角色的冷却期结束后执行 <code>withdraw_unstaked</code>——各周期见上表，每个角色一个。奖励以 <code>pending_rewards</code> 累积，并可通过 <code>claim_rewards</code> 领取——尚未接入本页面的界面，而填充该字段的时间表由链下 cranker 掌管，未在本应用可读取的任何地方发布。",
+    "stakeMetaTitle": "质押 OPEN",
+    "stakeMetaDescription": "为某个协议角色质押 OPEN——商家、节点运营者、仲裁员或服务提供方。",
+    "stakeHeroTitle": "质押 OPEN",
+    "stakeHeroIntro": "为你的协议角色质押 OPEN。质押由 Solana 上的质押程序强制执行。",
+    "noConfig": "此集群上不存在质押配置——尚无任何东西设定要求。",
+    "noConfigShort": "此集群上不存在质押配置。",
+    "readErrorMsg": "无法读取质押配置：{message}",
+    "readErrorGeneric": "无法从链上读取质押配置。",
+    "connectPromptRoles": "连接钱包以查看你为每个角色质押了多少。",
+    "statusActive": "在线",
+    "statusNotStarted": "未开始",
+    "minimum": "最低",
+    "youStaked": "你已质押",
+    "unbonding": "解绑",
+    "stakeBtn": "质押",
+    "rolesFootnote": "最低额和解绑周期从已部署的 <code>StakingConfig</code> 账户读取，每个角色各一个——它们可由治理更新，因此在本应用中都不是常量。破折号表示无法读取该账户；它绝不表示零。",
+    "unbondHours": "{count, plural, other {# 小时}}",
+    "unbondDays": "{count, plural, other {# 天}}",
+    "signerError": "此钱包连接无法签名——请用真实扩展重新连接。",
+    "noOpenAccount": "你还没有 OPEN 代币账户——质押前你的钱包中需要有 OPEN。",
+    "txFailed": "交易失败或被拒绝。",
+    "stakeBonded": "质押已完成",
+    "bondedSummary": "已质押 {amount} OPEN 作为{role}。已在 devnet 上确认。",
+    "bondedSummaryNode": "已质押 {amount} OPEN 作为{role}，用于 {nodeId}。已在 devnet 上确认。",
+    "backToStaking": "返回质押",
+    "panelBond": "质押 OPEN",
+    "roleLabel": "角色",
+    "minUnread": "最低额未读取",
+    "minValue": "最低 {n} OPEN",
+    "nodeIdLabel": "你运营的节点 ID",
+    "nodeIdPlaceholder": "例如 node-ke-full-02",
+    "nodeIdNote": "此处仅用于显示记录——质押程序本身没有按节点的字段。",
+    "amountLabel": "数量（OPEN）",
+    "minBondUnread": "最低质押额未读取",
+    "minBondValue": "最低质押额 {n} OPEN",
+    "setMin": "设为最低",
+    "belowMin": "低于{role}的 {n} OPEN 最低额。",
+    "unbondUnread": "无法从链上读取解绑周期。",
+    "unbondCooldown": "取消质押将为该角色启动 {label} 的冷却期。",
+    "merchantLockNote": "当你有活跃广告、预订或未结算托管时，商家质押将保持锁定。",
+    "connectToStake": "连接钱包以质押。",
+    "readingMin": "正在从链上读取最低额…",
+    "confirmInWallet": "在钱包中确认…",
+    "confirmingDevnet": "正在 devnet 上确认…",
+    "bondBtnAmount": "质押 {amount} OPEN 作为{role}",
+    "bondBtnNoAmount": "质押 OPEN 作为{role}",
+    "realTxNote": "向 Solana devnet 上的 openfiat-staking 程序提交一笔真实交易。",
+    "role": {
+      "merchant": {
+        "title": "商家质押",
+        "requirement": "发布广告所必需。OFS-4100 §4 使要求随所持仓位而变；程序强制执行下限。"
+      },
+      "arbitrator": {
+        "title": "仲裁员质押",
+        "requirement": "争议席位的资格。席位是对合格质押按案抽取，而非先到先得——因此门槛在于独立质押的数量，这是任何按钱包的最低额都无法定价的。"
+      },
+      "node": {
+        "title": "节点运营者质押",
+        "requirement": "针对你运营的节点进行质押。"
+      },
+      "notification-provider": {
+        "title": "通知提供方质押",
+        "requirement": "用于 OFS-1500 通知网关的注册质押。"
+      },
+      "oracle-provider": {
+        "title": "预言机提供方质押",
+        "requirement": "用于 OFS-1500 价格预言机的注册质押。"
+      },
+      "risk-provider": {
+        "title": "风险情报质押",
+        "requirement": "用于 OFS-1500 风险情报服务的注册质押。"
+      },
+      "snapshot-provider": {
+        "title": "快照提供方质押",
+        "requirement": "用于 OFS-1500 快照提供方的注册质押。"
+      }
+    }
   }
 }

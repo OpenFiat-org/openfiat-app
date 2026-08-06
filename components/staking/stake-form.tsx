@@ -1,10 +1,11 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { STAKING_ROLES, roleByKey, toOpen, unbondingLabel } from "@/lib/staking-roles";
+import { STAKING_ROLES, roleByKey, toOpen } from "@/lib/staking-roles";
 import { formatNumber, shortSig } from "@/lib/format";
 import { Panel } from "@/components/panel";
 import {
@@ -49,6 +50,14 @@ type SubmitState =
  * a transaction the chain rejects, or a stake the user did not need to make.
  */
 export function StakeForm({ initialRole }: { initialRole?: string }) {
+  const t = useTranslations("staking");
+  /** A lock period in words, localized. */
+  const unbondLabel = (seconds: bigint): string => {
+    const hours = Number(seconds) / 3600;
+    if (hours < 48) return t("unbondHours", { count: Math.round(hours) });
+    const days = hours / 24;
+    return t("unbondDays", { count: Number.isInteger(days) ? days : Number(days.toFixed(1)) });
+  };
   const [roleKey, setRoleKey] = useState(roleByKey(initialRole)?.key ?? "merchant");
   const [amount, setAmount] = useState("");
   const [nodeId, setNodeId] = useState("");
@@ -71,13 +80,13 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
         const live = await fetchStakingConfig();
         if (cancelled) return;
         setConfig(live);
-        if (!live) setConfigError("No staking config exists on this cluster.");
+        if (!live) setConfigError(t("noConfigShort"));
       } catch (err) {
         if (!cancelled) {
           setConfigError(
             err instanceof Error
-              ? `Couldn't read the staking config: ${err.message}`
-              : "Couldn't read the staking config from the chain.",
+              ? t("readErrorMsg", { message: err.message })
+              : t("readErrorGeneric"),
           );
         }
       }
@@ -85,7 +94,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const role = roleByKey(roleKey)!;
   const minStakeRaw = config?.minStakeByRole[role.onchain];
@@ -104,7 +113,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
     if (!wallet) return;
     const provider = currentSigner(wallet);
     if (!provider) {
-      setSubmit({ phase: "error", message: "This wallet connection can't sign — reconnect with a real extension." });
+      setSubmit({ phase: "error", message: t("signerError") });
       return;
     }
 
@@ -119,7 +128,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
       if (!fromAccount) {
         setSubmit({
           phase: "error",
-          message: "You don't have an OPEN token account yet — you need OPEN in your wallet before you can stake.",
+          message: t("noOpenAccount"),
         });
         return;
       }
@@ -140,9 +149,9 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
       const { signature } = await provider.signAndSendTransaction(transaction);
       setSubmit({ phase: "confirming", signature });
       await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-      setSubmit({ phase: "done", signature, amount: value, role: role.title });
+      setSubmit({ phase: "done", signature, amount: value, role: role.key });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Transaction failed or was rejected.";
+      const message = err instanceof Error ? err.message : t("txFailed");
       setSubmit({ phase: "error", message });
     }
   }
@@ -152,10 +161,18 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
       <Panel>
         <div className="px-4 py-14 text-center">
           <p className="text-2xl text-emerald-400">✓</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">Stake bonded</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">{t("stakeBonded")}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {formatNumber(submit.amount, 0)} OPEN bonded as {submit.role}
-            {role.key === "node" ? ` for ${nodeId}` : ""}. Confirmed on devnet.
+            {role.key === "node"
+              ? t("bondedSummaryNode", {
+                  amount: formatNumber(submit.amount, 0),
+                  role: t(`role.${role.key}.title`),
+                  nodeId,
+                })
+              : t("bondedSummary", {
+                  amount: formatNumber(submit.amount, 0),
+                  role: t(`role.${role.key}.title`),
+                })}
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -170,7 +187,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
               href="/staking"
               className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
             >
-              Back to Staking
+              {t("backToStaking")}
             </Link>
           </div>
         </div>
@@ -179,10 +196,10 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
   }
 
   return (
-    <Panel title="Bond OPEN">
+    <Panel title={t("panelBond")}>
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6">
-          <p className={labelCls}>Role</p>
+          <p className={labelCls}>{t("roleLabel")}</p>
           <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
             {STAKING_ROLES.map((r) => {
               const min = config?.minStakeByRole[r.onchain];
@@ -194,41 +211,41 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
                     roleKey === r.key ? "border-brand/50 bg-brand/10 text-white" : "border-white/10 text-gray-400 hover:text-white"
                   }`}
                 >
-                  <span className="block font-medium">{r.title}</span>
+                  <span className="block font-medium">{t(`role.${r.key}.title`)}</span>
                   <span className="mt-0.5 block text-xs text-gray-500">
-                    {min === undefined ? "minimum unread" : `min ${formatNumber(toOpen(min), 0)} OPEN`}
+                    {min === undefined ? t("minUnread") : t("minValue", { n: formatNumber(toOpen(min), 0) })}
                   </span>
                 </button>
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-gray-500">{role.requirement}</p>
+          <p className="mt-3 text-xs text-gray-500">{t(`role.${role.key}.requirement`)}</p>
         </div>
 
         {role.key === "node" && (
           <div className="px-4 py-6">
-            <label htmlFor="node-id" className={labelCls}>Node ID you operate</label>
+            <label htmlFor="node-id" className={labelCls}>{t("nodeIdLabel")}</label>
             <input
               id="node-id"
               value={nodeId}
               onChange={(e) => setNodeId(e.target.value)}
-              placeholder="e.g. node-ke-full-02"
+              placeholder={t("nodeIdPlaceholder")}
               className={`font-mono ${inputCls}`}
             />
             <p className="mt-1.5 text-[11px] text-gray-600">
-              Recorded here for display only — the staking program itself has no per-node field.
+              {t("nodeIdNote")}
             </p>
           </div>
         )}
 
         <div className="px-4 py-6">
           <div className="flex items-center justify-between">
-            <label htmlFor="amount" className={labelCls}>Amount (OPEN)</label>
+            <label htmlFor="amount" className={labelCls}>{t("amountLabel")}</label>
             <span className="text-xs tabular-nums text-gray-500">
-              {minBond === null ? "Minimum bond unread" : `Minimum bond ${formatNumber(minBond, 0)} OPEN`}
+              {minBond === null ? t("minBondUnread") : t("minBondValue", { n: formatNumber(minBond, 0) })}
               {minBond !== null && (
                 <button onClick={() => setAmount(String(minBond))} className="ml-2 text-brand hover:text-brand-hover">
-                  Set min
+                  {t("setMin")}
                 </button>
               )}
             </span>
@@ -243,7 +260,7 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
           />
           {minBond !== null && value > 0 && value < minBond && (
             <p className="mt-1.5 text-xs text-amber-300">
-              Below the {formatNumber(minBond, 0)} OPEN minimum for {role.title}.
+              {t("belowMin", { n: formatNumber(minBond, 0), role: t(`role.${role.key}.title`) })}
             </p>
           )}
           <p className="mt-3 text-xs text-gray-500">
@@ -251,17 +268,17 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
                 here for every role while the chain holds 24 hours for a
                 merchant and 3 days for an arbitrator. */}
             {unbonding === undefined
-              ? "The unbonding period could not be read from the chain."
-              : `Unstaking starts a ${unbondingLabel(unbonding)} cooldown for this role.`}{" "}
-            Merchant bonds stay locked while you have active ads, reservations, or unsettled escrow.
+              ? t("unbondUnread")
+              : t("unbondCooldown", { label: unbondLabel(unbonding) })}{" "}
+            {t("merchantLockNote")}
           </p>
         </div>
 
         <div className="px-4 py-6">
-          {!wallet && <p className="mb-2 text-center text-xs text-amber-300">Connect a wallet to stake.</p>}
+          {!wallet && <p className="mb-2 text-center text-xs text-amber-300">{t("connectToStake")}</p>}
           {configError && <p className="mb-2 text-center text-xs text-amber-300">{configError}</p>}
           {!configError && minBond === null && (
-            <p className="mb-2 text-center text-xs text-gray-500">Reading the minimum from the chain…</p>
+            <p className="mb-2 text-center text-xs text-gray-500">{t("readingMin")}</p>
           )}
           {submit.phase === "error" && <p className="mb-2 text-center text-xs text-red-300">{submit.message}</p>}
           <button
@@ -270,13 +287,15 @@ export function StakeForm({ initialRole }: { initialRole?: string }) {
             className="w-full rounded-md bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submit.phase === "signing"
-              ? "Confirm in wallet…"
+              ? t("confirmInWallet")
               : submit.phase === "confirming"
-                ? "Confirming on devnet…"
-                : `Bond ${value > 0 ? `${formatNumber(value, 0)} ` : ""}OPEN as ${role.title}`}
+                ? t("confirmingDevnet")
+                : value > 0
+                  ? t("bondBtnAmount", { amount: formatNumber(value, 0), role: t(`role.${role.key}.title`) })
+                  : t("bondBtnNoAmount", { role: t(`role.${role.key}.title`) })}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-600">
-            Submits a real transaction to the openfiat-staking program on Solana devnet.
+            {t("realTxNote")}
           </p>
         </div>
       </div>

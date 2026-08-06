@@ -969,5 +969,90 @@
     "signSend": "Sign and send test tokens",
     "connectFirst": "Connect a wallet first",
     "rateLimited": "Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable."
+  },
+  "staking": {
+    "metaTitle": "Staking",
+    "metaDescription": "Bond OPEN for your protocol role — merchant, node operator, arbitrator, or service provider.",
+    "heroTitle": "Staking",
+    "heroDescription": "OPEN secures the coordination layer: every protocol role is bonded. Stake for your role — merchant, node operator, arbitrator, or one of the four service-provider roles. Bonds are enforced by the real openfiat-staking program on Solana devnet.",
+    "stakeByRole": "Stake by role",
+    "unstakingFootnote": "Unstaking is <code>request_unstake</code>, then <code>withdraw_unstaked</code> once that role's cooldown elapses — the periods are in the table above, one per role. Rewards accrue as <code>pending_rewards</code> and are claimable via <code>claim_rewards</code> — not yet wired to this page's UI, and the schedule that fills that field is an off-chain cranker's, published nowhere this app can read.",
+    "stakeMetaTitle": "Stake OPEN",
+    "stakeMetaDescription": "Bond OPEN for a protocol role — merchant, node operator, arbitrator, or service provider.",
+    "stakeHeroTitle": "Stake OPEN",
+    "stakeHeroIntro": "Bond OPEN for your protocol role. Bonds are enforced by the staking program on Solana.",
+    "noConfig": "No staking config exists on this cluster — nothing has set the requirements yet.",
+    "noConfigShort": "No staking config exists on this cluster.",
+    "readErrorMsg": "Couldn't read the staking config: {message}",
+    "readErrorGeneric": "Couldn't read the staking config from the chain.",
+    "connectPromptRoles": "Connect a wallet to see what you have staked for each role.",
+    "statusActive": "Online",
+    "statusNotStarted": "Not started",
+    "minimum": "Minimum",
+    "youStaked": "You staked",
+    "unbonding": "Unbonding",
+    "stakeBtn": "Stake",
+    "rolesFootnote": "Minimums and unbonding periods are read from the deployed <code>StakingConfig</code> account, one of each per role — they are governance-updatable, so neither is a constant in this app. A dash means the account could not be read; it never means zero.",
+    "unbondHours": "{count, plural, one {# hour} other {# hours}}",
+    "unbondDays": "{count, plural, one {# day} other {# days}}",
+    "signerError": "This wallet connection can't sign — reconnect with a real extension.",
+    "noOpenAccount": "You don't have an OPEN token account yet — you need OPEN in your wallet before you can stake.",
+    "txFailed": "Transaction failed or was rejected.",
+    "stakeBonded": "Stake bonded",
+    "bondedSummary": "{amount} OPEN bonded as {role}. Confirmed on devnet.",
+    "bondedSummaryNode": "{amount} OPEN bonded as {role} for {nodeId}. Confirmed on devnet.",
+    "backToStaking": "Back to Staking",
+    "panelBond": "Bond OPEN",
+    "roleLabel": "Role",
+    "minUnread": "minimum unread",
+    "minValue": "min {n} OPEN",
+    "nodeIdLabel": "Node ID you operate",
+    "nodeIdPlaceholder": "e.g. node-ke-full-02",
+    "nodeIdNote": "Recorded here for display only — the staking program itself has no per-node field.",
+    "amountLabel": "Amount (OPEN)",
+    "minBondUnread": "Minimum bond unread",
+    "minBondValue": "Minimum bond {n} OPEN",
+    "setMin": "Set min",
+    "belowMin": "Below the {n} OPEN minimum for {role}.",
+    "unbondUnread": "The unbonding period could not be read from the chain.",
+    "unbondCooldown": "Unstaking starts a {label} cooldown for this role.",
+    "merchantLockNote": "Merchant bonds stay locked while you have active ads, reservations, or unsettled escrow.",
+    "connectToStake": "Connect a wallet to stake.",
+    "readingMin": "Reading the minimum from the chain…",
+    "confirmInWallet": "Confirm in wallet…",
+    "confirmingDevnet": "Confirming on devnet…",
+    "bondBtnAmount": "Bond {amount} OPEN as {role}",
+    "bondBtnNoAmount": "Bond OPEN as {role}",
+    "realTxNote": "Submits a real transaction to the openfiat-staking program on Solana devnet.",
+    "role": {
+      "merchant": {
+        "title": "Merchant bond",
+        "requirement": "Required to publish advertisements. OFS-4100 §4 scales the requirement with the position taken; the program enforces the floor."
+      },
+      "arbitrator": {
+        "title": "Arbitrator bond",
+        "requirement": "Eligibility for dispute seats. Seats are a per-case draw over qualifying stakes, not first-come — so the barrier is the number of independent stakes, which no per-wallet minimum can price."
+      },
+      "node": {
+        "title": "Node Operator stake",
+        "requirement": "Stake against a node you operate."
+      },
+      "notification-provider": {
+        "title": "Notification Provider stake",
+        "requirement": "Registration stake for an OFS-1500 notification gateway."
+      },
+      "oracle-provider": {
+        "title": "Oracle Provider stake",
+        "requirement": "Registration stake for an OFS-1500 price oracle."
+      },
+      "risk-provider": {
+        "title": "Risk Intelligence stake",
+        "requirement": "Registration stake for an OFS-1500 risk intelligence service."
+      },
+      "snapshot-provider": {
+        "title": "Snapshot Provider stake",
+        "requirement": "Registration stake for an OFS-1500 snapshot provider."
+      }
+    }
   }
 }
