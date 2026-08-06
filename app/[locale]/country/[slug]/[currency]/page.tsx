@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
@@ -69,18 +70,18 @@ export async function generateMetadata({
   const found = reference ? resolve(reference, slug, currency) : null;
   if (!found) return {};
   const { country, code } = found;
+  const t = await getTranslations({ locale, namespace: "countries" });
   return {
-    title: {
-      absolute: `Buy & Sell Stablecoins with ${code} in ${country.name} — P2P Exchange | OpenFiat`,
-    },
+    title: { absolute: t("currencyMetaTitle", { code, country: country.name }) },
     // See `app/country/[slug]/page.tsx` on why no rails and no tickers.
-    description: `Buy and sell stablecoins with ${code} in ${country.name}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
+    description: t("currencyMetaDescription", { code, country: country.name }),
     alternates: alternatesFor(`/country/${country.slug}/${code.toLowerCase()}`, locale),
   };
 }
 
 export default async function CountryCurrencyPage({ params }: { params: Promise<Params> }) {
-  const { slug, currency } = await params;
+  const { slug, currency, locale } = await params;
+  const t = await getTranslations({ locale, namespace: "countries" });
   const reference = await referenceForRender();
 
   // A node that could not be reached is not a 404 — see the sibling route's
@@ -90,12 +91,11 @@ export default async function CountryCurrencyPage({ params }: { params: Promise<
     return (
       <section>
         <Link href="/countries" className="text-sm text-gray-500 hover:text-white">
-          ← All countries
+          {t("allCountries")}
         </Link>
-        <h1 className="mt-3 text-xl font-semibold text-white">Could not reach a node</h1>
+        <h1 className="mt-3 text-xl font-semibold text-white">{t("couldNotReachNode")}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
-          Which currencies circulate where is the node&rsquo;s answer, and no node could be reached
-          to ask. Reload, or pick a different access node from the footer.
+          {t("couldNotReachBodyCurrency")}
         </p>
       </section>
     );
@@ -113,17 +113,20 @@ export default async function CountryCurrencyPage({ params }: { params: Promise<
         ← {country.name} ({country.currency})
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-white">
-        P2P Exchange in {country.name} — {code} {flagForCountry(country.code)}
+        {t("currencyHeading", { country: country.name, code })} {flagForCountry(country.code)}
       </h1>
       <p className="mt-1 max-w-3xl text-sm text-gray-400">
-        {code} circulates in {country.name} alongside {primaryName} ({country.currency}), and often
-        carries the deeper book of the two. Escrow is locked on Solana before you pay and released
-        only after receipt is verified; OpenFiat never takes custody of your {code}.
+        {t("currencyBody", {
+          code,
+          country: country.name,
+          primaryName,
+          currency: country.currency,
+        })}
       </p>
       <CurrencyPaymentMethods currency={code} />
 
       <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
-        <span className="text-gray-500">Other markets here:</span>
+        <span className="text-gray-500">{t("otherMarketsHere")}</span>
         {currenciesFor(country)
           .filter((c) => c !== code)
           .map((other) => (

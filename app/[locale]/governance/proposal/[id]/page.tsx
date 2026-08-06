@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { ProposalDetail } from "@/components/governance/proposal-detail";
 
-export const metadata: Metadata = {
-  title: "Proposal",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "governance" });
+  return { title: t("proposalMetaTitle") };
+}
 
 /**
  * A **network** proposal — the off-chain, gossiped record that carries the

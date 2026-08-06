@@ -838,7 +838,12 @@
     "connectFirst": "请先连接钱包——预订是对该商家流动性的一项已签名主张，只有你的钱包才能做出。",
     "twoPrompts": "两次钱包请求：先是预订，再是结算。如果交易没有推进，预订将在你签名后 30 分钟失效。",
     "methodNote": "<code>ReservationRequest</code> 不携带付款方式，因此你选择的通道不会被此次签名记录——结算开启后，商家会通过交易频道发送用于付款的账户。",
-    "goToTradeRoom": "前往交易室 →"
+    "goToTradeRoom": "前往交易室 →",
+    "reviewMetaTitle": "审核订单",
+    "reviewMetaDescription": "在对某条 OpenFiat 广告下单之前，先审核这条真实广告。",
+    "reviewOrderTitle": "审核订单",
+    "reviewOrderSubtitle": "对这条实时广告下达此订单将意味着什么。",
+    "couldNotReadAd": "无法从节点读取此广告"
   },
   "settings": {
     "metaTitle": "设置",
@@ -2476,5 +2481,44 @@
       "High": "已知诈骗钱包，已确认的钓鱼，欺诈团伙，资金骡子。",
       "Critical": "被盗资金，制裁，资助恐怖主义，勒索软件。"
     }
+  },
+  "countries": {
+    "metaTitle": "按国家的 P2P 交易所",
+    "metaDescription": "在每个国家点对点买卖 USDT、USDC、USD1 和 SOL——本地货币、本地付款方式，由 Solana 程序强制托管。",
+    "heroTitle": "按国家的 P2P 交易所",
+    "heroDescription": "OpenFiat 在稳定币所及的每个地方运作。选择一个国家以查看其本地订单簿、货币和付款方式。",
+    "searchPlaceholder": "搜索国家或货币——例如 肯尼亚、KES、欧元…",
+    "searchAriaLabel": "搜索国家",
+    "matchCount": "{count, plural, other {# 个匹配}}",
+    "countriesCount": "{count, plural, other {# 个国家}}",
+    "referenceError": "无法向你的接入节点询问网络支持哪些国家和货币（{message}）。<retry>重试</retry>",
+    "referenceErrorSub": "这是询问失败，而非 OpenFiat 无处服务的发现。",
+    "loading": "正在询问你的节点它服务哪些国家…",
+    "colCountry": "国家 / 地区",
+    "colCurrency": "货币",
+    "colCurrencyName": "货币名称",
+    "colOrderBook": "订单簿",
+    "international": "国际",
+    "anyCode": "任意",
+    "anyCurrencyMethod": "任意货币，任意付款方式",
+    "trade": "交易 →",
+    "noMatch": "没有国家匹配“{query}”。",
+    "slugMetaTitle": "在{country}买卖稳定币 — P2P 交易所 | OpenFiat",
+    "slugMetaDescription": "在{country}用 {currencyName}（{currency}）点对点买卖稳定币。由 Solana 程序强制托管——OpenFiat 从不保管你的法币。",
+    "allCountries": "← 所有国家",
+    "couldNotReachNode": "无法连接节点",
+    "couldNotReachBody": "这个网络服务哪些国家和货币是节点的回答，而无法连接任何节点来询问。这并不说明 OpenFiat 是否服务此市场——只是说明我们无法查明。请重新加载，或从页脚选择一个不同的接入节点。",
+    "noSuchMarket": "没有此市场",
+    "noSuchMarketBody": "你的节点的国家表中没有与此地址匹配的条目。",
+    "slugHeading": "{country}的 P2P 交易所",
+    "slugBody": "在{country}用 {currencyName}（{currency}）买卖稳定币。托管在你付款之前锁定于 Solana，仅在法币收款经核实后才释放；OpenFiat 从不保管你的 {currency}。",
+    "alsoTradedHere": "此处也交易：",
+    "primaryMarket": "{currency} 是主要市场",
+    "currencyMetaTitle": "在{country}用 {code} 买卖稳定币 — P2P 交易所 | OpenFiat",
+    "currencyMetaDescription": "在{country}用 {code} 点对点买卖稳定币。由 Solana 程序强制托管——OpenFiat 从不保管你的法币。",
+    "couldNotReachBodyCurrency": "哪些货币在何处流通是节点的回答，而无法连接任何节点来询问。请重新加载，或从页脚选择一个不同的接入节点。",
+    "currencyHeading": "{country}的 P2P 交易所 — {code}",
+    "currencyBody": "{code} 在{country}与 {primaryName}（{currency}）一并流通，且常常是两者中更深的盘口。托管在你付款之前锁定于 Solana，仅在收款经核实后才释放；OpenFiat 从不保管你的 {code}。",
+    "otherMarketsHere": "此处的其他市场："
   }
 }

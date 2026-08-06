@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { countryViews, flagForCountry, searchCountries } from "@/lib/countries";
@@ -25,6 +25,7 @@ import { DataTable, Td, Th, Tr } from "@/components/data-table";
  * to reach one.
  */
 export function CountryIndex() {
+  const t = useTranslations("countries");
   const [query, setQuery] = useState("");
   const reference = useReferenceData();
   const locale = useLocale();
@@ -51,23 +52,23 @@ export function CountryIndex() {
     <section>
       <PageHero
         variant="globe"
-        title="P2P Exchange by Country"
-        description="OpenFiat works everywhere stablecoins reach. Pick a country to see its local order book, currency, and payment methods."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
         below={
           <div className="flex max-w-xl items-center gap-3">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search country or currency — e.g. Kenya, KES, euro…"
-              aria-label="Search countries"
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("searchAriaLabel")}
               className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-4 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
             />
             <span className="shrink-0 text-xs tabular-nums text-gray-500">
               {reference.status !== "ready"
                 ? ""
                 : query
-                  ? `${results.length} match${results.length === 1 ? "" : "es"}`
-                  : `${countries.length} countries`}
+                  ? t("matchCount", { count: results.length })
+                  : t("countriesCount", { count: countries.length })}
             </span>
           </div>
         }
@@ -75,27 +76,30 @@ export function CountryIndex() {
 
       {reference.status === "error" ? (
         <p className="mt-8 text-sm text-amber-300">
-          Couldn&apos;t ask your access node which countries and currencies the network supports (
-          {reference.message}).{" "}
-          <button type="button" onClick={reference.retry} className="underline hover:text-amber-200">
-            Try again
-          </button>
+          {t.rich("referenceError", {
+            message: reference.message,
+            retry: (c) => (
+              <button type="button" onClick={reference.retry} className="underline hover:text-amber-200">
+                {c}
+              </button>
+            ),
+          })}
           <span className="mt-1 block text-xs text-gray-500">
-            This is a failure to ask, not a finding that OpenFiat serves nowhere.
+            {t("referenceErrorSub")}
           </span>
         </p>
       ) : reference.status === "loading" ? (
-        <p className="mt-8 text-sm text-gray-500">Asking your node which countries it serves…</p>
+        <p className="mt-8 text-sm text-gray-500">{t("loading")}</p>
       ) : (
         <div className="mt-8">
           <DataTable
             minWidth={680}
             head={
               <tr>
-                <Th>Country / Territory</Th>
-                <Th>Currency</Th>
-                <Th>Currency name</Th>
-                <Th right>Order book</Th>
+                <Th>{t("colCountry")}</Th>
+                <Th>{t("colCurrency")}</Th>
+                <Th>{t("colCurrencyName")}</Th>
+                <Th right>{t("colOrderBook")}</Th>
               </tr>
             }
           >
@@ -104,14 +108,14 @@ export function CountryIndex() {
                 <Td py="py-5">
                   <Link href="/" className="font-medium text-brand-hover">
                     <span className="mr-2">🌐</span>
-                    International
+                    {t("international")}
                   </Link>
                 </Td>
-                <Td className="font-medium text-gray-300">ANY</Td>
-                <Td className="text-xs text-gray-500">Any currency, any payment method</Td>
+                <Td className="font-medium text-gray-300">{t("anyCode")}</Td>
+                <Td className="text-xs text-gray-500">{t("anyCurrencyMethod")}</Td>
                 <Td right>
                   <Link href="/" className="text-sm text-brand hover:text-brand-hover">
-                    Trade →
+                    {t("trade")}
                   </Link>
                 </Td>
               </Tr>
@@ -142,7 +146,7 @@ export function CountryIndex() {
                     href={`/country/${c.slug}`}
                     className="text-sm text-brand hover:text-brand-hover"
                   >
-                    Trade →
+                    {t("trade")}
                   </Link>
                 </Td>
               </Tr>
@@ -150,7 +154,7 @@ export function CountryIndex() {
             {query && results.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-10 text-center text-sm text-gray-500">
-                  No countries match &ldquo;{query}&rdquo;.
+                  {t("noMatch", { query })}
                 </td>
               </tr>
             )}

@@ -838,7 +838,12 @@
     "connectFirst": "Hubungkan dompet dulu — reservasi adalah klaim yang ditandatangani atas likuiditas pedagang ini, dan hanya dompet Anda yang dapat membuatnya.",
     "twoPrompts": "Dua permintaan dompet: reservasi, lalu penyelesaian. Reservasi habis 30 menit setelah Anda menandatanganinya jika transaksi tidak bergerak.",
     "methodNote": "Sebuah <code>ReservationRequest</code> tidak membawa metode pembayaran, jadi rel yang Anda pilih tidak dicatat oleh tanda tangan ini — pedagang mengirimkan rekening untuk dibayar melalui kanal transaksi setelah penyelesaian terbuka.",
-    "goToTradeRoom": "Ke ruang transaksi →"
+    "goToTradeRoom": "Ke ruang transaksi →",
+    "reviewMetaTitle": "Tinjau pesanan",
+    "reviewMetaDescription": "Tinjau iklan OpenFiat yang nyata sebelum pesanan terhadapnya.",
+    "reviewOrderTitle": "Tinjau pesanan",
+    "reviewOrderSubtitle": "Apa artinya menempatkan pesanan ini terhadap iklan langsung.",
+    "couldNotReadAd": "Tidak dapat membaca iklan ini dari node"
   },
   "settings": {
     "metaTitle": "Pengaturan",
@@ -2476,5 +2481,44 @@
       "High": "Dompet penipuan dikenal, phishing terkonfirmasi, sindikat penipuan, kurir uang.",
       "Critical": "Dana curian, sanksi, pendanaan terorisme, ransomware."
     }
+  },
+  "countries": {
+    "metaTitle": "Bursa P2P menurut negara",
+    "metaDescription": "Beli dan jual USDT, USDC, USD1, dan SOL secara peer-to-peer di setiap negara — mata uang lokal, metode pembayaran lokal, escrow ditegakkan oleh program Solana.",
+    "heroTitle": "Bursa P2P menurut negara",
+    "heroDescription": "OpenFiat bekerja di mana pun stablecoin menjangkau. Pilih sebuah negara untuk melihat buku pesanan lokalnya, mata uangnya, dan metode pembayarannya.",
+    "searchPlaceholder": "Cari negara atau mata uang — mis. Kenya, KES, euro…",
+    "searchAriaLabel": "Cari negara",
+    "matchCount": "{count, plural, other {# kecocokan}}",
+    "countriesCount": "{count, plural, other {# negara}}",
+    "referenceError": "Tidak dapat menanyakan node akses Anda negara dan mata uang mana yang didukung jaringan ({message}). <retry>Coba lagi</retry>",
+    "referenceErrorSub": "Ini kegagalan bertanya, bukan temuan bahwa OpenFiat tidak melayani di mana pun.",
+    "loading": "Menanyakan node Anda negara mana yang dilayaninya…",
+    "colCountry": "Negara / Wilayah",
+    "colCurrency": "Mata uang",
+    "colCurrencyName": "Nama mata uang",
+    "colOrderBook": "Buku pesanan",
+    "international": "Internasional",
+    "anyCode": "APA PUN",
+    "anyCurrencyMethod": "Mata uang apa pun, metode pembayaran apa pun",
+    "trade": "Transaksi →",
+    "noMatch": "Tidak ada negara yang cocok dengan “{query}”.",
+    "slugMetaTitle": "Beli & Jual Stablecoin di {country} — Bursa P2P | OpenFiat",
+    "slugMetaDescription": "Beli dan jual stablecoin dengan {currencyName} ({currency}) di {country}, peer-to-peer. Escrow ditegakkan oleh program Solana — OpenFiat tidak pernah menahan fiat Anda.",
+    "allCountries": "← Semua negara",
+    "couldNotReachNode": "Tidak dapat menjangkau node",
+    "couldNotReachBody": "Negara dan mata uang mana yang dilayani jaringan ini adalah jawaban node, dan tidak ada node yang dapat dijangkau untuk ditanya. Ini tidak mengatakan apa pun tentang apakah OpenFiat melayani pasar ini — hanya bahwa kami tidak dapat mengetahuinya. Muat ulang, atau pilih node akses berbeda dari footer.",
+    "noSuchMarket": "Tidak ada pasar seperti itu",
+    "noSuchMarketBody": "Tabel negara node Anda tidak punya entri yang cocok dengan alamat ini.",
+    "slugHeading": "Bursa P2P di {country}",
+    "slugBody": "Beli dan jual stablecoin dengan {currencyName} ({currency}) di {country}. Escrow dikunci di Solana sebelum Anda membayar dan dilepaskan hanya setelah penerimaan fiat diverifikasi; OpenFiat tidak pernah menahan {currency} Anda.",
+    "alsoTradedHere": "Juga diperdagangkan di sini:",
+    "primaryMarket": "{currency} adalah pasar utama",
+    "currencyMetaTitle": "Beli & Jual Stablecoin dengan {code} di {country} — Bursa P2P | OpenFiat",
+    "currencyMetaDescription": "Beli dan jual stablecoin dengan {code} di {country}, peer-to-peer. Escrow ditegakkan oleh program Solana — OpenFiat tidak pernah menahan fiat Anda.",
+    "couldNotReachBodyCurrency": "Mata uang mana yang beredar di mana adalah jawaban node, dan tidak ada node yang dapat dijangkau untuk ditanya. Muat ulang, atau pilih node akses berbeda dari footer.",
+    "currencyHeading": "Bursa P2P di {country} — {code}",
+    "currencyBody": "{code} beredar di {country} bersama {primaryName} ({currency}), dan sering membawa buku yang lebih dalam di antara keduanya. Escrow dikunci di Solana sebelum Anda membayar dan dilepaskan hanya setelah penerimaan diverifikasi; OpenFiat tidak pernah menahan {code} Anda.",
+    "otherMarketsHere": "Pasar lain di sini:"
   }
 }

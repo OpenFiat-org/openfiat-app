@@ -1,17 +1,27 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { fetchAdvertisement } from "@/lib/live-advertisements";
 import { NewTradeReview, NewTradeMissingAd } from "@/components/orders/new-trade-form";
 
-export const metadata: Metadata = {
-  title: "Review Order",
-  description: "Review a real OpenFiat advertisement before an order against it.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "placeOrder" });
+  return { title: t("reviewMetaTitle"), description: t("reviewMetaDescription") };
+}
 
 export default async function NewOrderPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "placeOrder" });
   const query = await searchParams;
   const adParam = Array.isArray(query.ad) ? query.ad[0] : query.ad;
   // In the asset, not in fiat — see `NewTradeReview`. The parameter was
@@ -33,14 +43,14 @@ export default async function NewOrderPage({
 
   return (
     <section>
-      <h1 className="text-xl font-semibold text-white">Review Order</h1>
+      <h1 className="text-xl font-semibold text-white">{t("reviewOrderTitle")}</h1>
       <p className="mt-1 text-sm text-gray-400">
-        What placing this order against the live advertisement would mean.
+        {t("reviewOrderSubtitle")}
       </p>
       <div className="mt-8">
         {fetchError ? (
           <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-            <p className="text-sm font-medium text-red-300">Could not read this advertisement from the node</p>
+            <p className="text-sm font-medium text-red-300">{t("couldNotReadAd")}</p>
             <p className="mt-1 font-mono text-xs text-red-400/80">{fetchError}</p>
           </div>
         ) : ad ? (

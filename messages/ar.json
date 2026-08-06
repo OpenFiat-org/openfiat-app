@@ -838,7 +838,12 @@
     "connectFirst": "اربط محفظة أولًا — الحجز مطالبة موقَّعة على سيولة هذا التاجر، ولا يمكن إلا لمحفظتك أن تصنعها.",
     "twoPrompts": "طلبان في المحفظة: الحجز، ثم التسوية. ينتهي الحجز بعد 30 دقيقة من توقيعك عليه إن لم تتحرّك الصفقة.",
     "methodNote": "لا يحمل <code>ReservationRequest</code> أي طريقة دفع، لذا فالمسار الذي اخترته لا يسجّله هذا التوقيع — يرسل التاجر الحساب الذي تدفع إليه عبر قناة الصفقة بمجرد فتح التسوية.",
-    "goToTradeRoom": "اذهب إلى غرفة الصفقة →"
+    "goToTradeRoom": "اذهب إلى غرفة الصفقة →",
+    "reviewMetaTitle": "مراجعة الطلب",
+    "reviewMetaDescription": "راجِع إعلان OpenFiat حقيقيًا قبل طلبٍ مقابله.",
+    "reviewOrderTitle": "مراجعة الطلب",
+    "reviewOrderSubtitle": "ماذا سيعني تقديم هذا الطلب مقابل الإعلان المباشر.",
+    "couldNotReadAd": "تعذّرت قراءة هذا الإعلان من النود"
   },
   "settings": {
     "metaTitle": "الإعدادات",
@@ -2476,5 +2481,44 @@
       "High": "محفظة احتيال معروفة، تصيّد مؤكَّد، عصابة احتيال، بغل أموال.",
       "Critical": "أموال مسروقة، عقوبات، تمويل إرهاب، برمجيات فدية."
     }
+  },
+  "countries": {
+    "metaTitle": "تبادل P2P حسب الدولة",
+    "metaDescription": "اشترِ وبِع USDT وUSDC وUSD1 وSOL من نِدٍّ لِنِدٍّ في كل دولة — عملات محلية، طرق دفع محلية، ضمان بحجز تفرضه برامج Solana.",
+    "heroTitle": "تبادل P2P حسب الدولة",
+    "heroDescription": "يعمل OpenFiat في كل مكان تصله العملات المستقرّة. اختر دولة لرؤية دفتر أوامرها المحلي وعملتها وطرق الدفع فيها.",
+    "searchPlaceholder": "ابحث عن دولة أو عملة — مثل كينيا، KES، يورو…",
+    "searchAriaLabel": "البحث عن الدول",
+    "matchCount": "{count, plural, zero {لا تطابق} one {تطابق واحد} two {تطابقان} few {# تطابقات} many {# تطابقًا} other {# تطابق}}",
+    "countriesCount": "{count, plural, zero {لا دول} one {دولة واحدة} two {دولتان} few {# دول} many {# دولة} other {# دولة}}",
+    "referenceError": "تعذّر سؤال عقدة وصولك عن الدول والعملات التي تدعمها الشبكة ({message}). <retry>أعد المحاولة</retry>",
+    "referenceErrorSub": "هذا فشلٌ في السؤال، لا استنتاجٌ بأن OpenFiat لا يخدم أي مكان.",
+    "loading": "جارٍ سؤال نودك عن الدول التي يخدمها…",
+    "colCountry": "الدولة / الإقليم",
+    "colCurrency": "العملة",
+    "colCurrencyName": "اسم العملة",
+    "colOrderBook": "دفتر الأوامر",
+    "international": "دولي",
+    "anyCode": "أي",
+    "anyCurrencyMethod": "أي عملة، أي طريقة دفع",
+    "trade": "تداول ←",
+    "noMatch": "لا دولة تطابق “{query}”.",
+    "slugMetaTitle": "اشترِ وبِع العملات المستقرّة في {country} — تبادل P2P | OpenFiat",
+    "slugMetaDescription": "اشترِ وبِع العملات المستقرّة بـ{currencyName} ({currency}) في {country}، من نِدٍّ لِنِدٍّ. ضمان بحجز تفرضه برامج Solana — OpenFiat لا يحتجز نقودك الورقية أبدًا.",
+    "allCountries": "← كل الدول",
+    "couldNotReachNode": "تعذّر الوصول إلى نود",
+    "couldNotReachBody": "ما الدول والعملات التي تخدمها هذه الشبكة هو جواب النود، ولم يُمكن الوصول إلى أي نود للسؤال. هذا لا يقول شيئًا عمّا إذا كان OpenFiat يخدم هذا السوق — فقط أننا لم نتمكّن من المعرفة. أعد التحميل، أو اختر عقدة وصول مختلفة من التذييل.",
+    "noSuchMarket": "لا سوق كهذا",
+    "noSuchMarketBody": "لا إدخال في جدول دول نودك يطابق هذا العنوان.",
+    "slugHeading": "تبادل P2P في {country}",
+    "slugBody": "اشترِ وبِع العملات المستقرّة بـ{currencyName} ({currency}) في {country}. يُقفَل الحجز على Solana قبل أن تدفع ولا يُحرَّر إلا بعد التحقّق من استلام النقود الورقية؛ OpenFiat لا يحتجز {currency} الخاصة بك أبدًا.",
+    "alsoTradedHere": "يُتداوَل هنا أيضًا:",
+    "primaryMarket": "{currency} هي السوق الأساسية",
+    "currencyMetaTitle": "اشترِ وبِع العملات المستقرّة بـ{code} في {country} — تبادل P2P | OpenFiat",
+    "currencyMetaDescription": "اشترِ وبِع العملات المستقرّة بـ{code} في {country}، من نِدٍّ لِنِدٍّ. ضمان بحجز تفرضه برامج Solana — OpenFiat لا يحتجز نقودك الورقية أبدًا.",
+    "couldNotReachBodyCurrency": "أي عملات تنتشر أين هو جواب النود، ولم يُمكن الوصول إلى أي نود للسؤال. أعد التحميل، أو اختر عقدة وصول مختلفة من التذييل.",
+    "currencyHeading": "تبادل P2P في {country} — {code}",
+    "currencyBody": "يتداول {code} في {country} إلى جانب {primaryName} ({currency})، وغالبًا ما يحمل الدفتر الأعمق بينهما. يُقفَل الحجز على Solana قبل أن تدفع ولا يُحرَّر إلا بعد التحقّق من الاستلام؛ OpenFiat لا يحتجز {code} الخاصة بك أبدًا.",
+    "otherMarketsHere": "أسواق أخرى هنا:"
   }
 }

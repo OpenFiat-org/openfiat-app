@@ -838,7 +838,12 @@
     "connectFirst": "Connect a wallet first — a reservation is a signed claim on this merchant's liquidity, and only your wallet can make it.",
     "twoPrompts": "Two wallet prompts: the reservation, then the settlement. The reservation lapses 30 minutes after you sign it if the trade has not moved.",
     "methodNote": "A <code>ReservationRequest</code> carries no payment method, so the rail you picked is not recorded by this signature — the merchant sends the account to pay into through the trade channel once the settlement is open.",
-    "goToTradeRoom": "Go to the trade room →"
+    "goToTradeRoom": "Go to the trade room →",
+    "reviewMetaTitle": "Review Order",
+    "reviewMetaDescription": "Review a real OpenFiat advertisement before an order against it.",
+    "reviewOrderTitle": "Review Order",
+    "reviewOrderSubtitle": "What placing this order against the live advertisement would mean.",
+    "couldNotReadAd": "Could not read this advertisement from the node"
   },
   "settings": {
     "metaTitle": "Settings",
@@ -2476,5 +2481,44 @@
       "High": "Known scam wallet, confirmed phishing, fraud ring, money mule.",
       "Critical": "Stolen funds, sanctions, terrorist financing, ransomware."
     }
+  },
+  "countries": {
+    "metaTitle": "P2P Exchange by Country",
+    "metaDescription": "Buy and sell USDT, USDC, USD1, and SOL peer-to-peer in every country — local currencies, local payment methods, escrow enforced by Solana programs.",
+    "heroTitle": "P2P Exchange by Country",
+    "heroDescription": "OpenFiat works everywhere stablecoins reach. Pick a country to see its local order book, currency, and payment methods.",
+    "searchPlaceholder": "Search country or currency — e.g. Kenya, KES, euro…",
+    "searchAriaLabel": "Search countries",
+    "matchCount": "{count, plural, one {# match} other {# matches}}",
+    "countriesCount": "{count, plural, one {# country} other {# countries}}",
+    "referenceError": "Couldn't ask your access node which countries and currencies the network supports ({message}). <retry>Try again</retry>",
+    "referenceErrorSub": "This is a failure to ask, not a finding that OpenFiat serves nowhere.",
+    "loading": "Asking your node which countries it serves…",
+    "colCountry": "Country / Territory",
+    "colCurrency": "Currency",
+    "colCurrencyName": "Currency name",
+    "colOrderBook": "Order book",
+    "international": "International",
+    "anyCode": "ANY",
+    "anyCurrencyMethod": "Any currency, any payment method",
+    "trade": "Trade →",
+    "noMatch": "No countries match “{query}”.",
+    "slugMetaTitle": "Buy & Sell Stablecoins in {country} — P2P Exchange | OpenFiat",
+    "slugMetaDescription": "Buy and sell stablecoins with {currencyName} ({currency}) in {country}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.",
+    "allCountries": "← All countries",
+    "couldNotReachNode": "Could not reach a node",
+    "couldNotReachBody": "Which countries and currencies this network serves is the node's answer, and no node could be reached to ask. This says nothing about whether OpenFiat serves this market — only that we could not find out. Reload, or pick a different access node from the footer.",
+    "noSuchMarket": "No such market",
+    "noSuchMarketBody": "Your node's country table has no entry matching this address.",
+    "slugHeading": "P2P Exchange in {country}",
+    "slugBody": "Buy and sell stablecoins with {currencyName} ({currency}) in {country}. Escrow is locked on Solana before you pay and released only after fiat receipt is verified; OpenFiat never takes custody of your {currency}.",
+    "alsoTradedHere": "Also traded here:",
+    "primaryMarket": "{currency} is the primary market",
+    "currencyMetaTitle": "Buy & Sell Stablecoins with {code} in {country} — P2P Exchange | OpenFiat",
+    "currencyMetaDescription": "Buy and sell stablecoins with {code} in {country}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.",
+    "couldNotReachBodyCurrency": "Which currencies circulate where is the node's answer, and no node could be reached to ask. Reload, or pick a different access node from the footer.",
+    "currencyHeading": "P2P Exchange in {country} — {code}",
+    "currencyBody": "{code} circulates in {country} alongside {primaryName} ({currency}), and often carries the deeper book of the two. Escrow is locked on Solana before you pay and released only after receipt is verified; OpenFiat never takes custody of your {code}.",
+    "otherMarketsHere": "Other markets here:"
   }
 }

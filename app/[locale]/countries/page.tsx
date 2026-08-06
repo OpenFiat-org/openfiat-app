@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { alternatesFor } from "@/lib/seo";
 import { CountryIndex } from "@/components/p2p/country-index";
 
@@ -8,10 +9,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "countries" });
   return {
-  title: "P2P Exchange by Country",
-  description:
-    "Buy and sell USDT, USDC, USD1, and SOL peer-to-peer in every country — local currencies, local payment methods, escrow enforced by Solana programs.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
     alternates: alternatesFor("/countries", locale),
   };
 }

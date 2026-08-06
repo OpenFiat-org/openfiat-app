@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 import { countryBySlug, countryViews, currenciesFor, flagForCountry } from "@/lib/countries";
@@ -50,6 +51,7 @@ export async function generateMetadata({
   const reference = await referenceForRender();
   const country = reference ? countryBySlug(reference, slug, locale) : undefined;
   if (!country) return {};
+  const t = await getTranslations({ locale, namespace: "countries" });
   const currencyName = localizedCurrencyName(
     country.currency,
     reference?.currencies.find((c) => c.code === country.currency)?.name ?? country.currency,
@@ -58,15 +60,13 @@ export async function generateMetadata({
   return {
     // Localized name in the title/description, since a search result is exactly
     // where a reader searching in their own language needs to recognize the
-    // market. The surrounding copy is English until phase B4 translates it.
-    title: { absolute: `Buy & Sell Stablecoins in ${country.displayName} — P2P Exchange | OpenFiat` },
-    // No payment rails and no asset tickers here. Both used to be stated —
-    // "Pay with M-Pesa, Equity Bank, KCB", "USDT, USDC, USD1, and SOL" — out
-    // of a hand-written table, on all 253 country pages, whether or not a
-    // single advertisement existed. A description is the one piece of a page
-    // that travels without it, so it must not contain a claim the page
-    // itself would have to hedge.
-    description: `Buy and sell stablecoins with ${currencyName} (${country.currency}) in ${country.displayName}, peer to peer. Escrow enforced by Solana programs — OpenFiat never takes custody of your fiat.`,
+    // market.
+    title: { absolute: t("slugMetaTitle", { country: country.displayName }) },
+    description: t("slugMetaDescription", {
+      currencyName,
+      currency: country.currency,
+      country: country.displayName,
+    }),
     // Self-referential canonical for this locale plus the full hreflang set, so
     // search engines learn this page exists in all 27 languages.
     alternates: alternatesFor(`/country/${country.slug}`, locale),
@@ -75,6 +75,7 @@ export async function generateMetadata({
 
 export default async function CountryP2PPage({ params }: { params: Promise<Params> }) {
   const { slug, locale } = await params;
+  const t = await getTranslations({ locale, namespace: "countries" });
   const reference = await referenceForRender();
 
   /*
@@ -90,13 +91,11 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
     return (
       <section>
         <Link href="/countries" className="text-sm text-gray-500 hover:text-white">
-          ← All countries
+          {t("allCountries")}
         </Link>
-        <h1 className="mt-3 text-xl font-semibold text-white">Could not reach a node</h1>
+        <h1 className="mt-3 text-xl font-semibold text-white">{t("couldNotReachNode")}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
-          Which countries and currencies this network serves is the node&rsquo;s answer, and no node
-          could be reached to ask. This says nothing about whether OpenFiat serves this market —
-          only that we could not find out. Reload, or pick a different access node from the footer.
+          {t("couldNotReachBody")}
         </p>
       </section>
     );
@@ -107,11 +106,11 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
     return (
       <section>
         <Link href="/countries" className="text-sm text-gray-500 hover:text-white">
-          ← All countries
+          {t("allCountries")}
         </Link>
-        <h1 className="mt-3 text-xl font-semibold text-white">No such market</h1>
+        <h1 className="mt-3 text-xl font-semibold text-white">{t("noSuchMarket")}</h1>
         <p className="mt-2 max-w-2xl text-sm text-gray-400">
-          Your node&rsquo;s country table has no entry matching this address.
+          {t("noSuchMarketBody")}
         </p>
       </section>
     );
@@ -127,15 +126,17 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
   return (
     <section>
       <Link href="/countries" className="text-sm text-gray-500 hover:text-white">
-        ← All countries
+        {t("allCountries")}
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-white">
-        P2P Exchange in {country.displayName} {flagForCountry(country.code)}
+        {t("slugHeading", { country: country.displayName })} {flagForCountry(country.code)}
       </h1>
       <p className="mt-1 max-w-3xl text-sm text-gray-400">
-        Buy and sell stablecoins with {currencyName} ({country.currency}) in {country.displayName}. Escrow
-        is locked on Solana before you pay and released only after fiat receipt is verified;
-        OpenFiat never takes custody of your {country.currency}.
+        {t("slugBody", {
+          currencyName,
+          currency: country.currency,
+          country: country.displayName,
+        })}
       </p>
       {/* Which rails are on offer is a fact about the book, so it is read
           from the book rather than written into the page. */}
@@ -147,7 +148,7 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
           they are. */}
       {alternates.length > 0 && (
         <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
-          <span className="text-gray-500">Also traded here:</span>
+          <span className="text-gray-500">{t("alsoTradedHere")}</span>
           {alternates.map((code) => (
             <Link
               key={code}
@@ -157,7 +158,7 @@ export default async function CountryP2PPage({ params }: { params: Promise<Param
               {code}
             </Link>
           ))}
-          <span className="text-xs text-gray-600">{country.currency} is the primary market</span>
+          <span className="text-xs text-gray-600">{t("primaryMarket", { currency: country.currency })}</span>
         </p>
       )}
       <div className="mt-8">

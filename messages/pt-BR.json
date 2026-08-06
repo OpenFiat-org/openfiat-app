@@ -838,7 +838,12 @@
     "connectFirst": "Conecte uma carteira primeiro — uma reserva é uma reivindicação assinada sobre a liquidez deste comerciante, e só sua carteira pode fazê-la.",
     "twoPrompts": "Dois prompts da carteira: a reserva e depois a liquidação. A reserva expira 30 minutos após você assiná-la se a negociação não avançar.",
     "methodNote": "Uma <code>ReservationRequest</code> não carrega método de pagamento, então o trilho que você escolheu não é registrado por esta assinatura — o comerciante envia a conta para pagamento pelo canal da negociação assim que a liquidação estiver aberta.",
-    "goToTradeRoom": "Ir para a sala da negociação →"
+    "goToTradeRoom": "Ir para a sala da negociação →",
+    "reviewMetaTitle": "Revisar pedido",
+    "reviewMetaDescription": "Revise um anúncio real da OpenFiat antes de um pedido contra ele.",
+    "reviewOrderTitle": "Revisar pedido",
+    "reviewOrderSubtitle": "O que colocar este pedido contra o anúncio ao vivo significaria.",
+    "couldNotReadAd": "Não foi possível ler este anúncio do nó"
   },
   "settings": {
     "metaTitle": "Configurações",
@@ -2476,5 +2481,44 @@
       "High": "Carteira de golpe conhecida, phishing confirmado, quadrilha de fraude, mula de dinheiro.",
       "Critical": "Fundos roubados, sanções, financiamento ao terrorismo, ransomware."
     }
+  },
+  "countries": {
+    "metaTitle": "Câmbio P2P por país",
+    "metaDescription": "Compre e venda USDT, USDC, USD1 e SOL entre pares em cada país — moedas locais, métodos de pagamento locais, custódia garantida por programas da Solana.",
+    "heroTitle": "Câmbio P2P por país",
+    "heroDescription": "A OpenFiat funciona em todos os lugares aonde as stablecoins chegam. Escolha um país para ver seu livro de ordens local, sua moeda e seus métodos de pagamento.",
+    "searchPlaceholder": "Buscar país ou moeda — ex. Quênia, KES, euro…",
+    "searchAriaLabel": "Buscar países",
+    "matchCount": "{count, plural, one {# correspondência} other {# correspondências}}",
+    "countriesCount": "{count, plural, one {# país} other {# países}}",
+    "referenceError": "Não foi possível perguntar ao seu nó de acesso quais países e moedas a rede suporta ({message}). <retry>Tentar de novo</retry>",
+    "referenceErrorSub": "Isto é uma falha ao perguntar, não uma constatação de que a OpenFiat não serve lugar nenhum.",
+    "loading": "Perguntando ao seu nó quais países ele serve…",
+    "colCountry": "País / Território",
+    "colCurrency": "Moeda",
+    "colCurrencyName": "Nome da moeda",
+    "colOrderBook": "Livro de ordens",
+    "international": "Internacional",
+    "anyCode": "QUALQUER",
+    "anyCurrencyMethod": "Qualquer moeda, qualquer método de pagamento",
+    "trade": "Negociar →",
+    "noMatch": "Nenhum país corresponde a “{query}”.",
+    "slugMetaTitle": "Compre e venda stablecoins em {country} — Câmbio P2P | OpenFiat",
+    "slugMetaDescription": "Compre e venda stablecoins com {currencyName} ({currency}) em {country}, entre pares. Custódia garantida por programas da Solana — a OpenFiat nunca assume a custódia do seu fiduciário.",
+    "allCountries": "← Todos os países",
+    "couldNotReachNode": "Não foi possível alcançar um nó",
+    "couldNotReachBody": "Quais países e moedas esta rede serve é a resposta do nó, e nenhum nó pôde ser alcançado para perguntar. Isto não diz nada sobre se a OpenFiat serve este mercado — apenas que não conseguimos descobrir. Recarregue, ou escolha um nó de acesso diferente no rodapé.",
+    "noSuchMarket": "Nenhum mercado assim",
+    "noSuchMarketBody": "A tabela de países do seu nó não tem entrada correspondente a este endereço.",
+    "slugHeading": "Câmbio P2P em {country}",
+    "slugBody": "Compre e venda stablecoins com {currencyName} ({currency}) em {country}. A custódia é travada na Solana antes de você pagar e liberada só depois de verificado o recebimento do fiduciário; a OpenFiat nunca assume a custódia dos seus {currency}.",
+    "alsoTradedHere": "Também negociado aqui:",
+    "primaryMarket": "{currency} é o mercado principal",
+    "currencyMetaTitle": "Compre e venda stablecoins com {code} em {country} — Câmbio P2P | OpenFiat",
+    "currencyMetaDescription": "Compre e venda stablecoins com {code} em {country}, entre pares. Custódia garantida por programas da Solana — a OpenFiat nunca assume a custódia do seu fiduciário.",
+    "couldNotReachBodyCurrency": "Quais moedas circulam onde é a resposta do nó, e nenhum nó pôde ser alcançado para perguntar. Recarregue, ou escolha um nó de acesso diferente no rodapé.",
+    "currencyHeading": "Câmbio P2P em {country} — {code}",
+    "currencyBody": "{code} circula em {country} ao lado de {primaryName} ({currency}), e costuma carregar o livro mais profundo dos dois. A custódia é travada na Solana antes de você pagar e liberada só depois de verificado o recebimento; a OpenFiat nunca assume a custódia dos seus {code}.",
+    "otherMarketsHere": "Outros mercados aqui:"
   }
 }
