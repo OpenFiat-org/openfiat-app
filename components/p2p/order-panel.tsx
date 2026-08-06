@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { AssetIcon } from "@/components/asset-icon";
 import { TradeLimits } from "@/components/asset-label";
@@ -40,6 +41,7 @@ export function OrderPanel({
   userDirection: TradeDirection;
   onClose: () => void;
 }) {
+  const t = useTranslations("orderPanel");
   const buy = userDirection === "Buy";
   // The token's name as this panel prints it — `assetLabel` falls back to
   // the address, this stays `null` when the node named nothing, which is
@@ -149,33 +151,43 @@ export function OrderPanel({
 
   const blocker = useMemo(() => {
     if (noPrice) {
-      return "This advertiser prices against an oracle read that hasn't happened yet — there is nothing to quote.";
+      return t("noPriceBlocker");
     }
     if (needsAccount) {
       return accounts.length === 0
-        ? "You have no saved payment account yet — add one in Settings so the buyer knows where to send the money."
-        : "None of your saved accounts uses a method this advertiser accepts. Add one that does in Settings.";
+        ? t("needAccountNone")
+        : t("needAccountWrongMethod");
     }
     // Quoted in the asset, because that is the unit the merchant set the
     // bound in. The fiat equivalent follows in brackets so a taker filling
     // in the fiat box still knows what to type — a conversion this app
     // performed, not a figure on the record.
-    const band = `${formatCrypto(minAsset, assetLabel(ad))} and ${formatCrypto(maxAsset, assetLabel(ad))}`;
+    const band = t("band", {
+      min: formatCrypto(minAsset, assetLabel(ad)),
+      max: formatCrypto(maxAsset, assetLabel(ad)),
+    });
     if (fiatAmount <= 0) {
-      return `Enter an amount between ${band} (about ${formatFiat(minFiat, fiat, 0)} – ${formatFiat(maxFiat, fiat, 0)})`;
+      return t("enterAmount", {
+        band,
+        minFiat: formatFiat(minFiat, fiat, 0),
+        maxFiat: formatFiat(maxFiat, fiat, 0),
+      });
     }
-    if (tooLow) return `Below this advertiser's minimum of ${formatCrypto(minAsset, assetLabel(ad))}`;
-    if (tooHigh) return `Above this advertiser's maximum of ${formatCrypto(maxAsset, assetLabel(ad))}`;
-    if (overLiquidity) return `Only ${formatCrypto(ad.availableLiquidity, assetLabel(ad))} is available on this ad`;
+    if (tooLow) return t("belowMin", { min: formatCrypto(minAsset, assetLabel(ad)) });
+    if (tooHigh) return t("aboveMax", { max: formatCrypto(maxAsset, assetLabel(ad)) });
+    if (overLiquidity) return t("onlyAvailable", { amount: formatCrypto(ad.availableLiquidity, assetLabel(ad)) });
     if (backing.kind === "none" && cryptoAmount > 0) {
-      return "This advertiser has no liquidity vault for the token this ad settles in — nothing on chain backs it";
+      return t("noVaultBlocker");
     }
     if (cover !== null && !cover.covered) {
-      return `This advertiser's vault holds only ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} ${assetLabel(ad)} available`;
+      return t("vaultHoldsOnly", {
+        amount: formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0),
+        asset: assetLabel(ad),
+      });
     }
-    if (!method) return "Choose a payment method";
+    if (!method) return t("chooseMethod");
     return null;
-  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat, backing, cover, cryptoAmount]);
+  }, [noPrice, fiatAmount, tooLow, tooHigh, overLiquidity, needsAccount, accounts.length, ad, method, minAsset, maxAsset, minFiat, maxFiat, fiat, backing, cover, cryptoAmount, t]);
 
   /* Each field recomputes the other. Kept as strings so a half-typed "1." is
      not rewritten under the cursor. */
@@ -195,7 +207,7 @@ export function OrderPanel({
 
   const cryptoField = (
     <Field
-      label={buy ? "I will receive" : "I will sell"}
+      label={buy ? t("iWillReceive") : t("iWillSell")}
       value={receiveText}
       onChange={onReceive}
       placeholder={buy ? "0.00" : `${formatNumber(minCrypto, 2)} ~ ${formatNumber(maxCrypto, 2)}`}
@@ -210,7 +222,7 @@ export function OrderPanel({
 
   const fiatField = (
     <Field
-      label={buy ? "I will pay" : "I will receive"}
+      label={buy ? t("iWillPay") : t("iWillReceive")}
       value={payText}
       onChange={onPay}
       placeholder={buy ? `${formatNumber(minFiat, 0)} ~ ${formatNumber(maxFiat, 0)}` : "0.00"}
@@ -225,64 +237,68 @@ export function OrderPanel({
         {/* Advertisement facts */}
         <div className="min-w-0">
           <div className="flex items-baseline justify-between gap-4">
-            <h3 className="text-sm font-semibold text-gray-200">Advertisement</h3>
+            <h3 className="text-sm font-semibold text-gray-200">{t("advertisement")}</h3>
             <button
               type="button"
               onClick={onClose}
               className="text-xs text-gray-500 hover:text-gray-300"
             >
-              Close
+              {t("close")}
             </button>
           </div>
 
           <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            <Fact label="Merchant" value={`…${ad.merchantShort}`} mono />
-            <Fact label="Declared on the ad" value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
+            <Fact label={t("merchant")} value={`…${ad.merchantShort}`} mono />
+            <Fact label={t("declaredOnAd")} value={formatCrypto(ad.availableLiquidity, assetLabel(ad))} />
             {/*
               * Shown next to the declared figure, never instead of it. A
               * taker comparing the two is the whole point: the left number
               * is a claim, the right one is the vault behind it.
               */}
             <Fact
-              label="Backed by the merchant's vault"
+              label={t("backedByVault")}
               value={
                 backing.kind === "found" ? (
                   <span
                     className={vaultCoversDeclared === false ? "text-amber-300" : "text-gray-200"}
-                    title={`Vault ${backing.vault.address.toBase58()}`}
+                    title={t("vaultTitle", { address: backing.vault.address.toBase58() })}
                   >
-                    {formatBaseUnits(backing.vault.available, backing.vault.decimals)} {assetLabel(ad)} available
+                    {t("vaultAvailable", {
+                      amount: formatBaseUnits(backing.vault.available, backing.vault.decimals),
+                      asset: assetLabel(ad),
+                    })}
                   </span>
                 ) : backing.kind === "none" ? (
-                  <span className="text-red-300">No vault for this mint</span>
+                  <span className="text-red-300">{t("noVaultForMint")}</span>
                 ) : backing.kind === "loading" ? (
-                  <span className="text-gray-500">Reading the chain…</span>
+                  <span className="text-gray-500">{t("readingChain")}</span>
                 ) : backing.kind === "error" ? (
                   <span className="text-amber-300/80" title={backing.message}>
-                    Could not reach the cluster — unverified, not unbacked
+                    {t("clusterUnreachable")}
                   </span>
                 ) : (
                   // The merchant field is not an Ed25519 identity PeerId, so
                   // there is no wallet in it to key a vault read on.
-                  <span className="text-gray-500">Merchant identity carries no Solana address</span>
+                  <span className="text-gray-500">{t("merchantNoAddress")}</span>
                 )
               }
             />
-            <Fact label="Limits" value={<TradeLimits ad={ad} />} />
+            <Fact label={t("limits")} value={<TradeLimits ad={ad} />} />
             <Fact
-              label="Pricing"
+              label={t("pricing")}
               value={
                 ad.pricingKind === "Floating"
-                  ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}% of the oracle mid`
-                  : "Fixed"
+                  ? t("floatingPricing", {
+                      sign: (ad.premiumBps ?? 0) >= 0 ? "+" : "",
+                      pct: ((ad.premiumBps ?? 0) / 100).toFixed(2),
+                    })
+                  : t("fixed")
               }
             />
           </dl>
 
           <p className="mt-6 max-w-prose text-xs leading-relaxed text-gray-500">
-            {buy
-              ? `Your ${assetLabel(ad)} is locked in escrow on Solana the moment an order is placed — before you send any ${fiat}. It is released to you once the merchant confirms receipt, and if they do not, an arbitrator decides.`
-              : `Your ${assetLabel(ad)} moves into escrow on Solana when an order is placed and is released to the buyer only after you confirm their ${fiat} arrived.`}
+            {t("escrow", { buying: String(buy), asset: assetLabel(ad), fiat })}
           </p>
 
           {/*
@@ -291,25 +307,23 @@ export function OrderPanel({
             * amount is already deciding whether they can pay in time.
             */}
           <p className="mt-4 text-xs leading-relaxed text-gray-500">
-            Reviewing comes next, and placing the order signs a reservation against this
-            advertisement. A reservation holds the merchant&apos;s liquidity for 30 minutes and
-            lapses on its own if the trade has not moved by then.
+            {t("reservationNote")}
           </p>
         </div>
 
         {/* Order form */}
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-gray-400">Price</span>
+            <span className="text-sm text-gray-400">{t("price")}</span>
             <span className="font-mono text-lg font-semibold tabular-nums text-brand-teal">
               {noPrice ? "—" : `${formatNumber(price)} ${fiat}`}
             </span>
             {!noPrice && (
               <span
                 className="ml-auto text-xs tabular-nums text-gray-500"
-                title="The quote refreshes on this countdown; a floating ad reprices against the oracle mid."
+                title={t("quoteTitle")}
               >
-                {seconds}s
+                {t("countdown", { seconds })}
               </span>
             )}
           </div>
@@ -319,7 +333,7 @@ export function OrderPanel({
 
           {!buy && usable.length > 0 && (
             <label className="mt-3 block">
-              <span className="block text-xs text-gray-500">Receive into</span>
+              <span className="block text-xs text-gray-500">{t("receiveInto")}</span>
               <select
                 value={accountId || usable[0].id}
                 onChange={(e) => setAccountId(e.target.value)}
@@ -327,19 +341,18 @@ export function OrderPanel({
               >
                 {usable.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.method} · {a.fields[1]?.value ?? a.fields[0]?.value}
+                    {t("accountOption", { method: a.method, detail: a.fields[1]?.value ?? a.fields[0]?.value ?? "" })}
                   </option>
                 ))}
               </select>
               <span className="mt-1.5 block text-xs text-gray-500">
-                The buyer sees these details field by field, so they can copy each
-                one rather than retyping it.
+                {t("receiveIntoHelp")}
               </span>
             </label>
           )}
 
           <label className="mt-3 block">
-            <span className="sr-only">Payment method</span>
+            <span className="sr-only">{t("paymentMethod")}</span>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value)}
@@ -367,7 +380,7 @@ export function OrderPanel({
                 buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
               }`}
             >
-              Review {userDirection.toLowerCase()} order
+              {t("reviewOrder", { buying: String(buy) })}
             </Link>
           ) : (
             <>
@@ -377,7 +390,7 @@ export function OrderPanel({
                   buy ? "bg-emerald-600/35" : "bg-orange-600/35"
                 }`}
               >
-                {userDirection} {assetLabel(ad)}
+                {t("disabledAction", { buying: String(buy), asset: assetLabel(ad) })}
               </span>
               <p className="mt-2 text-xs text-amber-300">{blocker}</p>
             </>
