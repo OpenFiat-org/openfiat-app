@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
@@ -49,6 +50,8 @@ import { MetricStrip } from "@/components/metrics";
  * each, straight to the selected node. See `lib/merchant-ads.ts`.
  */
 export function MerchantConsole() {
+  const t = useTranslations("ads");
+  const L = useTranslations("lifecycle");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [ads, setAds] = useState<LiveAd[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,8 +104,7 @@ export function MerchantConsole() {
   if (!wallet) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-sm text-gray-400">
-        Connect a wallet to see the advertisements published under it. Your wallet key
-        <em> is </em> your merchant identity — there is no separate account to create.
+        {t.rich("connectPrompt", { em: (chunks) => <em>{chunks}</em> })}
       </p>
     );
   }
@@ -110,20 +112,20 @@ export function MerchantConsole() {
   if (error) {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read advertisements from the node</p>
+        <p className="text-sm font-medium text-red-300">{t("readError")}</p>
         <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
         <button
           onClick={() => void load(wallet.address)}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
   }
 
   if (ads === null) {
-    return <p className="p-6 text-sm text-gray-500">Reading advertisements…</p>;
+    return <p className="p-6 text-sm text-gray-500">{t("reading")}</p>;
   }
 
   const activeCount = ads.filter((a) => a.status === "Active").length;
@@ -147,51 +149,51 @@ export function MerchantConsole() {
         */}
       <MetricStrip
         items={[
-          { label: "Active ads", value: String(activeCount), sub: `${ads.length} published` },
+          { label: t("metricActiveAds"), value: String(activeCount), sub: t("metricPublished", { count: ads.length }) },
           {
-            label: "Tokens advertised",
+            label: t("metricTokens"),
             value: String(mints.size),
-            sub: "liquidity is per asset — see the table",
+            sub: t("metricTokensSub"),
           },
           {
-            label: "Merchant",
+            label: t("metricMerchant"),
             value: ads[0]?.merchantShort ?? "—",
-            sub: "PeerId suffix",
+            sub: t("metricMerchantSub"),
           },
         ]}
       />
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
         <h2 className="text-sm font-semibold text-white">
-          Your advertisements
+          {t("yourAds")}
           <span className="ml-2 font-normal text-gray-500">{ads.length}</span>
         </h2>
         <Link
           href="/ads/new"
           className="shrink-0 whitespace-nowrap rounded-md bg-brand px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
         >
-          Post advertisement
+          {t("postAd")}
         </Link>
       </div>
 
       {ads.length === 0 ? (
         <p className="py-8 text-sm text-gray-500">
-          This wallet has published no advertisements on the node you are connected to.
+          {t("noAds")}
         </p>
       ) : (
         <DataTable
           minWidth={1120}
           head={
             <tr>
-              <Th>Ad</Th>
-              <Th>Direction</Th>
-              <Th>Pair</Th>
-              <Th right>Price</Th>
-              <Th right>Limits</Th>
-              <Th right>Liquidity</Th>
-              <Th>Payment methods</Th>
-              <Th right>Status</Th>
-              <Th right>Terms</Th>
+              <Th>{t("colAd")}</Th>
+              <Th>{t("colDirection")}</Th>
+              <Th>{t("colPair")}</Th>
+              <Th right>{t("colPrice")}</Th>
+              <Th right>{t("colLimits")}</Th>
+              <Th right>{t("colLiquidity")}</Th>
+              <Th>{t("colPaymentMethods")}</Th>
+              <Th right>{t("colStatus")}</Th>
+              <Th right>{t("colTerms")}</Th>
             </tr>
           }
         >
@@ -203,7 +205,7 @@ export function MerchantConsole() {
                   ad.direction === "Sell" ? "text-orange-400" : "text-emerald-400"
                 }`}
               >
-                {ad.direction}
+                {L(ad.direction)}
               </Td>
               <Td className="text-gray-300">
                 <span className="flex items-baseline gap-1">
@@ -217,8 +219,8 @@ export function MerchantConsole() {
                 </span>
                 <span className="block text-[11px] text-gray-600">
                   {ad.pricingKind === "Floating"
-                    ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}%`
-                    : "Fixed"}
+                    ? t("floating", { sign: (ad.premiumBps ?? 0) >= 0 ? "+" : "", pct: ((ad.premiumBps ?? 0) / 100).toFixed(2) })
+                    : t("fixed")}
                 </span>
               </Td>
               {/* In the asset, not in `fiatCurrency` — see `LiveAd.minTrade`. */}
@@ -257,7 +259,7 @@ export function MerchantConsole() {
                   onClick={() => setEditing(ad)}
                   className="rounded border border-white/15 px-2 py-0.5 text-[11px] font-medium text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-40"
                 >
-                  Edit terms
+                  {t("editTerms")}
                 </button>
               </Td>
             </Tr>

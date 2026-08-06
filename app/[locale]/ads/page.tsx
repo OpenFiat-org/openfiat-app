@@ -1,18 +1,26 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { MerchantConsole } from "@/components/ads/merchant-console";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "My Ads",
-  description: "Merchant console — publish and manage OpenFiat advertisements backed by your liquidity vaults.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "ads" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 export default function AdsPage() {
+  const t = useTranslations("ads");
   return (
     <section>
       <PageHero
-        title="My Ads"
-        description="Edit, pause or take down what you have on offer. There is no identity check — the OPEN merchant bond is what is at risk if you do not settle, and Become a merchant reads yours against the chain's own minimum."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
       <div className="mt-8">
         <MerchantConsole />

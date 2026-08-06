@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { MethodPicker } from "@/components/ads/method-picker";
 import { tradingSymbol } from "@/lib/asset-display";
@@ -47,13 +48,6 @@ function transitionsFrom(status: LiveAd["status"]): AdvertisementStatus[] {
   }
 }
 
-const ACTION_LABEL: Record<AdvertisementStatus, string> = {
-  Active: "Put back on offer",
-  Vacation: "Pause",
-  Disabled: "Take down",
-  Deleted: "Delete",
-};
-
 export function AdStatusControl({
   ad,
   who,
@@ -63,6 +57,7 @@ export function AdStatusControl({
   who: MerchantIdentity | null;
   onDone: () => void;
 }) {
+  const t = useTranslations("ads");
   const [pending, setPending] = useState<AdvertisementStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const options = transitionsFrom(ad.status);
@@ -72,7 +67,7 @@ export function AdStatusControl({
     // Deletion is the one action with no way back — §21 keeps the record
     // and retires the id, so a mis-click cannot be undone by re-publishing
     // under the same one.
-    if (status === "Deleted" && !confirm(`Delete ${ad.id}? This cannot be undone.`)) return;
+    if (status === "Deleted" && !confirm(t("confirmDelete", { id: ad.id }))) return;
     setPending(status);
     setError(null);
     try {
@@ -96,7 +91,7 @@ export function AdStatusControl({
               : "bg-gray-500/10 text-gray-400"
         }`}
       >
-        {ad.status}
+        {t(`status.${ad.status}`)}
       </span>
       {options.length > 0 && (
         <span className="flex gap-1.5">
@@ -112,7 +107,7 @@ export function AdStatusControl({
                   : "border-white/15 text-gray-300 hover:bg-white/5"
               }`}
             >
-              {pending === status ? "Signing…" : ACTION_LABEL[status]}
+              {pending === status ? t("signing") : t(`action.${status}`)}
             </button>
           ))}
         </span>
@@ -145,6 +140,7 @@ export function AdTermsDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("ads");
   const [min, setMin] = useState(String(ad.minTrade));
   const [max, setMax] = useState(String(ad.maxTrade));
   const [methods, setMethods] = useState<string[]>(ad.paymentMethods);
@@ -165,9 +161,9 @@ export function AdTermsDialog({
   // wallet prompt rather than after one: terms nobody can trade against
   // are refused, and a floor above a ceiling matches nothing.
   const problems = [
-    ...(minNum > 0 ? [] : ["The minimum must be greater than zero."]),
-    ...(maxNum >= minNum ? [] : ["The maximum must be at least the minimum."]),
-    ...(methods.length > 0 ? [] : ["Keep at least one payment method — a buyer needs a way to pay."]),
+    ...(minNum > 0 ? [] : ["probMinZero"]),
+    ...(maxNum >= minNum ? [] : ["probMaxMin"]),
+    ...(methods.length > 0 ? [] : ["probMethods"]),
   ];
 
   async function save() {
@@ -198,12 +194,12 @@ export function AdTermsDialog({
     >
       <div
         role="dialog"
-        aria-label="Edit advertisement terms"
+        aria-label={t("dialogAria")}
         className="w-full max-w-lg rounded-md border border-white/15 bg-[#10151d] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-white/10 px-5 py-4">
-          <h2 className="text-base font-semibold text-white">Edit terms</h2>
+          <h2 className="text-base font-semibold text-white">{t("editTermsTitle")}</h2>
           <p className="mt-0.5 font-mono text-xs text-gray-500">{ad.id}</p>
         </div>
 
@@ -214,8 +210,8 @@ export function AdTermsDialog({
               before signing. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
-              { label: "Minimum trade", value: min, set: setMin },
-              { label: "Maximum trade", value: max, set: setMax },
+              { label: t("minTrade"), value: min, set: setMin },
+              { label: t("maxTrade"), value: max, set: setMax },
             ].map((field) => (
               <label key={field.label} className="block">
                 <span className="text-xs font-medium text-gray-300">{field.label}</span>
@@ -235,13 +231,15 @@ export function AdTermsDialog({
             * wrong one. See `LiveAd.minTrade`.
             */}
           <p className="-mt-2 text-[11px] text-gray-500">
-            In {tradingSymbol(ad.assetMint, ad.assetSymbol) ?? "the advertised token"}, not{" "}
-            {ad.fiatCurrency}. Currently{" "}
-            {formatNumber(ad.minTrade)}–{formatNumber(ad.maxTrade)}.
+            {t("inAsset", {
+              asset: tradingSymbol(ad.assetMint, ad.assetSymbol) ?? t("theAdvertisedToken"),
+              fiat: ad.fiatCurrency,
+              range: `${formatNumber(ad.minTrade)}–${formatNumber(ad.maxTrade)}`,
+            })}
           </p>
 
           <div>
-            <span className="text-xs font-medium text-gray-300">Payment methods</span>
+            <span className="text-xs font-medium text-gray-300">{t("paymentMethods")}</span>
             <div className="mt-1.5">
               {/* No country here: an advertisement carries a currency and
                   no country, and this dialog is editing one that already
@@ -261,7 +259,7 @@ export function AdTermsDialog({
           {problems.length > 0 && (
             <ul className="space-y-1 text-xs text-amber-300">
               {problems.map((p) => (
-                <li key={p}>{p}</li>
+                <li key={p}>{t(p)}</li>
               ))}
             </ul>
           )}
@@ -274,7 +272,7 @@ export function AdTermsDialog({
             onClick={onClose}
             className="rounded-md border border-white/15 px-3 py-1.5 text-sm text-gray-300 hover:bg-white/5"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -282,7 +280,7 @@ export function AdTermsDialog({
             onClick={() => void save()}
             className="rounded-md bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-40"
           >
-            {saving ? "Signing…" : "Sign and publish"}
+            {saving ? t("signing") : t("signPublish")}
           </button>
         </div>
       </div>
