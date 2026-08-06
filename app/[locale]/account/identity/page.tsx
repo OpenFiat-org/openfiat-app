@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
 import { IdentityClaimsPanel } from "@/components/account/identity-claims";
 import { LiveReputationPanel } from "@/components/account/live-reputation";
 import { PageHero } from "@/components/page-hero";
 import { Panel } from "@/components/panel";
 
-export const metadata: Metadata = {
-  title: "Identity & Reputation",
-  description:
-    "The identity claims your wallet has actually published, and the reputation counters a node records for it. Both are read live; neither is stored as a score or a level.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "identity" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 /**
  * Identity levels as OFS-5000 §8 defines them — a description of what a
@@ -26,35 +32,16 @@ export const metadata: Metadata = {
  * percentage and a token bond at Level 3 — none of which the specification
  * asks for and none of which anything in this codebase performs.
  */
-const LEVELS = [
-  {
-    level: "Level 0",
-    title: "Wallet identity",
-    body: "A valid wallet, authenticated. This is the minimum to use OpenFiat, and §8 is explicit that participation never requires going further than this.",
-  },
-  {
-    level: "Level 1",
-    title: "Verified contact",
-    body: "One or more communication channels — email, phone, Telegram, Discord, X — published as claims. The specification pairs these with OTP verification; that flow is the wallet application's to run and no node performs it, so a claim marked verified is the publisher saying so.",
-  },
-  {
-    level: "Level 2",
-    title: "Merchant identity",
-    body: "A display name, business name, brand logo and support contacts, self-published and signed. §8's own caveat is worth repeating: these improve confidence but do not imply regulatory approval, and nobody checks them against a registry.",
-  },
-  {
-    level: "Level 3",
-    title: "Infrastructure provider",
-    body: "Operational details an infrastructure operator may publish — organisation name, documentation, support and incident contacts — so other operators can identify them. There is no threshold to meet and no bond to post; the specification names no requirement of either kind.",
-  },
-];
+/** The four OFS-5000 §8 levels, by index. Titles and bodies are localized copy. */
+const LEVEL_INDEXES = [0, 1, 2, 3];
 
 export default function IdentityPage() {
+  const t = useTranslations("identity");
   return (
     <section>
       <PageHero
-        title="Identity & Reputation"
-        description="What your wallet has published about itself, and what the network has recorded about how it trades. Both are bound to your key rather than to an account, and both travel with it to every OpenFiat application."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
 
       <div className="mt-8">
@@ -66,21 +53,19 @@ export default function IdentityPage() {
       </div>
 
       <div className="mt-8">
-        <Panel title="What the levels mean">
+        <Panel title={t("levelsTitle")}>
           <ol className="divide-y divide-white/5">
-            {LEVELS.map((level) => (
-              <li key={level.level} className="px-4 py-4">
+            {LEVEL_INDEXES.map((n) => (
+              <li key={n} className="px-4 py-4">
                 <p className="text-sm text-gray-200">
-                  <span className="text-gray-500">{level.level}</span> · {level.title}
+                  <span className="text-gray-500">{t("levelLabel", { n })}</span> · {t(`levels.${n}.title`)}
                 </p>
-                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500">{level.body}</p>
+                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500">{t(`levels.${n}.body`)}</p>
               </li>
             ))}
           </ol>
           <p className="border-t border-white/10 px-4 py-2.5 text-[11px] text-gray-600">
-            No level is stored against your wallet, and nothing in the protocol is gated on one. A
-            level describes which kinds of claim a wallet has published, so it is something a
-            reader concludes from the list above rather than a status anybody grants.
+            {t("levelsFooter")}
           </p>
         </Panel>
       </div>

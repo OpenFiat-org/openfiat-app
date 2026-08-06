@@ -1054,5 +1054,72 @@
         "requirement": "Stake de registro para um provedor de snapshots OFS-1500."
       }
     }
+  },
+  "identity": {
+    "metaTitle": "Identidade e reputação",
+    "metaDescription": "As declarações de identidade que sua carteira realmente publicou, e os contadores de reputação que um nó registra para ela. Ambos são lidos ao vivo; nenhum é armazenado como pontuação ou nível.",
+    "heroTitle": "Identidade e reputação",
+    "heroDescription": "O que sua carteira publicou sobre si mesma, e o que a rede registrou sobre como ela negocia. Ambos estão ligados à sua chave, não a uma conta, e ambos a acompanham a cada aplicativo OpenFiat.",
+    "levelsTitle": "O que os níveis significam",
+    "levelLabel": "Nível {n}",
+    "levelsFooter": "Nenhum nível é armazenado contra sua carteira, e nada no protocolo depende de um. Um nível descreve quais tipos de declaração uma carteira publicou, então é algo que um leitor conclui da lista acima, e não um status que alguém concede.",
+    "levels": {
+      "0": {
+        "title": "Identidade de carteira",
+        "body": "Uma carteira válida, autenticada. Este é o mínimo para usar a OpenFiat, e §8 é explícito de que a participação nunca exige ir além disto."
+      },
+      "1": {
+        "title": "Contato verificado",
+        "body": "Um ou mais canais de comunicação — e-mail, telefone, Telegram, Discord, X — publicados como declarações. A especificação os associa à verificação por OTP; esse fluxo cabe ao aplicativo de carteira executar e nenhum nó o realiza, então uma declaração marcada como verificada é o publicador dizendo isso."
+      },
+      "2": {
+        "title": "Identidade de comerciante",
+        "body": "Um nome de exibição, nome comercial, logotipo de marca e contatos de suporte, autopublicados e assinados. Vale repetir a própria ressalva de §8: eles aumentam a confiança mas não implicam aprovação regulatória, e ninguém os confere contra um registro."
+      },
+      "3": {
+        "title": "Provedor de infraestrutura",
+        "body": "Detalhes operacionais que um operador de infraestrutura pode publicar — nome da organização, documentação, contatos de suporte e de incidentes — para que outros operadores possam identificá-lo. Não há limiar a cumprir nem bond a depositar; a especificação não nomeia requisito de nenhum tipo."
+      }
+    },
+    "repMetaTitle": "Reputação",
+    "repMetaDescription": "Sua reputação na OpenFiat — ligada à carteira, portátil, construída sobre 8 dimensões objetivas.",
+    "repPageDescription": "Sem avaliações por estrelas — a reputação é um conjunto de dimensões objetivas e verificáveis on-chain, ligadas à sua carteira e portáteis em cada aplicativo OpenFiat.",
+    "repEventsNote": "Eventos de reputação (SettlementCompleted, DisputeResolved, PaymentApproved, …) são emitidos como eventos de protocolo assinados e se agregam nos contadores acima em cada aplicativo OpenFiat que lê a mesma carteira.",
+    "nodeUnreachable": "Não foi possível alcançar seu nó de acesso.",
+    "readingNode": "Lendo do seu nó…",
+    "claimsTitle": "Suas declarações de identidade",
+    "claimsConnect": "Conecte uma carteira. Uma declaração é uma afirmação sobre uma chave, então não há conta para abrir nem nada para mostrar até que uma chave esteja conectada.",
+    "noClaims": "Esta carteira não publicou nenhuma declaração. Isso é Nível 0, e é suficiente para negociar — nada no protocolo exige mais.",
+    "claimsFooter": "Declarações revogadas, expiradas e substituídas são mostradas em vez de ocultadas. Uma declaração nunca é excluída (OFS-5000 §11) — publicar um novo valor arquiva o antigo — então é isso que uma contraparte inspecionando sua carteira também vê.",
+    "encryptionKey": "Chave de criptografia",
+    "custom": "personalizada",
+    "inactive": {
+      "revoked": "Revogada",
+      "expired": "Expirada",
+      "superseded": "Substituída"
+    },
+    "checkedByNode": "Verificada pelo nó",
+    "markedVerified": "Marcada como verificada pelo publicador",
+    "selfAsserted": "Autodeclarada",
+    "encryptionKeyNote": "Não é uma chave de carteira e não contém fundos. Contrapartes selam suas mensagens de negociação e detalhes de pagamento a ela, e só sua carteira pode derivar a metade privada que os abre — em qualquer dispositivo, a partir da mesma carteira.",
+    "published": "Publicada em {date}",
+    "expires": "expira em {date}",
+    "replaces": "substitui {id}",
+    "repTitle": "Sua reputação",
+    "repConnect": "Conecte uma carteira. A reputação está ligada a uma chave, não a uma conta — não há nada para mostrar até que uma esteja conectada.",
+    "repEmpty": "Ainda não há histórico registrado para esta carteira. A reputação é construída a partir de negociações concluídas, respostas de pagamento e disputas — começa vazia, e um registro vazio não é um registro ruim.",
+    "repFooter": "Contadores como o protocolo os registra (OFS-3000). Não há avaliações por estrelas nem níveis — a reputação é objetiva, ligada à carteira e portátil em cada aplicativo OpenFiat.",
+    "tradesStarted": "Negociações iniciadas",
+    "tradesCompleted": "Negociações concluídas",
+    "tradesCancelled": "Negociações canceladas",
+    "completionRate": "Taxa de conclusão",
+    "noTradesYet": "nenhuma negociação iniciada ainda",
+    "meanSettlement": "Tempo médio de liquidação",
+    "minutes": "{n} min",
+    "meanNote": "média entre negociações concluídas",
+    "disputesInvolved": "Disputas envolvidas",
+    "disputesLost": "Disputas perdidas",
+    "paymentDiscrepancies": "Divergências de pagamento",
+    "reservationsMissed": "Reservas perdidas"
   }
 }

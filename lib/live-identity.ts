@@ -157,15 +157,18 @@ export function currentClaims(
   );
 }
 
-/** Why a claim is not in force, or null when it is. */
+/** Why a claim is not in force, or null when it is. Returns a stable key
+ *  (`revoked`/`expired`/`superseded`); the caller resolves the label. */
+export type InactiveReason = "revoked" | "expired" | "superseded";
+
 export function inactiveReason(
   claim: IdentityClaimRecord,
   replacedIds: ReadonlySet<string>,
   now: number = Date.now(),
-): string | null {
-  if (claim.revoked) return "Revoked";
-  if (claim.expiresAt !== null && claim.expiresAt <= now) return "Expired";
-  if (replacedIds.has(claim.claimId)) return "Superseded";
+): InactiveReason | null {
+  if (claim.revoked) return "revoked";
+  if (claim.expiresAt !== null && claim.expiresAt <= now) return "expired";
+  if (replacedIds.has(claim.claimId)) return "superseded";
   return null;
 }
 

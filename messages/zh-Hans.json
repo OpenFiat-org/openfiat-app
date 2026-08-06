@@ -1054,5 +1054,72 @@
         "requirement": "用于 OFS-1500 快照提供方的注册质押。"
       }
     }
+  },
+  "identity": {
+    "metaTitle": "身份与信誉",
+    "metaDescription": "你的钱包实际发布的身份声明，以及节点为其记录的信誉计数。两者都实时读取；均不作为分数或等级存储。",
+    "heroTitle": "身份与信誉",
+    "heroDescription": "你的钱包关于自身发布了什么，以及网络记录了它如何交易。两者都绑定到你的密钥而非账户，并随之带到每个 OpenFiat 应用。",
+    "levelsTitle": "各等级的含义",
+    "levelLabel": "等级 {n}",
+    "levelsFooter": "你的钱包上不存储任何等级，协议中也没有任何东西以等级为门槛。等级描述的是钱包发布了哪些类型的声明，因此它是读者从上面的列表中得出的结论，而非任何人授予的状态。",
+    "levels": {
+      "0": {
+        "title": "钱包身份",
+        "body": "一个有效且已认证的钱包。这是使用 OpenFiat 的最低要求，§8 明确指出参与从不需要超出这一点。"
+      },
+      "1": {
+        "title": "已验证联系方式",
+        "body": "作为声明发布的一个或多个通信渠道——电子邮件、电话、Telegram、Discord、X。规范将其与 OTP 验证配对；该流程由钱包应用执行，任何节点都不执行，因此标记为“已验证”的声明只是发布者自己这样说。"
+      },
+      "2": {
+        "title": "商家身份",
+        "body": "自我发布并签名的显示名称、商业名称、品牌徽标和支持联系方式。值得重复 §8 自己的告诫：它们提升信任，但并不意味着监管批准，也没有人对照登记册核查它们。"
+      },
+      "3": {
+        "title": "基础设施提供方",
+        "body": "基础设施运营者可发布的运营详情——组织名称、文档、支持与事件联系方式——以便其他运营者识别他们。没有需要满足的门槛，也没有需要缴纳的保证金；规范未提出任何一类要求。"
+      }
+    },
+    "repMetaTitle": "信誉",
+    "repMetaDescription": "你在 OpenFiat 的信誉——绑定钱包、可携带、基于 8 个客观维度构建。",
+    "repPageDescription": "没有星级评分——信誉是一组客观、可在链上验证的维度，绑定到你的钱包，并可跨每个 OpenFiat 应用携带。",
+    "repEventsNote": "信誉事件（SettlementCompleted、DisputeResolved、PaymentApproved……）作为已签名的协议事件发出，并在读取同一钱包的每个 OpenFiat 应用中汇总为上面的计数。",
+    "nodeUnreachable": "无法连接到你的接入节点。",
+    "readingNode": "正在从你的节点读取…",
+    "claimsTitle": "你的身份声明",
+    "claimsConnect": "请连接钱包。声明是关于某个密钥的断言，因此在连接密钥之前没有可开设的账户，也没有可显示的内容。",
+    "noClaims": "此钱包尚未发布任何声明。这是等级 0，足以进行交易——协议不要求更多。",
+    "claimsFooter": "已撤销、已过期和已被取代的声明会显示而非隐藏。声明绝不会被删除（OFS-5000 §11）——发布新值会归档旧值——因此这也是检视你钱包的对手方所看到的内容。",
+    "encryptionKey": "加密密钥",
+    "custom": "自定义",
+    "inactive": {
+      "revoked": "已撤销",
+      "expired": "已过期",
+      "superseded": "已被取代"
+    },
+    "checkedByNode": "已由节点检验",
+    "markedVerified": "由发布者标记为已验证",
+    "selfAsserted": "自我声明",
+    "encryptionKeyNote": "这不是钱包密钥，也不持有任何资金。对手方将你的交易消息和付款信息密封到它，只有你的钱包才能派生出打开它们的私钥部分——在任何设备上，来自同一个钱包。",
+    "published": "发布于 {date}",
+    "expires": "到期 {date}",
+    "replaces": "取代 {id}",
+    "repTitle": "你的信誉",
+    "repConnect": "请连接钱包。信誉绑定到密钥而非账户——在连接钱包之前没有可显示的内容。",
+    "repEmpty": "此钱包尚无记录历史。信誉由已完成的交易、付款响应和争议构建——它从空白开始，而空白记录并非不良记录。",
+    "repFooter": "按协议记录方式的计数（OFS-3000）。没有星级评分，也没有等级——信誉是客观的、绑定钱包的，并可跨每个 OpenFiat 应用携带。",
+    "tradesStarted": "已发起交易",
+    "tradesCompleted": "已完成交易",
+    "tradesCancelled": "已取消交易",
+    "completionRate": "完成率",
+    "noTradesYet": "尚未发起任何交易",
+    "meanSettlement": "平均结算时间",
+    "minutes": "{n} 分钟",
+    "meanNote": "已完成交易的平均值",
+    "disputesInvolved": "涉及的争议",
+    "disputesLost": "败诉的争议",
+    "paymentDiscrepancies": "付款差异",
+    "reservationsMissed": "错过的预订"
   }
 }

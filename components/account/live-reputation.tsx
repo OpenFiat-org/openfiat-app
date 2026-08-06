@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { CopyButton } from "@/components/copy-button";
@@ -18,6 +19,7 @@ import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connect
  * that ladder existed only in the fixture.
  */
 export function LiveReputationPanel() {
+  const t = useTranslations("identity");
   const [wallet, setWallet] = useState<string | null>(null);
   const [data, setData] = useState<LiveReputation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,72 +42,69 @@ export function LiveReputationPanel() {
     setError(null);
     fetchReputation(wallet)
       .then((r) => !cancelled && setData(r))
-      .catch(() => !cancelled && setError("Could not reach your access node."))
+      .catch(() => !cancelled && setError(t("nodeUnreachable")))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [wallet]);
+  }, [wallet, t]);
 
   if (!wallet) {
     return (
-      <Panel title="Your reputation">
+      <Panel title={t("repTitle")}>
         <p className="px-4 py-10 text-center text-sm text-gray-500">
-          Connect a wallet. Reputation is bound to a key, not to an account — there is nothing to show
-          until one is connected.
+          {t("repConnect")}
         </p>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Your reputation">
+    <Panel title={t("repTitle")}>
       <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3 font-mono text-xs text-gray-500">
         {shortAddress(wallet)}
         <CopyButton value={wallet} />
       </div>
 
-      {loading && <p className="px-4 py-10 text-center text-sm text-gray-500">Reading from your node…</p>}
+      {loading && <p className="px-4 py-10 text-center text-sm text-gray-500">{t("readingNode")}</p>}
       {error && <p className="px-4 py-10 text-center text-sm text-amber-300">{error}</p>}
 
       {data && data.empty && (
         <p className="px-4 py-10 text-center text-sm text-gray-500">
-          No recorded history for this wallet yet. Reputation is built from completed trades, payment
-          responses and disputes — it starts empty, and an empty record is not a bad one.
+          {t("repEmpty")}
         </p>
       )}
 
       {data && !data.empty && (
         <ol className="divide-y divide-white/5">
-          <Row label="Trades started" value={String(data.tradesStarted)} />
-          <Row label="Trades completed" value={String(data.tradesCompleted)} />
-          <Row label="Trades cancelled" value={String(data.tradesCancelled)} />
+          <Row label={t("tradesStarted")} value={String(data.tradesStarted)} />
+          <Row label={t("tradesCompleted")} value={String(data.tradesCompleted)} />
+          <Row label={t("tradesCancelled")} value={String(data.tradesCancelled)} />
           <Row
-            label="Completion rate"
+            label={t("completionRate")}
             value={data.completionRate === null ? "—" : `${(data.completionRate * 100).toFixed(1)}%`}
-            note={data.completionRate === null ? "no trades started yet" : undefined}
+            note={data.completionRate === null ? t("noTradesYet") : undefined}
           />
           <Row
-            label="Mean settlement time"
+            label={t("meanSettlement")}
             value={
               data.medianSettlementMs === null
                 ? "—"
-                : `${Math.round(data.medianSettlementMs / 60000)} min`
+                : t("minutes", { n: Math.round(data.medianSettlementMs / 60000) })
             }
             // Named a mean because that is what it is: the node returns a
             // duration sum and a count, which cannot produce a median.
-            note="mean across completed trades"
+            note={t("meanNote")}
           />
-          <Row label="Disputes involved" value={String(data.disputesInvolved)} />
-          <Row label="Disputes lost" value={String(data.disputesLost)} />
-          <Row label="Payment discrepancies" value={String(data.paymentDiscrepancies)} />
-          <Row label="Reservations missed" value={String(data.reservationsMissed)} />
+          <Row label={t("disputesInvolved")} value={String(data.disputesInvolved)} />
+          <Row label={t("disputesLost")} value={String(data.disputesLost)} />
+          <Row label={t("paymentDiscrepancies")} value={String(data.paymentDiscrepancies)} />
+          <Row label={t("reservationsMissed")} value={String(data.reservationsMissed)} />
         </ol>
       )}
 
       <p className="border-t border-white/10 px-4 py-2.5 text-[11px] text-gray-600">
-        Counters as the protocol records them (OFS-3000). There are no star ratings and no tiers —
-        reputation is objective, wallet-bound, and portable across every OpenFiat application.
+        {t("repFooter")}
       </p>
     </Panel>
   );

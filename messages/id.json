@@ -1054,5 +1054,72 @@
         "requirement": "Stake pendaftaran untuk penyedia snapshot OFS-1500."
       }
     }
+  },
+  "identity": {
+    "metaTitle": "Identitas & Reputasi",
+    "metaDescription": "Klaim identitas yang benar-benar dipublikasikan dompet Anda, dan penghitung reputasi yang dicatat sebuah node untuknya. Keduanya dibaca langsung; tidak ada yang disimpan sebagai skor atau tingkat.",
+    "heroTitle": "Identitas & Reputasi",
+    "heroDescription": "Apa yang telah dipublikasikan dompet Anda tentang dirinya, dan apa yang telah dicatat jaringan tentang bagaimana ia bertransaksi. Keduanya terikat pada kunci Anda alih-alih pada akun, dan keduanya mengikutinya ke setiap aplikasi OpenFiat.",
+    "levelsTitle": "Apa arti tingkatan",
+    "levelLabel": "Tingkat {n}",
+    "levelsFooter": "Tidak ada tingkat yang disimpan terhadap dompet Anda, dan tidak ada dalam protokol yang digerbangi oleh tingkat. Sebuah tingkat menjelaskan jenis klaim apa yang telah dipublikasikan sebuah dompet, jadi ia adalah sesuatu yang disimpulkan pembaca dari daftar di atas, bukan status yang diberikan siapa pun.",
+    "levels": {
+      "0": {
+        "title": "Identitas dompet",
+        "body": "Dompet yang sah dan terautentikasi. Ini adalah minimum untuk menggunakan OpenFiat, dan §8 tegas bahwa partisipasi tidak pernah mengharuskan melampaui ini."
+      },
+      "1": {
+        "title": "Kontak terverifikasi",
+        "body": "Satu atau lebih kanal komunikasi — email, telepon, Telegram, Discord, X — dipublikasikan sebagai klaim. Spesifikasi memasangkannya dengan verifikasi OTP; alur itu adalah tugas aplikasi dompet untuk menjalankannya dan tidak ada node yang melakukannya, jadi klaim yang ditandai terverifikasi adalah penerbit yang mengatakannya."
+      },
+      "2": {
+        "title": "Identitas pedagang",
+        "body": "Nama tampilan, nama bisnis, logo merek, dan kontak dukungan, dipublikasikan sendiri dan ditandatangani. Peringatan §8 sendiri patut diulang: ini meningkatkan kepercayaan tetapi tidak menyiratkan persetujuan regulator, dan tidak ada yang memeriksanya terhadap registri."
+      },
+      "3": {
+        "title": "Penyedia infrastruktur",
+        "body": "Rincian operasional yang boleh dipublikasikan operator infrastruktur — nama organisasi, dokumentasi, kontak dukungan dan insiden — agar operator lain dapat mengidentifikasinya. Tidak ada ambang yang harus dipenuhi dan tidak ada bond yang harus disetor; spesifikasi tidak menyebut persyaratan jenis apa pun."
+      }
+    },
+    "repMetaTitle": "Reputasi",
+    "repMetaDescription": "Reputasi OpenFiat Anda — terikat dompet, portabel, dibangun di atas 8 dimensi objektif.",
+    "repPageDescription": "Tanpa peringkat bintang — reputasi adalah seperangkat dimensi objektif yang dapat diverifikasi on-chain, terikat pada dompet Anda dan portabel di setiap aplikasi OpenFiat.",
+    "repEventsNote": "Peristiwa reputasi (SettlementCompleted, DisputeResolved, PaymentApproved, …) dipancarkan sebagai peristiwa protokol yang ditandatangani dan diagregasikan ke dalam penghitung di atas pada setiap aplikasi OpenFiat yang membaca dompet yang sama.",
+    "nodeUnreachable": "Tidak dapat menjangkau node akses Anda.",
+    "readingNode": "Membaca dari node Anda…",
+    "claimsTitle": "Klaim identitas Anda",
+    "claimsConnect": "Hubungkan dompet. Sebuah klaim adalah pernyataan tentang sebuah kunci, jadi tidak ada akun untuk dibuka dan tidak ada yang ditampilkan sampai sebuah kunci terhubung.",
+    "noClaims": "Dompet ini belum memublikasikan klaim. Itu Tingkat 0, dan cukup untuk bertransaksi — tidak ada dalam protokol yang menuntut lebih.",
+    "claimsFooter": "Klaim yang dicabut, kedaluwarsa, dan digantikan ditampilkan alih-alih disembunyikan. Sebuah klaim tidak pernah dihapus (OFS-5000 §11) — memublikasikan nilai baru mengarsipkan yang lama — jadi ini juga yang dilihat pihak lawan yang memeriksa dompet Anda.",
+    "encryptionKey": "Kunci enkripsi",
+    "custom": "kustom",
+    "inactive": {
+      "revoked": "Dicabut",
+      "expired": "Kedaluwarsa",
+      "superseded": "Digantikan"
+    },
+    "checkedByNode": "Diperiksa oleh node",
+    "markedVerified": "Ditandai terverifikasi oleh penerbit",
+    "selfAsserted": "Swadeklarasi",
+    "encryptionKeyNote": "Bukan kunci dompet dan tidak menyimpan dana. Pihak lawan menyegel pesan transaksi dan detail pembayaran Anda ke sini, dan hanya dompet Anda yang dapat menurunkan separuh privat yang membukanya — di perangkat mana pun, dari dompet yang sama.",
+    "published": "Dipublikasikan {date}",
+    "expires": "kedaluwarsa {date}",
+    "replaces": "menggantikan {id}",
+    "repTitle": "Reputasi Anda",
+    "repConnect": "Hubungkan dompet. Reputasi terikat pada kunci, bukan pada akun — tidak ada yang ditampilkan sampai satu terhubung.",
+    "repEmpty": "Belum ada riwayat tercatat untuk dompet ini. Reputasi dibangun dari transaksi yang selesai, respons pembayaran, dan sengketa — ia dimulai kosong, dan catatan kosong bukanlah catatan buruk.",
+    "repFooter": "Penghitung sebagaimana dicatat protokol (OFS-3000). Tidak ada peringkat bintang dan tidak ada tingkatan — reputasi bersifat objektif, terikat dompet, dan portabel di setiap aplikasi OpenFiat.",
+    "tradesStarted": "Transaksi dimulai",
+    "tradesCompleted": "Transaksi selesai",
+    "tradesCancelled": "Transaksi dibatalkan",
+    "completionRate": "Tingkat penyelesaian",
+    "noTradesYet": "belum ada transaksi dimulai",
+    "meanSettlement": "Waktu penyelesaian rata-rata",
+    "minutes": "{n} mnt",
+    "meanNote": "rata-rata di seluruh transaksi selesai",
+    "disputesInvolved": "Sengketa terlibat",
+    "disputesLost": "Sengketa kalah",
+    "paymentDiscrepancies": "Ketidaksesuaian pembayaran",
+    "reservationsMissed": "Reservasi terlewat"
   }
 }

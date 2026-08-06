@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { PageHero } from "@/components/page-hero";
 import { LiveReputationPanel } from "@/components/account/live-reputation";
 
-export const metadata: Metadata = {
-  title: "Reputation",
-  description: "Your OpenFiat reputation — wallet-bound, portable, built on 8 objective dimensions.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "identity" });
+  return { title: t("repMetaTitle"), description: t("repMetaDescription") };
+}
 
 
 /*
@@ -18,11 +25,12 @@ export const metadata: Metadata = {
  */
 
 export default function ReputationPage() {
+  const t = useTranslations("identity");
   return (
     <section>
       <PageHero
-        title="Reputation"
-        description="No star ratings — reputation is a set of objective, on-chain-verifiable dimensions, bound to your wallet and portable across every OpenFiat application."
+        title={t("repMetaTitle")}
+        description={t("repPageDescription")}
       />
 
       <div className="mt-8">
@@ -31,9 +39,7 @@ export default function ReputationPage() {
 
 
       <p className="mt-8 text-xs text-gray-500">
-        Reputation events (SettlementCompleted, DisputeResolved, PaymentApproved, …) are emitted as
-        signed protocol events and aggregate into the counters above on every OpenFiat application
-        that reads the same wallet.
+        {t("repEventsNote")}
       </p>
 
     </section>

@@ -1054,5 +1054,72 @@
         "requirement": "Depósito de registro para un proveedor de snapshots OFS-1500."
       }
     }
+  },
+  "identity": {
+    "metaTitle": "Identidad y reputación",
+    "metaDescription": "Los reclamos de identidad que tu billetera ha publicado realmente, y los contadores de reputación que un nodo registra para ella. Ambos se leen en vivo; ninguno se almacena como puntuación ni nivel.",
+    "heroTitle": "Identidad y reputación",
+    "heroDescription": "Lo que tu billetera ha publicado sobre sí misma, y lo que la red ha registrado sobre cómo opera. Ambos están ligados a tu clave y no a una cuenta, y ambos la acompañan a cada aplicación de OpenFiat.",
+    "levelsTitle": "Qué significan los niveles",
+    "levelLabel": "Nivel {n}",
+    "levelsFooter": "No se almacena ningún nivel contra tu billetera, y nada en el protocolo depende de uno. Un nivel describe qué tipos de reclamo ha publicado una billetera, así que es algo que un lector concluye de la lista de arriba, no un estado que alguien otorga.",
+    "levels": {
+      "0": {
+        "title": "Identidad de billetera",
+        "body": "Una billetera válida, autenticada. Es el mínimo para usar OpenFiat, y §8 es explícito en que la participación nunca requiere ir más allá de esto."
+      },
+      "1": {
+        "title": "Contacto verificado",
+        "body": "Uno o más canales de comunicación — correo, teléfono, Telegram, Discord, X — publicados como reclamos. La especificación los empareja con verificación OTP; ese flujo lo ejecuta la aplicación de billetera y ningún nodo lo realiza, así que un reclamo marcado como verificado es el publicador diciéndolo."
+      },
+      "2": {
+        "title": "Identidad de comerciante",
+        "body": "Un nombre visible, nombre comercial, logotipo de marca y contactos de soporte, autopublicados y firmados. Vale repetir la propia advertencia de §8: mejoran la confianza pero no implican aprobación regulatoria, y nadie los comprueba contra un registro."
+      },
+      "3": {
+        "title": "Proveedor de infraestructura",
+        "body": "Datos operativos que un operador de infraestructura puede publicar — nombre de organización, documentación, contactos de soporte e incidentes — para que otros operadores puedan identificarlo. No hay umbral que cumplir ni fianza que depositar; la especificación no nombra ningún requisito de ninguno de los dos tipos."
+      }
+    },
+    "repMetaTitle": "Reputación",
+    "repMetaDescription": "Tu reputación en OpenFiat — ligada a la billetera, portátil, construida sobre 8 dimensiones objetivas.",
+    "repPageDescription": "Sin valoraciones por estrellas — la reputación es un conjunto de dimensiones objetivas y verificables en cadena, ligadas a tu billetera y portátiles en cada aplicación de OpenFiat.",
+    "repEventsNote": "Los eventos de reputación (SettlementCompleted, DisputeResolved, PaymentApproved, …) se emiten como eventos de protocolo firmados y se agregan en los contadores de arriba en cada aplicación de OpenFiat que lea la misma billetera.",
+    "nodeUnreachable": "No se pudo contactar con tu nodo de acceso.",
+    "readingNode": "Leyendo desde tu nodo…",
+    "claimsTitle": "Tus reclamos de identidad",
+    "claimsConnect": "Conecta una billetera. Un reclamo es una afirmación sobre una clave, así que no hay ninguna cuenta que abrir ni nada que mostrar hasta que se conecte una clave.",
+    "noClaims": "Esta billetera no ha publicado reclamos. Eso es Nivel 0, y basta para operar — nada en el protocolo requiere más.",
+    "claimsFooter": "Los reclamos revocados, expirados y reemplazados se muestran en lugar de ocultarse. Un reclamo nunca se elimina (OFS-5000 §11) — publicar un nuevo valor archiva el antiguo — así que esto es también lo que ve una contraparte que inspecciona tu billetera.",
+    "encryptionKey": "Clave de cifrado",
+    "custom": "personalizado",
+    "inactive": {
+      "revoked": "Revocado",
+      "expired": "Expirado",
+      "superseded": "Reemplazado"
+    },
+    "checkedByNode": "Comprobado por el nodo",
+    "markedVerified": "Marcado como verificado por el publicador",
+    "selfAsserted": "Autodeclarado",
+    "encryptionKeyNote": "No es una clave de billetera y no contiene fondos. Las contrapartes sellan tus mensajes de operación y datos de pago a esta, y solo tu billetera puede derivar la mitad privada que los abre — en cualquier dispositivo, desde la misma billetera.",
+    "published": "Publicado el {date}",
+    "expires": "expira el {date}",
+    "replaces": "reemplaza a {id}",
+    "repTitle": "Tu reputación",
+    "repConnect": "Conecta una billetera. La reputación está ligada a una clave, no a una cuenta — no hay nada que mostrar hasta que se conecte una.",
+    "repEmpty": "Aún no hay historial registrado para esta billetera. La reputación se construye a partir de operaciones completadas, respuestas de pago y disputas — empieza vacía, y un registro vacío no es uno malo.",
+    "repFooter": "Contadores tal como los registra el protocolo (OFS-3000). No hay valoraciones por estrellas ni niveles — la reputación es objetiva, ligada a la billetera y portátil en cada aplicación de OpenFiat.",
+    "tradesStarted": "Operaciones iniciadas",
+    "tradesCompleted": "Operaciones completadas",
+    "tradesCancelled": "Operaciones canceladas",
+    "completionRate": "Tasa de finalización",
+    "noTradesYet": "aún no se han iniciado operaciones",
+    "meanSettlement": "Tiempo medio de liquidación",
+    "minutes": "{n} min",
+    "meanNote": "media de las operaciones completadas",
+    "disputesInvolved": "Disputas involucradas",
+    "disputesLost": "Disputas perdidas",
+    "paymentDiscrepancies": "Discrepancias de pago",
+    "reservationsMissed": "Reservas incumplidas"
   }
 }

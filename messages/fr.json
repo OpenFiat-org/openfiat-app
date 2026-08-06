@@ -1054,5 +1054,72 @@
         "requirement": "Stake d'enregistrement pour un fournisseur de snapshots OFS-1500."
       }
     }
+  },
+  "identity": {
+    "metaTitle": "Identité et réputation",
+    "metaDescription": "Les revendications d'identité que votre portefeuille a réellement publiées, et les compteurs de réputation qu'un nœud enregistre pour lui. Les deux sont lus en direct ; aucun n'est stocké sous forme de score ou de niveau.",
+    "heroTitle": "Identité et réputation",
+    "heroDescription": "Ce que votre portefeuille a publié sur lui-même, et ce que le réseau a enregistré sur sa manière d'échanger. Les deux sont liés à votre clé plutôt qu'à un compte, et les deux le suivent vers chaque application OpenFiat.",
+    "levelsTitle": "Ce que signifient les niveaux",
+    "levelLabel": "Niveau {n}",
+    "levelsFooter": "Aucun niveau n'est stocké pour votre portefeuille, et rien dans le protocole n'est conditionné à un niveau. Un niveau décrit quels types de revendication un portefeuille a publiés, c'est donc quelque chose qu'un lecteur conclut de la liste ci-dessus, et non un statut que quelqu'un accorde.",
+    "levels": {
+      "0": {
+        "title": "Identité de portefeuille",
+        "body": "Un portefeuille valide, authentifié. C'est le minimum pour utiliser OpenFiat, et §8 est explicite : la participation n'exige jamais d'aller au-delà."
+      },
+      "1": {
+        "title": "Contact vérifié",
+        "body": "Un ou plusieurs canaux de communication — e-mail, téléphone, Telegram, Discord, X — publiés comme revendications. La spécification les associe à une vérification OTP ; ce flux revient à l'application de portefeuille et aucun nœud ne l'exécute, donc une revendication marquée vérifiée est le publieur qui l'affirme."
+      },
+      "2": {
+        "title": "Identité de commerçant",
+        "body": "Un nom d'affichage, un nom commercial, un logo de marque et des contacts d'assistance, auto-publiés et signés. La mise en garde propre à §8 mérite d'être répétée : ils améliorent la confiance mais n'impliquent pas d'agrément réglementaire, et personne ne les vérifie auprès d'un registre."
+      },
+      "3": {
+        "title": "Fournisseur d'infrastructure",
+        "body": "Des détails opérationnels qu'un opérateur d'infrastructure peut publier — nom d'organisation, documentation, contacts d'assistance et d'incident — pour que d'autres opérateurs puissent l'identifier. Aucun seuil à atteindre ni caution à déposer ; la spécification ne nomme aucune exigence de l'un ou l'autre type."
+      }
+    },
+    "repMetaTitle": "Réputation",
+    "repMetaDescription": "Votre réputation OpenFiat — liée au portefeuille, portable, bâtie sur 8 dimensions objectives.",
+    "repPageDescription": "Pas de notes en étoiles — la réputation est un ensemble de dimensions objectives et vérifiables sur la chaîne, liées à votre portefeuille et portables sur chaque application OpenFiat.",
+    "repEventsNote": "Les événements de réputation (SettlementCompleted, DisputeResolved, PaymentApproved, …) sont émis comme des événements de protocole signés et s'agrègent dans les compteurs ci-dessus sur chaque application OpenFiat qui lit le même portefeuille.",
+    "nodeUnreachable": "Impossible de joindre votre nœud d'accès.",
+    "readingNode": "Lecture depuis votre nœud…",
+    "claimsTitle": "Vos revendications d'identité",
+    "claimsConnect": "Connectez un portefeuille. Une revendication est une affirmation sur une clé, il n'y a donc aucun compte à ouvrir ni rien à afficher tant qu'une clé n'est pas connectée.",
+    "noClaims": "Ce portefeuille n'a publié aucune revendication. C'est le Niveau 0, et cela suffit pour échanger — rien dans le protocole n'en exige davantage.",
+    "claimsFooter": "Les revendications révoquées, expirées et remplacées sont affichées plutôt que masquées. Une revendication n'est jamais supprimée (OFS-5000 §11) — publier une nouvelle valeur archive l'ancienne — c'est donc aussi ce que voit une contrepartie inspectant votre portefeuille.",
+    "encryptionKey": "Clé de chiffrement",
+    "custom": "personnalisée",
+    "inactive": {
+      "revoked": "Révoquée",
+      "expired": "Expirée",
+      "superseded": "Remplacée"
+    },
+    "checkedByNode": "Vérifiée par le nœud",
+    "markedVerified": "Marquée vérifiée par le publieur",
+    "selfAsserted": "Auto-déclarée",
+    "encryptionKeyNote": "Ce n'est pas une clé de portefeuille et elle ne détient aucun fonds. Les contreparties scellent vos messages d'échange et détails de paiement à celle-ci, et seul votre portefeuille peut dériver la moitié privée qui les ouvre — sur n'importe quel appareil, depuis le même portefeuille.",
+    "published": "Publiée le {date}",
+    "expires": "expire le {date}",
+    "replaces": "remplace {id}",
+    "repTitle": "Votre réputation",
+    "repConnect": "Connectez un portefeuille. La réputation est liée à une clé, pas à un compte — il n'y a rien à afficher tant qu'un portefeuille n'est pas connecté.",
+    "repEmpty": "Aucun historique enregistré pour ce portefeuille pour l'instant. La réputation se construit à partir d'échanges terminés, de réponses de paiement et de litiges — elle commence vide, et un dossier vide n'est pas un mauvais dossier.",
+    "repFooter": "Compteurs tels que le protocole les enregistre (OFS-3000). Pas de notes en étoiles ni de niveaux — la réputation est objective, liée au portefeuille et portable sur chaque application OpenFiat.",
+    "tradesStarted": "Échanges commencés",
+    "tradesCompleted": "Échanges terminés",
+    "tradesCancelled": "Échanges annulés",
+    "completionRate": "Taux d'achèvement",
+    "noTradesYet": "aucun échange commencé pour l'instant",
+    "meanSettlement": "Temps de règlement moyen",
+    "minutes": "{n} min",
+    "meanNote": "moyenne sur les échanges terminés",
+    "disputesInvolved": "Litiges impliqués",
+    "disputesLost": "Litiges perdus",
+    "paymentDiscrepancies": "Écarts de paiement",
+    "reservationsMissed": "Réservations manquées"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { CopyButton } from "@/components/copy-button";
 import { Panel } from "@/components/panel";
@@ -10,6 +11,7 @@ import {
   inactiveReason,
   replacedClaimIds,
   type IdentityClaimRecord,
+  type InactiveReason,
 } from "@/lib/live-identity";
 import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connection";
 
@@ -48,6 +50,7 @@ import { readWalletConnection, WALLET_CHANGED_EVENT } from "@/lib/wallet-connect
  * protocol does not have, and putting a number on a person on that basis.
  */
 export function IdentityClaimsPanel() {
+  const t = useTranslations("identity");
   const [wallet, setWallet] = useState<string | null>(null);
   const [claims, setClaims] = useState<IdentityClaimRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,19 +73,18 @@ export function IdentityClaimsPanel() {
     setError(null);
     fetchIdentityClaims(wallet)
       .then((result) => !cancelled && setClaims(result))
-      .catch(() => !cancelled && setError("Could not reach your access node."))
+      .catch(() => !cancelled && setError(t("nodeUnreachable")))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [wallet]);
+  }, [wallet, t]);
 
   if (!wallet) {
     return (
-      <Panel title="Your identity claims">
+      <Panel title={t("claimsTitle")}>
         <p className="px-4 py-10 text-center text-sm text-gray-500">
-          Connect a wallet. A claim is an assertion about a key, so there is no account to open
-          and nothing to show until a key is connected.
+          {t("claimsConnect")}
         </p>
       </Panel>
     );
@@ -91,21 +93,20 @@ export function IdentityClaimsPanel() {
   const replaced = claims ? replacedClaimIds(claims) : new Set<string>();
 
   return (
-    <Panel title="Your identity claims">
+    <Panel title={t("claimsTitle")}>
       <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3 font-mono text-xs text-gray-500">
         {shortAddress(wallet)}
         <CopyButton value={wallet} />
       </div>
 
       {loading && (
-        <p className="px-4 py-10 text-center text-sm text-gray-500">Reading from your node…</p>
+        <p className="px-4 py-10 text-center text-sm text-gray-500">{t("readingNode")}</p>
       )}
       {error && <p className="px-4 py-10 text-center text-sm text-amber-300">{error}</p>}
 
       {claims?.length === 0 && (
         <p className="px-4 py-10 text-center text-sm text-gray-500">
-          This wallet has published no claims. That is Level 0, and it is enough to trade — nothing
-          in the protocol requires more.
+          {t("noClaims")}
         </p>
       )}
 
@@ -118,9 +119,7 @@ export function IdentityClaimsPanel() {
       )}
 
       <p className="border-t border-white/10 px-4 py-2.5 text-[11px] text-gray-600">
-        Revoked, expired and superseded claims are shown rather than hidden. A claim is never
-        deleted (OFS-5000 §11) — publishing a new value archives the old one — so this is what a
-        counterparty inspecting your wallet sees too.
+        {t("claimsFooter")}
       </p>
     </Panel>
   );
@@ -131,22 +130,23 @@ function ClaimRow({
   inactive,
 }: {
   claim: IdentityClaimRecord;
-  inactive: string | null;
+  inactive: InactiveReason | null;
 }) {
+  const t = useTranslations("identity");
   const isEncryptionKey = !claim.custom && claim.type === "EncryptionKey";
   return (
     <li className={`px-4 py-3 ${inactive ? "opacity-55" : ""}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-gray-200">
-          {isEncryptionKey ? "Encryption key" : claim.type}
+          {isEncryptionKey ? t("encryptionKey") : claim.type}
           {claim.custom && (
-            <span className="ml-2 text-[11px] uppercase tracking-wider text-gray-600">custom</span>
+            <span className="ml-2 text-[11px] uppercase tracking-wider text-gray-600">{t("custom")}</span>
           )}
         </p>
         <div className="flex items-center gap-2 text-[11px]">
           {inactive && (
             <span className="rounded-full border border-white/10 px-2 py-0.5 text-gray-400">
-              {inactive}
+              {t(`inactive.${inactive}`)}
             </span>
           )}
           {/*
@@ -164,10 +164,10 @@ function ClaimRow({
            */}
           <span className="rounded-full border border-white/10 px-2 py-0.5 text-gray-400">
             {isEncryptionKey
-              ? "Checked by the node"
+              ? t("checkedByNode")
               : claim.verified
-                ? "Marked verified by publisher"
-                : "Self-asserted"}
+                ? t("markedVerified")
+                : t("selfAsserted")}
           </span>
         </div>
       </div>
@@ -176,16 +176,14 @@ function ClaimRow({
 
       {isEncryptionKey && (
         <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
-          Not a wallet key and it holds no funds. Counterparties seal your trade messages and
-          payment details to this, and only your wallet can derive the private half that opens
-          them — on any device, from the same wallet.
+          {t("encryptionKeyNote")}
         </p>
       )}
 
       <p className="mt-1 text-[11px] text-gray-600">
-        Published {formatDateMs(claim.createdAt)}
-        {claim.expiresAt !== null && <> · expires {formatDateMs(claim.expiresAt)}</>}
-        {claim.supersedes && <> · replaces {claim.supersedes}</>}
+        {t("published", { date: formatDateMs(claim.createdAt) })}
+        {claim.expiresAt !== null && <> · {t("expires", { date: formatDateMs(claim.expiresAt) })}</>}
+        {claim.supersedes && <> · {t("replaces", { id: claim.supersedes })}</>}
       </p>
     </li>
   );

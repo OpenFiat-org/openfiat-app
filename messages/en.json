@@ -1054,5 +1054,72 @@
         "requirement": "Registration stake for an OFS-1500 snapshot provider."
       }
     }
+  },
+  "identity": {
+    "metaTitle": "Identity & Reputation",
+    "metaDescription": "The identity claims your wallet has actually published, and the reputation counters a node records for it. Both are read live; neither is stored as a score or a level.",
+    "heroTitle": "Identity & Reputation",
+    "heroDescription": "What your wallet has published about itself, and what the network has recorded about how it trades. Both are bound to your key rather than to an account, and both travel with it to every OpenFiat application.",
+    "levelsTitle": "What the levels mean",
+    "levelLabel": "Level {n}",
+    "levelsFooter": "No level is stored against your wallet, and nothing in the protocol is gated on one. A level describes which kinds of claim a wallet has published, so it is something a reader concludes from the list above rather than a status anybody grants.",
+    "levels": {
+      "0": {
+        "title": "Wallet identity",
+        "body": "A valid wallet, authenticated. This is the minimum to use OpenFiat, and §8 is explicit that participation never requires going further than this."
+      },
+      "1": {
+        "title": "Verified contact",
+        "body": "One or more communication channels — email, phone, Telegram, Discord, X — published as claims. The specification pairs these with OTP verification; that flow is the wallet application's to run and no node performs it, so a claim marked verified is the publisher saying so."
+      },
+      "2": {
+        "title": "Merchant identity",
+        "body": "A display name, business name, brand logo and support contacts, self-published and signed. §8's own caveat is worth repeating: these improve confidence but do not imply regulatory approval, and nobody checks them against a registry."
+      },
+      "3": {
+        "title": "Infrastructure provider",
+        "body": "Operational details an infrastructure operator may publish — organisation name, documentation, support and incident contacts — so other operators can identify them. There is no threshold to meet and no bond to post; the specification names no requirement of either kind."
+      }
+    },
+    "repMetaTitle": "Reputation",
+    "repMetaDescription": "Your OpenFiat reputation — wallet-bound, portable, built on 8 objective dimensions.",
+    "repPageDescription": "No star ratings — reputation is a set of objective, on-chain-verifiable dimensions, bound to your wallet and portable across every OpenFiat application.",
+    "repEventsNote": "Reputation events (SettlementCompleted, DisputeResolved, PaymentApproved, …) are emitted as signed protocol events and aggregate into the counters above on every OpenFiat application that reads the same wallet.",
+    "nodeUnreachable": "Could not reach your access node.",
+    "readingNode": "Reading from your node…",
+    "claimsTitle": "Your identity claims",
+    "claimsConnect": "Connect a wallet. A claim is an assertion about a key, so there is no account to open and nothing to show until a key is connected.",
+    "noClaims": "This wallet has published no claims. That is Level 0, and it is enough to trade — nothing in the protocol requires more.",
+    "claimsFooter": "Revoked, expired and superseded claims are shown rather than hidden. A claim is never deleted (OFS-5000 §11) — publishing a new value archives the old one — so this is what a counterparty inspecting your wallet sees too.",
+    "encryptionKey": "Encryption key",
+    "custom": "custom",
+    "inactive": {
+      "revoked": "Revoked",
+      "expired": "Expired",
+      "superseded": "Superseded"
+    },
+    "checkedByNode": "Checked by the node",
+    "markedVerified": "Marked verified by publisher",
+    "selfAsserted": "Self-asserted",
+    "encryptionKeyNote": "Not a wallet key and it holds no funds. Counterparties seal your trade messages and payment details to this, and only your wallet can derive the private half that opens them — on any device, from the same wallet.",
+    "published": "Published {date}",
+    "expires": "expires {date}",
+    "replaces": "replaces {id}",
+    "repTitle": "Your reputation",
+    "repConnect": "Connect a wallet. Reputation is bound to a key, not to an account — there is nothing to show until one is connected.",
+    "repEmpty": "No recorded history for this wallet yet. Reputation is built from completed trades, payment responses and disputes — it starts empty, and an empty record is not a bad one.",
+    "repFooter": "Counters as the protocol records them (OFS-3000). There are no star ratings and no tiers — reputation is objective, wallet-bound, and portable across every OpenFiat application.",
+    "tradesStarted": "Trades started",
+    "tradesCompleted": "Trades completed",
+    "tradesCancelled": "Trades cancelled",
+    "completionRate": "Completion rate",
+    "noTradesYet": "no trades started yet",
+    "meanSettlement": "Mean settlement time",
+    "minutes": "{n} min",
+    "meanNote": "mean across completed trades",
+    "disputesInvolved": "Disputes involved",
+    "disputesLost": "Disputes lost",
+    "paymentDiscrepancies": "Payment discrepancies",
+    "reservationsMissed": "Reservations missed"
   }
 }
