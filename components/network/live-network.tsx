@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Client } from "@openfiat/sdk";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -10,8 +11,6 @@ import { NodeUseButton } from "@/components/network/node-use-button";
 import { formatNumber } from "@/lib/format";
 import { NETWORK_LABEL, SOLANA_CLUSTER } from "@/lib/node-endpoint";
 import {
-  chainModeClaim,
-  chainObservationLabel,
   claimContradicted,
   readCapabilities,
   type ChainObservation,
@@ -85,6 +84,7 @@ async function probe(node: DiscoveredNode): Promise<Probe> {
 }
 
 export function LiveNetwork() {
+  const t = useTranslations("network");
   const [nodes, setNodes] = useState<DiscoveredNode[]>([]);
   const [probes, setProbes] = useState<Record<string, Probe>>({});
   const [checking, setChecking] = useState(true);
@@ -126,17 +126,17 @@ export function LiveNetwork() {
       <MetricStrip
         items={[
           {
-            label: "Nodes reachable",
+            label: t("metricNodesReachable"),
             value: checking ? "…" : `${reachable} / ${nodes.length}`,
-            sub: `${NETWORK_LABEL} cluster`,
+            sub: t("clusterSub", { label: NETWORK_LABEL }),
           },
           {
-            label: "Block height",
+            label: t("metricBlockHeight"),
             value: blockHeight !== null ? formatNumber(blockHeight, 0) : "—",
             sub: SOLANA_CLUSTER,
           },
           {
-            label: "Answered with a slot",
+            label: t("metricAnsweredSlot"),
             /*
              * Counted from what each node ANSWERED, never from what it
              * claims — a registration saying `chain:rpc` is the node's own
@@ -153,12 +153,12 @@ export function LiveNetwork() {
             value: checking
               ? "…"
               : String(nodes.filter((n) => probes[n.id]?.chain.kind === "answered").length),
-            sub: "getChainStatus — gossip can relay one too",
+            sub: t("metricAnsweredSub"),
           },
         ]}
       />
 
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">Nodes</h2>
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">{t("nodesHeading")}</h2>
       <div className="mt-3">
         {nodes.length === 0 ? (
           /*
@@ -172,21 +172,19 @@ export function LiveNetwork() {
            * present and invisible.
            */
           <p className="text-sm text-gray-500">
-            {checking
-              ? "Contacting the nodes this build knows about…"
-              : "No node could be listed. This build's seed is unreachable, so its registry could not be read either — which is a failure to ask, not a network with no nodes in it."}
+            {checking ? t("contacting") : t("noNodeListed")}
           </p>
         ) : (
           <DataTable
             minWidth={720}
             head={
               <tr>
-                <Th>Node</Th>
-                <Th className="w-64">Claims</Th>
-                <Th className="w-56">Observed</Th>
-                <Th right className="w-24">Latency</Th>
-                <Th right className="w-24">Status</Th>
-                <Th right className="w-24">Access</Th>
+                <Th>{t("colNode")}</Th>
+                <Th className="w-64">{t("colClaims")}</Th>
+                <Th className="w-56">{t("colObserved")}</Th>
+                <Th right className="w-24">{t("colLatency")}</Th>
+                <Th right className="w-24">{t("colStatus")}</Th>
+                <Th right className="w-24">{t("colAccess")}</Th>
               </tr>
             }
           >
@@ -226,24 +224,24 @@ export function LiveNetwork() {
                           />
                         )}
                         <span className="truncate text-gray-300">
-                          calls itself {n.branding.name ?? "—"}
+                          {t("callsItself", { name: n.branding.name ?? "—" })}
                         </span>
                       </span>
                     )}
                     {/* Every one of these is the node's own word. No ticks. */}
                     <span className={contradicted ? "text-amber-300" : "text-gray-300"}>
-                      {chainModeClaim(n.chainMode)}
+                      {t(`chainMode.${n.chainMode ?? "none"}`)}
                     </span>
                     <span className="mt-1.5 flex flex-wrap gap-1">
-                      {claims.retention && <Chip>retention {claims.retention}</Chip>}
-                      {claims.servesContent && <Chip>serves content</Chip>}
-                      {claims.producesSnapshots && <Chip>produces snapshots</Chip>}
+                      {claims.retention && <Chip>{t("chipRetention", { window: claims.retention })}</Chip>}
+                      {claims.servesContent && <Chip>{t("chipServesContent")}</Chip>}
+                      {claims.producesSnapshots && <Chip>{t("chipProducesSnapshots")}</Chip>}
                       {/* "declared" spelled out on the chip itself, not
                           only in the column heading: a chip is read on its
                           own. Nothing anywhere observes a node's region —
                           deriving it from the node's own addresses was
                           investigated under #173 and rejected. */}
-                      {n.region && <Chip>region {n.region} (declared)</Chip>}
+                      {n.region && <Chip>{t("chipRegion", { region: n.region })}</Chip>}
                       {/* A capability string this build has no reading for is
                           shown as itself. Dropping it would hide the newest
                           thing a node can do and keep looking correct. */}
@@ -255,23 +253,26 @@ export function LiveNetwork() {
                     </span>
                     {n.capabilities.length === 0 && (
                       <span className="mt-1 block text-[11px] text-gray-600">
-                        No registration behind this entry — it is a seed compiled into this build.
+                        {t("noRegistration")}
                       </span>
                     )}
                   </Td>
                   <Td py="py-5" className="w-56 text-xs text-gray-400">
-                    {checking ? "Checking…" : chainObservationLabel(observation)}
+                    {checking ? t("checking") : observationLabel(t, observation)}
                     {contradicted && (
                       <span className="mt-1 block text-[11px] leading-snug text-amber-300">
-                        Claims to read Solana directly but answered with no slot.
+                        {t("contradiction")}
                       </span>
                     )}
                   </Td>
                   <Td py="py-5" right num className="w-24 text-gray-400">
-                    {checking ? "…" : up ? `${p!.latencyMs} ms` : "—"}
+                    {checking ? "…" : up ? t("latencyMs", { ms: p!.latencyMs! }) : "—"}
                   </Td>
                   <Td py="py-5" right className="w-24">
-                    <StatusPill status={checking ? "Syncing" : up ? "Online" : "Offline"} />
+                    <StatusPill
+                      status={checking ? "Syncing" : up ? "Online" : "Offline"}
+                      label={checking ? t("statusSyncing") : up ? t("statusOnline") : t("statusOffline")}
+                    />
                   </Td>
                   <Td py="py-5" right className="w-24">
                     <NodeUseButton nodeId={n.id} />
@@ -282,20 +283,28 @@ export function LiveNetwork() {
           </DataTable>
         )}
         <p className="mt-3 text-xs leading-relaxed text-gray-600">
-          Everything under <span className="text-gray-500">Claims</span> comes from the node&apos;s own
-          registration, signed by its own key: it is what the operator configured, and nothing here
-          verifies any of it — including the name it calls itself and the region it declares, which
-          nobody measures. <span className="text-gray-500">Observed</span>, latency and status come
-          from a live request to each node when this page loads — that is the part that was checked,
-          and latency is measured from your browser, so it answers &quot;is this node fast for
-          me&quot; better than any declared region could. Peer counts and versions are per node
-          rather than per row and are under{" "}
-          <span className="text-gray-500">Your access node</span> below, because they are one
-          node&apos;s view of the network rather than the network&apos;s.
+          {t.rich("claimsFooter", { s: (chunks) => <span className="text-gray-500">{chunks}</span> })}
         </p>
       </div>
     </>
   );
+}
+
+/** Resolves the one-phrase chain observation, translated. */
+function observationLabel(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  observation: ChainObservation,
+): string {
+  switch (observation.kind) {
+    case "answered":
+      return t("obsAnswered", { slot: observation.slot.toLocaleString("en-US") });
+    case "no-slot":
+      return t("obsNoSlot");
+    case "unreachable":
+      return t("obsUnreachable");
+    case "pending":
+      return t("checking");
+  }
 }
 
 /** A claimed capability, styled so it never reads as a verified badge. */

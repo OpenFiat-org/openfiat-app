@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import { PageHero } from "@/components/page-hero";
@@ -6,10 +8,15 @@ import { LiveNetwork } from "@/components/network/live-network";
 import { NodeOperations } from "@/components/network/node-operations";
 import { NETWORK_LABEL } from "@/lib/node-endpoint";
 
-export const metadata: Metadata = {
-  title: "Network",
-  description: "OpenFiat network view — the real devnet cluster, contacted live.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "network" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 /**
  * This page used to render `lib/data/network.ts`: 128 nodes online, 3,412
@@ -24,12 +31,13 @@ export const metadata: Metadata = {
  * rather than describing one.
  */
 export default function NetworkPage() {
+  const t = useTranslations("network");
   return (
     <section>
       <PageHero
         variant="mesh"
-        title="Network"
-        description={`The coordination layer is event-sourced: every state transition emits a signed protocol event. This is the ${NETWORK_LABEL} cluster, contacted live when the page loads.`}
+        title={t("heroTitle")}
+        description={t("heroDescription", { label: NETWORK_LABEL })}
       >
         <LiveNetwork />
       </PageHero>
@@ -44,16 +52,18 @@ export default function NetworkPage() {
       <NodeOperations />
 
       <p className="mt-10 text-sm text-gray-400">
-        Looking for the signed event feed?{" "}
-        <Link href="/explorer" className="text-brand-hover hover:underline">
-          The explorer
-        </Link>{" "}
-        subscribes to it from your access node. Services that nodes consume — oracles, notification
-        gateways, risk intelligence, snapshots — are in the{" "}
-        <Link href="/providers" className="text-brand-hover hover:underline">
-          service registry
-        </Link>
-        , not here: they are not endpoints an interface connects to.
+        {t.rich("footerFeed", {
+          ex: (chunks) => (
+            <Link href="/explorer" className="text-brand-hover hover:underline">
+              {chunks}
+            </Link>
+          ),
+          sr: (chunks) => (
+            <Link href="/providers" className="text-brand-hover hover:underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </section>
   );

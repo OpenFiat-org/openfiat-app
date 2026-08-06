@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
@@ -41,6 +42,7 @@ import { shortPeerId } from "@/lib/peer-id";
  * effect has nowhere else to look for.
  */
 export function NodeOperations() {
+  const t = useTranslations("network");
   const section = useRef<HTMLElement>(null);
   /**
    * Whether this section has been reached, and therefore whether it is
@@ -141,49 +143,46 @@ export function NodeOperations() {
   return (
     <section className="mt-14" ref={section}>
       <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-        Your access node
+        {t("yourAccessNodeHeading")}
       </h2>
       <p className="mt-2 max-w-3xl text-xs leading-relaxed text-gray-500">
-        Everything below is {nodeLabel || "your access node"}&apos;s own answer about itself — its
-        peer table, and the snapshots it knows about. Another node will give different figures for
-        all of it, honestly: a peer list is one node&apos;s discovery cache, and latency and
-        exchange counts are its own experience of each peer rather than anybody&apos;s verdict.
+        {t("accessNodeIntro", { node: nodeLabel || t("yourAccessNode") })}
       </p>
 
       <div className="mt-5">
         <MetricStrip
           items={[
             {
-              label: "Peers",
+              label: t("metricPeers"),
               value: loading ? "…" : peersFailed ? "—" : String(peers?.peers.length ?? 0),
-              sub: peersFailed ? "node did not answer" : "in this node's discovery cache",
+              sub: peersFailed ? t("nodeDidNotAnswer") : t("peersSub"),
             },
             {
-              label: "Newest snapshot",
+              label: t("metricNewestSnapshot"),
               value:
                 loading || snapshotsFailed
                   ? loading
                     ? "…"
                     : "—"
                   : latestSlot === null
-                    ? "None"
+                    ? t("none")
                     : formatNumber(latestSlot, 0),
-              sub: snapshotsFailed ? "node did not answer" : "slot it captures state at",
+              sub: snapshotsFailed ? t("nodeDidNotAnswer") : t("newestSnapshotSub"),
             },
             {
-              label: "Checkpoint",
+              label: t("metricCheckpoint"),
               value:
                 loading || snapshotsFailed
                   ? loading
                     ? "…"
                     : "—"
                   : snapshots?.checkpointSlot == null
-                    ? "None"
+                    ? t("none")
                     : formatNumber(snapshots.checkpointSlot, 0),
               sub:
                 snapshots?.checkpointSlot == null && !loading && !snapshotsFailed
-                  ? "has imported no snapshot"
-                  : "slot its replay resumes from",
+                  ? t("checkpointNoneSub")
+                  : t("checkpointSub"),
             },
           ]}
         />
@@ -191,43 +190,42 @@ export function NodeOperations() {
 
       {peers && (
         <p className="mt-5 break-all font-mono text-[11px] leading-relaxed text-gray-600">
-          <span className="font-sans text-gray-500">Its own peer id: </span>
+          <span className="font-sans text-gray-500">{t("ownPeerId")} </span>
           {peers.selfPeerId}
           <br />
-          <span className="font-sans text-gray-500">Announces itself at: </span>
+          <span className="font-sans text-gray-500">{t("announcesAt")} </span>
           {peers.announcedAddresses.length > 0
             ? peers.announcedAddresses.join("  ·  ")
-            : "— nothing. Other nodes have no address to dial it at."}
+            : t("announcesNothing")}
         </p>
       )}
 
-      <h3 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">Peers</h3>
+      <h3 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">{t("peersHeading")}</h3>
       <div className="mt-3">
         {loading ? (
-          <p className="text-sm text-gray-500">Asking the node…</p>
+          <p className="text-sm text-gray-500">{t("askingNode")}</p>
         ) : peersFailed ? (
           <p className="text-sm text-amber-300">
-            {nodeLabel || "This node"} did not answer <code className="font-mono">getPeers</code>.
-            That is a failure to ask, not an empty peer table — nothing here says anything about how
-            connected it is.
+            {t.rich("peersFailed", {
+              node: nodeLabel || t("thisNode"),
+              code: (chunks) => <code className="font-mono">{chunks}</code>,
+            })}
           </p>
         ) : peers && peers.peers.length === 0 ? (
           <p className="max-w-3xl text-sm leading-relaxed text-gray-400">
-            This node has no peers in its discovery cache. It answered, so this is a real state and
-            a serious one: a node connected to nobody hears no events, and every off-chain answer it
-            gives is as old as the last thing it heard.
+            {t("peersEmpty")}
           </p>
         ) : (
           <DataTable
             minWidth={860}
             head={
               <tr>
-                <Th>Peer</Th>
-                <Th className="w-32">Version</Th>
-                <Th className="w-56">Declared roles</Th>
-                <Th right className="w-28">Last seen</Th>
-                <Th right className="w-24">Latency</Th>
-                <Th right className="w-32">Exchanges</Th>
+                <Th>{t("colPeer")}</Th>
+                <Th className="w-32">{t("colVersion")}</Th>
+                <Th className="w-56">{t("colDeclaredRoles")}</Th>
+                <Th right className="w-28">{t("colLastSeen")}</Th>
+                <Th right className="w-24">{t("colLatency")}</Th>
+                <Th right className="w-32">{t("colExchanges")}</Th>
               </tr>
             }
           >
@@ -250,7 +248,7 @@ export function NodeOperations() {
                 </Td>
                 <Td py="py-4" className="w-56">
                   {peer.roles.length === 0 ? (
-                    <span className="text-xs text-gray-600">None declared</span>
+                    <span className="text-xs text-gray-600">{t("noneDeclared")}</span>
                   ) : (
                     <span className="flex flex-wrap gap-1 max-lg:justify-end">
                       {peer.roles.map((role) => (
@@ -270,11 +268,11 @@ export function NodeOperations() {
                 {/* Never zero for "never measured": a peer this node has not
                     timed and one that answers instantly are different facts. */}
                 <Td py="py-4" right num className="w-24 text-gray-400">
-                  {peer.latencyMs === null ? "—" : `${peer.latencyMs} ms`}
+                  {peer.latencyMs === null ? "—" : t("latencyMs", { ms: peer.latencyMs })}
                 </Td>
                 <Td py="py-4" right className="w-32 text-xs text-gray-400">
                   {exchangeRecord(peer) ?? (
-                    <span className="text-gray-600">Not yet tried</span>
+                    <span className="text-gray-600">{t("notYetTried")}</span>
                   )}
                 </Td>
               </Tr>
@@ -284,45 +282,36 @@ export function NodeOperations() {
       </div>
 
       <h3 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-        Snapshots
+        {t("snapshotsHeading")}
       </h3>
       <p className="mt-2 max-w-3xl text-xs leading-relaxed text-gray-500">
-        A snapshot is how a new node joins without replaying all of history. It matters in both
-        directions: an operator bringing a node up downloads one, and anybody choosing an access
-        node can read from the age of the newest one roughly how long that node has been paying
-        attention.
+        {t("snapshotsIntro")}
         {gap !== null && gap > 0 && (
-          <>
-            {" "}
-            This node&apos;s checkpoint is {formatNumber(gap, 0)} slots behind the newest snapshot
-            it knows of, which is history it would replay over gossip rather than import.
-          </>
+          <> {t("checkpointBehind", { gap: formatNumber(gap, 0) })}</>
         )}
       </p>
       <div className="mt-3">
         {loading ? (
-          <p className="text-sm text-gray-500">Asking the node…</p>
+          <p className="text-sm text-gray-500">{t("askingNode")}</p>
         ) : snapshotsFailed ? (
           <p className="text-sm text-amber-300">
-            {nodeLabel || "This node"} did not answer the snapshot methods. Nothing here says
-            whether it has any.
+            {t("snapshotsFailed", { node: nodeLabel || t("thisNode") })}
           </p>
         ) : snapshots && snapshots.snapshots.length === 0 ? (
           <p className="max-w-3xl text-sm leading-relaxed text-gray-400">
-            This node knows of no snapshots. It answered — so either nobody on this network produces
-            them, or none has reached it yet. A new node would have to replay from genesis.
+            {t("snapshotsEmpty")}
           </p>
         ) : (
           <DataTable
             minWidth={860}
             head={
               <tr>
-                <Th>Snapshot</Th>
-                <Th right className="w-32">Slot</Th>
-                <Th className="w-44">Produced by</Th>
-                <Th right className="w-24">Size</Th>
-                <Th right className="w-28">Age</Th>
-                <Th className="w-24">Download</Th>
+                <Th>{t("colSnapshot")}</Th>
+                <Th right className="w-32">{t("colSlot")}</Th>
+                <Th className="w-44">{t("colProducedBy")}</Th>
+                <Th right className="w-24">{t("colSize")}</Th>
+                <Th right className="w-28">{t("colAge")}</Th>
+                <Th className="w-24">{t("colDownload")}</Th>
               </tr>
             }
           >
@@ -335,7 +324,7 @@ export function NodeOperations() {
                   <span className="font-mono text-xs break-all text-gray-300">{snapshot.id}</span>
                   {snapshot.id === snapshots.latest?.id && (
                     <span className="mt-1 block text-[11px] text-brand-teal">
-                      The one this node would hand a joiner
+                      {t("wouldHandJoiner")}
                     </span>
                   )}
                 </Td>
@@ -355,7 +344,7 @@ export function NodeOperations() {
                 </Td>
                 <Td py="py-4" className="w-24">
                   {snapshot.locations.length === 0 ? (
-                    <span className="text-xs text-gray-600">No location</span>
+                    <span className="text-xs text-gray-600">{t("noLocation")}</span>
                   ) : (
                     <span className="flex flex-col gap-1 max-lg:items-end">
                       {snapshot.locations.map((location) => (
@@ -382,17 +371,14 @@ export function NodeOperations() {
 
       <Panel className="mt-6">
         <p className="px-4 py-3 text-xs leading-relaxed text-gray-500">
-          A snapshot carries a 32-byte state root, and this page deliberately does not show it.
-          Rendering a digest here would read as verification, and nothing a browser does verifies
-          anything about it: the signature and registration checks a node performs establish that
-          the bytes are what the announcer said, not that the announcer told the truth — which is
-          why a node&apos;s <em>first</em> snapshot has to come from a pinned anchor rather than
-          from whoever answered. The producer is shown instead, because that is the part you can
-          look up in the{" "}
-          <a href="/providers" className="text-brand-hover hover:underline">
-            service registry
-          </a>
-          .
+          {t.rich("snapshotRootNote", {
+            em: (chunks) => <em>{chunks}</em>,
+            sr: (chunks) => (
+              <a href="/providers" className="text-brand-hover hover:underline">
+                {chunks}
+              </a>
+            ),
+          })}
         </p>
       </Panel>
     </section>
