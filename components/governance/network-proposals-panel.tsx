@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -22,17 +23,18 @@ import { shortPeerId } from "@/lib/peer-id";
  * register they are reading rather than one merged list that could not.
  */
 export function NetworkProposalsPanel() {
+  const t = useTranslations("governance");
   const [proposals, setProposals] = useState<NodeProposal[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = () => {
       setProposals(null);
-      setError(null);
+      setError(false);
       fetchNodeProposals(readNodeSelection().url)
         .then((rows) => !cancelled && setProposals(rows))
-        .catch(() => !cancelled && setError("Your access node did not answer."));
+        .catch(() => !cancelled && setError(true));
     };
     load();
     window.addEventListener(NODE_CHANGED_EVENT, load);
@@ -42,14 +44,12 @@ export function NetworkProposalsPanel() {
     };
   }, []);
 
-  if (error) return <p className="text-sm text-amber-300">{error}</p>;
-  if (proposals === null) return <p className="text-sm text-gray-500">Reading proposals…</p>;
+  if (error) return <p className="text-sm text-amber-300">{t("nodeNoAnswer")}</p>;
+  if (proposals === null) return <p className="text-sm text-gray-500">{t("readingProposals")}</p>;
   if (proposals.length === 0) {
     return (
       <p className="max-w-2xl text-sm leading-relaxed text-gray-500">
-        This node holds no proposals. Proposals are gossiped, so a node that has replicated less of
-        the network reports fewer of them — an empty list means this node has seen none, not that
-        none exist.
+        {t("noProposals")}
       </p>
     );
   }
@@ -59,12 +59,12 @@ export function NetworkProposalsPanel() {
       minWidth={860}
       head={
         <tr>
-          <Th>Proposal</Th>
-          <Th className="w-32">Category</Th>
-          <Th className="w-40">Author</Th>
-          <Th className="w-40">Voting</Th>
+          <Th>{t("colProposal")}</Th>
+          <Th className="w-32">{t("colCategory")}</Th>
+          <Th className="w-40">{t("colAuthor")}</Th>
+          <Th className="w-40">{t("colVoting")}</Th>
           <Th right className="w-28">
-            Status
+            {t("colStatus")}
           </Th>
         </tr>
       }
@@ -86,11 +86,14 @@ export function NetworkProposalsPanel() {
             {shortPeerId(proposal.author)}
           </Td>
           <Td py="py-4" className="w-40 text-xs text-gray-500">
-            {votingClosed(proposal) ? "Closed " : "Closes "}
+            {votingClosed(proposal) ? t("votingClosedPrefix") : t("votingClosesPrefix")}{" "}
             {formatDateShortMs(proposal.voting_closes_at)}
           </Td>
           <Td py="py-4" right className="w-28">
-            <StatusPill status={proposal.status === "Voting" ? "Active" : proposal.status} />
+            <StatusPill
+              status={proposal.status === "Voting" ? "Active" : proposal.status}
+              label={t(`status.${proposal.status === "Voting" ? "Active" : proposal.status}`)}
+            />
           </Td>
         </Tr>
       ))}

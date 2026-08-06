@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { CopyButton } from "@/components/copy-button";
 import { CHAIN_AGREEMENT, type ProposalChainLink } from "@/lib/live-proposals";
 import { shortAddress } from "@/lib/format";
@@ -30,6 +31,7 @@ const TONE: Record<"neutral" | "good" | "warn" | "bad", string> = {
  * have to derive.
  */
 export function ChainLinkPanel({ link }: { link: ProposalChainLink }) {
+  const t = useTranslations("governance");
   const verdict = CHAIN_AGREEMENT[link.agreement];
 
   return (
@@ -37,20 +39,20 @@ export function ChainLinkPanel({ link }: { link: ProposalChainLink }) {
       <span
         className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${TONE[verdict.tone]}`}
       >
-        {verdict.label}
+        {t(`agreement.${link.agreement}.label`)}
       </span>
-      <p className="max-w-2xl text-xs leading-relaxed text-gray-400">{verdict.detail}</p>
+      <p className="max-w-2xl text-xs leading-relaxed text-gray-400">{t(`agreement.${link.agreement}.detail`)}</p>
 
       <dl className="space-y-1.5 border-t border-white/5 pt-3 text-xs">
-        <Row label="On-chain proposal">
+        <Row label={t("rowOnchainProposal")}>
           {link.onchain_proposal_id === null ? (
-            <span className="text-gray-500">None claimed</span>
+            <span className="text-gray-500">{t("noneClaimed")}</span>
           ) : (
             <span className="font-mono text-gray-300">#{link.onchain_proposal_id}</span>
           )}
         </Row>
         {link.onchain_proposal_address && (
-          <Row label="Account">
+          <Row label={t("rowAccount")}>
             <span className="flex items-center justify-end gap-2">
               <a
                 href={`https://explorer.solana.com/address/${link.onchain_proposal_address}?cluster=devnet`}
@@ -64,7 +66,7 @@ export function ChainLinkPanel({ link }: { link: ProposalChainLink }) {
             </span>
           </Row>
         )}
-        <Row label="Join key">
+        <Row label={t("rowJoinKey")}>
           {/* The digest the on-chain half must carry, and exactly what
               `link_offchain_proposal` takes — shown so an author creating
               the chain-side record does not have to re-derive a hash that
@@ -76,7 +78,7 @@ export function ChainLinkPanel({ link }: { link: ProposalChainLink }) {
             <CopyButton value={link.offchain_id_hash} />
           </span>
         </Row>
-        <Row label="Program">
+        <Row label={t("rowProgram")}>
           <span className="font-mono text-gray-500">{shortAddress(link.governance_program)}</span>
         </Row>
       </dl>

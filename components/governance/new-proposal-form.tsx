@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { PROPOSAL_CATEGORIES, type ProposalCategory } from "@/lib/live-proposals";
@@ -56,6 +57,7 @@ export function slugify(title: string): string {
  * is in.
  */
 export function NewProposalForm() {
+  const t = useTranslations("governance");
   const router = useRouter();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [title, setTitle] = useState("");
@@ -83,7 +85,7 @@ export function NewProposalForm() {
   async function submit() {
     const signer = currentSigner(wallet);
     if (!wallet || !signer) {
-      setError("Connect a wallet that can sign messages — a proposal is a signed record.");
+      setError(t("connectSignerError"));
       return;
     }
     setBusy(true);
@@ -109,26 +111,24 @@ export function NewProposalForm() {
     <div className="max-w-2xl space-y-5">
       {!wallet && (
         <p className="rounded-md border border-amber-400/30 bg-amber-400/[0.04] px-4 py-3 text-xs leading-relaxed text-amber-200">
-          Connect a wallet to file a proposal. It is signed by that wallet and gossiped to every
-          node under its peer id — there is no anonymous filing and no way to withdraw the text
-          once it has spread.
+          {t("connectToFile")}
         </p>
       )}
 
-      <Field label="Title" htmlFor="proposal-title">
+      <Field label={t("fieldTitle")} htmlFor="proposal-title">
         <input
           id="proposal-title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Shorten the reservation validation window"
+          placeholder={t("titlePlaceholder")}
           className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
         />
       </Field>
 
       <Field
-        label="Id"
+        label={t("fieldId")}
         htmlFor="proposal-id"
-        hint="The key every node stores this under, network-wide and first come first served. It is also what is hashed to join this proposal to an on-chain one, fixed at creation and never amendable — so it cannot be corrected later."
+        hint={t("idHint")}
       >
         <input
           id="proposal-id"
@@ -142,9 +142,9 @@ export function NewProposalForm() {
       </Field>
 
       <Field
-        label="Summary"
+        label={t("fieldSummary")}
         htmlFor="proposal-summary"
-        hint="What you are proposing and why. Stored by every node forever and readable by anyone."
+        hint={t("summaryHint")}
       >
         <textarea
           id="proposal-summary"
@@ -156,9 +156,9 @@ export function NewProposalForm() {
       </Field>
 
       <Field
-        label="Category"
+        label={t("fieldCategory")}
         htmlFor="proposal-category"
-        hint="The network's own categories. They are not the governance program's — the chain has a different set, and its quorum and threshold rules key on that one."
+        hint={t("categoryHint")}
       >
         <select
           id="proposal-category"
@@ -168,30 +168,27 @@ export function NewProposalForm() {
         >
           {PROPOSAL_CATEGORIES.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {t(`category.${value}`)}
             </option>
           ))}
         </select>
       </Field>
 
-      <Field label="On-chain proposal id (optional)" htmlFor="proposal-onchain-id">
+      <Field label={t("fieldOnchainId")} htmlFor="proposal-onchain-id">
         <input
           id="proposal-onchain-id"
           value={onchainId}
           onChange={(event) => setOnchainId(event.target.value)}
           inputMode="numeric"
-          placeholder="Leave blank for an off-chain-only proposal"
+          placeholder={t("onchainPlaceholder")}
           className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 font-mono text-sm text-white outline-none focus:border-brand/50"
         />
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          Only if you have already created the chain-side proposal, which takes a stake deposit in
-          OPEN and is a separate transaction. Naming it here signs your half of the join; the
-          program&apos;s <code>link_offchain_proposal</code> is the other half, and until both exist
-          nothing about the chain&apos;s tally is attributed to this proposal.
+          {t.rich("onchainNote", { code: (c) => <code>{c}</code> })}
         </p>
         {!claimedValid && (
           <p className="mt-1 text-xs text-amber-300">
-            An on-chain proposal id is a whole number, or blank.
+            {t("onchainInvalid")}
           </p>
         )}
       </Field>
@@ -204,13 +201,11 @@ export function NewProposalForm() {
         disabled={!ready || busy || !wallet}
         className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
       >
-        {busy ? "Signing…" : "Sign and file the proposal"}
+        {busy ? t("signing") : t("signFile")}
       </button>
 
       <p className="text-xs leading-relaxed text-gray-500">
-        Voting opens immediately and runs for the protocol&apos;s default period of seven days.
-        There is no draft state off chain: discussion and technical review happen on a forum, not
-        as gossiped protocol events, so a proposal is filed when it is ready to be voted on.
+        {t("formFooter")}
       </p>
     </div>
   );

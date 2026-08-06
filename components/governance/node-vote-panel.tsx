@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 
@@ -13,15 +14,12 @@ import { castNodeVote, explainGovernanceRefusal } from "@/lib/proposal-flow";
 import { tradeIdentity } from "@/lib/trade-flow";
 import { currentSigner, type WalletConnection } from "@/lib/wallet-connection";
 
-const CHOICES: Array<[VoteChoice, string]> = [
-  ["Approve", "Approve"],
-  ["Reject", "Reject"],
-  ["Abstain", "Abstain"],
-];
+const CHOICES: VoteChoice[] = ["Approve", "Reject", "Abstain"];
 
 interface StakeOption {
   role: number;
-  label: string;
+  /** URL role key (e.g. "merchant"), for resolving the translated role title. */
+  roleKey: string;
   /** Base58 `StakeAccount` PDA — what the vote actually names. */
   account: string;
   /** Currently staked base units, read from the account this vote will cite. */
@@ -68,6 +66,9 @@ export function NodeVotePanel({
   /** Re-reads the proposal from the node — the only way to learn a vote landed. */
   onVoted: () => void;
 }) {
+  const t = useTranslations("governance");
+  const St = useTranslations("staking");
+  const roleTitle = (key: string) => St(`role.${key}.title`);
   const [stakes, setStakes] = useState<StakeOption[] | null | undefined>(undefined);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,12 +82,12 @@ export function NodeVotePanel({
     let cancelled = false;
     const owner = new PublicKey(wallet.address);
     Promise.all(
-      STAKING_ROLES.map(async ({ onchain, title }) => {
+      STAKING_ROLES.map(async ({ onchain, key }) => {
         const account = await fetchStakeAccount(owner, onchain);
         if (!account) return null;
         return {
           role: onchain,
-          label: title,
+          roleKey: key,
           account: staking.stakeAccountPda(owner, onchain)[0].toBase58(),
           amount: account.amount,
         } satisfies StakeOption;
@@ -113,30 +114,30 @@ export function NodeVotePanel({
     return (
       <div className="px-4 py-3 text-sm">
         <p className="text-gray-200">
-          This wallet voted <span className="font-semibold">{mine.choice}</span>.
+          {t.rich("votedChoice", {
+            choice: t(`choice.${mine.choice}`),
+            b: (c) => <span className="font-semibold">{c}</span>,
+          })}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          Recorded with a weight of {formatBaseUnits(BigInt(mine.weight), OPEN_DECIMALS)} OPEN — the
-          amount this node decoded from your stake account on chain, not the figure the vote
-          claimed. A vote cannot be changed once recorded.
+          {t("votedNote", { amount: formatBaseUnits(BigInt(mine.weight), OPEN_DECIMALS) })}
         </p>
       </div>
     );
   }
 
   if (closed) {
-    return <p className="px-4 py-3 text-xs text-gray-500">Voting on this proposal has closed.</p>;
+    return <p className="px-4 py-3 text-xs text-gray-500">{t("votingClosedMsg")}</p>;
   }
 
   if (!wallet) {
-    return <p className="px-4 py-3 text-xs text-amber-300">Connect a wallet to vote.</p>;
+    return <p className="px-4 py-3 text-xs text-amber-300">{t("connectToVote")}</p>;
   }
 
   if (stakes === undefined) {
     return (
       <p className="px-4 py-3 text-xs text-gray-500">
-        Reading your stake accounts from the cluster… If this does not resolve, the cluster could
-        not be reached — which is not the same as your having no stake.
+        {t("readingStakes")}
       </p>
     );
   }
@@ -145,18 +146,16 @@ export function NodeVotePanel({
     return (
       <div className="px-4 py-3">
         <p className="text-xs leading-relaxed text-amber-300">
-          This wallet has no stake account, so a vote from it would carry a weight of zero. The node
-          never trusts the weight a vote claims — it reads the stake account for itself — so
-          submitting one would look like it worked and then be dropped without a word.
+          {t("noStakeWarn")}
         </p>
         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          Voting weight is staked OPEN, and on devnet the OPEN mint&apos;s authority is permanently
-          unset: no more can ever be issued, so a wallet holding none cannot obtain any. If you do
-          hold some,{" "}
-          <Link href="/staking" className="text-brand-teal hover:underline">
-            stake it first
-          </Link>
-          .
+          {t.rich("noStakeMint", {
+            link: (c) => (
+              <Link href="/staking" className="text-brand-teal hover:underline">
+                {c}
+              </Link>
+            ),
+          })}
         </p>
       </div>
     );
@@ -167,7 +166,7 @@ export function NodeVotePanel({
   async function cast(choice: VoteChoice) {
     const signer = currentSigner(wallet);
     if (!wallet || !signer) {
-      setNote({ text: "This wallet connection cannot sign — reconnect it and try again.", bad: true });
+      setNote({ text: t("cantSignReconnect"), bad: true });
       return;
     }
     setBusy(true);
@@ -182,10 +181,7 @@ export function NodeVotePanel({
         // actually read, so the record is not a fiction either way.
         claimedWeight: Number(option.amount),
       });
-      setNote({
-        text: "Signed and submitted. It is not counted yet: this node now reads your stake account from Solana and records the vote with the amount it decodes there. Reload in a moment to see whether it landed.",
-        bad: false,
-      });
+      setNote({ text: t("submittedNote"), bad: false });
       onVoted();
     } catch (err) {
       setNote({
@@ -201,7 +197,7 @@ export function NodeVotePanel({
     <div className="space-y-3 px-4 py-3">
       {stakes.length > 1 && (
         <label className="block">
-          <span className="block text-xs text-gray-500">Vote with the stake under</span>
+          <span className="block text-xs text-gray-500">{t("voteWithStakeUnder")}</span>
           <select
             value={selected ?? ""}
             onChange={(event) => setSelected(event.target.value)}
@@ -209,7 +205,7 @@ export function NodeVotePanel({
           >
             {stakes.map((row) => (
               <option key={row.account} value={row.account}>
-                {row.label} — {formatBaseUnits(row.amount, OPEN_DECIMALS)} OPEN
+                {roleTitle(row.roleKey)} — {formatBaseUnits(row.amount, OPEN_DECIMALS)} OPEN
               </option>
             ))}
           </select>
@@ -217,14 +213,16 @@ export function NodeVotePanel({
       )}
 
       <p className="text-xs leading-relaxed text-gray-500">
-        {formatBaseUnits(option.amount, OPEN_DECIMALS)} OPEN staked as {option.label}, read from{" "}
-        <span className="font-mono">{option.account.slice(0, 8)}…</span> just now. Your vote names
-        that account; the node reads it again itself and records whatever it finds there, so this
-        figure is what to expect and not a promise.
+        {t.rich("stakeLine", {
+          amount: formatBaseUnits(option.amount, OPEN_DECIMALS),
+          role: roleTitle(option.roleKey),
+          account: option.account.slice(0, 8),
+          m: (c) => <span className="font-mono">{c}</span>,
+        })}
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {CHOICES.map(([choice, label]) => (
+        {CHOICES.map((choice) => (
           <button
             key={choice}
             type="button"
@@ -232,7 +230,7 @@ export function NodeVotePanel({
             disabled={busy}
             className="rounded-lg border border-white/15 px-4 py-1.5 text-sm font-medium text-gray-100 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {busy ? "Submitting…" : label}
+            {busy ? t("submitting") : t(`choice.${choice}`)}
           </button>
         ))}
       </div>

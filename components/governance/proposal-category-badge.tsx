@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ProposalCategory } from "@/lib/live-proposals";
 
 /**
@@ -25,13 +26,14 @@ const BADGE: Record<ProposalCategory, string> = {
 };
 
 export function ProposalCategoryBadge({ category }: { category: ProposalCategory }) {
+  const t = useTranslations("governance");
   return (
     <span
       className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
         BADGE[category] ?? BADGE.Governance
       }`}
     >
-      {category}
+      {t(`category.${category}`)}
     </span>
   );
 }

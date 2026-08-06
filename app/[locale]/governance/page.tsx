@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import { GovernanceProposalsPanel } from "@/components/governance/governance-proposals-panel";
 import { NetworkProposalsPanel } from "@/components/governance/network-proposals-panel";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Governance",
-  description: "OpenFiat governance — proposals, OPEN-weighted voting, and the protocol treasury.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "governance" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 /**
  * Governance, in the two registers it actually exists in.
@@ -27,30 +34,29 @@ export const metadata: Metadata = {
  * surface.
  */
 export default function GovernancePage() {
+  const t = useTranslations("governance");
   return (
     <section>
       <PageHero
         variant="ballot"
-        title="Governance"
-        description="Proposals are decided by OPEN-weighted voting. There are two records of a proposal — the one the network gossips, which carries its text, and the one the governance program holds on Solana devnet, which carries the stake-weighted tally. Both are below."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
 
       <div className="mt-10 space-y-12">
         <div>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-white">Network proposals</h2>
+              <h2 className="text-sm font-semibold text-white">{t("networkProposalsHeading")}</h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500">
-                Signed records replicated between nodes. This is where a proposal&apos;s title and
-                summary exist — the chain stores only hashes of them. Read from your access node,
-                so a node that has replicated less of the network shows fewer.
+                {t("networkProposalsNote")}
               </p>
             </div>
             <Link
               href="/governance/new"
               className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
             >
-              File a proposal
+              {t("fileProposal")}
             </Link>
           </div>
           <div className="mt-5">
@@ -59,12 +65,9 @@ export default function GovernancePage() {
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-white">On-chain proposals</h2>
+          <h2 className="text-sm font-semibold text-white">{t("onchainProposalsHeading")}</h2>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500">
-            <code>Proposal</code> accounts on the openfiat-governance program. A stake deposit is
-            paid to file one and the votes are weighted by staked OPEN, tallied and finalised by
-            the program itself. Its title and summary are stored as hashes, so what a row can show
-            is a fingerprint of them.
+            {t.rich("onchainProposalsNote", { code: (c) => <code>{c}</code> })}
           </p>
           <div className="mt-5">
             <GovernanceProposalsPanel />
