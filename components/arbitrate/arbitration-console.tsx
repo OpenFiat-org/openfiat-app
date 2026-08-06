@@ -2,6 +2,7 @@
 
 import { PublicKey, Transaction } from "@solana/web3.js";
 import bs58 from "bs58";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import {
@@ -19,7 +20,6 @@ import {
   newSalt,
   OFFCHAIN_VOTE_BYTE,
   ONCHAIN_OUTCOME_BYTE,
-  OUTCOME_LABEL,
   peerIdForPublicKey,
   saveSalt,
   sendSignedEvent,
@@ -73,6 +73,8 @@ type Busy = { what: string } | null;
  * visible to you" was describing this rule before the node enforced it.
  */
 export function ArbitrationConsole() {
+  const t = useTranslations("arbitrate");
+  const D = useTranslations("disputes");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [endpoint, setEndpoint] = useState<string>(() => readNodeSelection().url);
   const [disputes, setDisputes] = useState<PublicDispute[] | null>(null);
@@ -113,9 +115,9 @@ export function ArbitrationConsole() {
       setError(null);
     } catch (err) {
       setDisputes([]);
-      setError(err instanceof Error ? err.message : "Could not reach the selected node.");
+      setError(err instanceof Error ? err.message : t("nodeUnreachable"));
     }
-  }, [endpoint]);
+  }, [endpoint, t]);
 
   useEffect(() => {
     void refresh();
@@ -134,7 +136,7 @@ export function ArbitrationConsole() {
       setNote(await fn());
       await refresh();
     } catch (err) {
-      setNote(`Failed: ${explainArbitrationRefusal(err)}`);
+      setNote(t("failed", { reason: explainArbitrationRefusal(err) }));
     } finally {
       setBusy(null);
     }
@@ -142,24 +144,24 @@ export function ArbitrationConsole() {
 
   function requireContext() {
     const provider = currentSigner(wallet);
-    if (!provider) throw new Error("Reconnect your wallet with a real extension to sign.");
-    if (!publicKey || !peerId) throw new Error("No wallet connected.");
-    if (!selected) throw new Error("Select a case first.");
+    if (!provider) throw new Error(t("reconnectSign"));
+    if (!publicKey || !peerId) throw new Error(t("noWalletConnected"));
+    if (!selected) throw new Error(t("selectCaseFirst"));
     return { provider, who: { publicKey, peerId }, endpoint, dispute: selected };
   }
 
   const offchainJoin = () =>
-    run("join", async () => {
+    run(t("busyJoin"), async () => {
       const { provider, who, endpoint: url, dispute } = requireContext();
       const join = buildJoin(dispute.id, who);
       const signature = await signPayload(provider, join);
       await sendSignedEvent(url, "sendArbitratorJoin", { join, signature });
       mine.forget();
-      return "Joined the case. Read your cases to see the complaint and the rest of the panel.";
+      return t("joinedMsg");
     });
 
   const offchainCommit = () =>
-    run("commit", async () => {
+    run(t("busyCommit"), async () => {
       const { provider, who, endpoint: url, dispute } = requireContext();
       const salt = newSalt();
       const commitment = await commitmentFor(OFFCHAIN_VOTE_BYTE[outcome], salt);
@@ -168,32 +170,29 @@ export function ArbitrationConsole() {
       await sendSignedEvent(url, "sendVoteCommit", { commit, signature });
       saveSalt(dispute.id, salt, outcome);
       mine.forget();
-      return `Committed "${OUTCOME_LABEL[outcome]}". The salt is stored in this browser — you need it to reveal.`;
+      return t("committedMsg", { outcome: t(`outcome.${outcome}`) });
     });
 
   const offchainReveal = () =>
-    run("reveal", async () => {
+    run(t("busyReveal"), async () => {
       const { provider, who, endpoint: url, dispute } = requireContext();
       const stored = loadSalt(dispute.id);
       if (!stored) {
-        throw new Error(
-          "No salt stored for this case in this browser. Without it the commitment cannot be opened.",
-        );
+        throw new Error(t("noSaltReveal"));
       }
       const reveal = buildReveal(dispute.id, who, stored.outcome, stored.salt);
       const signature = await signPayload(provider, reveal);
       await sendSignedEvent(url, "sendVoteReveal", { reveal, signature });
       clearSalt(dispute.id);
       mine.forget();
-      return `Revealed "${OUTCOME_LABEL[stored.outcome]}".`;
+      return t("revealedMsg", { outcome: t(`outcome.${stored.outcome}`) });
     });
 
   if (!wallet) {
     return (
-      <Panel title="Arbitration">
+      <Panel title={t("panelArbitration")}>
         <p className="px-4 py-6 text-sm text-gray-400">
-          Connect a wallet to work a case. The same key signs your rulings and identifies you to
-          the network.
+          {t("connectPrompt")}
         </p>
       </Panel>
     );
@@ -201,10 +200,10 @@ export function ArbitrationConsole() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Open cases" action={<button type="button" onClick={() => void refresh()} className="text-xs text-gray-400 hover:text-white">Refresh</button>}>
+      <Panel title={t("openCases")} action={<button type="button" onClick={() => void refresh()} className="text-xs text-gray-400 hover:text-white">{t("refresh")}</button>}>
         {error && <p className="px-4 py-4 text-sm text-amber-400">{error}</p>}
         {!error && disputes?.length === 0 && (
-          <p className="px-4 py-6 text-sm text-gray-400">No disputes on this node right now.</p>
+          <p className="px-4 py-6 text-sm text-gray-400">{t("noDisputesNow")}</p>
         )}
         <ul className="divide-y divide-white/5">
           {disputes?.map((d) => {
@@ -224,12 +223,12 @@ export function ArbitrationConsole() {
                         nothing truthful to put on this line until then, and
                         the settlement it concerns is what identifies it. */}
                     <span className="block truncate text-xs text-gray-500">
-                      settlement {d.settlement_id}
+                      {D("settlementRef", { id: d.settlement_id })}
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-gray-400">
-                    {d.status} · {d.arbitrators_seated}/{d.required_arbitrators}
-                    {seat && peerId && hasJoined(seat, peerId) ? " · joined" : ""}
+                    {D(`status.${d.status}`)} · {d.arbitrators_seated}/{d.required_arbitrators}
+                    {seat && peerId && hasJoined(seat, peerId) ? t("joinedSuffix") : ""}
                   </span>
                 </button>
               </li>
@@ -242,14 +241,14 @@ export function ArbitrationConsole() {
           rather than done on load: it costs a wallet prompt, and a prompt
           nobody asked for is a prompt nobody reads. */}
       <Panel
-        title="Your cases"
+        title={t("yourCases")}
         action={
           <button
             type="button"
             onClick={mine.read}
             className="text-xs text-gray-400 hover:text-white"
           >
-            {mine.status === "loading" ? "Signing…" : myCases ? "Read again" : "Read my cases"}
+            {mine.status === "loading" ? t("signing") : myCases ? t("readAgain") : t("readMyCases")}
           </button>
         }
       >
@@ -258,25 +257,22 @@ export function ArbitrationConsole() {
             <p className="text-amber-400">{mine.error}</p>
           ) : myCases === null ? (
             <p className="text-gray-400">
-              Sign a challenge with your wallet to read the cases you are seated on — the
-              complaint, the rest of the panel, and where each of you has got to. A node will not
-              show any of that to someone who has not joined the case.
+              {t("yourCasesPrompt")}
             </p>
           ) : myCases.length === 0 ? (
             <p className="text-gray-400">
-              This wallet is not a party to, or seated on, any case this node knows about.
+              {t("notSeatedAny")}
             </p>
           ) : (
             <p className="text-gray-400">
-              {myCases.length === 1 ? "One case" : `${myCases.length} cases`} readable by this
-              wallet. Select one above to work it.
+              {t("casesReadable", { count: myCases.length })}
             </p>
           )}
         </div>
       </Panel>
 
       {selected && peerId && (
-        <Panel title={`Case ${selected.id}`}>
+        <Panel title={t("caseTitle", { id: selected.id })}>
           <div className="space-y-5 px-4 py-4 text-sm">
             {/* The complaint appears only once this wallet is entitled to it.
                 Nothing stands in for it: an empty quote or a "hidden" label
@@ -285,12 +281,12 @@ export function ArbitrationConsole() {
               <p className="text-gray-400">{selectedMine.reason}</p>
             ) : (
               <p className="text-gray-500">
-                Join this case and read your cases to see the complaint.
+                {t("joinToSeeComplaint")}
               </p>
             )}
 
             <div>
-              <span className="mb-1 block text-xs text-gray-500">Your ruling</span>
+              <span className="mb-1 block text-xs text-gray-500">{t("yourRuling")}</span>
               <select
                 className={inputCls}
                 value={outcome}
@@ -298,7 +294,7 @@ export function ArbitrationConsole() {
               >
                 {OUTCOMES.map((o) => (
                   <option key={o} value={o}>
-                    {OUTCOME_LABEL[o]}
+                    {t(`outcome.${o}`)}
                   </option>
                 ))}
               </select>
@@ -311,14 +307,14 @@ export function ArbitrationConsole() {
                   is refused by the node, which is the right place for it: the
                   alternative is guessing here. */}
               <Action
-                label="Join case"
+                label={t("joinCase")}
                 disabled={
                   !isJoinable(selected) || (selectedMine !== null && hasJoined(selectedMine, peerId)) || busy !== null
                 }
                 onClick={offchainJoin}
               />
               <Action
-                label="Commit (off-chain)"
+                label={t("commitOff")}
                 disabled={
                   selectedMine === null ||
                   !hasJoined(selectedMine, peerId) ||
@@ -328,7 +324,7 @@ export function ArbitrationConsole() {
                 onClick={offchainCommit}
               />
               <Action
-                label="Reveal (off-chain)"
+                label={t("revealOff")}
                 disabled={
                   selectedMine === null ||
                   !hasCommitted(selectedMine, peerId) ||
@@ -341,33 +337,31 @@ export function ArbitrationConsole() {
 
             <div className="border-t border-white/5 pt-4">
               <span className="mb-1 block text-xs text-gray-500">
-                On-chain reservation id — the stake-weighted vote that decides payout and slashing
+                {t("onchainResId")}
               </span>
               <input
                 className={inputCls}
                 inputMode="numeric"
-                placeholder="e.g. 1"
+                placeholder={t("onchainResPlaceholder")}
                 value={reservationId}
                 onChange={(e) => setReservationId(e.target.value)}
               />
               <p className="mt-2 text-xs text-gray-500">
-                Nothing in the protocol links this to the case id above, so it has to be entered.
-                The on-chain vote uses a different outcome encoding than the off-chain one; this
-                console handles that for you.
+                {t("onchainNote")}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Action
-                  label="Commit (on-chain)"
+                  label={t("commitOn")}
                   disabled={busy !== null}
                   onClick={() =>
-                    run("onchain-commit", async () => {
+                    run(t("busyOnchainCommit"), async () => {
                       const { provider, dispute } = requireContext();
                       if (!/^\d+$/.test(reservationId)) {
-                        throw new Error("Enter the on-chain reservation id (a whole number).");
+                        throw new Error(t("enterResId"));
                       }
                       const stored = loadSalt(dispute.id);
                       if (!stored) {
-                        throw new Error("Commit off-chain first — that is what generates the salt.");
+                        throw new Error(t("commitOffFirst"));
                       }
                       const commitment = await commitmentFor(
                         ONCHAIN_OUTCOME_BYTE[stored.outcome],
@@ -379,21 +373,21 @@ export function ArbitrationConsole() {
                         BigInt(reservationId),
                         commitment,
                       );
-                      return await sendTx(provider, owner, ix);
+                      return t("submittedOnChain", { sig: await sendTx(provider, owner, ix) });
                     })
                   }
                 />
                 <Action
-                  label="Reveal (on-chain)"
+                  label={t("revealOn")}
                   disabled={busy !== null}
                   onClick={() =>
-                    run("onchain-reveal", async () => {
+                    run(t("busyOnchainReveal"), async () => {
                       const { provider, dispute } = requireContext();
                       if (!/^\d+$/.test(reservationId)) {
-                        throw new Error("Enter the on-chain reservation id (a whole number).");
+                        throw new Error(t("enterResId"));
                       }
                       const stored = loadSalt(dispute.id);
-                      if (!stored) throw new Error("No salt stored for this case in this browser.");
+                      if (!stored) throw new Error(t("noSaltShort"));
                       const owner = new PublicKey(wallet.address);
                       const [stakePda] = staking.stakeAccountPda(owner, 1); // Role.Arbitrator
                       const ix = escrow.revealDisputeVoteIx(
@@ -403,14 +397,14 @@ export function ArbitrationConsole() {
                         stored.salt,
                         stakePda,
                       );
-                      return await sendTx(provider, owner, ix);
+                      return t("submittedOnChain", { sig: await sendTx(provider, owner, ix) });
                     })
                   }
                 />
               </div>
             </div>
 
-            {busy && <p className="text-xs text-gray-500">Working: {busy.what}…</p>}
+            {busy && <p className="text-xs text-gray-500">{t("working", { what: busy.what })}</p>}
             {note && <p className="text-xs text-gray-300">{note}</p>}
           </div>
         </Panel>
@@ -450,5 +444,5 @@ async function sendTx(
   const tx = new Transaction({ feePayer: owner, blockhash, lastValidBlockHeight }).add(instruction);
   const { signature } = await provider.signAndSendTransaction(tx);
   await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-  return `Submitted on chain: ${shortSig(signature)}`;
+  return shortSig(signature);
 }
