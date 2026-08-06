@@ -216,5 +216,148 @@
     "empty": "Tak ada dompet yang saat ini mengiklankan dalam {currency} di node akses Anda. Memasang sebuah iklan sudah cukup untuk membuka pasar ini.",
     "merchantsAccept": "{count, plural, other {# merchant menerima}}",
     "noNamedMethod": "tak ada metode pembayaran bernama"
+  },
+  "guide": {
+    "index": {
+      "metaTitle": "Cara membeli & menjual di OpenFiat P2P",
+      "metaDescription": "Panduan trading P2P langkah demi langkah: buat pesanan, bayar penjual dalam batas waktu, dan terima kripto dari escrow yang ditegakkan Solana — plus tips keamanan.",
+      "heroTitle": "Cara membeli & menjual di OpenFiat P2P",
+      "heroDescription": "Trading P2P memungkinkan Anda menukar kripto langsung dengan orang lain memakai mata uang lokal dan metode pembayaran — tiap pesanan dilindungi escrow di Solana.",
+      "onrampTitle": "Cara membeli kripto dengan fiat (on-ramp) →",
+      "onrampDesc": "Ubah mata uang lokal menjadi USDT, USDC, USD1, atau SOL — M-Pesa, transfer bank, dan metode pembayaran lokal.",
+      "offrampTitle": "Cara menjual kripto untuk fiat (off-ramp) →",
+      "offrampDesc": "Cairkan stablecoin ke bank atau uang seluler Anda — dan satu aturan yang menjaga Anda aman.",
+      "merchantTitle": "Cara menjadi merchant →",
+      "merchantDesc": "Pasang iklan yang menjadi lawan transaksi semua orang lain — bond, vault, dan apa yang mengikat Anda padanya.",
+      "whatIsHeading": "Apa itu trading P2P?",
+      "whatIsBody": "Trading P2P memungkinkan Anda membeli dan menjual kripto langsung dengan orang lain memakai mata uang lokal dan metode pembayaran Anda. Alih-alih memercayai orang asing, tiap pesanan dilindungi escrow: kripto penjual dikunci di program escrow Solana begitu pesanan dibuat, dan hanya dilepaskan setelah penjual mengonfirmasi pembayaran Anda tiba. OpenFiat tak pernah mengkustodi fiat Anda.",
+      "keyTermsHeading": "Istilah utama",
+      "glossary": [
+        [
+          "Pengiklan (Merchant)",
+          "Pengguna terverifikasi yang memasang penawaran beli/jual dengan harga, batas, dan metode pembayaran mereka sendiri."
+        ],
+        [
+          "Taker",
+          "Anda — pengguna yang memilih penawaran yang ada dan membuat pesanan terhadapnya."
+        ],
+        [
+          "Escrow",
+          "Kripto penjual dikunci di program escrow Solana saat pesanan dibuat dan hanya dilepaskan setelah pembayaran dikonfirmasi."
+        ],
+        [
+          "Banding (Sengketa)",
+          "Tombol yang ditekan saat ada yang salah — escrow membeku dan seorang arbiter turun tangan."
+        ],
+        [
+          "Jendela pembayaran",
+          "Hitung mundur yang di dalamnya Anda harus membayar. Jika habis, pesanan dibatalkan dan escrow terbuka kembali."
+        ]
+      ],
+      "safetyHeading": "Tips keamanan",
+      "safetyTips": [
+        "Jangan pernah melepaskan kripto sebelum mengonfirmasi pembayaran di akun Anda sendiri.",
+        "Bayar hanya ke rincian akun persis yang ditampilkan di pesanan — jangan pernah rincian yang dikirim di chat.",
+        "Hindari pembayaran pihak ketiga: nama pengirim harus cocok dengan lawan transaksi.",
+        "Gunakan Banding jika lawan transaksi tak merespons atau ada yang terasa salah.",
+        "Simpan semua chat di platform — ia menjadi bukti dalam sengketa."
+      ],
+      "startTrading": "Mulai bertransaksi →",
+      "yourOrders": "Pesanan Anda →",
+      "appealsDisputes": "Banding & sengketa →"
+    },
+    "buy": {
+      "metaTitle": "Cara membeli kripto dengan fiat — On-Ramp Fiat | OpenFiat",
+      "metaDescription": "On-ramp fiat yang sederhana: beli stablecoin secara peer-to-peer dengan metode pembayaran lokal di bursa P2P OpenFiat — dilindungi escrow di Solana.",
+      "heroTitle": "Cara membeli kripto dengan fiat — On-Ramp Fiat",
+      "heroDescription": "Ubah mata uang lokal Anda menjadi stablecoin dalam hitungan menit. Token, mata uang, dan metode pembayaran apa yang ditawarkan berasal dari node akses Anda dan buku pesanan langsung — tiap pesanan dilindungi escrow di Solana.",
+      "stepByStep": "Langkah demi langkah",
+      "steps": [
+        [
+          "Pilih Beli + aset + mata uang Anda + metode pembayaran",
+          "Pil aset, daftar mata uang, dan filter metode pembayaran semuanya dibaca dari node akses Anda dan buku langsung — jadi menampilkan yang benar-benar ditawarkan di tempat Anda, bukan daftar yang ditulis ke halaman ini."
+        ],
+        [
+          "Bandingkan penawaran",
+          "Bandingkan harga, likuiditas tersedia, dan batas per pesanan — tiga hal yang benar-benar dibawa tiap baris buku."
+        ],
+        [
+          "Klik Beli dan masukkan jumlah",
+          "Masukkan berapa fiat yang ingin Anda belanjakan (atau berapa kripto yang Anda mau) — dalam batas pengiklan."
+        ],
+        [
+          "Buat pesanan",
+          "Kripto penjual dikunci di program escrow Solana seketika, jadi terjamin untuk Anda sebelum Anda membayar apa pun."
+        ],
+        [
+          "Bayar penjual dalam jendela waktu",
+          "Transfer fiat memakai persis rincian akun yang ditampilkan di pesanan — tiap bidang bisa disalin. Jika jendela habis, pesanan dibatalkan dan escrow terbuka kembali."
+        ],
+        [
+          "Klik «Ditransfer, beri tahu penjual»",
+          "Hanya setelah Anda benar-benar mengirim uang. Ini memberi tahu penjual untuk memeriksa akun mereka."
+        ],
+        [
+          "Penjual mengonfirmasi — kripto tiba di dompet Anda",
+          "Penjual memverifikasi pembayaran Anda dan escrow melepaskan kripto ke dompet Anda. Pesanan selesai."
+        ]
+      ],
+      "goodToKnowHeading": "Baik untuk diketahui",
+      "goodToKnow": [
+        "Escrow melindungi Anda: kripto penjual dikunci di Solana sebelum Anda membayar — mereka tak bisa kabur dengannya.",
+        "Yang Anda bayar adalah harga pengiklan. Biaya protokol berada di rantai dalam konfigurasi biaya program escrow dan dapat diperbarui tata kelola, jadi tak ada halaman di sini yang mengutip tarif yang belum dibacanya.",
+        "Tiap pesanan punya jendela pembayaran; jika tak bisa membayar tepat waktu, batalkan alih-alih membiarkannya habis.",
+        "Jika penjual tak merespons atau mengonfirmasi, buka Banding — escrow membeku dan seorang arbiter turun tangan."
+      ],
+      "startBuying": "Mulai membeli →",
+      "sellingInstead": "Malah menjual? Cara menjual →"
+    },
+    "sell": {
+      "metaTitle": "Cara menjual kripto untuk fiat — Off-Ramp Fiat | OpenFiat",
+      "metaDescription": "Off-ramp fiat yang sederhana: jual stablecoin secara peer-to-peer dan cairkan lewat metode pembayaran lokal di bursa P2P OpenFiat — dilindungi escrow di Solana.",
+      "heroTitle": "Cara menjual kripto untuk fiat — Off-Ramp Fiat",
+      "heroDescription": "Cairkan stablecoin Anda ke mata uang lokal dengan aman. Token dan metode pembayaran apa yang ditawarkan berasal dari node akses Anda dan buku pesanan langsung — dilindungi escrow di Solana.",
+      "stepByStep": "Langkah demi langkah",
+      "steps": [
+        [
+          "Pilih Jual",
+          "Pilih token yang ingin Anda jual dan mata uang fiat yang ingin Anda terima. Kedua daftar berasal dari node akses Anda, bukan dari halaman ini."
+        ],
+        [
+          "Pilih penawaran yang cocok dengan jumlah Anda",
+          "Bandingkan harga pembeli, likuiditas tersedia, dan batas per pesanan seperti pembeli membandingkan penjual."
+        ],
+        [
+          "Masukkan jumlah dan buat pesanan",
+          "Kripto Anda dikunci di program escrow Solana — pembeli bisa melihat ia terjamin untuk mereka."
+        ],
+        [
+          "Tunggu pembayaran pembeli",
+          "Pembeli mentransfer fiat ke rekening bank atau uang seluler Anda dalam jendela waktu."
+        ],
+        [
+          "Verifikasi dana di akun ANDA",
+          "Masuk ke rekening bank atau uang seluler Anda sendiri dan konfirmasikan uang benar-benar tiba — jangan pernah percaya tangkapan layar semata."
+        ],
+        [
+          "Klik «Pembayaran diterima» dan lepaskan",
+          "Hanya setelah verifikasi. Escrow melepaskan kripto Anda ke pembeli seketika."
+        ],
+        [
+          "Pesanan selesai",
+          "Fiat ada di akun Anda, pembeli punya kriptonya, dan kedua reputasi diperbarui."
+        ]
+      ],
+      "staySafeHeading": "Tetap aman saat menjual",
+      "goodToKnow": [
+        "Jangan pernah melepaskan kripto sebelum mengonfirmasi pembayaran di akun Anda sendiri — inilah satu aturan yang penting.",
+        "Tangkapan layar tak membuktikan apa pun: pembeli bisa memalsukan bukti pembayaran. Periksa saldo Anda sendiri.",
+        "Waspadai pembayaran pihak ketiga: nama pengirim harus cocok dengan pembeli.",
+        "Jika pembeli menandai terbayar tapi tak ada yang tiba, jangan lepaskan — buka Banding dan seorang arbiter akan meninjau.",
+        "Simpan semua chat di platform agar bisa menjadi bukti dalam sengketa."
+      ],
+      "startSelling": "Mulai menjual →",
+      "buyingInstead": "Malah membeli? Cara membeli →"
+    }
   }
 }

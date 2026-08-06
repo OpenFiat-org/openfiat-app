@@ -216,5 +216,148 @@
     "empty": "Aucun portefeuille n’annonce actuellement en {currency} sur votre nœud d’accès. Publier une annonce suffit à ouvrir ce marché.",
     "merchantsAccept": "{count, plural, one {# commerçant accepte} other {# commerçants acceptent}}",
     "noNamedMethod": "aucun moyen de paiement nommé"
+  },
+  "guide": {
+    "index": {
+      "metaTitle": "Comment acheter et vendre sur OpenFiat P2P",
+      "metaDescription": "Guide de trading P2P étape par étape : passez un ordre, payez le vendeur dans le délai, et recevez la crypto depuis l’escrow garanti par Solana — plus des conseils de sécurité.",
+      "heroTitle": "Comment acheter et vendre sur OpenFiat P2P",
+      "heroDescription": "Le trading P2P vous permet d’échanger de la crypto directement avec d’autres personnes en monnaie locale et moyens de paiement — chaque ordre protégé par escrow sur Solana.",
+      "onrampTitle": "Comment acheter de la crypto avec du fiat (on-ramp) →",
+      "onrampDesc": "Convertissez la monnaie locale en USDT, USDC, USD1 ou SOL — M-Pesa, virement bancaire et moyens de paiement locaux.",
+      "offrampTitle": "Comment vendre de la crypto contre du fiat (off-ramp) →",
+      "offrampDesc": "Convertissez des stablecoins vers votre banque ou votre argent mobile — et la seule règle qui vous protège.",
+      "merchantTitle": "Comment devenir commerçant →",
+      "merchantDesc": "Publiez les annonces contre lesquelles tous les autres échangent — le bond, le coffre, et ce à quoi cela vous engage.",
+      "whatIsHeading": "Qu’est-ce que le trading P2P ?",
+      "whatIsBody": "Le trading P2P vous permet d’acheter et de vendre de la crypto directement avec d’autres personnes en utilisant votre monnaie locale et vos moyens de paiement. Au lieu de faire confiance à un inconnu, chaque ordre est protégé par escrow : la crypto du vendeur est verrouillée dans le programme d’escrow de Solana dès que l’ordre est passé, et elle n’est libérée qu’après que le vendeur confirme que votre paiement est arrivé. OpenFiat ne prend jamais la garde de votre fiat.",
+      "keyTermsHeading": "Termes clés",
+      "glossary": [
+        [
+          "Annonceur (Commerçant)",
+          "Un utilisateur vérifié qui publie des offres d’achat/vente avec son propre prix, ses limites et ses moyens de paiement."
+        ],
+        [
+          "Preneur (Taker)",
+          "Vous — l’utilisateur qui choisit une offre existante et passe un ordre contre elle."
+        ],
+        [
+          "Escrow",
+          "La crypto du vendeur est verrouillée dans le programme d’escrow de Solana quand l’ordre est passé et n’est libérée qu’après confirmation du paiement."
+        ],
+        [
+          "Appel (Litige)",
+          "Le bouton à presser quand quelque chose tourne mal — l’escrow gèle et un arbitre intervient."
+        ],
+        [
+          "Fenêtre de paiement",
+          "Le compte à rebours dans lequel vous devez payer. S’il expire, l’ordre est annulé et l’escrow se déverrouille."
+        ]
+      ],
+      "safetyHeading": "Conseils de sécurité",
+      "safetyTips": [
+        "Ne libérez jamais la crypto avant d’avoir confirmé le paiement sur votre propre compte.",
+        "Ne payez que les coordonnées exactes affichées dans l’ordre — jamais des coordonnées envoyées par chat.",
+        "Évitez les paiements par un tiers : le nom de l’expéditeur doit correspondre à la contrepartie.",
+        "Utilisez Appel si la contrepartie ne répond pas ou si quelque chose cloche.",
+        "Gardez tout le chat sur la plateforme — il devient une preuve dans un litige."
+      ],
+      "startTrading": "Commencer à trader →",
+      "yourOrders": "Vos ordres →",
+      "appealsDisputes": "Appels et litiges →"
+    },
+    "buy": {
+      "metaTitle": "Comment acheter de la crypto avec du fiat — On-Ramp Fiat | OpenFiat",
+      "metaDescription": "On-ramp fiat en toute simplicité : achetez des stablecoins de pair à pair avec des moyens de paiement locaux sur l’exchange P2P OpenFiat — protégé par escrow sur Solana.",
+      "heroTitle": "Comment acheter de la crypto avec du fiat — On-Ramp Fiat",
+      "heroDescription": "Convertissez votre monnaie locale en stablecoins en quelques minutes. Quels tokens, monnaies et moyens de paiement sont proposés provient de votre nœud d’accès et du carnet d’ordres en direct — chaque ordre protégé par escrow sur Solana.",
+      "stepByStep": "Étape par étape",
+      "steps": [
+        [
+          "Choisissez Acheter + actif + votre monnaie + moyen de paiement",
+          "Les pastilles d’actif, la liste des monnaies et le filtre de moyen de paiement sont tous lus depuis votre nœud d’accès et le carnet en direct — ils montrent donc ce qui est réellement proposé là où vous êtes, plutôt qu’une liste écrite dans cette page."
+        ],
+        [
+          "Comparez les offres",
+          "Comparez prix, liquidité disponible et limites par ordre — les trois choses que chaque ligne du carnet porte réellement."
+        ],
+        [
+          "Cliquez sur Acheter et saisissez un montant",
+          "Saisissez combien de fiat vous voulez dépenser (ou combien de crypto vous voulez) — dans les limites de l’annonceur."
+        ],
+        [
+          "Passez l’ordre",
+          "La crypto du vendeur est verrouillée dans le programme d’escrow de Solana immédiatement, elle est donc garantie pour vous avant que vous ne payiez quoi que ce soit."
+        ],
+        [
+          "Payez le vendeur dans la fenêtre de temps",
+          "Virez le fiat en utilisant exactement les coordonnées affichées dans l’ordre — chaque champ est copiable. Si la fenêtre expire, l’ordre s’annule et l’escrow se déverrouille."
+        ],
+        [
+          "Cliquez sur « Transféré, notifier le vendeur »",
+          "Seulement après avoir réellement envoyé l’argent. Cela dit au vendeur de vérifier son compte."
+        ],
+        [
+          "Le vendeur confirme — la crypto arrive dans votre portefeuille",
+          "Le vendeur vérifie votre paiement et l’escrow libère la crypto vers votre portefeuille. Ordre terminé."
+        ]
+      ],
+      "goodToKnowHeading": "Bon à savoir",
+      "goodToKnow": [
+        "L’escrow vous protège : la crypto du vendeur est verrouillée sur Solana avant que vous ne payiez — il ne peut pas disparaître avec.",
+        "Ce que vous payez est le prix de l’annonceur. Les frais du protocole vivent on-chain dans la config de frais du programme d’escrow et sont modifiables par gouvernance, donc aucune page ici ne cote un taux qu’elle n’a pas lu.",
+        "Chaque ordre a une fenêtre de paiement ; si vous ne pouvez pas payer à temps, annulez au lieu de la laisser expirer.",
+        "Si le vendeur ne répond pas ou ne confirme pas, ouvrez un Appel — l’escrow gèle et un arbitre intervient."
+      ],
+      "startBuying": "Commencer à acheter →",
+      "sellingInstead": "Vous vendez plutôt ? Comment vendre →"
+    },
+    "sell": {
+      "metaTitle": "Comment vendre de la crypto contre du fiat — Off-Ramp Fiat | OpenFiat",
+      "metaDescription": "Off-ramp fiat en toute simplicité : vendez des stablecoins de pair à pair et encaissez via des moyens de paiement locaux sur l’exchange P2P OpenFiat — protégé par escrow sur Solana.",
+      "heroTitle": "Comment vendre de la crypto contre du fiat — Off-Ramp Fiat",
+      "heroDescription": "Encaissez vos stablecoins en monnaie locale en toute sécurité. Quels tokens et moyens de paiement sont proposés provient de votre nœud d’accès et du carnet d’ordres en direct — protégé par escrow sur Solana.",
+      "stepByStep": "Étape par étape",
+      "steps": [
+        [
+          "Choisissez Vendre",
+          "Choisissez le token que vous voulez vendre et la monnaie fiat que vous voulez recevoir. Les deux listes viennent de votre nœud d’accès, pas de cette page."
+        ],
+        [
+          "Choisissez une offre correspondant à votre montant",
+          "Comparez les prix des acheteurs, la liquidité disponible et les limites par ordre comme les acheteurs comparent les vendeurs."
+        ],
+        [
+          "Saisissez le montant et passez l’ordre",
+          "Votre crypto est verrouillée dans le programme d’escrow de Solana — l’acheteur voit qu’elle est garantie pour lui."
+        ],
+        [
+          "Attendez le paiement de l’acheteur",
+          "L’acheteur vire le fiat vers votre compte bancaire ou d’argent mobile dans la fenêtre de temps."
+        ],
+        [
+          "Vérifiez les fonds sur VOTRE compte",
+          "Connectez-vous à votre propre compte bancaire ou d’argent mobile et confirmez que l’argent est bien arrivé — ne faites jamais confiance aux seules captures d’écran."
+        ],
+        [
+          "Cliquez sur « Paiement reçu » et libérez",
+          "Seulement après vérification. L’escrow libère votre crypto à l’acheteur instantanément."
+        ],
+        [
+          "Ordre terminé",
+          "Le fiat est sur votre compte, l’acheteur a sa crypto, et les deux réputations se mettent à jour."
+        ]
+      ],
+      "staySafeHeading": "Restez prudent en vendant",
+      "goodToKnow": [
+        "Ne libérez jamais la crypto avant d’avoir confirmé le paiement sur votre propre compte — c’est la seule règle qui compte.",
+        "Les captures d’écran ne prouvent rien : les acheteurs peuvent falsifier des preuves de paiement. Vérifiez votre propre solde.",
+        "Méfiez-vous des paiements par un tiers : le nom de l’expéditeur doit correspondre à l’acheteur.",
+        "Si l’acheteur marque payé mais que rien n’est arrivé, ne libérez pas — ouvrez un Appel et un arbitre examinera.",
+        "Gardez tout le chat sur la plateforme pour qu’il puisse servir de preuve dans un litige."
+      ],
+      "startSelling": "Commencer à vendre →",
+      "buyingInstead": "Vous achetez plutôt ? Comment acheter →"
+    }
   }
 }

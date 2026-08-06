@@ -220,5 +220,91 @@
     "empty": "No wallet is currently advertising in {currency} on your access node. Publishing an advertisement is all it takes to open this market.",
     "merchantsAccept": "{count, plural, one {# merchant accepts} other {# merchants accept}}",
     "noNamedMethod": "no named payment method"
+  },
+  "guide": {
+    "index": {
+      "metaTitle": "How to Buy & Sell on OpenFiat P2P",
+      "metaDescription": "Step-by-step P2P trading guide: place an order, pay the seller within the time limit, and receive crypto from Solana-enforced escrow — plus safety tips.",
+      "heroTitle": "How to Buy & Sell on OpenFiat P2P",
+      "heroDescription": "P2P trading lets you exchange crypto directly with other people using local currency and payment methods — every order protected by escrow on Solana.",
+      "onrampTitle": "How to buy crypto with fiat (on-ramp) →",
+      "onrampDesc": "Turn local currency into USDT, USDC, USD1, or SOL — M-Pesa, bank transfer, and local payment methods.",
+      "offrampTitle": "How to sell crypto for fiat (off-ramp) →",
+      "offrampDesc": "Cash out stablecoins to your bank or mobile money — and the one rule that keeps you safe.",
+      "merchantTitle": "How to become a merchant →",
+      "merchantDesc": "Post the advertisements everyone else trades against — the bond, the vault, and what it commits you to.",
+      "whatIsHeading": "What is P2P trading?",
+      "whatIsBody": "P2P trading lets you buy and sell crypto directly with other people using your local currency and payment methods. Instead of trusting a stranger, every order is protected by escrow: the seller's crypto locks in the Solana escrow program the moment the order is placed, and it is released only after the seller confirms your payment arrived. OpenFiat never takes custody of your fiat.",
+      "keyTermsHeading": "Key terms",
+      "glossary": [
+        ["Advertiser (Merchant)", "A verified user who posts buy/sell offers with their own price, limits, and payment methods."],
+        ["Taker", "You — the user who picks an existing offer and places an order against it."],
+        ["Escrow", "The seller's crypto locks in the Solana escrow program when the order is placed and releases only after payment is confirmed."],
+        ["Appeal (Dispute)", "The button to press when something goes wrong — escrow freezes and an arbitrator steps in."],
+        ["Payment window", "The countdown you must pay within. If it expires, the order is cancelled and escrow unlocks."]
+      ],
+      "safetyHeading": "Safety tips",
+      "safetyTips": [
+        "Never release crypto before confirming payment in your own account.",
+        "Only pay the exact account details shown in the order — never details sent in chat.",
+        "Avoid third-party payments: the sender's name should match the counterparty.",
+        "Use Appeal if the counterparty doesn't respond or something feels wrong.",
+        "Keep all chat on-platform — it becomes evidence in a dispute."
+      ],
+      "startTrading": "Start trading →",
+      "yourOrders": "Your orders →",
+      "appealsDisputes": "Appeals & disputes →"
+    },
+    "buy": {
+      "metaTitle": "How to Buy Crypto with Fiat — Fiat On-Ramp | OpenFiat",
+      "metaDescription": "Fiat on-ramp made simple: buy stablecoins peer-to-peer with local payment methods on the OpenFiat P2P exchange — escrow-protected on Solana.",
+      "heroTitle": "How to Buy Crypto with Fiat — Fiat On-Ramp",
+      "heroDescription": "Turn your local currency into stablecoins in minutes. Which tokens, currencies and payment methods are on offer comes from your access node and the live order book — every order protected by escrow on Solana.",
+      "stepByStep": "Step by step",
+      "steps": [
+        ["Choose Buy + asset + your currency + payment method", "The asset pills, the currency list and the payment-method filter are all read from your access node and from the live book — so they show what is genuinely on offer where you are, rather than a list written into this page."],
+        ["Compare offers", "Compare price, available liquidity and per-order limits — the three things every row on the book actually carries."],
+        ["Click Buy and enter an amount", "Enter how much fiat you want to spend (or how much crypto you want) — within the advertiser's limits."],
+        ["Place the order", "The seller's crypto locks in the Solana escrow program immediately, so it is guaranteed for you before you pay anything."],
+        ["Pay the seller within the time window", "Transfer fiat using exactly the account details shown in the order — every field is copyable. If the window expires, the order cancels and escrow unlocks."],
+        ["Click “Transferred, notify seller”", "Only after you have actually sent the money. This tells the seller to check their account."],
+        ["Seller confirms — crypto arrives in your wallet", "The seller verifies your payment and escrow releases the crypto to your wallet. Order completed."]
+      ],
+      "goodToKnowHeading": "Good to know",
+      "goodToKnow": [
+        "Escrow protects you: the seller's crypto is locked on Solana before you pay — they cannot disappear with it.",
+        "What you pay is the advertiser's price. Protocol fees live on chain in the escrow program's fee config and are governance-updatable, so no page here quotes a rate it has not read.",
+        "Every order has a payment window; if you can't pay in time, cancel instead of letting it expire.",
+        "If the seller doesn't respond or confirm, open an Appeal — escrow freezes and an arbitrator steps in."
+      ],
+      "startBuying": "Start buying →",
+      "sellingInstead": "Selling instead? How to sell →"
+    },
+    "sell": {
+      "metaTitle": "How to Sell Crypto for Fiat — Fiat Off-Ramp | OpenFiat",
+      "metaDescription": "Fiat off-ramp made simple: sell stablecoins peer-to-peer and cash out through local payment methods on the OpenFiat P2P exchange — escrow-protected on Solana.",
+      "heroTitle": "How to Sell Crypto for Fiat — Fiat Off-Ramp",
+      "heroDescription": "Cash out your stablecoins to local currency safely. Which tokens and payment methods are on offer comes from your access node and the live order book — escrow-protected on Solana.",
+      "stepByStep": "Step by step",
+      "steps": [
+        ["Choose Sell", "Pick the token you want to sell and the fiat currency you want to receive. Both lists come from your access node, not from this page."],
+        ["Pick an offer matching your amount", "Compare buyer prices, available liquidity and per-order limits the same way buyers compare sellers."],
+        ["Enter the amount and place the order", "Your crypto locks in the Solana escrow program — the buyer can see it is guaranteed for them."],
+        ["Wait for the buyer's payment", "The buyer transfers fiat to your bank or mobile-money account within the time window."],
+        ["Verify the funds in YOUR account", "Log in to your own bank or mobile-money account and confirm the money actually arrived — never trust screenshots alone."],
+        ["Click “Payment received” and release", "Only after verifying. Escrow releases your crypto to the buyer instantly."],
+        ["Order completed", "Fiat is in your account, the buyer has their crypto, and both reputations update."]
+      ],
+      "staySafeHeading": "Stay safe when selling",
+      "goodToKnow": [
+        "Never release crypto before confirming payment in your own account — this is the one rule that matters.",
+        "Screenshots prove nothing: buyers can fake payment proofs. Check your own balance.",
+        "Beware of third-party payments: the sender's name should match the buyer.",
+        "If the buyer marks paid but nothing arrived, don't release — open an Appeal and an arbitrator will review.",
+        "Keep all chat on-platform so it can serve as evidence in a dispute."
+      ],
+      "startSelling": "Start selling →",
+      "buyingInstead": "Buying instead? How to buy →"
+    }
   }
 }
