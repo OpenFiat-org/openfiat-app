@@ -358,6 +358,56 @@
       ],
       "startSelling": "Comece a vender →",
       "buyingInstead": "Comprando em vez disso? Como comprar →"
+    },
+    "merchant": {
+      "metaTitle": "Como se tornar comerciante — Publique anúncios no OpenFiat P2P | OpenFiat",
+      "metaDescription": "Torne-se comerciante da OpenFiat: faça bond de OPEN, financie um vault de liquidez e publique anúncios contra os quais compradores e vendedores operam. Sem inscrição e sem aprovação — o bond é a qualificação.",
+      "heroTitle": "Como se tornar comerciante",
+      "heroDescription": "Os comerciantes são a liquidez na OpenFiat: publicam os anúncios contra os quais todos os outros operam, cotam os preços e liquidam a perna fiat. Não há inscrição nem aprovação — você faz bond de OPEN, financia um vault e publica. O que segue é a que isso de fato o compromete.",
+      "bondNote": "Fazer bond é uma transação de staking real, e esta página não lê sua carteira — então não pode dizer se você já se qualifica. <link>A página de staking</link> mostra o bond mínimo que o programa implantado realmente exige e o que você colocou em bond contra ele.",
+      "stepByStep": "Passo a passo",
+      "steps": [
+        [
+          "Faça bond de OPEN",
+          "Um comerciante coloca OPEN em stake como responsabilidade, não como taxa — continua seu, salvo se uma penalidade do protocolo se aplicar. A página de staking mostra o mínimo que o programa implantado exige; esta página deliberadamente não repete uma cifra que não leu. É isso que substitui um formulário de inscrição: ninguém o aprova, mas você tem algo em risco."
+        ],
+        [
+          "Financie um vault de liquidez",
+          "Um anúncio de venda é lastreado por estoque que você já depositou, por stablecoin. Reservas movem saldos de Disponível para Reservado, e a liquidação os move para Liquidado — um comprador pode ver que os fundos existem antes de se comprometer, e é por isso que seus anúncios são aceitos."
+        ],
+        [
+          "Decida seu mercado",
+          "Direção, ativo e moeda fiat. Escolha um corredor que você realmente consiga atender: você precisa de uma conta de pagamento nessa moeda e precisa estar acordado quando os compradores dela estão."
+        ],
+        [
+          "Defina um preço",
+          "Fixo, ou flutuante como um prêmio sobre o mid do oráculo. O flutuante acompanha o mercado sem você vigiar; o fixo é previsível mas fica obsoleto. Um preço mais apertado ganha mais ordens e ganha menos por ordem."
+        ],
+        [
+          "Defina limites que vai honrar",
+          "Mínimo e máximo por operação. Um máximo acima do que você consegue liquidar prontamente custa velocidade de liquidação, que é uma dimensão de reputação pela qual os compradores filtram."
+        ],
+        [
+          "Declare métodos de pagamento e termos",
+          "Apenas trilhos nos quais você genuinamente consegue receber. Seus termos são onde você declara em nome de quem deve estar a transferência, que referência usar e em quais horas liquida — essas condições são sobre as quais as disputas giram, então coloque-as aqui em vez de explicá-las no chat depois."
+        ],
+        [
+          "Publique e mantenha-se responsivo",
+          "Disponibilidade e tempo de resposta são pontuados e decaem com a inatividade, então um anúncio obsoleto para de aparecer em silêncio. Pause seus anúncios em vez de deixá-los ativos quando não pode liquidar."
+        ]
+      ],
+      "obligationsHeading": "O que você está assumindo",
+      "obligations": [
+        "Seu bond é passível de slash. Não liquidar uma operação que você aceitou, ou perder uma disputa, tem um custo — esse é o objetivo dele.",
+        "Cada operação concluída atualiza oito dimensões de reputação. Taxa de disputas e velocidade de liquidação são as duas que os compradores olham com mais atenção.",
+        "Você é a contraparte, não uma plataforma. Ninguém faz escrow por você — o programa de escrow da Solana faz, e ele libera conforme o desfecho, não conforme sua palavra.",
+        "Libere apenas depois de verificar o dinheiro na sua própria conta. Uma captura de tela não é um pagamento.",
+        "Mantenha cada mensagem no chat da operação. É a evidência que um árbitro lê, e conversas movidas para outro lugar não podem ser apresentadas depois."
+      ],
+      "checkStanding": "Veja onde você está →",
+      "postFirstAd": "Publique seu primeiro anúncio →",
+      "bondOpen": "Faça bond de OPEN →",
+      "fundVault": "Financie um vault de liquidez →"
     }
   }
 }

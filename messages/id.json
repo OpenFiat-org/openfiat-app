@@ -358,6 +358,56 @@
       ],
       "startSelling": "Mulai menjual →",
       "buyingInstead": "Malah membeli? Cara membeli →"
+    },
+    "merchant": {
+      "metaTitle": "Cara menjadi merchant — Pasang iklan di OpenFiat P2P | OpenFiat",
+      "metaDescription": "Jadi merchant OpenFiat: bond OPEN, danai vault likuiditas, dan pasang iklan yang menjadi lawan transaksi pembeli dan penjual. Tanpa lamaran dan tanpa persetujuan — bond adalah kualifikasinya.",
+      "heroTitle": "Cara menjadi merchant",
+      "heroDescription": "Merchant adalah likuiditas di OpenFiat: mereka memasang iklan yang menjadi lawan transaksi semua orang lain, mengutip harga, dan menyelesaikan sisi fiat. Tak ada lamaran dan tak ada persetujuan — Anda bond OPEN, mendanai vault, dan memasang. Yang menyusul adalah apa yang sebenarnya mengikat Anda padanya.",
+      "bondNote": "Bond adalah transaksi staking sungguhan, dan halaman ini tak membaca dompet Anda — jadi tak bisa memberi tahu apakah Anda sudah memenuhi syarat. <link>Halaman staking</link> menampilkan bond minimum yang benar-benar ditegakkan program yang di-deploy dan berapa yang telah Anda bond terhadapnya.",
+      "stepByStep": "Langkah demi langkah",
+      "steps": [
+        [
+          "Bond OPEN",
+          "Seorang merchant men-stake OPEN sebagai pertanggungjawaban, bukan biaya — ia tetap milik Anda kecuali penalti protokol berlaku. Halaman staking menampilkan minimum yang ditegakkan program yang di-deploy; halaman ini sengaja tak mengulang angka yang belum dibacanya. Inilah yang menggantikan formulir lamaran: tak ada yang menyetujui Anda, tapi Anda punya sesuatu yang dipertaruhkan."
+        ],
+        [
+          "Danai vault likuiditas",
+          "Iklan jual didukung oleh inventaris yang sudah Anda setor, per stablecoin. Pemesanan memindahkan saldo dari Tersedia ke Dipesan, dan penyelesaian memindahkannya ke Terselesaikan — pembeli bisa melihat dana ada sebelum berkomitmen, itu sebabnya iklan Anda diambil."
+        ],
+        [
+          "Putuskan pasar Anda",
+          "Arah, aset, dan mata uang fiat. Pilih koridor yang benar-benar bisa Anda layani: Anda butuh akun pembayaran dalam mata uang itu, dan Anda harus terjaga saat pembelinya terjaga."
+        ],
+        [
+          "Tetapkan harga",
+          "Tetap, atau mengambang sebagai premi atas mid oracle. Mengambang mengikuti pasar tanpa Anda mengawasi; tetap dapat diprediksi tapi jadi usang. Harga lebih ketat memenangkan lebih banyak pesanan dan menghasilkan lebih sedikit per pesanan."
+        ],
+        [
+          "Tetapkan batas yang akan Anda hormati",
+          "Minimum dan maksimum per transaksi. Maksimum di atas yang bisa Anda selesaikan segera merugikan kecepatan penyelesaian Anda, yang merupakan dimensi reputasi yang disaring pembeli."
+        ],
+        [
+          "Nyatakan metode pembayaran dan ketentuan",
+          "Hanya jalur yang benar-benar bisa Anda terima. Ketentuan Anda adalah tempat Anda menyatakan atas nama siapa transfer harus, referensi apa yang dipakai, dan pada jam berapa Anda menyelesaikan — kondisi itulah yang menjadi poros sengketa, jadi taruh di sini alih-alih menjelaskannya di chat sesudahnya."
+        ],
+        [
+          "Pasang dan tetap responsif",
+          "Ketersediaan dan waktu respons dinilai dan meluruh dengan ketakaktifan, jadi iklan usang diam-diam berhenti muncul. Jeda iklan Anda alih-alih membiarkannya tayang saat Anda tak bisa menyelesaikan."
+        ]
+      ],
+      "obligationsHeading": "Apa yang Anda emban",
+      "obligations": [
+        "Bond Anda bisa di-slash. Gagal menyelesaikan transaksi yang Anda terima, atau kalah sengketa, ada biayanya — itulah maksudnya.",
+        "Tiap transaksi selesai memperbarui delapan dimensi reputasi. Tingkat sengketa dan kecepatan penyelesaian adalah dua yang paling ketat dilihat pembeli.",
+        "Anda adalah lawan transaksi, bukan platform. Tak ada yang meng-escrow atas nama Anda — program escrow Solana yang melakukannya, dan ia melepaskan sesuai hasil, bukan atas ucapan Anda.",
+        "Lepaskan hanya setelah Anda memverifikasi uang di akun Anda sendiri. Tangkapan layar bukan pembayaran.",
+        "Simpan tiap pesan di chat transaksi. Itulah bukti yang dibaca arbiter, dan percakapan yang dipindah ke tempat lain tak bisa dihadirkan kemudian."
+      ],
+      "checkStanding": "Cek posisi Anda →",
+      "postFirstAd": "Pasang iklan pertama Anda →",
+      "bondOpen": "Bond OPEN →",
+      "fundVault": "Danai vault likuiditas →"
     }
   }
 }

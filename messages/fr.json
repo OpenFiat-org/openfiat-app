@@ -358,6 +358,56 @@
       ],
       "startSelling": "Commencer à vendre →",
       "buyingInstead": "Vous achetez plutôt ? Comment acheter →"
+    },
+    "merchant": {
+      "metaTitle": "Comment devenir commerçant — Publiez des annonces sur OpenFiat P2P | OpenFiat",
+      "metaDescription": "Devenez commerçant OpenFiat : faites un bond d’OPEN, financez un coffre de liquidité et publiez des annonces contre lesquelles acheteurs et vendeurs échangent. Pas de candidature ni d’approbation — le bond est la qualification.",
+      "heroTitle": "Comment devenir commerçant",
+      "heroDescription": "Les commerçants sont la liquidité sur OpenFiat : ils publient les annonces contre lesquelles tous les autres échangent, cotent les prix et règlent la partie fiat. Il n’y a ni candidature ni approbation — vous faites un bond d’OPEN, financez un coffre et publiez. Ce qui suit est ce à quoi cela vous engage réellement.",
+      "bondNote": "Faire un bond est une vraie transaction de staking, et cette page ne lit pas votre portefeuille — elle ne peut donc pas vous dire si vous êtes déjà qualifié. <link>La page de staking</link> montre le bond minimum que le programme déployé impose réellement et ce que vous avez mis en bond contre lui.",
+      "stepByStep": "Étape par étape",
+      "steps": [
+        [
+          "Faites un bond d’OPEN",
+          "Un commerçant met de l’OPEN en stake comme responsabilité, pas comme frais — il reste le vôtre sauf application d’une pénalité du protocole. La page de staking montre le minimum que le programme déployé impose ; cette page ne répète délibérément pas un chiffre qu’elle n’a pas lu. C’est ce qui remplace un formulaire de candidature : personne ne vous approuve, mais vous avez quelque chose en jeu."
+        ],
+        [
+          "Financez un coffre de liquidité",
+          "Une annonce de vente est adossée à un stock que vous avez déjà déposé, par stablecoin. Les réservations font passer des soldes de Disponible à Réservé, et le règlement les fait passer à Réglé — un acheteur peut voir que les fonds existent avant de s’engager, et c’est pourquoi vos annonces sont prises."
+        ],
+        [
+          "Décidez votre marché",
+          "Direction, actif et monnaie fiat. Choisissez un corridor que vous pouvez réellement servir : il vous faut un compte de paiement dans cette monnaie, et il vous faut être éveillé quand ses acheteurs le sont."
+        ],
+        [
+          "Fixez un prix",
+          "Fixe, ou flottant en prime sur le mid de l’oracle. Le flottant suit le marché sans que vous le surveilliez ; le fixe est prévisible mais devient obsolète. Un prix plus serré gagne plus d’ordres et gagne moins par ordre."
+        ],
+        [
+          "Fixez des limites que vous honorerez",
+          "Minimum et maximum par échange. Un maximum au-dessus de ce que vous pouvez régler promptement vous coûte de la vitesse de règlement, qui est une dimension de réputation sur laquelle les acheteurs filtrent."
+        ],
+        [
+          "Déclarez les moyens de paiement et les conditions",
+          "Uniquement les rails sur lesquels vous pouvez vraiment recevoir. Vos conditions sont là où vous indiquez au nom de qui doit être le virement, quelle référence utiliser et à quelles heures vous réglez — ce sont ces conditions qui décident des litiges, alors mettez-les ici plutôt que de les expliquer dans le chat après."
+        ],
+        [
+          "Publiez et restez réactif",
+          "Disponibilité et temps de réponse sont notés et déclinent avec l’inactivité, donc une annonce obsolète cesse discrètement d’apparaître. Mettez vos annonces en pause plutôt que de les laisser en ligne quand vous ne pouvez pas régler."
+        ]
+      ],
+      "obligationsHeading": "Ce que vous prenez sur vous",
+      "obligations": [
+        "Votre bond est slashable. Ne pas régler un échange que vous avez accepté, ou perdre un litige, a un coût — c’est bien le but.",
+        "Chaque échange terminé met à jour huit dimensions de réputation. Le taux de litiges et la vitesse de règlement sont les deux que les acheteurs regardent le plus.",
+        "Vous êtes la contrepartie, pas une plateforme. Personne ne fait d’escrow à votre place — le programme d’escrow de Solana le fait, et il libère selon l’issue, pas sur votre parole.",
+        "Ne libérez qu’après avoir vérifié l’argent sur votre propre compte. Une capture d’écran n’est pas un paiement.",
+        "Gardez chaque message dans le chat de l’échange. C’est la preuve que lit un arbitre, et les conversations déplacées ailleurs ne peuvent pas être produites plus tard."
+      ],
+      "checkStanding": "Voir où vous en êtes →",
+      "postFirstAd": "Publiez votre première annonce →",
+      "bondOpen": "Faire un bond d’OPEN →",
+      "fundVault": "Financer un coffre de liquidité →"
     }
   }
 }
