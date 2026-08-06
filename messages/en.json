@@ -1731,5 +1731,35 @@
     "reviewsFooter": "Signed by somebody who really settled a trade with this wallet, and nothing more than that. The author and the trade are deliberately not published — both parties may review the same trade, so either would rebuild the counterparty graph the protocol withholds. The date is the day, not the moment, for the same reason. This is opinion; the trading record beside it is computed from signed events and cannot be talked up or down.",
     "profileMetaTitle": "Merchant …{short}",
     "profileMetaDescription": "A wallet advertising on OpenFiat: the advertisements it has published, what counterparties said about it, and the trading record your access node computes for it."
+  },
+  "pair": {
+    "metaTitleNoRate": "Convert {label} to {currency} — P2P Exchange | OpenFiat",
+    "metaDescNoRate": "Buy and sell {label} for {currency} peer-to-peer on OpenFiat. Escrow enforced by Solana programs — OpenFiat never takes custody of your {currency}.",
+    "metaTitle": "Convert {label} to {currency} — {label}/{currency} P2P Rate | OpenFiat",
+    "metaDesc": "Convert {label} to {currency} peer-to-peer at {rate} {currency} per {label}.{advertiserPhrase} Escrow enforced by Solana programs — OpenFiat never takes custody of your {currency}.",
+    "metaAdvertiserPhrase": " {advertisers, plural, one {# live advertiser} other {# live advertisers}}{rails, select, none {} other {, paying by {rails}}}.",
+    "breadcrumbExchange": "Exchange",
+    "convertHeading": "Convert {label} to {currency}",
+    "advertisersLine": "{advertisers, plural, one {# advertiser is} other {# advertisers are}} trading {label} against {currency} right now. There is no exchange in the middle: you pick someone whose price and limits suit you, and the {currency} moves between your own accounts{methods, select, none {} other { using {methods}}}{more, select, yes { and others} other {}}.",
+    "noAdvertisersLine": "Nobody is advertising {label} against {currency} on this node right now. A node counts only the advertisements it has replicated, so a node that joined recently knows about fewer than exist — and an empty corridor is an opening rather than a closure: the first merchant in one sets the price.",
+    "escrowLine": "Your {label} is locked in a Solana escrow program before any {currency} is sent. It releases when the receiving side confirms the money arrived, and if they do not, independent arbitrators who have staked OPEN decide it. Nobody at OpenFiat can release escrow early, freeze it, or take custody of your {currency} at any point.",
+    "currencyLine": "{currency} is the currency of {countries}{more, select, yes { and {moreCount} more} other {}}. {isUsd, select, yes {Advertisers pricing in dollars often accept any currency, so this pair is usually the deepest book on the network.} other {Local rails mean settlement in minutes rather than the days a cross-border transfer takes.}}",
+    "otherAssetsHeading": "Other assets in {currency}",
+    "noOtherAssets": "No other asset is priced against {currency} right now.",
+    "otherCurrenciesHeading": "{label} in other currencies",
+    "noOtherCurrencies": "{label} is not priced in any other currency right now.",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "Median across every unexpired oracle record",
+    "rateMedianN": "{contributors, plural, one {Median across # oracle} other {Median across # oracles}}",
+    "rateContext": "{median} (OFS-7000 §11), good until {until}. Advertisers price above or below it, so the rate you get is the one on the offer you accept — compare below.",
+    "unreachableRate": "The access node could not be reached, so there is no rate to show. This says nothing about whether {label}/{currency} is priced — only that we could not ask.",
+    "staleRate": "The {label}/{currency} feed has lapsed{lapsed, select, none {} other { — the last record expired {lapsedAt}}}, and expired data is not a rate (OFS-7000 §12). A provider publishes this pair, so a fresh reading should appear once they publish again.",
+    "noOracleRate": "No oracle publishes {label}/{currency} on this node, so there is no median rate for it. That is not a temporary outage: it is a corridor nobody prices yet. Merchants can still advertise the pair at a fixed price of their own choosing."
+  },
+  "converter": {
+    "youHave": "You have",
+    "youGetRoughly": "You get, roughly",
+    "amountIn": "Amount in {symbol}",
+    "oracleMidNote": "At the oracle mid of {rate} {currency}. Advertisers price above or below it, so the figure on the offer you accept is the one that counts."
   }
 }

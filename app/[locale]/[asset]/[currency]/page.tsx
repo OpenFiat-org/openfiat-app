@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
@@ -50,6 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const pair = await normalisePair(asset, currency);
   if (!pair) return {};
 
+  const t = await getTranslations({ locale, namespace: "pair" });
   const { rate, advertisers, methods } = await loadPairData(pair);
   const canonical = { alternates: alternatesFor(`/${pair.slug}`, locale) };
 
@@ -59,10 +62,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   // exactly the error this page was fixed for.
   if (rate.kind !== "current") {
     return {
-      title: {
-        absolute: `Convert ${pair.label} to ${pair.currency} — P2P Exchange | OpenFiat`,
-      },
-      description: `Buy and sell ${pair.label} for ${pair.currency} peer-to-peer on OpenFiat. Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
+      title: { absolute: t("metaTitleNoRate", { label: pair.label, currency: pair.currency }) },
+      description: t("metaDescNoRate", { label: pair.label, currency: pair.currency }),
       ...canonical,
     };
   }
@@ -70,13 +71,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const rails = methods.slice(0, 3).join(", ");
   const advertiserPhrase =
     advertisers > 0
-      ? ` ${advertisers} live advertiser${advertisers === 1 ? "" : "s"}${rails ? `, paying by ${rails}` : ""}.`
+      ? t("metaAdvertiserPhrase", { advertisers, rails: rails || "none" })
       : "";
   return {
-    title: {
-      absolute: `Convert ${pair.label} to ${pair.currency} — ${pair.label}/${pair.currency} P2P Rate | OpenFiat`,
-    },
-    description: `Convert ${pair.label} to ${pair.currency} peer-to-peer at ${formatNumber(rate.rate)} ${pair.currency} per ${pair.label}.${advertiserPhrase} Escrow enforced by Solana programs — OpenFiat never takes custody of your ${pair.currency}.`,
+    title: { absolute: t("metaTitle", { label: pair.label, currency: pair.currency }) },
+    description: t("metaDesc", {
+      label: pair.label,
+      currency: pair.currency,
+      rate: formatNumber(rate.rate),
+      advertiserPhrase,
+    }),
     ...canonical,
   };
 }
@@ -86,7 +90,16 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
   const pair = await normalisePair(asset, currency);
   if (!pair) notFound();
 
-  const { rate, advertisers, methods, countries, priced, unreachable } = await loadPairData(pair);
+  const data = await loadPairData(pair);
+  return <PairView pair={pair} data={data} />;
+}
+
+type PairData = Awaited<ReturnType<typeof loadPairData>>;
+type Pair = NonNullable<Awaited<ReturnType<typeof normalisePair>>>;
+
+function PairView({ pair, data }: { pair: Pair; data: PairData }) {
+  const t = useTranslations("pair");
+  const { rate, advertisers, methods, countries, priced, unreachable } = data;
 
   const countryList = countries.slice(0, 4).join(", ");
   const more = countries.length - 4;
@@ -112,7 +125,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
     <section>
       <nav className="text-sm text-gray-500">
         <Link href="/" className="hover:text-white">
-          Exchange
+          {t("breadcrumbExchange")}
         </Link>
         <span className="mx-2 text-gray-700">/</span>
         <span className="text-gray-400">
@@ -122,7 +135,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
 
       <h1 className="mt-3 flex flex-wrap items-center gap-2.5 text-xl font-semibold text-white">
         <AssetIcon asset={pair.label} size={22} />
-        Convert {pair.label} to {pair.currency}
+        {t("convertHeading", { label: pair.label, currency: pair.currency })}
       </h1>
 
       {/* The answer, immediately — or, when there isn't one, which of the two
@@ -138,33 +151,27 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
       <div className="mt-8 max-w-3xl space-y-4 text-sm leading-relaxed text-gray-400">
         {advertisers > 0 ? (
           <p>
-            {advertisers} advertiser{advertisers === 1 ? "" : "s"} are trading {pair.label} against{" "}
-            {pair.currency} right now. There is no exchange in the middle: you pick someone whose
-            price and limits suit you, and the {pair.currency} moves between your own accounts
-            {methods.length > 0 && <> using {methods.slice(0, 3).join(", ")}</>}
-            {methods.length > 3 ? " and others" : ""}.
+            {t("advertisersLine", {
+              advertisers,
+              label: pair.label,
+              currency: pair.currency,
+              methods: methods.length > 0 ? methods.slice(0, 3).join(", ") : "none",
+              more: methods.length > 3 ? "yes" : "no",
+            })}
           </p>
         ) : (
-          <p>
-            Nobody is advertising {pair.label} against {pair.currency} on this node right now. A
-            node counts only the advertisements it has replicated, so a node that joined recently
-            knows about fewer than exist — and an empty corridor is an opening rather than a
-            closure: the first merchant in one sets the price.
-          </p>
+          <p>{t("noAdvertisersLine", { label: pair.label, currency: pair.currency })}</p>
         )}
-        <p>
-          Your {pair.label} is locked in a Solana escrow program before any {pair.currency} is sent.
-          It releases when the receiving side confirms the money arrived, and if they do not,
-          independent arbitrators who have staked OPEN decide it. Nobody at OpenFiat can release
-          escrow early, freeze it, or take custody of your {pair.currency} at any point.
-        </p>
+        <p>{t("escrowLine", { label: pair.label, currency: pair.currency })}</p>
         {countries.length > 0 && (
           <p>
-            {pair.currency} is the currency of {countryList}
-            {more > 0 ? ` and ${more} more` : ""}.{" "}
-            {pair.currency === "USD"
-              ? "Advertisers pricing in dollars often accept any currency, so this pair is usually the deepest book on the network."
-              : `Local rails mean settlement in minutes rather than the days a cross-border transfer takes.`}
+            {t("currencyLine", {
+              currency: pair.currency,
+              countries: countryList,
+              more: more > 0 ? "yes" : "no",
+              moreCount: more,
+              isUsd: pair.currency === "USD" ? "yes" : "no",
+            })}
           </p>
         )}
       </div>
@@ -181,7 +188,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
       <div className="mt-12 grid gap-8 border-t border-white/10 pt-8 sm:grid-cols-2">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-            Other assets in {pair.currency}
+            {t("otherAssetsHeading", { currency: pair.currency })}
           </h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {otherAssets.map((p) => (
@@ -197,7 +204,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
             ))}
             {otherAssets.length === 0 && (
               <li className="text-sm text-gray-500">
-                No other asset is priced against {pair.currency} right now.
+                {t("noOtherAssets", { currency: pair.currency })}
               </li>
             )}
           </ul>
@@ -205,7 +212,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
 
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-            {pair.label} in other currencies
+            {t("otherCurrenciesHeading", { label: pair.label })}
           </h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {otherCurrencies.map((p) => (
@@ -220,7 +227,7 @@ export default async function PairPage({ params }: { params: Promise<Params> }) 
             ))}
             {otherCurrencies.length === 0 && (
               <li className="text-sm text-gray-500">
-                {pair.label} is not priced in any other currency right now.
+                {t("noOtherCurrencies", { label: pair.label })}
               </li>
             )}
           </ul>
@@ -247,23 +254,26 @@ function Rate({
   rate: RateLookup;
   unreachable: boolean;
 }) {
+  const t = useTranslations("pair");
   if (rate.kind === "current") {
+    const median =
+      rate.contributors === null
+        ? t("rateMedianAll")
+        : t("rateMedianN", { contributors: rate.contributors });
     return (
       <>
         <p className="mt-3 text-2xl font-semibold tabular-nums text-white">
-          1 {pair.label} ={" "}
-          <span className="text-brand-teal">
-            {formatNumber(rate.rate)} {pair.currency}
-          </span>
+          {t.rich("rateLine", {
+            label: pair.label,
+            rate: formatNumber(rate.rate),
+            currency: pair.currency,
+            v: (chunks) => <span className="text-brand-teal">{chunks}</span>,
+          })}
         </p>
         <p className="mt-1 text-xs text-gray-500">
           {/* Omitted rather than guessed when the answer did not carry it —
               see `RateLookup`. The median is still the median either way. */}
-          {rate.contributors === null
-            ? "Median across every unexpired oracle record"
-            : `Median across ${rate.contributors} oracle${rate.contributors === 1 ? "" : "s"}`}{" "}
-          (OFS-7000 §11), good until {new Date(rate.expiresAt).toLocaleString()}. Advertisers price
-          above or below it, so the rate you get is the one on the offer you accept — compare below.
+          {t("rateContext", { median, until: new Date(rate.expiresAt).toLocaleString() })}
         </p>
       </>
     );
@@ -272,8 +282,7 @@ function Rate({
   if (unreachable) {
     return (
       <p className="mt-3 max-w-2xl text-sm text-amber-300">
-        The access node could not be reached, so there is no rate to show. This says nothing about
-        whether {pair.label}/{pair.currency} is priced — only that we could not ask.
+        {t("unreachableRate", { label: pair.label, currency: pair.currency })}
       </p>
     );
   }
@@ -281,21 +290,19 @@ function Rate({
   if (rate.kind === "stale") {
     return (
       <p className="mt-3 max-w-2xl text-sm text-amber-300">
-        The {pair.label}/{pair.currency} feed has lapsed
-        {rate.lapsedAt === null
-          ? ""
-          : ` — the last record expired ${new Date(rate.lapsedAt).toLocaleString()}`}
-        , and expired data is not a rate (OFS-7000 §12). A provider publishes this pair, so a fresh
-        reading should appear once they publish again.
+        {t("staleRate", {
+          label: pair.label,
+          currency: pair.currency,
+          lapsed: rate.lapsedAt === null ? "none" : "yes",
+          lapsedAt: rate.lapsedAt === null ? "" : new Date(rate.lapsedAt).toLocaleString(),
+        })}
       </p>
     );
   }
 
   return (
     <p className="mt-3 max-w-2xl text-sm text-gray-400">
-      No oracle publishes {pair.label}/{pair.currency} on this node, so there is no median rate for
-      it. That is not a temporary outage: it is a corridor nobody prices yet. Merchants can still
-      advertise the pair at a fixed price of their own choosing.
+      {t("noOracleRate", { label: pair.label, currency: pair.currency })}
     </p>
   );
 }

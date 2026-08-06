@@ -1731,5 +1731,35 @@
     "reviewsFooter": "Firmada por alguien que realmente liquidó una operación con esta billetera, y nada más que eso. El autor y la operación deliberadamente no se publican — ambas partes pueden reseñar la misma operación, así que cualquiera reconstruiría el grafo de contrapartes que el protocolo retiene. La fecha es el día, no el momento, por la misma razón. Esto es opinión; el registro de operaciones a su lado se computa de eventos firmados y no se puede subir ni bajar hablando.",
     "profileMetaTitle": "Comerciante …{short}",
     "profileMetaDescription": "Una billetera que anuncia en OpenFiat: los anuncios que ha publicado, lo que dijeron las contrapartes sobre ella, y el registro de operaciones que tu nodo de acceso computa para ella."
+  },
+  "pair": {
+    "metaTitleNoRate": "Convertir {label} a {currency} — Intercambio P2P | OpenFiat",
+    "metaDescNoRate": "Compra y vende {label} por {currency} entre pares en OpenFiat. Custodia garantizada por programas de Solana — OpenFiat nunca toma custodia de tus {currency}.",
+    "metaTitle": "Convertir {label} a {currency} — Tasa P2P {label}/{currency} | OpenFiat",
+    "metaDesc": "Convierte {label} a {currency} entre pares a {rate} {currency} por {label}.{advertiserPhrase} Custodia garantizada por programas de Solana — OpenFiat nunca toma custodia de tus {currency}.",
+    "metaAdvertiserPhrase": " {advertisers, plural, one {# anunciante activo} other {# anunciantes activos}}{rails, select, none {} other {, que pagan por {rails}}}.",
+    "breadcrumbExchange": "Intercambio",
+    "convertHeading": "Convertir {label} a {currency}",
+    "advertisersLine": "{advertisers, plural, one {# anunciante está operando} other {# anunciantes están operando}} {label} contra {currency} en este momento. No hay un intercambio en medio: eliges a alguien cuyo precio y límites te convengan, y los {currency} se mueven entre tus propias cuentas{methods, select, none {} other { usando {methods}}}{more, select, yes { y otros} other {}}.",
+    "noAdvertisersLine": "Nadie anuncia {label} contra {currency} en este nodo en este momento. Un nodo cuenta solo los anuncios que ha replicado, así que un nodo que se unió hace poco conoce menos de los que existen — y un corredor vacío es una apertura más que un cierre: el primer comerciante en él fija el precio.",
+    "escrowLine": "Tus {label} quedan bloqueados en un programa de custodia de Solana antes de que se envíe cualquier {currency}. Se liberan cuando la parte receptora confirma que el dinero llegó, y si no lo hacen, árbitros independientes que han hecho staking de OPEN lo deciden. Nadie en OpenFiat puede liberar la custodia antes de tiempo, congelarla ni tomar custodia de tus {currency} en ningún momento.",
+    "currencyLine": "{currency} es la moneda de {countries}{more, select, yes { y {moreCount} más} other {}}. {isUsd, select, yes {Los anunciantes que cotizan en dólares suelen aceptar cualquier moneda, así que este par suele ser el libro más profundo de la red.} other {Los rieles locales hacen que la liquidación tarde minutos en lugar de los días de una transferencia transfronteriza.}}",
+    "otherAssetsHeading": "Otros activos en {currency}",
+    "noOtherAssets": "Ningún otro activo tiene precio contra {currency} en este momento.",
+    "otherCurrenciesHeading": "{label} en otras monedas",
+    "noOtherCurrencies": "{label} no tiene precio en ninguna otra moneda en este momento.",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "Mediana de todos los registros de oráculo no vencidos",
+    "rateMedianN": "{contributors, plural, one {Mediana de # oráculo} other {Mediana de # oráculos}}",
+    "rateContext": "{median} (OFS-7000 §11), válida hasta {until}. Los anunciantes cotizan por encima o por debajo de ella, así que la tasa que obtienes es la de la oferta que aceptas — compara abajo.",
+    "unreachableRate": "No se pudo contactar el nodo de acceso, así que no hay tasa que mostrar. Esto no dice nada sobre si {label}/{currency} tiene precio — solo que no pudimos preguntar.",
+    "staleRate": "El feed de {label}/{currency} ha caducado{lapsed, select, none {} other { — el último registro venció {lapsedAt}}}, y los datos vencidos no son una tasa (OFS-7000 §12). Un proveedor publica este par, así que debería aparecer una lectura fresca cuando vuelva a publicar.",
+    "noOracleRate": "Ningún oráculo publica {label}/{currency} en este nodo, así que no hay tasa mediana para él. Eso no es una interrupción temporal: es un corredor que nadie cotiza aún. Los comerciantes aún pueden anunciar el par a un precio fijo de su elección."
+  },
+  "converter": {
+    "youHave": "Tú tienes",
+    "youGetRoughly": "Recibes, aproximadamente",
+    "amountIn": "Importe en {symbol}",
+    "oracleMidNote": "Al medio del oráculo de {rate} {currency}. Los anunciantes cotizan por encima o por debajo, así que la cifra de la oferta que aceptas es la que cuenta."
   }
 }

@@ -1731,5 +1731,35 @@
     "reviewsFooter": "Signé par quelqu'un qui a réellement réglé un échange avec ce portefeuille, et rien de plus. L'auteur et l'échange ne sont délibérément pas publiés — les deux parties peuvent évaluer le même échange, donc l'une ou l'autre reconstruirait le graphe des contreparties que le protocole retient. La date est le jour, pas le moment, pour la même raison. Ceci est une opinion ; le registre d'échange à côté est calculé à partir d'événements signés et ne peut être gonflé ou baissé par des paroles.",
     "profileMetaTitle": "Commerçant …{short}",
     "profileMetaDescription": "Un portefeuille annonçant sur OpenFiat : les annonces qu'il a publiées, ce que les contreparties ont dit de lui, et le registre d'échange que votre nœud d'accès calcule pour lui."
+  },
+  "pair": {
+    "metaTitleNoRate": "Convertir {label} en {currency} — Échange P2P | OpenFiat",
+    "metaDescNoRate": "Achetez et vendez {label} contre {currency} de pair à pair sur OpenFiat. Séquestre imposé par des programmes Solana — OpenFiat ne prend jamais la garde de vos {currency}.",
+    "metaTitle": "Convertir {label} en {currency} — Taux P2P {label}/{currency} | OpenFiat",
+    "metaDesc": "Convertissez {label} en {currency} de pair à pair à {rate} {currency} par {label}.{advertiserPhrase} Séquestre imposé par des programmes Solana — OpenFiat ne prend jamais la garde de vos {currency}.",
+    "metaAdvertiserPhrase": " {advertisers, plural, one {# annonceur actif} other {# annonceurs actifs}}{rails, select, none {} other {, payant par {rails}}}.",
+    "breadcrumbExchange": "Échange",
+    "convertHeading": "Convertir {label} en {currency}",
+    "advertisersLine": "{advertisers, plural, one {# annonceur échange} other {# annonceurs échangent}} {label} contre {currency} en ce moment. Il n'y a pas d'échange au milieu : vous choisissez quelqu'un dont le prix et les limites vous conviennent, et les {currency} circulent entre vos propres comptes{methods, select, none {} other { via {methods}}}{more, select, yes { et d'autres} other {}}.",
+    "noAdvertisersLine": "Personne n'annonce {label} contre {currency} sur ce nœud en ce moment. Un nœud ne compte que les annonces qu'il a répliquées, donc un nœud qui a rejoint récemment en connaît moins qu'il n'en existe — et un corridor vide est une ouverture plutôt qu'une fermeture : le premier commerçant à s'y placer fixe le prix.",
+    "escrowLine": "Vos {label} sont verrouillés dans un programme de séquestre Solana avant que le moindre {currency} ne soit envoyé. Ils se libèrent quand la partie réceptrice confirme l'arrivée de l'argent, et sinon, des arbitres indépendants ayant staké de l'OPEN en décident. Personne chez OpenFiat ne peut libérer le séquestre en avance, le geler, ou prendre la garde de vos {currency} à quelque moment que ce soit.",
+    "currencyLine": "{currency} est la monnaie de {countries}{more, select, yes { et {moreCount} de plus} other {}}. {isUsd, select, yes {Les annonceurs cotant en dollars acceptent souvent n'importe quelle monnaie, donc cette paire est généralement le carnet le plus profond du réseau.} other {Les rails locaux permettent un règlement en minutes plutôt que les jours d'un transfert transfrontalier.}}",
+    "otherAssetsHeading": "Autres actifs en {currency}",
+    "noOtherAssets": "Aucun autre actif n'est coté contre {currency} en ce moment.",
+    "otherCurrenciesHeading": "{label} dans d'autres monnaies",
+    "noOtherCurrencies": "{label} n'est coté dans aucune autre monnaie en ce moment.",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "Médiane sur tous les enregistrements d'oracle non expirés",
+    "rateMedianN": "{contributors, plural, one {Médiane sur # oracle} other {Médiane sur # oracles}}",
+    "rateContext": "{median} (OFS-7000 §11), valable jusqu'au {until}. Les annonceurs cotent au-dessus ou en dessous, donc le taux que vous obtenez est celui de l'offre que vous acceptez — comparez ci-dessous.",
+    "unreachableRate": "Le nœud d'accès n'a pas pu être joint, il n'y a donc pas de taux à afficher. Cela ne dit rien sur la cotation de {label}/{currency} — seulement que nous n'avons pas pu demander.",
+    "staleRate": "Le flux {label}/{currency} a expiré{lapsed, select, none {} other { — le dernier enregistrement a expiré le {lapsedAt}}}, et des données expirées ne sont pas un taux (OFS-7000 §12). Un fournisseur publie cette paire, donc une nouvelle lecture devrait apparaître dès qu'il republie.",
+    "noOracleRate": "Aucun oracle ne publie {label}/{currency} sur ce nœud, il n'y a donc pas de taux médian pour elle. Ce n'est pas une panne temporaire : c'est un corridor que personne ne cote encore. Les commerçants peuvent quand même annoncer la paire à un prix fixe de leur choix."
+  },
+  "converter": {
+    "youHave": "Vous avez",
+    "youGetRoughly": "Vous recevez, environ",
+    "amountIn": "Montant en {symbol}",
+    "oracleMidNote": "Au milieu de l'oracle de {rate} {currency}. Les annonceurs cotent au-dessus ou en dessous, donc le chiffre de l'offre que vous acceptez est celui qui compte."
   }
 }

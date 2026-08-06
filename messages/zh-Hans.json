@@ -1731,5 +1731,35 @@
     "reviewsFooter": "由确实与此钱包完成了一笔交易的人签名，仅此而已。作者和交易被有意不予发布——双方都可以评价同一笔交易，因此任一方都会重建协议所保留的对手方图谱。出于同样原因，日期只精确到天而非时刻。这是看法；旁边的交易记录由已签名事件计算，无法通过言语抬高或压低。",
     "profileMetaTitle": "商家 …{short}",
     "profileMetaDescription": "一个在 OpenFiat 上打广告的钱包：它发布的广告、对手方对它的评价，以及你接入节点为其计算的交易记录。"
+  },
+  "pair": {
+    "metaTitleNoRate": "将 {label} 兑换为 {currency} — P2P 交易所 | OpenFiat",
+    "metaDescNoRate": "在 OpenFiat 上点对点买卖 {label} 换 {currency}。由 Solana 程序强制托管——OpenFiat 从不保管你的 {currency}。",
+    "metaTitle": "将 {label} 兑换为 {currency} — {label}/{currency} P2P 汇率 | OpenFiat",
+    "metaDesc": "以每 {label} {rate} {currency} 的价格点对点将 {label} 兑换为 {currency}。{advertiserPhrase} 由 Solana 程序强制托管——OpenFiat 从不保管你的 {currency}。",
+    "metaAdvertiserPhrase": " {advertisers, plural, other {# 个活跃广告主}}{rails, select, none {} other {，以 {rails} 付款}}。",
+    "breadcrumbExchange": "交易所",
+    "convertHeading": "将 {label} 兑换为 {currency}",
+    "advertisersLine": "{advertisers, plural, other {现在有 # 个广告主}}正在用 {currency} 交易 {label}。中间没有交易所：你挑选价格和限额合适的人，{currency} 在你自己的账户之间转移{methods, select, none {} other {，使用 {methods}}}{more, select, yes { 等方式} other {}}。",
+    "noAdvertisersLine": "现在没有人在此节点上用 {currency} 为 {label} 打广告。节点只计入它已复制的广告，因此最近才加入的节点知道的比实际存在的少——而空走廊是开端而非终结：第一个进入的商家决定价格。",
+    "escrowLine": "在任何 {currency} 发送之前，你的 {label} 会锁定在 Solana 托管程序中。当接收方确认款项到账时释放；如果他们不确认，则由质押了 OPEN 的独立仲裁员裁定。OpenFiat 的任何人都无法提前释放托管、冻结它，或在任何时候保管你的 {currency}。",
+    "currencyLine": "{currency} 是{countries}{more, select, yes { 等 {moreCount} 个地区} other {}}的货币。{isUsd, select, yes {以美元定价的广告主通常接受任何货币，因此这个交易对通常是网络上最深的盘口。} other {本地通道意味着结算只需几分钟，而不是跨境转账所需的几天。}}",
+    "otherAssetsHeading": "以 {currency} 计价的其他资产",
+    "noOtherAssets": "目前没有其他资产以 {currency} 定价。",
+    "otherCurrenciesHeading": "{label} 兑换其他货币",
+    "noOtherCurrencies": "目前 {label} 没有以任何其他货币定价。",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "所有未过期预言机记录的中位数",
+    "rateMedianN": "{contributors, plural, other {# 个预言机的中位数}}",
+    "rateContext": "{median}（OFS-7000 §11），有效期至 {until}。广告主的定价高于或低于它，因此你得到的汇率是你所接受报价上的汇率——在下方比较。",
+    "unreachableRate": "无法连接接入节点，因此没有汇率可显示。这并不说明 {label}/{currency} 是否有定价——只是我们无法询问。",
+    "staleRate": "{label}/{currency} 数据源已失效{lapsed, select, none {} other {——最后一条记录已于 {lapsedAt} 过期}}，而过期数据不是汇率（OFS-7000 §12）。有一个提供方发布此交易对，因此他们再次发布后应会出现新读数。",
+    "noOracleRate": "此节点上没有预言机发布 {label}/{currency}，因此它没有中位数汇率。这不是暂时的中断：这是一个尚无人定价的走廊。商家仍可以自选固定价格为该交易对打广告。"
+  },
+  "converter": {
+    "youHave": "你拥有",
+    "youGetRoughly": "你大约获得",
+    "amountIn": "以 {symbol} 计的金额",
+    "oracleMidNote": "按 {rate} {currency} 的预言机中间价。广告主的定价高于或低于它，因此你所接受报价上的数字才是最终数字。"
   }
 }

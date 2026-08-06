@@ -1731,5 +1731,35 @@
     "reviewsFooter": "Ditandatangani oleh seseorang yang benar-benar menyelesaikan transaksi dengan dompet ini, dan tidak lebih dari itu. Penulis dan transaksi sengaja tidak dipublikasikan — kedua pihak dapat mengulas transaksi yang sama, jadi salah satunya akan membangun ulang graf pihak lawan yang ditahan protokol. Tanggalnya adalah harinya, bukan momennya, karena alasan yang sama. Ini pendapat; catatan perdagangan di sebelahnya dihitung dari peristiwa yang ditandatangani dan tidak dapat dinaikkan atau diturunkan lewat ucapan.",
     "profileMetaTitle": "Pedagang …{short}",
     "profileMetaDescription": "Sebuah dompet yang mengiklankan di OpenFiat: iklan yang telah dipublikasikannya, apa kata pihak lawan tentangnya, dan catatan perdagangan yang dihitung node akses Anda untuknya."
+  },
+  "pair": {
+    "metaTitleNoRate": "Konversi {label} ke {currency} — Bursa P2P | OpenFiat",
+    "metaDescNoRate": "Beli dan jual {label} dengan {currency} secara peer-to-peer di OpenFiat. Escrow ditegakkan oleh program Solana — OpenFiat tidak pernah menahan {currency} Anda.",
+    "metaTitle": "Konversi {label} ke {currency} — Kurs P2P {label}/{currency} | OpenFiat",
+    "metaDesc": "Konversikan {label} ke {currency} secara peer-to-peer pada {rate} {currency} per {label}.{advertiserPhrase} Escrow ditegakkan oleh program Solana — OpenFiat tidak pernah menahan {currency} Anda.",
+    "metaAdvertiserPhrase": " {advertisers, plural, other {# pengiklan aktif}}{rails, select, none {} other {, membayar dengan {rails}}}.",
+    "breadcrumbExchange": "Bursa",
+    "convertHeading": "Konversi {label} ke {currency}",
+    "advertisersLine": "{advertisers, plural, other {# pengiklan}} sedang memperdagangkan {label} terhadap {currency} sekarang. Tidak ada bursa di tengah: Anda memilih seseorang yang harga dan batasnya cocok untuk Anda, dan {currency} berpindah di antara akun Anda sendiri{methods, select, none {} other { menggunakan {methods}}}{more, select, yes { dan lainnya} other {}}.",
+    "noAdvertisersLine": "Tidak ada yang mengiklankan {label} terhadap {currency} di node ini sekarang. Sebuah node hanya menghitung iklan yang telah direplikasinya, jadi node yang baru bergabung tahu lebih sedikit daripada yang ada — dan koridor kosong adalah pembukaan, bukan penutupan: pedagang pertama di dalamnya menetapkan harga.",
+    "escrowLine": "{label} Anda dikunci dalam program escrow Solana sebelum {currency} apa pun dikirim. Ia dilepaskan ketika pihak penerima memastikan uangnya tiba, dan jika tidak, arbiter independen yang telah men-stake OPEN yang memutuskan. Tidak ada seorang pun di OpenFiat yang dapat melepaskan escrow lebih awal, membekukannya, atau menahan {currency} Anda kapan pun.",
+    "currencyLine": "{currency} adalah mata uang {countries}{more, select, yes { dan {moreCount} lainnya} other {}}. {isUsd, select, yes {Pengiklan yang mematok harga dalam dolar sering menerima mata uang apa pun, jadi pasangan ini biasanya buku terdalam di jaringan.} other {Rel lokal berarti penyelesaian dalam menit alih-alih berhari-hari seperti transfer lintas negara.}}",
+    "otherAssetsHeading": "Aset lain dalam {currency}",
+    "noOtherAssets": "Tidak ada aset lain yang dihargai terhadap {currency} sekarang.",
+    "otherCurrenciesHeading": "{label} dalam mata uang lain",
+    "noOtherCurrencies": "{label} tidak dihargai dalam mata uang lain mana pun sekarang.",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "Median di semua catatan orakel yang belum kedaluwarsa",
+    "rateMedianN": "{contributors, plural, other {Median di # orakel}}",
+    "rateContext": "{median} (OFS-7000 §11), berlaku hingga {until}. Pengiklan mematok harga di atas atau di bawahnya, jadi kurs yang Anda dapatkan adalah kurs pada penawaran yang Anda terima — bandingkan di bawah.",
+    "unreachableRate": "Node akses tidak dapat dihubungi, jadi tidak ada kurs untuk ditampilkan. Ini tidak mengatakan apa pun tentang apakah {label}/{currency} dihargai — hanya bahwa kami tidak dapat bertanya.",
+    "staleRate": "Feed {label}/{currency} telah kedaluwarsa{lapsed, select, none {} other { — catatan terakhir kedaluwarsa {lapsedAt}}}, dan data kedaluwarsa bukanlah kurs (OFS-7000 §12). Ada penyedia yang memublikasikan pasangan ini, jadi pembacaan baru akan muncul begitu mereka memublikasikan lagi.",
+    "noOracleRate": "Tidak ada orakel yang memublikasikan {label}/{currency} di node ini, jadi tidak ada kurs median untuknya. Ini bukan gangguan sementara: ini koridor yang belum dihargai siapa pun. Pedagang tetap dapat mengiklankan pasangan ini pada harga tetap pilihan mereka sendiri."
+  },
+  "converter": {
+    "youHave": "Anda punya",
+    "youGetRoughly": "Anda dapat, kira-kira",
+    "amountIn": "Jumlah dalam {symbol}",
+    "oracleMidNote": "Pada nilai tengah orakel {rate} {currency}. Pengiklan mematok harga di atas atau di bawahnya, jadi angka pada penawaran yang Anda terima itulah yang berlaku."
   }
 }

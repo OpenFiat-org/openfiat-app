@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AssetIcon } from "@/components/asset-icon";
 import { formatNumber } from "@/lib/format";
 
@@ -25,6 +26,7 @@ export function PairConverter({
   currency: string;
   rate: number;
 }) {
+  const t = useTranslations("converter");
   const [cryptoText, setCryptoText] = useState("100");
   const [fiatText, setFiatText] = useState(formatNumber(100 * rate, 2));
 
@@ -45,14 +47,14 @@ export function PairConverter({
   return (
     <div className="rounded-md border border-white/10 p-4">
       <label className="block">
-        <span className="text-xs text-gray-500">You have</span>
+        <span className="text-xs text-gray-500">{t("youHave")}</span>
         <span className="mt-1 flex items-center gap-2">
           <input
             type="text"
             inputMode="decimal"
             value={cryptoText}
             onChange={(e) => onCrypto(e.target.value)}
-            aria-label={`Amount in ${asset}`}
+            aria-label={t("amountIn", { symbol: asset })}
             className="min-w-0 flex-1 bg-transparent text-xl tabular-nums text-white outline-none"
           />
           <AssetIcon asset={asset} size={18} />
@@ -61,14 +63,14 @@ export function PairConverter({
       </label>
 
       <label className="mt-3 block border-t border-white/10 pt-3">
-        <span className="text-xs text-gray-500">You get, roughly</span>
+        <span className="text-xs text-gray-500">{t("youGetRoughly")}</span>
         <span className="mt-1 flex items-center gap-2">
           <input
             type="text"
             inputMode="decimal"
             value={fiatText}
             onChange={(e) => onFiat(e.target.value)}
-            aria-label={`Amount in ${currency}`}
+            aria-label={t("amountIn", { symbol: currency })}
             className="min-w-0 flex-1 bg-transparent text-xl tabular-nums text-white outline-none"
           />
           <span className="shrink-0 text-sm font-medium text-gray-300">{currency}</span>
@@ -76,8 +78,7 @@ export function PairConverter({
       </label>
 
       <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
-        At the oracle mid of {formatNumber(rate)} {currency}. Advertisers price above or below it, so
-        the figure on the offer you accept is the one that counts.
+        {t("oracleMidNote", { rate: formatNumber(rate), currency })}
       </p>
     </div>
   );

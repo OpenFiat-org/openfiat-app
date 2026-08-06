@@ -1731,5 +1731,35 @@
     "reviewsFooter": "Assinada por alguém que de fato liquidou uma negociação com esta carteira, e nada além disso. O autor e a negociação deliberadamente não são publicados — ambas as partes podem avaliar a mesma negociação, então qualquer uma reconstruiria o grafo de contrapartes que o protocolo retém. A data é o dia, não o momento, pela mesma razão. Isto é opinião; o registro de negociação ao lado é computado de eventos assinados e não pode ser elevado ou rebaixado com conversa.",
     "profileMetaTitle": "Comerciante …{short}",
     "profileMetaDescription": "Uma carteira anunciando na OpenFiat: os anúncios que publicou, o que as contrapartes disseram sobre ela, e o registro de negociação que seu nó de acesso computa para ela."
+  },
+  "pair": {
+    "metaTitleNoRate": "Converter {label} para {currency} — Câmbio P2P | OpenFiat",
+    "metaDescNoRate": "Compre e venda {label} por {currency} entre pares na OpenFiat. Custódia garantida por programas da Solana — a OpenFiat nunca assume a custódia dos seus {currency}.",
+    "metaTitle": "Converter {label} para {currency} — Taxa P2P {label}/{currency} | OpenFiat",
+    "metaDesc": "Converta {label} para {currency} entre pares a {rate} {currency} por {label}.{advertiserPhrase} Custódia garantida por programas da Solana — a OpenFiat nunca assume a custódia dos seus {currency}.",
+    "metaAdvertiserPhrase": " {advertisers, plural, one {# anunciante ativo} other {# anunciantes ativos}}{rails, select, none {} other {, que pagam por {rails}}}.",
+    "breadcrumbExchange": "Câmbio",
+    "convertHeading": "Converter {label} para {currency}",
+    "advertisersLine": "{advertisers, plural, one {# anunciante está negociando} other {# anunciantes estão negociando}} {label} contra {currency} agora. Não há câmbio no meio: você escolhe alguém cujo preço e limites lhe convêm, e os {currency} se movem entre suas próprias contas{methods, select, none {} other { usando {methods}}}{more, select, yes { e outros} other {}}.",
+    "noAdvertisersLine": "Ninguém está anunciando {label} contra {currency} neste nó agora. Um nó conta apenas os anúncios que replicou, então um nó que entrou recentemente conhece menos do que existem — e um corredor vazio é uma abertura em vez de um fechamento: o primeiro comerciante nele define o preço.",
+    "escrowLine": "Seus {label} ficam bloqueados em um programa de custódia da Solana antes de qualquer {currency} ser enviado. Liberam quando a parte receptora confirma que o dinheiro chegou, e se não confirmarem, árbitros independentes que fizeram stake de OPEN decidem. Ninguém na OpenFiat pode liberar a custódia antecipadamente, congelá-la ou assumir a custódia dos seus {currency} em qualquer momento.",
+    "currencyLine": "{currency} é a moeda de {countries}{more, select, yes { e mais {moreCount}} other {}}. {isUsd, select, yes {Anunciantes que cotam em dólares costumam aceitar qualquer moeda, então este par costuma ser o livro mais profundo da rede.} other {Trilhos locais significam liquidação em minutos em vez dos dias que uma transferência internacional leva.}}",
+    "otherAssetsHeading": "Outros ativos em {currency}",
+    "noOtherAssets": "Nenhum outro ativo tem preço contra {currency} agora.",
+    "otherCurrenciesHeading": "{label} em outras moedas",
+    "noOtherCurrencies": "{label} não tem preço em nenhuma outra moeda agora.",
+    "rateLine": "1 {label} = <v>{rate} {currency}</v>",
+    "rateMedianAll": "Mediana de todos os registros de oráculo não expirados",
+    "rateMedianN": "{contributors, plural, one {Mediana de # oráculo} other {Mediana de # oráculos}}",
+    "rateContext": "{median} (OFS-7000 §11), válida até {until}. Anunciantes cotam acima ou abaixo dela, então a taxa que você obtém é a da oferta que você aceita — compare abaixo.",
+    "unreachableRate": "O nó de acesso não pôde ser contatado, então não há taxa a mostrar. Isso não diz nada sobre se {label}/{currency} tem preço — apenas que não pudemos perguntar.",
+    "staleRate": "O feed de {label}/{currency} expirou{lapsed, select, none {} other { — o último registro expirou em {lapsedAt}}}, e dados expirados não são uma taxa (OFS-7000 §12). Um provedor publica este par, então uma leitura nova deve aparecer quando ele publicar de novo.",
+    "noOracleRate": "Nenhum oráculo publica {label}/{currency} neste nó, então não há taxa mediana para ele. Isso não é uma interrupção temporária: é um corredor que ninguém precifica ainda. Comerciantes ainda podem anunciar o par a um preço fixo de sua escolha."
+  },
+  "converter": {
+    "youHave": "Você tem",
+    "youGetRoughly": "Você recebe, aproximadamente",
+    "amountIn": "Valor em {symbol}",
+    "oracleMidNote": "No meio do oráculo de {rate} {currency}. Anunciantes cotam acima ou abaixo, então o valor na oferta que você aceita é o que conta."
   }
 }
