@@ -505,5 +505,268 @@
     "roleRequester": "Solicitante",
     "roleCounterparty": "Contraparte",
     "noTradesInState": "No hay operaciones en este estado."
+  },
+  "lifecycle": {
+    "EscrowLocked": "Custodia bloqueada",
+    "AwaitingPayment": "Esperando pago",
+    "PaymentSubmitted": "Pago enviado",
+    "MerchantReviewing": "Comerciante revisando",
+    "Approved": "Aprobado",
+    "EscrowReleased": "Custodia liberada",
+    "Completed": "Completado",
+    "Rejected": "Rechazado",
+    "Cancelled": "Cancelado",
+    "Disputed": "En disputa",
+    "Requested": "Solicitado",
+    "Validated": "Validado",
+    "Accepted": "Aceptado",
+    "Expired": "Expirado",
+    "Buy": "Compra",
+    "Sell": "Venta"
+  },
+  "settlementSteps": {
+    "reservationLabel": "Reserva",
+    "settlementBeginsBelow": "La liquidación comienza abajo",
+    "automatic": "Automático",
+    "yourTurn": "Tu turno",
+    "waitingOn": "Esperando a {name}",
+    "EscrowLocked": {
+      "buyer": "El programa de Solana bloqueó las criptomonedas. No pueden moverse hasta que esta operación se resuelva.",
+      "seller": "Tus criptomonedas están bloqueadas en el programa de Solana, para que el comprador vea que realmente están ahí."
+    },
+    "AwaitingPayment": {
+      "buyer": "Envía el dinero con los datos de abajo, luego márcalo como pagado y adjunta tu comprobante.",
+      "seller": "El comprador envía el dinero. No tienes nada que hacer hasta que lo marque como pagado."
+    },
+    "PaymentSubmitted": {
+      "buyer": "Has declarado el pago. El comerciante ahora revisa su propia cuenta.",
+      "seller": "El comprador dice que ha pagado. Revisa tu propia cuenta: una captura de pantalla no es un pago."
+    },
+    "MerchantReviewing": {
+      "buyer": "El comerciante está verificando que el dinero llegó. Si no responde, puedes abrir una disputa.",
+      "seller": "Confirma que el dinero llegó, o recházalo si no fue así."
+    },
+    "Approved": {
+      "buyer": "Recepción confirmada. La liberación es el siguiente paso y ocurre automáticamente.",
+      "seller": "Confirmaste la recepción. El programa se encarga a partir de aquí."
+    },
+    "EscrowReleased": {
+      "buyer": "El programa envió las criptomonedas a tu billetera.",
+      "seller": "El programa envió las criptomonedas al comprador."
+    },
+    "Completed": {
+      "buyer": "Listo. Ambas reputaciones se han actualizado.",
+      "seller": "Listo. Ambas reputaciones se han actualizado."
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "Sala de operación",
+    "backToTrades": "← Volver a Mis operaciones",
+    "tradeHeading": "Operación {id}",
+    "couldNotRead": "No se pudo leer esta operación desde el nodo",
+    "noReservation": "Este nodo no tiene ninguna reserva con el id «{id}».",
+    "statusLabel": "Estado",
+    "theMerchant": "el comerciante",
+    "reservationEnded": "Esta reserva terminó como <strong>{state}</strong> antes de que la custodia llegara a bloquearse: no existe ninguna liquidación para ella.",
+    "viewDisputes": "Ver disputas →",
+    "panelReservation": "Reserva",
+    "reservationId": "ID de reserva",
+    "advertisement": "Anuncio",
+    "requester": "Solicitante",
+    "notNamed": "No nombrado en el registro público",
+    "amount": "Importe",
+    "state": "Estado",
+    "requested": "Solicitado",
+    "updated": "Actualizado",
+    "expires": "Expira",
+    "panelSettlement": "Liquidación",
+    "settlementId": "ID de liquidación",
+    "buyer": "Comprador",
+    "seller": "Vendedor",
+    "paymentReference": "Referencia de pago",
+    "paymentSubmitted": "Pago enviado",
+    "merchantResponded": "El comerciante respondió",
+    "discrepancy": "Discrepancia",
+    "created": "Creado",
+    "escrowReleaseTx": "Tx de liberación de custodia",
+    "notYetConfirmed": "Aún no confirmado en la cadena",
+    "panelYourReview": "Tu reseña",
+    "panelTradeChannel": "Canal de la operación",
+    "panelAttachments": "Adjuntos",
+    "panelAdvertisement": "Anuncio",
+    "pair": "Par",
+    "merchantDirection": "Dirección del comerciante",
+    "price": "Precio",
+    "paymentMethods": "Métodos de pago",
+    "partyConnect": "Conecta la billetera que participa en esta operación para actuar sobre ella.",
+    "partyConnectSub": "Lo de arriba es el registro público: importes, estados y tiempos, sin nombrar a ninguna de las partes. Quién participa en una operación solo pueden leerlo las personas que están en ella.",
+    "partyReadError": "No se pudo leer tu copia de esta operación",
+    "tryAgain": "Reintentar",
+    "partyNotAParty": "El nodo respondió, y esta billetera no es parte de esta operación.",
+    "partyNotAPartySub": "Es una respuesta distinta de «no se pudo preguntar»: la lectura tuvo éxito y devolvió tus operaciones, y esta no es una de ellas.",
+    "partySignPrompt": "Firma una vez para cargar tu propia copia de esta operación y actuar sobre ella.",
+    "partySignPromptSub": "El registro público de arriba no nombra a nadie. De qué lado estás, qué puedes firmar y el canal de la operación necesitan el registro sin redactar, que el nodo solo entrega a una parte que demuestre la billetera.",
+    "waitingWallet": "Esperando a tu billetera…",
+    "loadMyCopy": "Cargar mi copia de esta operación"
+  },
+  "attachments": {
+    "readError": "No se pudieron leer los adjuntos desde tu nodo de acceso.",
+    "signerUnavailable": "Reconecta tu billetera: el proveedor de firma no está disponible.",
+    "publishError": "No se pudo publicar el adjunto.",
+    "noSettlement": "Se pueden adjuntar archivos una vez que la operación tenga una liquidación. Un adjunto nombra la liquidación a la que pertenece: ese es el registro que lee un árbitro.",
+    "reading": "Leyendo adjuntos…",
+    "empty": "Aún no hay nada adjunto a esta operación.",
+    "imageAlt": "Prueba adjunta",
+    "pdfPlaceholder": "PDF: abrir en una pestaña nueva",
+    "noCaption": "Sin descripción",
+    "publicWarning": "Todo lo que adjuntes es público y permanente. Se almacena en IPFS, y cualquier gateway lo servirá a quien tenga la referencia, que viaja en registros que cada nodo conserva. Nunca adjuntes datos de pago ni documentos de identidad aquí.",
+    "captionPlaceholder": "¿Qué es esto? p. ej. comprobante de transferencia bancaria",
+    "uploading": "Subiendo y firmando…",
+    "attachFile": "Adjuntar archivo",
+    "fileHelp": "PNG, JPEG, WebP o PDF, hasta {mb} MB. Tu billetera firma el registro; solo tú y tu contraparte pueden añadir a esta operación, y un adjunto no puede eliminarse una vez publicado.",
+    "connectPrompt": "Conecta tu billetera para adjuntar un archivo. Solo el comprador y el vendedor de una operación pueden añadir a ella, lo cual se comprueba contra la liquidación en lugar de darse por sentado."
+  },
+  "tradeActions": {
+    "heading": "Lo que puedes hacer",
+    "cannotSign": "Esta conexión de billetera no puede firmar: reconéctala e inténtalo de nuevo.",
+    "notNumericIdNote": "El id de esta reserva no es un número, así que no direcciona ninguna cuenta de custodia en la cadena — el programa de custodia encuentra una custodia de operación en una PDA sembrada con el id como <code>u64</code>. Nada en la cadena puede crearse, leerse ni liberarse para ella. Las reservas hechas por esta app siempre pueden.",
+    "factOnchainEscrow": "Custodia en la cadena",
+    "factHeld": "Retenido",
+    "factApproved": "Comerciante aprobó",
+    "factEscrowAccount": "Cuenta de custodia",
+    "yes": "Sí",
+    "notYet": "Todavía no",
+    "vaultState": {
+      "Available": "Disponible",
+      "Reserved": "Reservado",
+      "AwaitingFiatSettlement": "Esperando liquidación en fiat",
+      "Released": "Liberado",
+      "Cancelled": "Cancelado",
+      "Frozen": "Congelado"
+    },
+    "escrowReading": "Leyendo la custodia desde el clúster… Si no se resuelve, no se pudo contactar con el clúster, lo cual no es lo mismo que no exista custodia.",
+    "escrowNone": "Aún no existe ninguna custodia en la cadena para esta reserva.",
+    "onChain": "En la cadena",
+    "onChainTitle": "Mueve valor en Solana y cuesta una comisión de red",
+    "close": "Cerrar",
+    "details": "Detalles",
+    "action": {
+      "initiate": {
+        "label": "Abrir la liquidación",
+        "detail": "Registra al comprador y al comerciante contra esta reserva e inicia la ventana de pago. Firmado por ti, enviado al nodo: nada se mueve en la cadena."
+      },
+      "lock-escrow": {
+        "label": "Bloquear la custodia",
+        "detail": "Reserva el importe en tu bóveda de liquidez, abre la custodia de la operación y mueve los tokens a ella. Una sola transacción, para que una reserva nunca quede marcada contra el inventario sin custodia detrás."
+      },
+      "declare-paid": {
+        "label": "He enviado el pago",
+        "detail": "Le dice al comerciante que el dinero va en camino. Hazlo solo cuando realmente lo hayas enviado: la declaración la firmas tú y es permanente."
+      },
+      "approve": {
+        "label": "Confirmar que el pago llegó",
+        "detail": "Dos firmas: el nodo registra tu aprobación y el programa de custodia marca la operación como aprobada para que los tokens puedan liberarse."
+      },
+      "release": {
+        "label": "Liberar la custodia",
+        "detail": "Paga al comprador y a las cuatro tesorerías de comisiones desde la custodia. Cualquiera puede enviarla una vez que el comerciante ha aprobado, y pasa por el nodo para que la red registre la confirmación."
+      },
+      "cancel-escrow": {
+        "label": "Devolver los tokens a la bóveda",
+        "detail": "Cancela la custodia en la cadena y devuelve los tokens del comerciante a su bóveda de liquidez. Solo es posible antes de la liberación."
+      },
+      "cancel-reservation": {
+        "label": "Cancelar esta reserva",
+        "detail": "Retira tu reclamo sobre la liquidez del comerciante y la libera de inmediato, en lugar de retenerla el resto de la ventana de 30 minutos. Firmado por ti, enviado al nodo: nada se mueve en la cadena, y solo tú puedes cancelar tu propia reserva."
+      },
+      "cancel-settlement": {
+        "label": "Cancelar la operación",
+        "detail": "Termina la liquidación sin que nadie deba nada. Solo posible mientras no se haya declarado ningún pago: una vez que el comprador ha dicho que pagó, ninguna parte puede retirarse unilateralmente."
+      },
+      "reverse-payment": {
+        "label": "En realidad no he pagado",
+        "detail": "Retira tu declaración y devuelve la operación a la espera de pago. Hazlo solo por una declaración hecha por error: permite al comerciante cancelar la operación, así que un pago que realmente ha salido de tu cuenta debe ir a una disputa."
+      },
+      "reject-payment": {
+        "label": "El pago nunca llegó",
+        "detail": "Registra tu rechazo sin abrir una disputa ni pagar una tasa. Es tu afirmación, no un fallo: un comprador que realmente pagó aún puede abrir una disputa después."
+      },
+      "dispute": {
+        "label": "Abrir una disputa",
+        "detail": "Pone la operación ante árbitros. La evidencia de ambas partes proviene del canal de la operación, y revelarla a un árbitro comparte toda la conversación de forma permanente."
+      }
+    },
+    "waiting": {
+      "observer": "No eres parte de esta operación, así que aquí no hay nada que puedas firmar.",
+      "merchantNoSettlement": "El tomador ha reservado contra tu anuncio, pero aún no ha abierto la liquidación. Hasta que lo haga, no hay ningún registro que te nombre como vendedor para actuar, y solo él puede cancelar su propia reserva.",
+      "merchantEscrowUnknown": "No se pudo leer el clúster, así que se desconoce si la custodia de esta operación ya existe. Bloquearla de nuevo fallaría en una cuenta que ya está ahí: recarga antes de firmar nada.",
+      "merchantEscrowHeld": "La custodia retiene tus tokens. El comprador aún no ha declarado el dinero enviado, que es también la única ventana en la que cualquiera de los dos puede aún retirarse.",
+      "buyerEscrowUnreadable": "No se pudo leer del clúster si el comerciante ha bloqueado los tokens. No envíes ningún dinero hasta que se pueda.",
+      "buyerNotLocked": "El comerciante aún no ha bloqueado los tokens en custodia. No envíes ningún dinero hasta que lo haga: no hay nada en la cadena respaldando esta operación.",
+      "buyerAwaitingConfirm": "Al comerciante se le ha dicho que el pago está enviado y aún no lo ha confirmado.",
+      "approvedNoEscrow": "Esta liquidación está aprobada pero nunca se financió ninguna custodia para ella, así que no hay nada que liberar.",
+      "disputed": "Esta operación está con árbitros. La custodia se mueve según su decisión, no según la firma de ninguna de las partes."
+    },
+    "discrepancy": {
+      "IncorrectAmount": "El importe era incorrecto",
+      "WrongReference": "La referencia era incorrecta o faltaba",
+      "DuplicatePayment": "Era un duplicado de otro pago",
+      "IncorrectAccount": "Se envió a la cuenta equivocada",
+      "Other": "Otra cosa: sin fallo de pago"
+    },
+    "referenceLabel": "Referencia de pago (opcional)",
+    "referencePlaceholder": "Lo que tu banco o billetera puso en la transferencia",
+    "referenceHelp": "Lo que escribas aquí se almacena en la liquidación y es legible por el comerciante y por cualquier árbitro; por eso se omite de la vista pública, así que limítate a la referencia en sí.",
+    "disputeLabel": "Qué salió mal",
+    "rejectWhatWrong": "Qué estuvo mal en él",
+    "rejectDiscrepancyHelp": "Este es el campo que cuenta la reputación, así que elige el que realmente aplique. Todo excepto «Otra cosa» registra un fallo de exactitud de pago contra el comprador.",
+    "rejectOwnWords": "En tus propias palabras",
+    "rejectOwnWordsHelp": "Leído por el comprador y por cualquier árbitro al que escale. Nada lo analiza.",
+    "reverseWarning": "Solo si <b>no</b> has enviado realmente el dinero. Retirar tu declaración devuelve la operación a la espera de pago, lo que permite al comerciante cancelarla; así que si el dinero realmente ha salido de tu cuenta, esto le da una ventana para cancelar por debajo. En ese caso abre una disputa en su lugar.",
+    "cancelSettlementWarning": "Termina la operación sin que nadie deba nada. Si la otra parte ya ha enviado el dinero pero aún no lo ha declarado, esto cancela por debajo de su dinero: el protocolo no puede ver una transferencia bancaria, solo la declaración. No canceles una operación que alguien te ha dicho que está pagando.",
+    "cancelReservationNote": "Libera la liquidez del comerciante de inmediato en lugar de retenerla el resto de la ventana de 30 minutos. No hay nada que deshacer después: tendrías que hacer un nuevo pedido.",
+    "busyInitiate": "Abriendo la liquidación",
+    "busyLock": "Bloqueando la custodia",
+    "busyDeclare": "Registrando el pago",
+    "busyApprove": "Aprobando",
+    "busyRelease": "Liberando",
+    "busyCancelEscrow": "Devolviendo los tokens",
+    "busyCancelReservation": "Cancelando la reserva",
+    "busyCancelSettlement": "Cancelando la operación",
+    "busyReverse": "Retirando la declaración",
+    "busyReject": "Registrando el rechazo",
+    "busyDispute": "Abriendo la disputa",
+    "busyPrompt": "{what}… aprueba la solicitud en tu billetera.",
+    "errNotNumericId": "El id de esta reserva no es un número, así que no direcciona ninguna cuenta de custodia. Las reservas hechas por esta app sí; una de otro cliente puede que no.",
+    "errNoAdMint": "No se pudo leer el anuncio de esta operación, y es el único registro de en qué mint liquida la custodia. Nada en la cadena puede construirse sin él.",
+    "errNoAdMerchantKey": "No se pudo leer el anuncio de esta operación, y la liquidación tiene que nombrar la propia clave pública del comerciante a partir de él.",
+    "errNoSettlementLock": "No hay ninguna liquidación contra la que bloquear una custodia.",
+    "errBuyerNoAddress": "El id de par del comprador no lleva ninguna dirección de Solana, así que ninguna custodia puede nombrarlo.",
+    "errNoSettlementDeclare": "No hay ninguna liquidación sobre la que declarar un pago.",
+    "errNoSettlementApprove": "No hay ninguna liquidación que aprobar.",
+    "errWalletBroadcasts": "Esta billetera no puede firmar una transacción sin también difundirla. La liberación tiene que llegar a Solana a través del nodo para que la red registre la confirmación, así que no puede completarse desde esta billetera.",
+    "errPartyNoAddressRelease": "El id de par de una parte no lleva ninguna dirección de Solana, así que no puede construirse ninguna liberación.",
+    "errNoSettlementRelease": "No hay ninguna liquidación que liberar.",
+    "errNoEscrowCancel": "No hay ninguna custodia que cancelar.",
+    "errPartyNoAddressCancel": "El id de par de una parte no lleva ninguna dirección de Solana, así que no puede construirse ninguna cancelación.",
+    "errNoSettlementCancel": "No hay ninguna liquidación que cancelar.",
+    "errNoDeclaration": "No hay ninguna declaración que retirar.",
+    "errNoSettlementReject": "No hay ninguna liquidación que rechazar.",
+    "errRejectEmpty": "Di qué encontraste o no encontraste: el comprador y cualquier árbitro leen esto.",
+    "errNoSettlementDispute": "No hay ninguna liquidación que disputar.",
+    "errDisputeEmpty": "Di qué salió mal: un árbitro lee esto.",
+    "okInitiate": "La liquidación está abierta. El comerciante ya puede bloquear los tokens en custodia.",
+    "okLock": "Custodia financiada. Transacción {signature}.",
+    "okDeclare": "Se le ha dicho al comerciante que el pago va en camino.",
+    "okApprove": "Aprobado, en el nodo y en la cadena. Transacción {signature}. Cualquiera de las partes ya puede liberar la custodia.",
+    "okApproveNodeOnly": "Aprobado en el nodo. No se pudo construir la aprobación en la cadena: el id de par del comprador no lleva ninguna dirección de Solana.",
+    "okRelease": "La liberación está con el nodo. Se registrará en esta operación una vez que el nodo la haya visto confirmada por sí mismo.",
+    "okReleaseUnwrap": "La liberación está con el nodo. Se registrará en esta operación una vez que el nodo la haya visto confirmada por sí mismo: el SOL envuelto se desenvuelve en la misma transacción, así que lo que llega es SOL.",
+    "okCancelEscrow": "Los tokens están de vuelta en la bóveda del comerciante. Transacción {signature}. Los registros fuera de la cadena son separados: cancela también la operación, o la liquidación queda abierta sin custodia detrás.",
+    "okCancelReservation": "La reserva está cancelada y la liquidez del comerciante vuelve a estar libre.",
+    "okCancelSettlement": "La operación está cancelada. Si aún hay tokens bloqueados en custodia, devuélvelos también a la bóveda: los dos registros son separados.",
+    "okReverse": "Tu declaración está retirada y la operación vuelve a esperar pago. El comerciante ya puede cancelarla, así que envía el dinero y declara de nuevo, o cancela tú mismo.",
+    "okReject": "Registrado. El comprador aún puede abrir una disputa si cree que pagó: rechazar traslada el coste de escalar a quien esté equivocado, no decide quién es.",
+    "okDispute": "La disputa {id} está abierta. Los árbitros se unen a ella desde la mesa de arbitraje."
   }
 }

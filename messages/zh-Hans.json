@@ -505,5 +505,268 @@
     "roleRequester": "发起方",
     "roleCounterparty": "对手方",
     "noTradesInState": "此状态下没有交易。"
+  },
+  "lifecycle": {
+    "EscrowLocked": "托管已锁定",
+    "AwaitingPayment": "等待付款",
+    "PaymentSubmitted": "已提交付款",
+    "MerchantReviewing": "商家审核中",
+    "Approved": "已批准",
+    "EscrowReleased": "托管已释放",
+    "Completed": "已完成",
+    "Rejected": "已拒绝",
+    "Cancelled": "已取消",
+    "Disputed": "争议中",
+    "Requested": "已申请",
+    "Validated": "已验证",
+    "Accepted": "已接受",
+    "Expired": "已过期",
+    "Buy": "买入",
+    "Sell": "卖出"
+  },
+  "settlementSteps": {
+    "reservationLabel": "预订",
+    "settlementBeginsBelow": "结算从下方开始",
+    "automatic": "自动",
+    "yourTurn": "轮到你了",
+    "waitingOn": "等待 {name}",
+    "EscrowLocked": {
+      "buyer": "Solana 程序已锁定加密资产。在本次交易解决之前无法转移。",
+      "seller": "你的加密资产已锁定在 Solana 程序中，买家可以看到它确实存在。"
+    },
+    "AwaitingPayment": {
+      "buyer": "使用下方的信息发送法币，然后标记为已付款并附上你的收据。",
+      "seller": "买家发送法币。在其标记为已付款之前，你无需操作。"
+    },
+    "PaymentSubmitted": {
+      "buyer": "你已声明付款。商家现在会检查自己的账户。",
+      "seller": "买家称已付款。请检查你自己的账户——截图不等于付款。"
+    },
+    "MerchantReviewing": {
+      "buyer": "商家正在核实款项是否到账。如果对方不回应，你可以发起争议。",
+      "seller": "确认款项已到账，若未到账则拒绝。"
+    },
+    "Approved": {
+      "buyer": "已确认收款。下一步是释放，将自动进行。",
+      "seller": "你已确认收款。接下来交由程序处理。"
+    },
+    "EscrowReleased": {
+      "buyer": "程序已将加密资产发送到你的钱包。",
+      "seller": "程序已将加密资产发送给买家。"
+    },
+    "Completed": {
+      "buyer": "完成。双方的信誉均已更新。",
+      "seller": "完成。双方的信誉均已更新。"
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "交易室",
+    "backToTrades": "← 返回我的交易",
+    "tradeHeading": "交易 {id}",
+    "couldNotRead": "无法从节点读取此交易",
+    "noReservation": "此节点没有 id 为“{id}”的预订。",
+    "statusLabel": "状态",
+    "theMerchant": "商家",
+    "reservationEnded": "此预订在托管锁定之前即以 <strong>{state}</strong> 结束——没有为其生成任何结算。",
+    "viewDisputes": "查看争议 →",
+    "panelReservation": "预订",
+    "reservationId": "预订 ID",
+    "advertisement": "广告",
+    "requester": "发起方",
+    "notNamed": "未在公开记录中列出",
+    "amount": "金额",
+    "state": "状态",
+    "requested": "申请时间",
+    "updated": "更新时间",
+    "expires": "到期",
+    "panelSettlement": "结算",
+    "settlementId": "结算 ID",
+    "buyer": "买家",
+    "seller": "卖家",
+    "paymentReference": "付款参考号",
+    "paymentSubmitted": "付款已提交",
+    "merchantResponded": "商家已回应",
+    "discrepancy": "差异",
+    "created": "创建时间",
+    "escrowReleaseTx": "托管释放交易",
+    "notYetConfirmed": "链上尚未确认",
+    "panelYourReview": "你的评价",
+    "panelTradeChannel": "交易频道",
+    "panelAttachments": "附件",
+    "panelAdvertisement": "广告",
+    "pair": "交易对",
+    "merchantDirection": "商家方向",
+    "price": "价格",
+    "paymentMethods": "付款方式",
+    "partyConnect": "连接作为本次交易一方的钱包以对其进行操作。",
+    "partyConnectSub": "上方是公开记录——金额、状态和时间，不列出任何一方。谁参与交易只有交易中的人才能读取。",
+    "partyReadError": "无法读取你的这笔交易副本",
+    "tryAgain": "重试",
+    "partyNotAParty": "节点已回应，此钱包不是本次交易的一方。",
+    "partyNotAPartySub": "这与“无法询问”是不同的答案：读取成功并返回了你的交易，而这不是其中之一。",
+    "partySignPrompt": "签名一次以加载你自己的这笔交易副本并对其进行操作。",
+    "partySignPromptSub": "上方的公开记录不列出任何人。你处于哪一方、能签署什么以及交易频道都需要未删节的记录，节点只会将其交给证明了钱包的一方。",
+    "waitingWallet": "正在等待你的钱包…",
+    "loadMyCopy": "加载我的这笔交易副本"
+  },
+  "attachments": {
+    "readError": "无法从你的接入节点读取附件。",
+    "signerUnavailable": "请重新连接钱包——签名提供程序不可用。",
+    "publishError": "无法发布附件。",
+    "noSettlement": "交易有结算后即可附加文件。附件会指明其所属的结算——那正是仲裁员读取的记录。",
+    "reading": "正在读取附件…",
+    "empty": "此交易尚无任何附件。",
+    "imageAlt": "附加的证据",
+    "pdfPlaceholder": "PDF——在新标签页中打开",
+    "noCaption": "无说明",
+    "publicWarning": "你附加的任何内容都是公开且永久的。它存储在 IPFS 上，任何网关都会将其提供给持有该引用的人——而该引用会在每个节点保存的记录中传播。切勿在此附加付款信息或身份证件。",
+    "captionPlaceholder": "这是什么？例如：银行转账收据",
+    "uploading": "正在上传并签名…",
+    "attachFile": "附加文件",
+    "fileHelp": "PNG、JPEG、WebP 或 PDF，最多 {mb} MB。你的钱包为记录签名；只有你和你的对手方可以向此交易添加内容，且附件一经发布便无法删除。",
+    "connectPrompt": "连接你的钱包以附加文件。只有交易的买家和卖家可以向其添加内容，这会根据结算进行核验，而非凭信任。"
+  },
+  "tradeActions": {
+    "heading": "你可以做什么",
+    "cannotSign": "此钱包连接无法签名——请重新连接后再试。",
+    "notNumericIdNote": "此预订的 id 不是数字，因此在链上不指向任何托管账户——托管程序在以该 id 作为 <code>u64</code> 派生的 PDA 处查找交易托管。无法为其在链上创建、读取或释放任何内容。由本应用发起的预订始终可以。",
+    "factOnchainEscrow": "链上托管",
+    "factHeld": "持有",
+    "factApproved": "商家已批准",
+    "factEscrowAccount": "托管账户",
+    "yes": "是",
+    "notYet": "尚未",
+    "vaultState": {
+      "Available": "可用",
+      "Reserved": "已预留",
+      "AwaitingFiatSettlement": "等待法币结算",
+      "Released": "已释放",
+      "Cancelled": "已取消",
+      "Frozen": "已冻结"
+    },
+    "escrowReading": "正在从集群读取托管…如果一直无法完成，说明无法连接到集群——这与不存在托管不是一回事。",
+    "escrowNone": "此预订在链上尚不存在任何托管。",
+    "onChain": "链上",
+    "onChainTitle": "在 Solana 上转移价值，并需支付网络手续费",
+    "close": "关闭",
+    "details": "详情",
+    "action": {
+      "initiate": {
+        "label": "开启结算",
+        "detail": "将买家和商家登记到此预订并启动付款窗口。由你签名，发送到节点——链上无任何变动。"
+      },
+      "lock-escrow": {
+        "label": "锁定托管",
+        "detail": "在你的流动性金库中预留该金额，开启交易托管，并将代币转入其中。单笔交易，因此预订绝不会在没有托管支撑的情况下被标记占用库存。"
+      },
+      "declare-paid": {
+        "label": "我已发送付款",
+        "detail": "告知商家法币正在途中。只有在你确实已发送后才这样做——该声明由你签名且永久有效。"
+      },
+      "approve": {
+        "label": "确认款项已到账",
+        "detail": "两次签名：节点记录你的批准，托管程序将交易标记为已批准，以便释放代币。"
+      },
+      "release": {
+        "label": "释放托管",
+        "detail": "从托管向买家和四个手续费金库付款。商家批准后任何人都可提交，且它通过节点进行，以便网络记录确认。"
+      },
+      "cancel-escrow": {
+        "label": "将代币退回金库",
+        "detail": "取消链上托管，并将商家的代币退回其流动性金库。仅在释放之前可行。"
+      },
+      "cancel-reservation": {
+        "label": "取消此预订",
+        "detail": "撤回你对商家流动性的占用并立即释放，而不是在 30 分钟窗口的剩余时间内继续占用。由你签名，发送到节点——链上无任何变动，且只有你能取消你自己的预订。"
+      },
+      "cancel-settlement": {
+        "label": "取消交易",
+        "detail": "结束结算，双方互不相欠。仅在尚未声明任何付款时可行——一旦买家表示已付款，任何一方都不能单方面退出。"
+      },
+      "reverse-payment": {
+        "label": "我其实还没付款",
+        "detail": "撤回你的声明并将交易退回等待付款状态。只有对误报的声明才这样做：它会让商家取消交易，因此若法币确实已离开你的账户，必须改为发起争议。"
+      },
+      "reject-payment": {
+        "label": "付款从未到账",
+        "detail": "记录你的拒绝，无需发起争议或支付立案费。这是你的主张，而非裁决——确实付了款的买家之后仍可发起争议。"
+      },
+      "dispute": {
+        "label": "发起争议",
+        "detail": "将交易交由仲裁员处理。双方的证据均来自交易频道，向仲裁员披露会永久共享整段对话。"
+      }
+    },
+    "waiting": {
+      "observer": "你不是本次交易的一方，因此这里没有需要你签署的内容。",
+      "merchantNoSettlement": "接单方已针对你的广告下了预订，但尚未开启结算。在此之前，没有任何记录将你列为卖家以供操作——而且只有他们能取消自己的预订。",
+      "merchantEscrowUnknown": "无法读取集群，因此不确定此交易的托管是否已存在。再次锁定会在一个可能已存在的账户上失败——在签署任何内容前请重新加载。",
+      "merchantEscrowHeld": "托管持有你的代币。买家尚未声明已发送法币——这也是你们双方仍可退出的唯一窗口。",
+      "buyerEscrowUnreadable": "无法从集群读取商家是否已锁定代币。在可以读取之前，请勿发送任何款项。",
+      "buyerNotLocked": "商家尚未将代币锁定到托管中。在其锁定之前请勿发送任何款项——链上没有任何东西为此交易背书。",
+      "buyerAwaitingConfirm": "已告知商家付款已发送，其尚未确认。",
+      "approvedNoEscrow": "此结算已批准，但从未为其注资任何托管，因此没有可释放的内容。",
+      "disputed": "此交易正由仲裁员处理。托管依其决定而变动，而非依任何一方的签名。"
+    },
+    "discrepancy": {
+      "IncorrectAmount": "金额有误",
+      "WrongReference": "参考号有误或缺失",
+      "DuplicatePayment": "是另一笔付款的重复",
+      "IncorrectAccount": "付到了错误的账户",
+      "Other": "其他情况——无付款过错"
+    },
+    "referenceLabel": "付款参考号（可选）",
+    "referencePlaceholder": "你的银行或钱包在转账上填写的内容",
+    "referenceHelp": "你在此输入的任何内容都会存储在结算中，并可被商家和任何仲裁员读取——正因如此它被从公开视图中略去，所以请只填写参考号本身。",
+    "disputeLabel": "出了什么问题",
+    "rejectWhatWrong": "它的问题在哪里",
+    "rejectDiscrepancyHelp": "这是信誉据以计算的字段，所以请选择真正适用的那一项。除“其他情况”外，其余每一项都会针对买家记录一次付款准确性过错。",
+    "rejectOwnWords": "用你自己的话说",
+    "rejectOwnWordsHelp": "由买家以及他们升级到的任何仲裁员阅读。不会有任何程序解析它。",
+    "reverseWarning": "仅当你<b>确实尚未</b>发送款项时。撤回你的声明会将交易退回等待付款状态，从而让商家可以取消它——因此若法币确实已离开你的账户，这会给他们一个可趁机取消的窗口。那种情况下请改为发起争议。",
+    "cancelSettlementWarning": "结束交易，双方互不相欠。如果对方已经发送了法币但尚未声明，这会在其款项之下将其取消——协议看不到银行转账，只看得到声明。不要取消有人已告诉你正在付款的交易。",
+    "cancelReservationNote": "立即释放商家的流动性，而不是在 30 分钟窗口的剩余时间内继续占用。之后没有任何可撤销的操作——你需要重新下单。",
+    "busyInitiate": "正在开启结算",
+    "busyLock": "正在锁定托管",
+    "busyDeclare": "正在记录付款",
+    "busyApprove": "正在批准",
+    "busyRelease": "正在释放",
+    "busyCancelEscrow": "正在退回代币",
+    "busyCancelReservation": "正在取消预订",
+    "busyCancelSettlement": "正在取消交易",
+    "busyReverse": "正在撤回声明",
+    "busyReject": "正在记录拒绝",
+    "busyDispute": "正在发起争议",
+    "busyPrompt": "{what}……请在你的钱包中批准该请求。",
+    "errNotNumericId": "此预订的 id 不是数字，因此不指向任何托管账户。由本应用发起的预订可以；来自其他客户端的可能不行。",
+    "errNoAdMint": "无法读取此交易的广告，而它是托管以何种 mint 结算的唯一记录。没有它，链上无法构建任何内容。",
+    "errNoAdMerchantKey": "无法读取此交易的广告，而结算必须据其列明商家自己的公钥。",
+    "errNoSettlementLock": "没有可供锁定托管的结算。",
+    "errBuyerNoAddress": "买家的对等 id 不带任何 Solana 地址，因此托管无法列明其身份。",
+    "errNoSettlementDeclare": "没有可供声明付款的结算。",
+    "errNoSettlementApprove": "没有可供批准的结算。",
+    "errWalletBroadcasts": "此钱包无法在不广播的情况下签署交易。释放必须通过节点到达 Solana，以便网络记录确认，因此无法从此钱包完成。",
+    "errPartyNoAddressRelease": "某一方的对等 id 不带任何 Solana 地址，因此无法构建释放。",
+    "errNoSettlementRelease": "没有可供释放的结算。",
+    "errNoEscrowCancel": "没有可供取消的托管。",
+    "errPartyNoAddressCancel": "某一方的对等 id 不带任何 Solana 地址，因此无法构建取消。",
+    "errNoSettlementCancel": "没有可供取消的结算。",
+    "errNoDeclaration": "没有可供撤回的声明。",
+    "errNoSettlementReject": "没有可供拒绝的结算。",
+    "errRejectEmpty": "说明你查到或没查到什么——买家和任何仲裁员都会阅读。",
+    "errNoSettlementDispute": "没有可供争议的结算。",
+    "errDisputeEmpty": "说明出了什么问题——仲裁员会阅读。",
+    "okInitiate": "结算已开启。商家现在可以将代币锁定到托管中。",
+    "okLock": "托管已注资。交易 {signature}。",
+    "okDeclare": "已告知商家付款正在途中。",
+    "okApprove": "已批准，在节点上并在链上。交易 {signature}。任何一方现在都可以释放托管。",
+    "okApproveNodeOnly": "已在节点上批准。无法构建链上批准：买家的对等 id 不带任何 Solana 地址。",
+    "okRelease": "释放已交给节点。待节点自行看到其确认后，将记录到此交易上。",
+    "okReleaseUnwrap": "释放已交给节点。待节点自行看到其确认后，将记录到此交易上——包裹的 SOL 在同一笔交易中解包，因此到账的是 SOL。",
+    "okCancelEscrow": "代币已回到商家的金库。交易 {signature}。链下记录是独立的——请同时取消交易，否则结算会在没有托管支撑的情况下保持开启。",
+    "okCancelReservation": "预订已取消，商家的流动性再次空闲。",
+    "okCancelSettlement": "交易已取消。如果仍有代币锁定在托管中，也请将其退回金库——这两份记录是独立的。",
+    "okReverse": "你的声明已撤回，交易再次等待付款。商家现在可以取消它，所以请发送款项并重新声明，或自行取消。",
+    "okReject": "已记录。如果买家认为自己付了款，仍可发起争议——拒绝会将升级的成本转移给理亏的一方，而不决定谁理亏。",
+    "okDispute": "争议 {id} 已开启。仲裁员从仲裁台加入。"
   }
 }

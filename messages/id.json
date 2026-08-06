@@ -505,5 +505,268 @@
     "roleRequester": "Peminta",
     "roleCounterparty": "Pihak lawan",
     "noTradesInState": "Tidak ada transaksi dalam status ini."
+  },
+  "lifecycle": {
+    "EscrowLocked": "Escrow Terkunci",
+    "AwaitingPayment": "Menunggu Pembayaran",
+    "PaymentSubmitted": "Pembayaran Dikirim",
+    "MerchantReviewing": "Pedagang Meninjau",
+    "Approved": "Disetujui",
+    "EscrowReleased": "Escrow Dilepaskan",
+    "Completed": "Selesai",
+    "Rejected": "Ditolak",
+    "Cancelled": "Dibatalkan",
+    "Disputed": "Disengketakan",
+    "Requested": "Diminta",
+    "Validated": "Divalidasi",
+    "Accepted": "Diterima",
+    "Expired": "Kedaluwarsa",
+    "Buy": "Beli",
+    "Sell": "Jual"
+  },
+  "settlementSteps": {
+    "reservationLabel": "Reservasi",
+    "settlementBeginsBelow": "Penyelesaian dimulai di bawah",
+    "automatic": "Otomatis",
+    "yourTurn": "Giliran Anda",
+    "waitingOn": "Menunggu {name}",
+    "EscrowLocked": {
+      "buyer": "Program Solana mengunci kripto. Ia tidak bisa berpindah sampai transaksi ini selesai.",
+      "seller": "Kripto Anda terkunci di program Solana, sehingga pembeli bisa melihat bahwa ia benar-benar ada."
+    },
+    "AwaitingPayment": {
+      "buyer": "Kirim fiat menggunakan detail di bawah, lalu tandai sudah dibayar dan lampirkan bukti Anda.",
+      "seller": "Pembeli mengirim fiat. Tidak ada yang perlu Anda lakukan sampai mereka menandainya sudah dibayar."
+    },
+    "PaymentSubmitted": {
+      "buyer": "Anda telah menyatakan pembayaran. Pedagang kini memeriksa rekeningnya sendiri.",
+      "seller": "Pembeli mengatakan sudah membayar. Periksa rekening Anda sendiri — tangkapan layar bukanlah pembayaran."
+    },
+    "MerchantReviewing": {
+      "buyer": "Pedagang sedang memverifikasi uang telah tiba. Jika mereka tidak merespons, Anda dapat membuka sengketa.",
+      "seller": "Konfirmasi uang telah tiba, atau tolak jika tidak."
+    },
+    "Approved": {
+      "buyer": "Penerimaan dikonfirmasi. Pelepasan adalah langkah berikutnya dan terjadi otomatis.",
+      "seller": "Anda mengonfirmasi penerimaan. Program mengambil alih dari sini."
+    },
+    "EscrowReleased": {
+      "buyer": "Program mengirim kripto ke dompet Anda.",
+      "seller": "Program mengirim kripto ke pembeli."
+    },
+    "Completed": {
+      "buyer": "Selesai. Kedua reputasi telah diperbarui.",
+      "seller": "Selesai. Kedua reputasi telah diperbarui."
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "Ruang Transaksi",
+    "backToTrades": "← Kembali ke Transaksi Saya",
+    "tradeHeading": "Transaksi {id}",
+    "couldNotRead": "Tidak dapat membaca transaksi ini dari node",
+    "noReservation": "Node ini tidak memiliki reservasi dengan id “{id}”.",
+    "statusLabel": "Status",
+    "theMerchant": "pedagang",
+    "reservationEnded": "Reservasi ini berakhir sebagai <strong>{state}</strong> sebelum escrow sempat terkunci — tidak ada penyelesaian untuknya.",
+    "viewDisputes": "Lihat sengketa →",
+    "panelReservation": "Reservasi",
+    "reservationId": "ID reservasi",
+    "advertisement": "Iklan",
+    "requester": "Peminta",
+    "notNamed": "Tidak disebutkan dalam catatan publik",
+    "amount": "Jumlah",
+    "state": "Keadaan",
+    "requested": "Diminta",
+    "updated": "Diperbarui",
+    "expires": "Kedaluwarsa",
+    "panelSettlement": "Penyelesaian",
+    "settlementId": "ID penyelesaian",
+    "buyer": "Pembeli",
+    "seller": "Penjual",
+    "paymentReference": "Referensi pembayaran",
+    "paymentSubmitted": "Pembayaran dikirim",
+    "merchantResponded": "Pedagang merespons",
+    "discrepancy": "Ketidaksesuaian",
+    "created": "Dibuat",
+    "escrowReleaseTx": "Tx pelepasan escrow",
+    "notYetConfirmed": "Belum dikonfirmasi on-chain",
+    "panelYourReview": "Ulasan Anda",
+    "panelTradeChannel": "Kanal transaksi",
+    "panelAttachments": "Lampiran",
+    "panelAdvertisement": "Iklan",
+    "pair": "Pasangan",
+    "merchantDirection": "Arah pedagang",
+    "price": "Harga",
+    "paymentMethods": "Metode pembayaran",
+    "partyConnect": "Hubungkan dompet yang menjadi pihak dalam transaksi ini untuk bertindak atasnya.",
+    "partyConnectSub": "Yang di atas adalah catatan publik — jumlah, keadaan, dan waktu, tanpa menyebut pihak mana pun. Siapa yang ada dalam transaksi hanya dapat dibaca oleh orang-orang di dalamnya.",
+    "partyReadError": "Tidak dapat membaca salinan transaksi ini milik Anda",
+    "tryAgain": "Coba lagi",
+    "partyNotAParty": "Node merespons, dan dompet ini bukan pihak dalam transaksi ini.",
+    "partyNotAPartySub": "Itu jawaban yang berbeda dari “tidak bisa bertanya”: pembacaan berhasil dan mengembalikan transaksi Anda, dan ini bukan salah satunya.",
+    "partySignPrompt": "Tanda tangani sekali untuk memuat salinan transaksi ini milik Anda dan bertindak atasnya.",
+    "partySignPromptSub": "Catatan publik di atas tidak menyebut siapa pun. Di pihak mana Anda, apa yang bisa Anda tanda tangani, dan kanal transaksi semuanya memerlukan catatan yang tidak disunting, yang hanya diberikan node kepada pihak yang membuktikan dompet.",
+    "waitingWallet": "Menunggu dompet Anda…",
+    "loadMyCopy": "Muat salinan transaksi ini milik saya"
+  },
+  "attachments": {
+    "readError": "Tidak dapat membaca lampiran dari node akses Anda.",
+    "signerUnavailable": "Hubungkan ulang dompet Anda — penyedia tanda tangan tidak tersedia.",
+    "publishError": "Tidak dapat memublikasikan lampiran.",
+    "noSettlement": "Berkas dapat dilampirkan setelah transaksi memiliki penyelesaian. Sebuah lampiran menyebut penyelesaian tempatnya berada — itulah catatan yang dibaca arbiter.",
+    "reading": "Membaca lampiran…",
+    "empty": "Belum ada yang dilampirkan pada transaksi ini.",
+    "imageAlt": "Bukti terlampir",
+    "pdfPlaceholder": "PDF — buka di tab baru",
+    "noCaption": "Tanpa keterangan",
+    "publicWarning": "Apa pun yang Anda lampirkan bersifat publik dan permanen. Ia disimpan di IPFS, dan gateway mana pun akan menyajikannya kepada siapa saja yang memegang referensinya — yang berpindah dalam catatan yang disimpan setiap node. Jangan pernah melampirkan detail pembayaran atau dokumen identitas di sini.",
+    "captionPlaceholder": "Ini apa? mis. bukti transfer bank",
+    "uploading": "Mengunggah dan menandatangani…",
+    "attachFile": "Lampirkan berkas",
+    "fileHelp": "PNG, JPEG, WebP, atau PDF, hingga {mb} MB. Dompet Anda menandatangani catatan; hanya Anda dan pihak lawan yang dapat menambah ke transaksi ini, dan lampiran tidak dapat dihapus setelah dipublikasikan.",
+    "connectPrompt": "Hubungkan dompet Anda untuk melampirkan berkas. Hanya pembeli dan penjual suatu transaksi yang dapat menambah ke dalamnya, yang diperiksa terhadap penyelesaian alih-alih dianggap benar begitu saja."
+  },
+  "tradeActions": {
+    "heading": "Yang dapat Anda lakukan",
+    "cannotSign": "Koneksi dompet ini tidak dapat menandatangani — hubungkan ulang dan coba lagi.",
+    "notNumericIdNote": "Id reservasi ini bukan angka, sehingga tidak mengalamati akun escrow mana pun on-chain — program escrow menemukan escrow transaksi pada PDA yang diturunkan dari id sebagai <code>u64</code>. Tidak ada yang dapat dibuat, dibaca, atau dilepaskan on-chain untuknya. Reservasi yang dibuat oleh aplikasi ini selalu bisa.",
+    "factOnchainEscrow": "Escrow on-chain",
+    "factHeld": "Ditahan",
+    "factApproved": "Pedagang menyetujui",
+    "factEscrowAccount": "Akun escrow",
+    "yes": "Ya",
+    "notYet": "Belum",
+    "vaultState": {
+      "Available": "Tersedia",
+      "Reserved": "Dicadangkan",
+      "AwaitingFiatSettlement": "Menunggu penyelesaian fiat",
+      "Released": "Dilepaskan",
+      "Cancelled": "Dibatalkan",
+      "Frozen": "Dibekukan"
+    },
+    "escrowReading": "Membaca escrow dari klaster… Jika ini tidak selesai, klaster tidak dapat dijangkau — yang tidak sama dengan tidak adanya escrow.",
+    "escrowNone": "Belum ada escrow on-chain untuk reservasi ini.",
+    "onChain": "On-chain",
+    "onChainTitle": "Memindahkan nilai di Solana, dan dikenai biaya jaringan",
+    "close": "Tutup",
+    "details": "Detail",
+    "action": {
+      "initiate": {
+        "label": "Buka penyelesaian",
+        "detail": "Mencatat pembeli dan pedagang pada reservasi ini dan memulai jendela pembayaran. Ditandatangani oleh Anda, dikirim ke node — tidak ada yang berpindah on-chain."
+      },
+      "lock-escrow": {
+        "label": "Kunci escrow",
+        "detail": "Mencadangkan jumlah di vault likuiditas Anda, membuka escrow transaksi, dan memindahkan token ke dalamnya. Satu transaksi, sehingga sebuah reservasi tidak pernah tertinggal ditandai terhadap inventaris tanpa escrow di baliknya."
+      },
+      "declare-paid": {
+        "label": "Saya telah mengirim pembayaran",
+        "detail": "Memberi tahu pedagang bahwa fiat sedang dalam perjalanan. Lakukan ini hanya setelah Anda benar-benar mengirimnya — pernyataan ini ditandatangani oleh Anda dan permanen."
+      },
+      "approve": {
+        "label": "Konfirmasi pembayaran telah tiba",
+        "detail": "Dua tanda tangan: node mencatat persetujuan Anda, dan program escrow menandai transaksi disetujui agar token dapat dilepaskan."
+      },
+      "release": {
+        "label": "Lepaskan escrow",
+        "detail": "Membayar pembeli dan keempat kas biaya dari escrow. Siapa pun dapat mengirimkannya setelah pedagang menyetujui, dan itu melewati node agar jaringan mencatat konfirmasi."
+      },
+      "cancel-escrow": {
+        "label": "Kembalikan token ke vault",
+        "detail": "Membatalkan escrow on-chain dan mengembalikan token pedagang ke vault likuiditasnya. Hanya mungkin sebelum pelepasan."
+      },
+      "cancel-reservation": {
+        "label": "Batalkan reservasi ini",
+        "detail": "Menarik klaim Anda atas likuiditas pedagang dan membebaskannya seketika, alih-alih menahannya selama sisa jendela 30 menit. Ditandatangani oleh Anda, dikirim ke node — tidak ada yang berpindah on-chain, dan hanya Anda yang dapat membatalkan reservasi Anda sendiri."
+      },
+      "cancel-settlement": {
+        "label": "Batalkan transaksi",
+        "detail": "Mengakhiri penyelesaian tanpa ada yang berutang di kedua sisi. Hanya mungkin selama belum ada pembayaran yang dinyatakan — begitu pembeli mengatakan telah membayar, tidak ada pihak yang dapat mundur secara sepihak."
+      },
+      "reverse-payment": {
+        "label": "Sebenarnya saya belum membayar",
+        "detail": "Menarik pernyataan Anda dan mengembalikan transaksi ke menunggu pembayaran. Lakukan ini hanya untuk pernyataan yang dibuat karena keliru: ia memungkinkan pedagang membatalkan transaksi, jadi pembayaran yang benar-benar telah keluar dari rekening Anda harus masuk ke sengketa."
+      },
+      "reject-payment": {
+        "label": "Pembayaran tidak pernah tiba",
+        "detail": "Mencatat penolakan Anda tanpa membuka sengketa atau membayar biaya pengajuan. Ini klaim Anda, bukan putusan — pembeli yang benar-benar membayar tetap dapat membuka sengketa setelahnya."
+      },
+      "dispute": {
+        "label": "Buka sengketa",
+        "detail": "Membawa transaksi ke hadapan arbiter. Bukti kedua pihak berasal dari kanal transaksi, dan mengungkapkannya kepada seorang arbiter membagikan seluruh percakapan secara permanen."
+      }
+    },
+    "waiting": {
+      "observer": "Anda bukan pihak dalam transaksi ini, jadi tidak ada yang perlu Anda tanda tangani di sini.",
+      "merchantNoSettlement": "Pengambil telah memesan terhadap iklan Anda tetapi belum membuka penyelesaian. Sampai mereka melakukannya, tidak ada catatan yang menyebut Anda sebagai penjual untuk bertindak — dan hanya mereka yang dapat membatalkan reservasi mereka sendiri.",
+      "merchantEscrowUnknown": "Klaster tidak dapat dibaca, jadi tidak diketahui apakah escrow transaksi ini sudah ada. Menguncinya lagi akan gagal pada akun yang sudah ada — muat ulang sebelum menandatangani apa pun.",
+      "merchantEscrowHeld": "Escrow menahan token Anda. Pembeli belum menyatakan fiat terkirim — yang juga merupakan satu-satunya jendela di mana salah satu dari Anda masih dapat mundur.",
+      "buyerEscrowUnreadable": "Apakah pedagang telah mengunci token tidak dapat dibaca dari klaster. Jangan kirim uang apa pun sampai bisa.",
+      "buyerNotLocked": "Pedagang belum mengunci token dalam escrow. Jangan kirim uang apa pun sampai mereka melakukannya — tidak ada apa pun on-chain yang menopang transaksi ini.",
+      "buyerAwaitingConfirm": "Pedagang telah diberi tahu bahwa pembayaran terkirim dan belum mengonfirmasinya.",
+      "approvedNoEscrow": "Penyelesaian ini disetujui tetapi tidak ada escrow yang pernah didanai untuknya, jadi tidak ada yang perlu dilepaskan.",
+      "disputed": "Transaksi ini berada di tangan arbiter. Escrow bergerak atas keputusan mereka, bukan atas tanda tangan salah satu pihak."
+    },
+    "discrepancy": {
+      "IncorrectAmount": "Jumlahnya salah",
+      "WrongReference": "Referensinya salah atau hilang",
+      "DuplicatePayment": "Itu duplikat dari pembayaran lain",
+      "IncorrectAccount": "Dikirim ke rekening yang salah",
+      "Other": "Sesuatu yang lain — tanpa kesalahan pembayaran"
+    },
+    "referenceLabel": "Referensi pembayaran (opsional)",
+    "referencePlaceholder": "Apa yang bank atau dompet Anda tuliskan pada transfer",
+    "referenceHelp": "Apa pun yang Anda ketik di sini disimpan pada penyelesaian dan dapat dibaca oleh pedagang dan oleh arbiter mana pun — itulah sebabnya ia dihapus dari tampilan publik, jadi batasi pada referensinya saja.",
+    "disputeLabel": "Apa yang salah",
+    "rejectWhatWrong": "Apa yang salah dengannya",
+    "rejectDiscrepancyHelp": "Ini adalah bidang yang dihitung reputasi, jadi pilih yang benar-benar berlaku. Semua kecuali “Sesuatu yang lain” mencatat kesalahan akurasi pembayaran terhadap pembeli.",
+    "rejectOwnWords": "Dengan kata-kata Anda sendiri",
+    "rejectOwnWordsHelp": "Dibaca oleh pembeli dan oleh arbiter mana pun yang mereka eskalasi. Tidak ada yang mengurainya.",
+    "reverseWarning": "Hanya jika Anda <b>belum</b> benar-benar mengirim uangnya. Menarik pernyataan Anda mengembalikan transaksi ke menunggu pembayaran, yang memungkinkan pedagang membatalkannya — jadi jika fiat benar-benar telah keluar dari rekening Anda, ini memberi mereka jendela untuk membatalkan dari bawahnya. Dalam hal itu, buka sengketa saja.",
+    "cancelSettlementWarning": "Mengakhiri transaksi tanpa ada yang berutang di kedua sisi. Jika pihak lain sudah mengirim fiat tetapi belum menyatakannya, ini membatalkan dari bawah uang mereka — protokol tidak dapat melihat transfer bank, hanya pernyataan. Jangan batalkan transaksi yang seseorang katakan sedang mereka bayar.",
+    "cancelReservationNote": "Membebaskan likuiditas pedagang seketika alih-alih menahannya selama sisa jendela 30 menit. Tidak ada yang bisa dibatalkan setelahnya — Anda harus membuat pesanan baru.",
+    "busyInitiate": "Membuka penyelesaian",
+    "busyLock": "Mengunci escrow",
+    "busyDeclare": "Mencatat pembayaran",
+    "busyApprove": "Menyetujui",
+    "busyRelease": "Melepaskan",
+    "busyCancelEscrow": "Mengembalikan token",
+    "busyCancelReservation": "Membatalkan reservasi",
+    "busyCancelSettlement": "Membatalkan transaksi",
+    "busyReverse": "Menarik pernyataan",
+    "busyReject": "Mencatat penolakan",
+    "busyDispute": "Membuka sengketa",
+    "busyPrompt": "{what}… setujui permintaan di dompet Anda.",
+    "errNotNumericId": "Id reservasi ini bukan angka, sehingga tidak mengalamati akun escrow mana pun. Reservasi yang dibuat oleh aplikasi ini bisa; satu dari klien lain mungkin tidak.",
+    "errNoAdMint": "Iklan transaksi ini tidak dapat dibaca, dan itu adalah satu-satunya catatan tentang mint mana escrow diselesaikan. Tidak ada apa pun on-chain yang dapat dibangun tanpanya.",
+    "errNoAdMerchantKey": "Iklan transaksi ini tidak dapat dibaca, dan penyelesaian harus menyebut kunci publik milik pedagang sendiri darinya.",
+    "errNoSettlementLock": "Tidak ada penyelesaian untuk mengunci escrow terhadapnya.",
+    "errBuyerNoAddress": "Peer id pembeli tidak membawa alamat Solana, sehingga tidak ada escrow yang dapat menyebutnya.",
+    "errNoSettlementDeclare": "Tidak ada penyelesaian untuk menyatakan pembayaran atasnya.",
+    "errNoSettlementApprove": "Tidak ada penyelesaian untuk disetujui.",
+    "errWalletBroadcasts": "Dompet ini tidak dapat menandatangani transaksi tanpa juga menyiarkannya. Pelepasan harus mencapai Solana melalui node agar jaringan mencatat konfirmasi, jadi tidak dapat diselesaikan dari dompet ini.",
+    "errPartyNoAddressRelease": "Peer id salah satu pihak tidak membawa alamat Solana, sehingga tidak ada pelepasan yang dapat dibangun.",
+    "errNoSettlementRelease": "Tidak ada penyelesaian untuk dilepaskan.",
+    "errNoEscrowCancel": "Tidak ada escrow untuk dibatalkan.",
+    "errPartyNoAddressCancel": "Peer id salah satu pihak tidak membawa alamat Solana, sehingga tidak ada pembatalan yang dapat dibangun.",
+    "errNoSettlementCancel": "Tidak ada penyelesaian untuk dibatalkan.",
+    "errNoDeclaration": "Tidak ada pernyataan untuk ditarik.",
+    "errNoSettlementReject": "Tidak ada penyelesaian untuk ditolak.",
+    "errRejectEmpty": "Katakan apa yang Anda temukan atau tidak temukan — pembeli dan arbiter mana pun membaca ini.",
+    "errNoSettlementDispute": "Tidak ada penyelesaian untuk disengketakan.",
+    "errDisputeEmpty": "Katakan apa yang salah — seorang arbiter membaca ini.",
+    "okInitiate": "Penyelesaian terbuka. Pedagang kini dapat mengunci token dalam escrow.",
+    "okLock": "Escrow didanai. Transaksi {signature}.",
+    "okDeclare": "Pedagang telah diberi tahu bahwa pembayaran sedang dalam perjalanan.",
+    "okApprove": "Disetujui, di node dan on-chain. Transaksi {signature}. Salah satu pihak kini dapat melepaskan escrow.",
+    "okApproveNodeOnly": "Disetujui di node. Persetujuan on-chain tidak dapat dibangun: peer id pembeli tidak membawa alamat Solana.",
+    "okRelease": "Pelepasan ada pada node. Ia akan dicatat pada transaksi ini setelah node melihatnya terkonfirmasi sendiri.",
+    "okReleaseUnwrap": "Pelepasan ada pada node. Ia akan dicatat pada transaksi ini setelah node melihatnya terkonfirmasi sendiri — SOL yang dibungkus dibuka bungkusnya dalam transaksi yang sama, jadi yang tiba adalah SOL.",
+    "okCancelEscrow": "Token telah kembali ke vault pedagang. Transaksi {signature}. Catatan off-chain terpisah — batalkan transaksi juga, atau penyelesaian tetap terbuka tanpa escrow di baliknya.",
+    "okCancelReservation": "Reservasi dibatalkan dan likuiditas pedagang bebas kembali.",
+    "okCancelSettlement": "Transaksi dibatalkan. Jika token masih terkunci dalam escrow, kembalikan juga ke vault — kedua catatan itu terpisah.",
+    "okReverse": "Pernyataan Anda ditarik dan transaksi menunggu pembayaran lagi. Pedagang kini dapat membatalkannya, jadi kirim uangnya dan nyatakan lagi, atau batalkan sendiri.",
+    "okReject": "Tercatat. Pembeli tetap dapat membuka sengketa jika mereka yakin telah membayar — menolak memindahkan biaya eskalasi kepada siapa pun yang salah, ia tidak memutuskan siapa itu.",
+    "okDispute": "Sengketa {id} terbuka. Arbiter bergabung dari meja arbitrase."
   }
 }

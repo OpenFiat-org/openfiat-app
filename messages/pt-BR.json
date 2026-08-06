@@ -505,5 +505,268 @@
     "roleRequester": "Solicitante",
     "roleCounterparty": "Contraparte",
     "noTradesInState": "Nenhuma negociação neste estado."
+  },
+  "lifecycle": {
+    "EscrowLocked": "Custódia bloqueada",
+    "AwaitingPayment": "Aguardando pagamento",
+    "PaymentSubmitted": "Pagamento enviado",
+    "MerchantReviewing": "Comerciante analisando",
+    "Approved": "Aprovado",
+    "EscrowReleased": "Custódia liberada",
+    "Completed": "Concluído",
+    "Rejected": "Recusado",
+    "Cancelled": "Cancelado",
+    "Disputed": "Em disputa",
+    "Requested": "Solicitado",
+    "Validated": "Validado",
+    "Accepted": "Aceito",
+    "Expired": "Expirado",
+    "Buy": "Compra",
+    "Sell": "Venda"
+  },
+  "settlementSteps": {
+    "reservationLabel": "Reserva",
+    "settlementBeginsBelow": "A liquidação começa abaixo",
+    "automatic": "Automático",
+    "yourTurn": "Sua vez",
+    "waitingOn": "Aguardando {name}",
+    "EscrowLocked": {
+      "buyer": "O programa da Solana bloqueou as criptomoedas. Elas não podem se mover até que esta negociação seja resolvida.",
+      "seller": "Suas criptomoedas estão bloqueadas no programa da Solana, para que o comprador veja que elas realmente estão lá."
+    },
+    "AwaitingPayment": {
+      "buyer": "Envie o dinheiro usando os dados abaixo, depois marque como pago e anexe seu comprovante.",
+      "seller": "O comprador envia o dinheiro. Nada a fazer até que ele marque como pago."
+    },
+    "PaymentSubmitted": {
+      "buyer": "Você declarou o pagamento. O comerciante agora verifica a própria conta.",
+      "seller": "O comprador diz que pagou. Verifique sua própria conta — uma captura de tela não é um pagamento."
+    },
+    "MerchantReviewing": {
+      "buyer": "O comerciante está verificando se o dinheiro chegou. Se ele não responder, você pode abrir uma disputa.",
+      "seller": "Confirme que o dinheiro chegou, ou recuse se não chegou."
+    },
+    "Approved": {
+      "buyer": "Recebimento confirmado. A liberação é o próximo passo e acontece automaticamente.",
+      "seller": "Você confirmou o recebimento. O programa assume a partir daqui."
+    },
+    "EscrowReleased": {
+      "buyer": "O programa enviou as criptomoedas para sua carteira.",
+      "seller": "O programa enviou as criptomoedas para o comprador."
+    },
+    "Completed": {
+      "buyer": "Pronto. As duas reputações foram atualizadas.",
+      "seller": "Pronto. As duas reputações foram atualizadas."
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "Sala da negociação",
+    "backToTrades": "← Voltar para Minhas negociações",
+    "tradeHeading": "Negociação {id}",
+    "couldNotRead": "Não foi possível ler esta negociação a partir do nó",
+    "noReservation": "Este nó não tem nenhuma reserva com o id “{id}”.",
+    "statusLabel": "Status",
+    "theMerchant": "o comerciante",
+    "reservationEnded": "Esta reserva terminou como <strong>{state}</strong> antes de a custódia chegar a ser bloqueada — não existe liquidação para ela.",
+    "viewDisputes": "Ver disputas →",
+    "panelReservation": "Reserva",
+    "reservationId": "ID da reserva",
+    "advertisement": "Anúncio",
+    "requester": "Solicitante",
+    "notNamed": "Não nomeado no registro público",
+    "amount": "Valor",
+    "state": "Estado",
+    "requested": "Solicitado",
+    "updated": "Atualizado",
+    "expires": "Expira",
+    "panelSettlement": "Liquidação",
+    "settlementId": "ID da liquidação",
+    "buyer": "Comprador",
+    "seller": "Vendedor",
+    "paymentReference": "Referência de pagamento",
+    "paymentSubmitted": "Pagamento enviado",
+    "merchantResponded": "O comerciante respondeu",
+    "discrepancy": "Divergência",
+    "created": "Criado",
+    "escrowReleaseTx": "Tx de liberação da custódia",
+    "notYetConfirmed": "Ainda não confirmado on-chain",
+    "panelYourReview": "Sua avaliação",
+    "panelTradeChannel": "Canal da negociação",
+    "panelAttachments": "Anexos",
+    "panelAdvertisement": "Anúncio",
+    "pair": "Par",
+    "merchantDirection": "Direção do comerciante",
+    "price": "Preço",
+    "paymentMethods": "Métodos de pagamento",
+    "partyConnect": "Conecte a carteira que faz parte desta negociação para agir sobre ela.",
+    "partyConnectSub": "O que está acima é o registro público — valores, estados e datas, sem nomear nenhuma das partes. Quem está em uma negociação só pode ser lido pelas pessoas nela.",
+    "partyReadError": "Não foi possível ler sua cópia desta negociação",
+    "tryAgain": "Tentar de novo",
+    "partyNotAParty": "O nó respondeu, e esta carteira não faz parte desta negociação.",
+    "partyNotAPartySub": "É uma resposta diferente de “não foi possível perguntar”: a leitura teve sucesso e retornou suas negociações, e esta não é uma delas.",
+    "partySignPrompt": "Assine uma vez para carregar sua própria cópia desta negociação e agir sobre ela.",
+    "partySignPromptSub": "O registro público acima não nomeia ninguém. De que lado você está, o que pode assinar e o canal da negociação exigem o registro não redigido, que o nó entrega apenas a uma parte que prove a carteira.",
+    "waitingWallet": "Aguardando sua carteira…",
+    "loadMyCopy": "Carregar minha cópia desta negociação"
+  },
+  "attachments": {
+    "readError": "Não foi possível ler os anexos a partir do seu nó de acesso.",
+    "signerUnavailable": "Reconecte sua carteira — o provedor de assinatura não está disponível.",
+    "publishError": "Não foi possível publicar o anexo.",
+    "noSettlement": "Arquivos podem ser anexados assim que a negociação tiver uma liquidação. Um anexo nomeia a liquidação à qual pertence — esse é o registro que um árbitro lê.",
+    "reading": "Lendo anexos…",
+    "empty": "Nada anexado a esta negociação ainda.",
+    "imageAlt": "Prova anexada",
+    "pdfPlaceholder": "PDF — abrir em nova aba",
+    "noCaption": "Sem legenda",
+    "publicWarning": "Tudo o que você anexa é público e permanente. É armazenado no IPFS, e qualquer gateway o servirá a quem tiver a referência — que viaja em registros que cada nó mantém. Nunca anexe dados de pagamento ou documentos de identidade aqui.",
+    "captionPlaceholder": "O que é isto? ex.: comprovante de transferência bancária",
+    "uploading": "Enviando e assinando…",
+    "attachFile": "Anexar arquivo",
+    "fileHelp": "PNG, JPEG, WebP ou PDF, até {mb} MB. Sua carteira assina o registro; somente você e sua contraparte podem adicionar a esta negociação, e um anexo não pode ser removido depois de publicado.",
+    "connectPrompt": "Conecte sua carteira para anexar um arquivo. Apenas o comprador e o vendedor de uma negociação podem adicionar a ela, o que é verificado contra a liquidação em vez de tomado como certo."
+  },
+  "tradeActions": {
+    "heading": "O que você pode fazer",
+    "cannotSign": "Esta conexão de carteira não pode assinar — reconecte-a e tente de novo.",
+    "notNumericIdNote": "O id desta reserva não é um número, então ele não endereça nenhuma conta de custódia on-chain — o programa de custódia encontra uma custódia de negociação em uma PDA derivada do id como <code>u64</code>. Nada on-chain pode ser criado, lido ou liberado para ela. Reservas feitas por este app sempre podem.",
+    "factOnchainEscrow": "Custódia on-chain",
+    "factHeld": "Retido",
+    "factApproved": "Comerciante aprovou",
+    "factEscrowAccount": "Conta de custódia",
+    "yes": "Sim",
+    "notYet": "Ainda não",
+    "vaultState": {
+      "Available": "Disponível",
+      "Reserved": "Reservado",
+      "AwaitingFiatSettlement": "Aguardando liquidação em fiat",
+      "Released": "Liberado",
+      "Cancelled": "Cancelado",
+      "Frozen": "Congelado"
+    },
+    "escrowReading": "Lendo a custódia a partir do cluster… Se isto não resolver, o cluster não pôde ser alcançado — o que não é o mesmo que não existir custódia.",
+    "escrowNone": "Ainda não existe nenhuma custódia on-chain para esta reserva.",
+    "onChain": "On-chain",
+    "onChainTitle": "Move valor na Solana e custa uma taxa de rede",
+    "close": "Fechar",
+    "details": "Detalhes",
+    "action": {
+      "initiate": {
+        "label": "Abrir a liquidação",
+        "detail": "Registra o comprador e o comerciante nesta reserva e inicia a janela de pagamento. Assinado por você, enviado ao nó — nada se move on-chain."
+      },
+      "lock-escrow": {
+        "label": "Bloquear a custódia",
+        "detail": "Reserva o valor no seu cofre de liquidez, abre a custódia da negociação e move os tokens para ela. Uma transação, para que uma reserva nunca fique marcada contra o estoque sem custódia por trás."
+      },
+      "declare-paid": {
+        "label": "Enviei o pagamento",
+        "detail": "Diz ao comerciante que o dinheiro está a caminho. Só faça isso depois de realmente tê-lo enviado — a declaração é assinada por você e permanente."
+      },
+      "approve": {
+        "label": "Confirmar que o pagamento chegou",
+        "detail": "Duas assinaturas: o nó registra sua aprovação e o programa de custódia marca a negociação como aprovada para que os tokens possam ser liberados."
+      },
+      "release": {
+        "label": "Liberar a custódia",
+        "detail": "Paga o comprador e as quatro tesourarias de taxas a partir da custódia. Qualquer um pode enviá-la depois que o comerciante aprovar, e ela passa pelo nó para que a rede registre a confirmação."
+      },
+      "cancel-escrow": {
+        "label": "Devolver os tokens ao cofre",
+        "detail": "Cancela a custódia on-chain e devolve os tokens do comerciante ao seu cofre de liquidez. Só possível antes da liberação."
+      },
+      "cancel-reservation": {
+        "label": "Cancelar esta reserva",
+        "detail": "Retira sua reivindicação sobre a liquidez do comerciante e a libera imediatamente, em vez de retê-la pelo resto da janela de 30 minutos. Assinado por você, enviado ao nó — nada se move on-chain, e só você pode cancelar sua própria reserva."
+      },
+      "cancel-settlement": {
+        "label": "Cancelar a negociação",
+        "detail": "Encerra a liquidação sem nada devido de nenhum lado. Só possível enquanto nenhum pagamento tiver sido declarado — depois que o comprador diz que pagou, nenhum lado pode sair unilateralmente."
+      },
+      "reverse-payment": {
+        "label": "Na verdade não paguei",
+        "detail": "Retira sua declaração e devolve a negociação para aguardando pagamento. Só faça isso por uma declaração feita por engano: ela permite que o comerciante cancele a negociação, então um pagamento que realmente saiu da sua conta deve ir para uma disputa."
+      },
+      "reject-payment": {
+        "label": "O pagamento nunca chegou",
+        "detail": "Registra sua recusa sem abrir uma disputa ou pagar uma taxa. É sua afirmação, não uma decisão — um comprador que realmente pagou ainda pode abrir uma disputa depois."
+      },
+      "dispute": {
+        "label": "Abrir uma disputa",
+        "detail": "Coloca a negociação diante de árbitros. As provas de ambas as partes vêm do canal da negociação, e divulgá-las a um árbitro compartilha toda a conversa permanentemente."
+      }
+    },
+    "waiting": {
+      "observer": "Você não faz parte desta negociação, então não há nada aqui para você assinar.",
+      "merchantNoSettlement": "O tomador reservou contra o seu anúncio, mas ainda não abriu a liquidação. Até que o faça, não há registro nomeando você como vendedor para agir — e só ele pode cancelar a própria reserva.",
+      "merchantEscrowUnknown": "O cluster não pôde ser lido, então não se sabe se a custódia desta negociação já existe. Bloqueá-la de novo falharia em uma conta que já está lá — recarregue antes de assinar qualquer coisa.",
+      "merchantEscrowHeld": "A custódia retém seus tokens. O comprador ainda não declarou o dinheiro enviado — que é também a única janela em que qualquer um de vocês ainda pode sair.",
+      "buyerEscrowUnreadable": "Não foi possível ler do cluster se o comerciante bloqueou os tokens. Não envie nenhum dinheiro até que seja possível.",
+      "buyerNotLocked": "O comerciante ainda não bloqueou os tokens em custódia. Não envie nenhum dinheiro até que o faça — não há nada on-chain sustentando esta negociação.",
+      "buyerAwaitingConfirm": "O comerciante foi avisado de que o pagamento foi enviado e ainda não o confirmou.",
+      "approvedNoEscrow": "Esta liquidação está aprovada, mas nenhuma custódia foi financiada para ela, então não há nada a liberar.",
+      "disputed": "Esta negociação está com árbitros. A custódia se move pela decisão deles, não pela assinatura de nenhuma das partes."
+    },
+    "discrepancy": {
+      "IncorrectAmount": "O valor estava errado",
+      "WrongReference": "A referência estava errada ou faltando",
+      "DuplicatePayment": "Era uma duplicata de outro pagamento",
+      "IncorrectAccount": "Foi enviado para a conta errada",
+      "Other": "Outra coisa — sem falha de pagamento"
+    },
+    "referenceLabel": "Referência de pagamento (opcional)",
+    "referencePlaceholder": "O que seu banco ou carteira colocou na transferência",
+    "referenceHelp": "O que você digitar aqui é armazenado na liquidação e pode ser lido pelo comerciante e por qualquer árbitro — por isso é removido da visão pública, então limite-se à referência em si.",
+    "disputeLabel": "O que deu errado",
+    "rejectWhatWrong": "O que estava errado nele",
+    "rejectDiscrepancyHelp": "Este é o campo que a reputação conta, então escolha o que realmente se aplica. Tudo exceto “Outra coisa” registra uma falha de exatidão de pagamento contra o comprador.",
+    "rejectOwnWords": "Nas suas próprias palavras",
+    "rejectOwnWordsHelp": "Lido pelo comprador e por qualquer árbitro a quem ele escalar. Nada o analisa.",
+    "reverseWarning": "Só se você <b>não</b> tiver realmente enviado o dinheiro. Retirar sua declaração devolve a negociação para aguardando pagamento, o que permite ao comerciante cancelá-la — então, se o dinheiro realmente saiu da sua conta, isso lhe dá uma janela para cancelar por baixo. Nesse caso, abra uma disputa em vez disso.",
+    "cancelSettlementWarning": "Encerra a negociação sem nada devido de nenhum lado. Se o outro lado já enviou o dinheiro mas ainda não o declarou, isto cancela por baixo do dinheiro dele — o protocolo não vê uma transferência bancária, só a declaração. Não cancele uma negociação que alguém lhe disse que está pagando.",
+    "cancelReservationNote": "Libera a liquidez do comerciante imediatamente em vez de retê-la pelo resto da janela de 30 minutos. Não há nada a desfazer depois — você faria um novo pedido.",
+    "busyInitiate": "Abrindo a liquidação",
+    "busyLock": "Bloqueando a custódia",
+    "busyDeclare": "Registrando o pagamento",
+    "busyApprove": "Aprovando",
+    "busyRelease": "Liberando",
+    "busyCancelEscrow": "Devolvendo os tokens",
+    "busyCancelReservation": "Cancelando a reserva",
+    "busyCancelSettlement": "Cancelando a negociação",
+    "busyReverse": "Retirando a declaração",
+    "busyReject": "Registrando a recusa",
+    "busyDispute": "Abrindo a disputa",
+    "busyPrompt": "{what}… aprove a solicitação na sua carteira.",
+    "errNotNumericId": "O id desta reserva não é um número, então ele não endereça nenhuma conta de custódia. Reservas feitas por este app endereçam; uma de outro cliente pode não endereçar.",
+    "errNoAdMint": "O anúncio desta negociação não pôde ser lido, e ele é o único registro de em qual mint a custódia liquida. Nada on-chain pode ser construído sem ele.",
+    "errNoAdMerchantKey": "O anúncio desta negociação não pôde ser lido, e a liquidação tem de nomear a própria chave pública do comerciante a partir dele.",
+    "errNoSettlementLock": "Não há liquidação contra a qual bloquear uma custódia.",
+    "errBuyerNoAddress": "O id de par do comprador não carrega nenhum endereço Solana, então nenhuma custódia pode nomeá-lo.",
+    "errNoSettlementDeclare": "Não há liquidação sobre a qual declarar um pagamento.",
+    "errNoSettlementApprove": "Não há liquidação a aprovar.",
+    "errWalletBroadcasts": "Esta carteira não pode assinar uma transação sem também transmiti-la. A liberação precisa chegar à Solana através do nó para que a rede registre a confirmação, então não pode ser concluída a partir desta carteira.",
+    "errPartyNoAddressRelease": "O id de par de uma das partes não carrega nenhum endereço Solana, então nenhuma liberação pode ser construída.",
+    "errNoSettlementRelease": "Não há liquidação a liberar.",
+    "errNoEscrowCancel": "Não há custódia a cancelar.",
+    "errPartyNoAddressCancel": "O id de par de uma das partes não carrega nenhum endereço Solana, então nenhum cancelamento pode ser construído.",
+    "errNoSettlementCancel": "Não há liquidação a cancelar.",
+    "errNoDeclaration": "Não há declaração a retirar.",
+    "errNoSettlementReject": "Não há liquidação a recusar.",
+    "errRejectEmpty": "Diga o que você encontrou ou não encontrou — o comprador e qualquer árbitro leem isto.",
+    "errNoSettlementDispute": "Não há liquidação a disputar.",
+    "errDisputeEmpty": "Diga o que deu errado — um árbitro lê isto.",
+    "okInitiate": "A liquidação está aberta. O comerciante já pode bloquear os tokens em custódia.",
+    "okLock": "Custódia financiada. Transação {signature}.",
+    "okDeclare": "O comerciante foi avisado de que o pagamento está a caminho.",
+    "okApprove": "Aprovado, no nó e on-chain. Transação {signature}. Qualquer uma das partes já pode liberar a custódia.",
+    "okApproveNodeOnly": "Aprovado no nó. A aprovação on-chain não pôde ser construída: o id de par do comprador não carrega nenhum endereço Solana.",
+    "okRelease": "A liberação está com o nó. Ela será registrada nesta negociação assim que o nó a tiver visto confirmada por si mesmo.",
+    "okReleaseUnwrap": "A liberação está com o nó. Ela será registrada nesta negociação assim que o nó a tiver visto confirmada por si mesmo — o SOL encapsulado é desencapsulado na mesma transação, então o que chega é SOL.",
+    "okCancelEscrow": "Os tokens estão de volta no cofre do comerciante. Transação {signature}. Os registros off-chain são separados — cancele a negociação também, ou a liquidação fica aberta sem custódia por trás.",
+    "okCancelReservation": "A reserva está cancelada e a liquidez do comerciante está livre novamente.",
+    "okCancelSettlement": "A negociação está cancelada. Se ainda houver tokens bloqueados em custódia, devolva-os ao cofre também — os dois registros são separados.",
+    "okReverse": "Sua declaração foi retirada e a negociação está aguardando pagamento de novo. O comerciante já pode cancelá-la, então envie o dinheiro e declare de novo, ou cancele você mesmo.",
+    "okReject": "Registrado. O comprador ainda pode abrir uma disputa se acreditar que pagou — recusar transfere o custo de escalar para quem estiver errado, não decide quem é.",
+    "okDispute": "A disputa {id} está aberta. Os árbitros entram nela a partir da mesa de arbitragem."
   }
 }

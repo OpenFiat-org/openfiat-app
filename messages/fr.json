@@ -505,5 +505,268 @@
     "roleRequester": "Demandeur",
     "roleCounterparty": "Contrepartie",
     "noTradesInState": "Aucun échange dans cet état."
+  },
+  "lifecycle": {
+    "EscrowLocked": "Séquestre verrouillé",
+    "AwaitingPayment": "En attente de paiement",
+    "PaymentSubmitted": "Paiement envoyé",
+    "MerchantReviewing": "Commerçant en vérification",
+    "Approved": "Approuvé",
+    "EscrowReleased": "Séquestre libéré",
+    "Completed": "Terminé",
+    "Rejected": "Refusé",
+    "Cancelled": "Annulé",
+    "Disputed": "En litige",
+    "Requested": "Demandé",
+    "Validated": "Validé",
+    "Accepted": "Accepté",
+    "Expired": "Expiré",
+    "Buy": "Achat",
+    "Sell": "Vente"
+  },
+  "settlementSteps": {
+    "reservationLabel": "Réservation",
+    "settlementBeginsBelow": "Le règlement commence ci-dessous",
+    "automatic": "Automatique",
+    "yourTurn": "À votre tour",
+    "waitingOn": "En attente de {name}",
+    "EscrowLocked": {
+      "buyer": "Le programme Solana a verrouillé les cryptomonnaies. Elles ne peuvent pas bouger tant que cet échange n'est pas résolu.",
+      "seller": "Vos cryptomonnaies sont verrouillées dans le programme Solana, pour que l'acheteur voie qu'elles sont bien là."
+    },
+    "AwaitingPayment": {
+      "buyer": "Envoyez les fonds avec les informations ci-dessous, puis marquez le paiement comme effectué et joignez votre reçu.",
+      "seller": "L'acheteur envoie les fonds. Rien à faire tant qu'il ne les a pas marqués comme payés."
+    },
+    "PaymentSubmitted": {
+      "buyer": "Vous avez déclaré le paiement. Le commerçant vérifie maintenant son propre compte.",
+      "seller": "L'acheteur dit avoir payé. Vérifiez votre propre compte — une capture d'écran n'est pas un paiement."
+    },
+    "MerchantReviewing": {
+      "buyer": "Le commerçant vérifie que l'argent est arrivé. S'il ne répond pas, vous pouvez ouvrir un litige.",
+      "seller": "Confirmez que l'argent est arrivé, ou refusez si ce n'est pas le cas."
+    },
+    "Approved": {
+      "buyer": "Réception confirmée. La libération est l'étape suivante et se fait automatiquement.",
+      "seller": "Vous avez confirmé la réception. Le programme prend le relais."
+    },
+    "EscrowReleased": {
+      "buyer": "Le programme a envoyé les cryptomonnaies vers votre portefeuille.",
+      "seller": "Le programme a envoyé les cryptomonnaies à l'acheteur."
+    },
+    "Completed": {
+      "buyer": "Terminé. Les deux réputations ont été mises à jour.",
+      "seller": "Terminé. Les deux réputations ont été mises à jour."
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "Salle d'échange",
+    "backToTrades": "← Retour à Mes échanges",
+    "tradeHeading": "Échange {id}",
+    "couldNotRead": "Impossible de lire cet échange depuis le nœud",
+    "noReservation": "Ce nœud n'a aucune réservation portant l'id « {id} ».",
+    "statusLabel": "Statut",
+    "theMerchant": "le commerçant",
+    "reservationEnded": "Cette réservation s'est terminée en <strong>{state}</strong> avant même que le séquestre ne se verrouille — aucun règlement n'existe pour elle.",
+    "viewDisputes": "Voir les litiges →",
+    "panelReservation": "Réservation",
+    "reservationId": "ID de réservation",
+    "advertisement": "Annonce",
+    "requester": "Demandeur",
+    "notNamed": "Non nommé dans le registre public",
+    "amount": "Montant",
+    "state": "État",
+    "requested": "Demandé",
+    "updated": "Mis à jour",
+    "expires": "Expire",
+    "panelSettlement": "Règlement",
+    "settlementId": "ID de règlement",
+    "buyer": "Acheteur",
+    "seller": "Vendeur",
+    "paymentReference": "Référence de paiement",
+    "paymentSubmitted": "Paiement envoyé",
+    "merchantResponded": "Le commerçant a répondu",
+    "discrepancy": "Écart",
+    "created": "Créé",
+    "escrowReleaseTx": "Tx de libération du séquestre",
+    "notYetConfirmed": "Pas encore confirmé sur la chaîne",
+    "panelYourReview": "Votre avis",
+    "panelTradeChannel": "Canal de l'échange",
+    "panelAttachments": "Pièces jointes",
+    "panelAdvertisement": "Annonce",
+    "pair": "Paire",
+    "merchantDirection": "Sens du commerçant",
+    "price": "Prix",
+    "paymentMethods": "Moyens de paiement",
+    "partyConnect": "Connectez le portefeuille partie à cet échange pour agir dessus.",
+    "partyConnectSub": "Ce qui est au-dessus est le registre public — montants, états et dates, sans nommer aucune partie. Qui participe à un échange n'est lisible que par les personnes qui y sont.",
+    "partyReadError": "Impossible de lire votre copie de cet échange",
+    "tryAgain": "Réessayer",
+    "partyNotAParty": "Le nœud a répondu, et ce portefeuille n'est pas partie à cet échange.",
+    "partyNotAPartySub": "C'est une réponse différente de « impossible de demander » : la lecture a réussi et a renvoyé vos échanges, et celui-ci n'en fait pas partie.",
+    "partySignPrompt": "Signez une fois pour charger votre propre copie de cet échange et agir dessus.",
+    "partySignPromptSub": "Le registre public ci-dessus ne nomme personne. De quel côté vous êtes, ce que vous pouvez signer et le canal de l'échange nécessitent le registre non caviardé, que le nœud ne remet qu'à une partie prouvant le portefeuille.",
+    "waitingWallet": "En attente de votre portefeuille…",
+    "loadMyCopy": "Charger ma copie de cet échange"
+  },
+  "attachments": {
+    "readError": "Impossible de lire les pièces jointes depuis votre nœud d'accès.",
+    "signerUnavailable": "Reconnectez votre portefeuille — le fournisseur de signature n'est pas disponible.",
+    "publishError": "Impossible de publier la pièce jointe.",
+    "noSettlement": "Des fichiers peuvent être joints une fois que l'échange a un règlement. Une pièce jointe nomme le règlement auquel elle appartient — c'est le registre que lit un arbitre.",
+    "reading": "Lecture des pièces jointes…",
+    "empty": "Rien n'est encore joint à cet échange.",
+    "imageAlt": "Preuve jointe",
+    "pdfPlaceholder": "PDF — ouvrir dans un nouvel onglet",
+    "noCaption": "Sans légende",
+    "publicWarning": "Tout ce que vous joignez est public et permanent. C'est stocké sur IPFS, et n'importe quelle passerelle le servira à quiconque détient la référence — qui circule dans les registres que chaque nœud conserve. Ne joignez jamais ici de détails de paiement ni de documents d'identité.",
+    "captionPlaceholder": "De quoi s'agit-il ? p. ex. reçu de virement bancaire",
+    "uploading": "Envoi et signature…",
+    "attachFile": "Joindre un fichier",
+    "fileHelp": "PNG, JPEG, WebP ou PDF, jusqu'à {mb} Mo. Votre portefeuille signe le registre ; seuls vous et votre contrepartie pouvez ajouter à cet échange, et une pièce jointe ne peut pas être retirée une fois publiée.",
+    "connectPrompt": "Connectez votre portefeuille pour joindre un fichier. Seuls l'acheteur et le vendeur d'un échange peuvent y ajouter, ce qui est vérifié par rapport au règlement plutôt que pris sur parole."
+  },
+  "tradeActions": {
+    "heading": "Ce que vous pouvez faire",
+    "cannotSign": "Cette connexion de portefeuille ne peut pas signer — reconnectez-la et réessayez.",
+    "notNumericIdNote": "L'id de cette réservation n'est pas un nombre, il n'adresse donc aucun compte de séquestre sur la chaîne — le programme de séquestre trouve un séquestre d'échange à une PDA dérivée de l'id comme <code>u64</code>. Rien ne peut être créé, lu ni libéré sur la chaîne pour elle. Les réservations passées par cette app le peuvent toujours.",
+    "factOnchainEscrow": "Séquestre sur la chaîne",
+    "factHeld": "Détenu",
+    "factApproved": "Commerçant a approuvé",
+    "factEscrowAccount": "Compte de séquestre",
+    "yes": "Oui",
+    "notYet": "Pas encore",
+    "vaultState": {
+      "Available": "Disponible",
+      "Reserved": "Réservé",
+      "AwaitingFiatSettlement": "En attente de règlement en fiat",
+      "Released": "Libéré",
+      "Cancelled": "Annulé",
+      "Frozen": "Gelé"
+    },
+    "escrowReading": "Lecture du séquestre depuis le cluster… Si cela ne se résout pas, le cluster n'a pas pu être joint — ce qui n'est pas la même chose que l'absence de séquestre.",
+    "escrowNone": "Aucun séquestre n'existe encore sur la chaîne pour cette réservation.",
+    "onChain": "Sur la chaîne",
+    "onChainTitle": "Déplace de la valeur sur Solana et coûte des frais de réseau",
+    "close": "Fermer",
+    "details": "Détails",
+    "action": {
+      "initiate": {
+        "label": "Ouvrir le règlement",
+        "detail": "Enregistre l'acheteur et le commerçant sur cette réservation et lance la fenêtre de paiement. Signé par vous, envoyé au nœud — rien ne bouge sur la chaîne."
+      },
+      "lock-escrow": {
+        "label": "Verrouiller le séquestre",
+        "detail": "Réserve le montant dans votre coffre de liquidité, ouvre le séquestre de l'échange et y déplace les jetons. Une seule transaction, pour qu'une réservation ne reste jamais marquée sur l'inventaire sans séquestre derrière."
+      },
+      "declare-paid": {
+        "label": "J'ai envoyé le paiement",
+        "detail": "Indique au commerçant que les fonds sont en route. Ne le faites qu'une fois que vous les avez réellement envoyés — la déclaration est signée par vous et permanente."
+      },
+      "approve": {
+        "label": "Confirmer la réception du paiement",
+        "detail": "Deux signatures : le nœud enregistre votre approbation, et le programme de séquestre marque l'échange approuvé pour que les jetons puissent être libérés."
+      },
+      "release": {
+        "label": "Libérer le séquestre",
+        "detail": "Paie l'acheteur et les quatre trésoreries de frais depuis le séquestre. N'importe qui peut le soumettre une fois que le commerçant a approuvé, et cela passe par le nœud pour que le réseau enregistre la confirmation."
+      },
+      "cancel-escrow": {
+        "label": "Rendre les jetons au coffre",
+        "detail": "Annule le séquestre sur la chaîne et remet les jetons du commerçant dans son coffre de liquidité. Possible uniquement avant la libération."
+      },
+      "cancel-reservation": {
+        "label": "Annuler cette réservation",
+        "detail": "Retire votre créance sur la liquidité du commerçant et la libère immédiatement, au lieu de la retenir le reste de la fenêtre de 30 minutes. Signé par vous, envoyé au nœud — rien ne bouge sur la chaîne, et vous seul pouvez annuler votre propre réservation."
+      },
+      "cancel-settlement": {
+        "label": "Annuler l'échange",
+        "detail": "Met fin au règlement sans rien dû de part et d'autre. Possible uniquement tant qu'aucun paiement n'a été déclaré — une fois que l'acheteur a dit avoir payé, aucun côté ne peut se retirer unilatéralement."
+      },
+      "reverse-payment": {
+        "label": "Je n'ai pas réellement payé",
+        "detail": "Retire votre déclaration et ramène l'échange en attente de paiement. Ne le faites que pour une déclaration faite par erreur : cela permet au commerçant d'annuler l'échange, donc un paiement qui a réellement quitté votre compte doit passer par un litige."
+      },
+      "reject-payment": {
+        "label": "Le paiement n'est jamais arrivé",
+        "detail": "Enregistre votre refus sans ouvrir de litige ni payer de frais de dossier. C'est votre affirmation, pas un jugement — un acheteur qui a réellement payé peut encore ouvrir un litige ensuite."
+      },
+      "dispute": {
+        "label": "Ouvrir un litige",
+        "detail": "Porte l'échange devant des arbitres. Les preuves des deux parties viennent du canal de l'échange, et les divulguer à un arbitre partage toute la conversation de façon permanente."
+      }
+    },
+    "waiting": {
+      "observer": "Vous n'êtes pas partie à cet échange, il n'y a donc rien ici à signer pour vous.",
+      "merchantNoSettlement": "Le preneur a réservé sur votre annonce mais n'a pas encore ouvert le règlement. Tant qu'il ne le fait pas, aucun registre ne vous nomme comme vendeur pour agir — et lui seul peut annuler sa propre réservation.",
+      "merchantEscrowUnknown": "Le cluster n'a pas pu être lu, on ne sait donc pas si le séquestre de cet échange existe déjà. Le verrouiller à nouveau échouerait sur un compte déjà présent — rechargez avant de signer quoi que ce soit.",
+      "merchantEscrowHeld": "Le séquestre détient vos jetons. L'acheteur n'a pas encore déclaré les fonds envoyés — c'est aussi la seule fenêtre pendant laquelle l'un ou l'autre peut encore se retirer.",
+      "buyerEscrowUnreadable": "Impossible de lire depuis le cluster si le commerçant a verrouillé les jetons. N'envoyez aucun argent tant que ce n'est pas possible.",
+      "buyerNotLocked": "Le commerçant n'a pas encore verrouillé les jetons en séquestre. N'envoyez aucun argent tant qu'il ne l'a pas fait — rien sur la chaîne ne soutient cet échange.",
+      "buyerAwaitingConfirm": "Le commerçant a été informé que le paiement est envoyé et ne l'a pas encore confirmé.",
+      "approvedNoEscrow": "Ce règlement est approuvé mais aucun séquestre n'a jamais été financé pour lui, il n'y a donc rien à libérer.",
+      "disputed": "Cet échange est entre les mains des arbitres. Le séquestre bouge sur leur décision, pas sur la signature de l'une ou l'autre partie."
+    },
+    "discrepancy": {
+      "IncorrectAmount": "Le montant était erroné",
+      "WrongReference": "La référence était erronée ou manquante",
+      "DuplicatePayment": "C'était un doublon d'un autre paiement",
+      "IncorrectAccount": "Il a été envoyé au mauvais compte",
+      "Other": "Autre chose — pas de faute de paiement"
+    },
+    "referenceLabel": "Référence de paiement (facultatif)",
+    "referencePlaceholder": "Ce que votre banque ou portefeuille a mis sur le virement",
+    "referenceHelp": "Ce que vous saisissez ici est stocké dans le règlement et lisible par le commerçant et par tout arbitre — c'est pourquoi il est retiré de la vue publique, alors limitez-vous à la référence elle-même.",
+    "disputeLabel": "Ce qui a mal tourné",
+    "rejectWhatWrong": "Ce qui n'allait pas",
+    "rejectDiscrepancyHelp": "C'est le champ que la réputation compte, alors choisissez celui qui s'applique réellement. Tout sauf « Autre chose » enregistre une faute d'exactitude de paiement contre l'acheteur.",
+    "rejectOwnWords": "Dans vos propres mots",
+    "rejectOwnWordsHelp": "Lu par l'acheteur et par tout arbitre auquel il fait remonter l'affaire. Rien ne l'analyse.",
+    "reverseWarning": "Uniquement si vous n'avez <b>pas</b> réellement envoyé l'argent. Retirer votre déclaration ramène l'échange en attente de paiement, ce qui permet au commerçant de l'annuler — donc si les fonds ont réellement quitté votre compte, cela lui donne une fenêtre pour annuler par-dessous. Dans ce cas, ouvrez plutôt un litige.",
+    "cancelSettlementWarning": "Met fin à l'échange sans rien dû de part et d'autre. Si l'autre côté a déjà envoyé les fonds mais ne les a pas encore déclarés, cela annule par-dessous son argent — le protocole ne voit pas un virement bancaire, seulement la déclaration. N'annulez pas un échange dont quelqu'un vous a dit qu'il le paie.",
+    "cancelReservationNote": "Libère la liquidité du commerçant immédiatement au lieu de la retenir le reste de la fenêtre de 30 minutes. Il n'y a rien à défaire ensuite — vous passeriez une nouvelle commande.",
+    "busyInitiate": "Ouverture du règlement",
+    "busyLock": "Verrouillage du séquestre",
+    "busyDeclare": "Enregistrement du paiement",
+    "busyApprove": "Approbation",
+    "busyRelease": "Libération",
+    "busyCancelEscrow": "Restitution des jetons",
+    "busyCancelReservation": "Annulation de la réservation",
+    "busyCancelSettlement": "Annulation de l'échange",
+    "busyReverse": "Retrait de la déclaration",
+    "busyReject": "Enregistrement du refus",
+    "busyDispute": "Ouverture du litige",
+    "busyPrompt": "{what}… approuvez la demande dans votre portefeuille.",
+    "errNotNumericId": "L'id de cette réservation n'est pas un nombre, il n'adresse donc aucun compte de séquestre. Les réservations passées par cette app le font ; une réservation d'un autre client peut ne pas le faire.",
+    "errNoAdMint": "L'annonce de cet échange n'a pas pu être lue, et c'est le seul registre du mint dans lequel le séquestre règle. Rien ne peut être construit sur la chaîne sans elle.",
+    "errNoAdMerchantKey": "L'annonce de cet échange n'a pas pu être lue, et le règlement doit y nommer la propre clé publique du commerçant.",
+    "errNoSettlementLock": "Il n'y a aucun règlement contre lequel verrouiller un séquestre.",
+    "errBuyerNoAddress": "L'id de pair de l'acheteur ne porte aucune adresse Solana, aucun séquestre ne peut donc le nommer.",
+    "errNoSettlementDeclare": "Il n'y a aucun règlement sur lequel déclarer un paiement.",
+    "errNoSettlementApprove": "Il n'y a aucun règlement à approuver.",
+    "errWalletBroadcasts": "Ce portefeuille ne peut pas signer une transaction sans aussi la diffuser. La libération doit atteindre Solana via le nœud pour que le réseau enregistre la confirmation, elle ne peut donc pas être effectuée depuis ce portefeuille.",
+    "errPartyNoAddressRelease": "L'id de pair d'une partie ne porte aucune adresse Solana, aucune libération ne peut donc être construite.",
+    "errNoSettlementRelease": "Il n'y a aucun règlement à libérer.",
+    "errNoEscrowCancel": "Il n'y a aucun séquestre à annuler.",
+    "errPartyNoAddressCancel": "L'id de pair d'une partie ne porte aucune adresse Solana, aucune annulation ne peut donc être construite.",
+    "errNoSettlementCancel": "Il n'y a aucun règlement à annuler.",
+    "errNoDeclaration": "Il n'y a aucune déclaration à retirer.",
+    "errNoSettlementReject": "Il n'y a aucun règlement à refuser.",
+    "errRejectEmpty": "Dites ce que vous avez trouvé ou non — l'acheteur et tout arbitre le lisent.",
+    "errNoSettlementDispute": "Il n'y a aucun règlement à contester.",
+    "errDisputeEmpty": "Dites ce qui a mal tourné — un arbitre le lit.",
+    "okInitiate": "Le règlement est ouvert. Le commerçant peut maintenant verrouiller les jetons en séquestre.",
+    "okLock": "Séquestre financé. Transaction {signature}.",
+    "okDeclare": "Le commerçant a été informé que le paiement est en route.",
+    "okApprove": "Approuvé, sur le nœud et sur la chaîne. Transaction {signature}. L'une ou l'autre partie peut maintenant libérer le séquestre.",
+    "okApproveNodeOnly": "Approuvé sur le nœud. L'approbation sur la chaîne n'a pas pu être construite : l'id de pair de l'acheteur ne porte aucune adresse Solana.",
+    "okRelease": "La libération est chez le nœud. Elle sera enregistrée sur cet échange une fois que le nœud l'aura vue confirmée par lui-même.",
+    "okReleaseUnwrap": "La libération est chez le nœud. Elle sera enregistrée sur cet échange une fois que le nœud l'aura vue confirmée par lui-même — le SOL enveloppé est déballé dans la même transaction, donc ce qui arrive est du SOL.",
+    "okCancelEscrow": "Les jetons sont de retour dans le coffre du commerçant. Transaction {signature}. Les registres hors chaîne sont distincts — annulez aussi l'échange, sinon le règlement reste ouvert sans séquestre derrière.",
+    "okCancelReservation": "La réservation est annulée et la liquidité du commerçant est de nouveau libre.",
+    "okCancelSettlement": "L'échange est annulé. Si des jetons sont encore verrouillés en séquestre, rendez-les aussi au coffre — les deux registres sont distincts.",
+    "okReverse": "Votre déclaration est retirée et l'échange est de nouveau en attente de paiement. Le commerçant peut maintenant l'annuler, alors envoyez l'argent et déclarez à nouveau, ou annulez vous-même.",
+    "okReject": "Enregistré. L'acheteur peut encore ouvrir un litige s'il pense avoir payé — refuser fait porter le coût de l'escalade à celui qui a tort, cela ne décide pas qui c'est.",
+    "okDispute": "Le litige {id} est ouvert. Les arbitres le rejoignent depuis le bureau d'arbitrage."
   }
 }
