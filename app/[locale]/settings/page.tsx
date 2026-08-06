@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { AvatarForm } from "@/components/account/avatar-form";
 import { MerchantNameForm } from "@/components/account/merchant-name-form";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Settings",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "settings" });
+  return { title: t("metaTitle") };
+}
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   return (
     <>
       {/*
@@ -24,8 +33,8 @@ export default function SettingsPage() {
        * a scrollbar; the title was simply gone.
        */}
       <PageHero
-        title="Settings"
-        description="Your merchant name and avatar are published to the network and signed by your wallet. Everything below them is a local preference stored in this browser."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
       {/*
        * One rhythm. The six panels here are peers — a merchant name is not a

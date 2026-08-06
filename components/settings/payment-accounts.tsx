@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   type SavedPaymentAccount,
   blankFields,
@@ -53,6 +54,7 @@ const labelCls = "block text-xs text-gray-500";
  * reach one, so the form says "could not load" and refuses to open instead.
  */
 export function PaymentAccounts() {
+  const t = useTranslations("settings");
   const reference = useReferenceData();
   const [accounts, setAccounts] = useState<SavedPaymentAccount[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -177,13 +179,10 @@ export function PaymentAccounts() {
     fields.every((f) => f.value.trim().length > 0);
 
   return (
-    <Panel title={`Payment accounts${accounts.length ? ` — ${accounts.length}` : ""}`}>
+    <Panel title={accounts.length ? t("paTitleCount", { count: accounts.length }) : t("paTitle")}>
       <div className="px-4 py-4">
         <p className="text-xs leading-relaxed text-gray-500">
-          The accounts you receive fiat into. Selling requires at least one: when
-          you take a sell order, you nominate which of these the buyer pays, and
-          they see each field separately so they can copy it without retyping.
-          Stored in this browser only.
+          {t("paIntro")}
         </p>
 
         {accounts.length > 0 && (
@@ -208,7 +207,7 @@ export function PaymentAccounts() {
                     </span>
                     {!isComplete(a) && (
                       <span className="rounded border border-amber-400/40 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-300">
-                        incomplete
+                        {t("incomplete")}
                       </span>
                     )}
                     <button
@@ -216,7 +215,7 @@ export function PaymentAccounts() {
                       onClick={() => setAccounts((prev) => prev.filter((x) => x.id !== a.id))}
                       className="ml-auto text-xs text-gray-500 hover:text-red-300"
                     >
-                      Remove
+                      {t("remove")}
                     </button>
                   </div>
                   <dl className="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2">
@@ -243,7 +242,7 @@ export function PaymentAccounts() {
                   usefully offer. */}
               <div>
                 <label className={labelCls} htmlFor="acct-country">
-                  Held in
+                  {t("heldIn")}
                 </label>
                 <CountrySelect
                   id="acct-country"
@@ -255,7 +254,7 @@ export function PaymentAccounts() {
               </div>
               <div>
                 <label className={labelCls} htmlFor="acct-method">
-                  Method
+                  {t("method")}
                 </label>
                 <select
                   id="acct-method"
@@ -266,10 +265,10 @@ export function PaymentAccounts() {
                 >
                   <option value="">
                     {catalogue.status === "loading"
-                      ? "Asking your node…"
+                      ? t("askingNode")
                       : catalogue.status === "error"
-                        ? "Could not load payment methods"
-                        : "Select a method"}
+                        ? t("couldNotLoadMethods")
+                        : t("selectMethod")}
                   </option>
                   {methods.map(({ method: m, group }) => (
                     <option key={m.id} value={m.id}>
@@ -277,7 +276,7 @@ export function PaymentAccounts() {
                           never as one the network carries — the client
                           contract's rule 3, in the one control that has no
                           room for a badge. */}
-                      {group === "merchant" ? "Your own — " : ""}
+                      {group === "merchant" ? t("yourOwn") : ""}
                       {group === "suggested" && countryCode ? "★ " : ""}
                       {m.name}
                     </option>
@@ -289,12 +288,12 @@ export function PaymentAccounts() {
                     onClick={catalogue.retry}
                     className="mt-1 text-[11px] text-brand underline hover:text-white"
                   >
-                    Try again
+                    {t("tryAgain")}
                   </button>
                 )}
                 {catalogue.status === "ready" && countryCode && (
                   <p className="mt-1 text-[11px] text-gray-600">
-                    ★ marks the rails your node associates with this country.
+                    {t("starHint")}
                   </p>
                 )}
               </div>
@@ -325,20 +324,18 @@ export function PaymentAccounts() {
                 disabled={!ready}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
               >
-                Save account
+                {t("saveAccount")}
               </button>
               <button
                 type="button"
                 onClick={() => setAdding(false)}
                 className="text-sm text-gray-500 hover:text-gray-300"
               >
-                Cancel
+                {t("cancel")}
               </button>
               {!ready && (
                 <span className="text-xs text-amber-300">
-                  {countryCode && methodId
-                    ? "Fill every field — a partial account cannot be paid into."
-                    : "Choose where the account is held, then which rail it is on."}
+                  {countryCode && methodId ? t("fillEvery") : t("chooseHeld")}
                 </span>
               )}
             </div>
@@ -348,15 +345,18 @@ export function PaymentAccounts() {
              carries is the node's answer, and "could not load" has to be
              distinguishable from "loaded, and empty". */
           <p className="mt-4 text-sm text-amber-300">
-            Couldn&apos;t ask your access node which payment methods and countries
-            the network supports ({reference.message}).{" "}
-            <button
-              type="button"
-              onClick={reference.retry}
-              className="underline hover:text-amber-200"
-            >
-              Try again
-            </button>
+            {t.rich("referenceError", {
+              message: reference.message,
+              retry: (chunks) => (
+                <button
+                  type="button"
+                  onClick={reference.retry}
+                  className="underline hover:text-amber-200"
+                >
+                  {chunks}
+                </button>
+              ),
+            })}
           </p>
         ) : (
           <button
@@ -365,9 +365,7 @@ export function PaymentAccounts() {
             disabled={reference.status !== "ready"}
             className="mt-4 rounded-md border border-white/15 px-4 py-2 text-sm text-gray-200 hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {reference.status === "ready"
-              ? "Add a payment account"
-              : "Asking your node which rails exist…"}
+            {reference.status === "ready" ? t("addAccount") : t("askingRails")}
           </button>
         )}
       </div>

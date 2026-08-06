@@ -2,10 +2,10 @@
 
 import bs58 from "bs58";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import {
-  CATEGORY_NOTE,
   NOTIFICATION_CATEGORIES,
   fetchSubscription,
   publishSubscription,
@@ -40,6 +40,7 @@ import {
  * flip a switch and expect an email.
  */
 export function NotificationSubscription() {
+  const t = useTranslations("settings");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [enabled, setEnabled] = useState<NotificationCategory[] | null>(null);
   const [unknown, setUnknown] = useState<string[]>([]);
@@ -72,11 +73,11 @@ export function NotificationSubscription() {
       setEnabled(null);
       setLoadError(
         err instanceof Error
-          ? `Couldn't read your subscription: ${err.message}`
-          : "Couldn't read your subscription from your access node.",
+          ? t("readError", { message: err.message })
+          : t("readErrorGeneric"),
       );
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!wallet) {
@@ -103,7 +104,7 @@ export function NotificationSubscription() {
     if (!provider) {
       setStatus({
         kind: "error",
-        message: "Reconnect your wallet — the signing provider is not available.",
+        message: t("signerUnavailable"),
       });
       return;
     }
@@ -115,35 +116,31 @@ export function NotificationSubscription() {
     } catch (err) {
       setStatus({
         kind: "error",
-        message: err instanceof Error ? err.message : "Could not publish the subscription.",
+        message: err instanceof Error ? err.message : t("publishError"),
       });
     }
   }
 
   if (!wallet) {
     return (
-      <Panel title="Notifications (OFS-6000)">
+      <Panel title={t("notifTitle")}>
         <p className="px-4 py-10 text-center text-sm leading-relaxed text-gray-500">
-          Connect a wallet. A subscription is an event your key signs and every
-          node replicates — not a setting stored in this browser — so there is
-          nothing to show or change without one.
+          {t("notifConnect")}
         </p>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Notifications (OFS-6000)">
+    <Panel title={t("notifTitle")}>
       {loadError && <p className="px-4 pt-4 text-xs text-amber-300">{loadError}</p>}
       {enabled === null ? (
-        !loadError && <p className="px-4 py-10 text-center text-sm text-gray-500">Reading…</p>
+        !loadError && <p className="px-4 py-10 text-center text-sm text-gray-500">{t("reading")}</p>
       ) : (
         <>
           {!published && (
             <p className="border-b border-white/5 px-4 py-3 text-xs leading-relaxed text-gray-500">
-              This wallet has never published a subscription. That is not the
-              same as having turned everything off — it has made no statement
-              at all.
+              {t("neverPublished")}
             </p>
           )}
           <ol className="divide-y divide-white/5">
@@ -153,13 +150,13 @@ export function NotificationSubscription() {
                 className="flex items-center justify-between gap-4 px-4 py-4"
               >
                 <div>
-                  <p className="text-sm text-gray-200">{category}</p>
-                  <p className="max-w-md text-xs text-gray-500">{CATEGORY_NOTE[category]}</p>
+                  <p className="text-sm text-gray-200">{t(`category.${category}`)}</p>
+                  <p className="max-w-md text-xs text-gray-500">{t(`categoryNote.${category}`)}</p>
                 </div>
                 <button
                   role="switch"
                   aria-checked={enabled.includes(category)}
-                  aria-label={category}
+                  aria-label={t(`category.${category}`)}
                   onClick={() => toggle(category)}
                   className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                     enabled.includes(category) ? "bg-brand" : "bg-white/15"
@@ -180,13 +177,13 @@ export function NotificationSubscription() {
               disabled={status.kind === "busy"}
               className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {status.kind === "busy" ? "Confirm in wallet…" : "Sign and publish"}
+              {status.kind === "busy" ? t("confirmInWallet") : t("signPublish")}
             </button>
             {status.kind === "error" && (
               <p className="text-xs text-red-300">{status.message}</p>
             )}
             {status.kind === "done" && (
-              <p className="text-xs text-emerald-300">Subscription published.</p>
+              <p className="text-xs text-emerald-300">{t("published")}</p>
             )}
             {/*
               * The gap between "enabled" and "delivered", stated rather than
@@ -196,8 +193,8 @@ export function NotificationSubscription() {
               */}
             <p className="max-w-2xl text-xs leading-relaxed text-gray-500">
               {destinations === 0
-                ? "No delivery destination is attached to this subscription, so nothing is actually sent anywhere. Enabling a category records what you want; delivery needs an address sealed to a registered notification gateway, which this app cannot yet create."
-                : `${destinations} delivery destination${destinations === 1 ? "" : "s"} attached.`}
+                ? t("noDestination")
+                : t("destinationsAttached", { count: destinations })}
             </p>
           </div>
         </>

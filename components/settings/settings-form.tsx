@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Panel } from "@/components/panel";
 import { NotificationSubscription } from "@/components/settings/notification-subscription";
 import { PaymentAccounts } from "@/components/settings/payment-accounts";
@@ -18,6 +19,7 @@ import { preferredCurrency, writePreferredCurrency } from "@/lib/market-preferen
  */
 
 export function SettingsForm() {
+  const t = useTranslations("settings");
   /*
    * Empty until mount. The preference lives in localStorage, which cannot be
    * read during a server render, so seeding this with a currency here would
@@ -44,15 +46,13 @@ export function SettingsForm() {
           sell without an account to receive into. */}
       <PaymentAccounts />
 
-      <Panel title="Preferences">
+      <Panel title={t("preferences")}>
         <ol className="divide-y divide-white/5">
           <li className="flex items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-sm text-gray-200">Default market</p>
+              <p className="text-sm text-gray-200">{t("defaultMarket")}</p>
               <p className="text-xs text-gray-500">
-                {fiat
-                  ? "The currency the exchange opens on, in this browser."
-                  : "No market chosen yet — the exchange opens on whichever you last browsed."}
+                {fiat ? t("defaultMarketChosen") : t("defaultMarketNone")}
               </p>
             </div>
             <CurrencyCombobox value={fiat} onChange={chooseFiat} />
@@ -84,10 +84,10 @@ export function SettingsForm() {
            */}
           <li className="flex items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-sm text-gray-200">Theme</p>
-              <p className="text-xs text-gray-500">Dark only for now — light mode is on the roadmap</p>
+              <p className="text-sm text-gray-200">{t("theme")}</p>
+              <p className="text-xs text-gray-500">{t("themeNote")}</p>
             </div>
-            <span className="text-sm text-gray-500">Dark</span>
+            <span className="text-sm text-gray-500">{t("dark")}</span>
           </li>
         </ol>
       </Panel>
