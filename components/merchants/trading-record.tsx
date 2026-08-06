@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { fetchReputationForPeerId, type LiveReputation } from "@/lib/live-reputation";
 
@@ -21,6 +22,7 @@ import { fetchReputationForPeerId, type LiveReputation } from "@/lib/live-reputa
  * that correctly refused to score anything.
  */
 export function TradingRecord({ peerId }: { peerId: string }) {
+  const t = useTranslations("merchants");
   const [data, setData] = useState<LiveReputation | null>(null);
   const [error, setError] = useState(false);
 
@@ -40,55 +42,53 @@ export function TradingRecord({ peerId }: { peerId: string }) {
   return (
     <div>
       <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-        Trading record
+        {t("recTitle")}
       </h3>
       {error ? (
         <p className="mt-3 text-xs text-amber-300">
-          Your access node did not answer for this wallet.
+          {t("recNodeError")}
         </p>
       ) : !data ? (
-        <p className="mt-3 text-xs text-gray-500">Reading…</p>
+        <p className="mt-3 text-xs text-gray-500">{t("recReading")}</p>
       ) : data.empty ? (
         <p className="mt-3 text-xs leading-relaxed text-gray-500">
-          This node has no settlements, disputes or payments involving this
-          wallet. It has advertised but not yet traded — or has traded only
-          through peers this node has not replicated from.
+          {t("recEmpty")}
         </p>
       ) : (
         <dl className="mt-3 divide-y divide-white/5 text-xs">
-          <Fact label="Trades started" value={String(data.tradesStarted)} />
-          <Fact label="Completed" value={String(data.tradesCompleted)} />
+          <Fact label={t("recTradesStarted")} value={String(data.tradesStarted)} />
+          <Fact label={t("recCompleted")} value={String(data.tradesCompleted)} />
           <Fact
-            label="Completion rate"
+            label={t("recCompletionRate")}
             value={data.completionRate === null ? "—" : percent(data.completionRate)}
-            hint="Completed settlements ÷ started settlements (OFS-3000 §8). Not a rating."
+            hint={t("recCompletionHint")}
           />
-          <Fact label="Cancelled" value={String(data.tradesCancelled)} />
+          <Fact label={t("recCancelled")} value={String(data.tradesCancelled)} />
           <Fact
-            label="Disputes"
-            value={`${data.disputesInvolved} involved · ${data.disputesLost} lost`}
-          />
-          <Fact
-            label="Answered payment claims"
-            value={data.responseRate === null ? "Never asked" : percent(data.responseRate)}
-            hint="How often this wallet, as merchant, approved or rejected a buyer's payment declaration at all (OFS-3000 §13)."
+            label={t("recDisputes")}
+            value={t("recDisputesValue", { involved: data.disputesInvolved, lost: data.disputesLost })}
           />
           <Fact
-            label="Mean time to answer"
+            label={t("recAnsweredClaims")}
+            value={data.responseRate === null ? t("recNeverAsked") : percent(data.responseRate)}
+            hint={t("recAnsweredHint")}
+          />
+          <Fact
+            label={t("recMeanAnswer")}
             value={data.meanResponseMs === null ? "—" : duration(data.meanResponseMs)}
-            hint="Measured between two signed events: the buyer declaring payment and the merchant ruling on it. Not an advertised turnaround."
+            hint={t("recMeanAnswerHint")}
           />
           <Fact
-            label="Mean settlement"
+            label={t("recMeanSettlement")}
             value={data.medianSettlementMs === null ? "—" : duration(data.medianSettlementMs)}
           />
           <Fact
-            label="Missed reservations"
+            label={t("recMissedReservations")}
             value={String(data.reservationsMissed)}
-            hint="Reservations this wallet requested and let expire."
+            hint={t("recMissedHint")}
           />
           <Fact
-            label="First traded"
+            label={t("recFirstTraded")}
             value={
               data.firstActiveAt === null
                 ? "—"
@@ -98,9 +98,7 @@ export function TradingRecord({ peerId }: { peerId: string }) {
         </dl>
       )}
       <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
-        Computed by your access node from settlements, disputes and reservations
-        it has replicated — nothing here is asserted by the merchant. A node
-        that has seen less of the network will report less.
+        {t("recFooter")}
       </p>
     </div>
   );

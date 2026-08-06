@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
 import { MerchantsDirectory } from "@/components/merchants/merchants-directory";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Merchants",
-  description:
-    "Everyone advertising a trade on OpenFiat, read from the advertisement book (OFS-2100) your access node holds — the pairs they quote, the payment rails they take, and the trading record the protocol computes for them.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "merchants" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 /**
  * The merchant directory.
@@ -22,12 +28,13 @@ export const metadata: Metadata = {
  * a node will enumerate and this protocol is willing to make public.
  */
 export default function MerchantsPage() {
+  const t = useTranslations("merchants");
   return (
     <section>
       <PageHero
         variant="globe"
-        title="Merchants"
-        description="Every wallet currently advertising a trade, as your access node's advertisement book reports it. There is no merchant register in this protocol and no application to be listed — publishing an advertisement is what puts a wallet here, and withdrawing every advertisement is what removes it."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
 
       <div className="mt-10">

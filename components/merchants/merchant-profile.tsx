@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { AssetLabel, TradeLimits } from "@/components/asset-label";
@@ -81,6 +82,7 @@ const EMPTY: ProfileState = {
 };
 
 export function MerchantProfile({ peerId }: { peerId: string }) {
+  const t = useTranslations("merchants");
   const [state, setState] = useState<ProfileState>(EMPTY);
   // The Ed25519 key inside the PeerId — extracted, never looked up. `null`
   // for a peer that is not an Ed25519 identity key, which has no Solana
@@ -123,7 +125,7 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
           setState({
             ...EMPTY,
             loading: false,
-            error: `Could not read this wallet's advertisements from ${selection.label}.`,
+            error: t("profileReadError", { label: selection.label }),
           });
         }
       }
@@ -135,7 +137,7 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
       cancelled = true;
       window.removeEventListener(NODE_CHANGED_EVENT, load);
     };
-  }, [peerId, address]);
+  }, [peerId, address, t]);
 
   const { ads, reviews, name, avatarUrl, loading, error } = state;
   const live = ads.filter((ad) => ad.status !== "Deleted");
@@ -146,11 +148,11 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
   return (
     <section>
       <Link href="/merchants" className="text-sm text-gray-500 hover:text-white">
-        ← All merchants
+        {t("allMerchants")}
       </Link>
 
       <div className="mt-6 flex flex-wrap items-center gap-5">
-        <WalletAvatar seed={peerId} src={avatarUrl} label={name ?? `Merchant …${short}`} size={56} />
+        <WalletAvatar seed={peerId} src={avatarUrl} label={name ?? t("merchantLabel", { short })} size={56} />
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-white">
             {name ?? <span className="font-mono">…{short}</span>}
@@ -161,18 +163,18 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
                — OFS-5000 §6/§8 — so a name shown without its source reads
                as a registration this network does not have. */
             <p className="mt-1 text-xs text-gray-500">
-              A name this wallet published about itself (MerchantName claim). Nothing verifies it.
+              {t("nameSelfPublished")}
             </p>
           )}
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
-              <span className="text-gray-600">PeerId</span>
+              <span className="text-gray-600">{t("peerIdLabel")}</span>
               <span className="font-mono text-gray-400">…{short}</span>
               <CopyButton value={peerId} />
             </span>
             {address && (
               <span className="flex items-center gap-1.5">
-                <span className="text-gray-600">Wallet</span>
+                <span className="text-gray-600">{t("walletLabel")}</span>
                 <Link
                   href={`/explorer/address/${address}`}
                   className="font-mono text-gray-400 hover:text-white"
@@ -191,21 +193,21 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
       <div className="mt-8">
         <MetricStrip
           items={[
-            { label: "Advertisements", value: loading ? "…" : String(live.length) },
-            { label: "Currently active", value: loading ? "…" : String(active.length) },
+            { label: t("metricAds"), value: loading ? "…" : String(live.length) },
+            { label: t("metricActive"), value: loading ? "…" : String(active.length) },
             {
-              label: "Pairs",
+              label: t("metricPairsLabel"),
               value: loading
                 ? "…"
                 : String(new Set(live.map((ad) => `${assetLabel(ad)}/${ad.fiatCurrency}`)).size),
             },
             {
-              label: "Reviews",
+              label: t("metricReviews"),
               value: loading ? "…" : String(reviews.length),
-              sub: stars === null ? "none on this node" : `${stars.toFixed(1)} of 5 average`,
+              sub: stars === null ? t("noneOnNode") : t("starsAverage", { stars: stars.toFixed(1) }),
             },
             {
-              label: "First advertised",
+              label: t("metricFirstAdvertised"),
               value: loading || live.length === 0
                 ? "—"
                 : formatDateShortMs(Math.min(...live.map((ad) => ad.createdAt))),
@@ -217,20 +219,20 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-            Advertisements
+            {t("advertisements")}
           </h2>
           <div className="mt-3">
             <DataTable
               minWidth={860}
               head={
                 <tr>
-                  <Th>Direction</Th>
-                  <Th>Pair</Th>
-                  <Th right>Price</Th>
-                  <Th right>Limits</Th>
-                  <Th right>Liquidity</Th>
-                  <Th>Payment</Th>
-                  <Th right>Status</Th>
+                  <Th>{t("colDirection")}</Th>
+                  <Th>{t("colPair")}</Th>
+                  <Th right>{t("colPrice")}</Th>
+                  <Th right>{t("colLimits")}</Th>
+                  <Th right>{t("colLiquidity")}</Th>
+                  <Th>{t("colPayment")}</Th>
+                  <Th right>{t("colStatus")}</Th>
                 </tr>
               }
             >
@@ -241,10 +243,10 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
                     {loading
-                      ? "Reading the book…"
+                      ? t("readingBook")
                       : error
-                        ? "Nothing to show — the book could not be read."
-                        : "This wallet has no advertisements on this node. It may have deleted them, or this node may not have replicated them."}
+                        ? t("nothingToShow")
+                        : t("profileNoAds")}
                   </td>
                 </tr>
               )}
@@ -252,7 +254,7 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
           </div>
 
           <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-            What counterparties said
+            {t("whatCounterpartiesSaid")}
           </h2>
           <Reviews reviews={reviews} loading={loading} />
         </div>
@@ -270,34 +272,32 @@ export function MerchantProfile({ peerId }: { peerId: string }) {
 }
 
 function AdRow({ ad }: { ad: LiveAd }) {
+  const t = useTranslations("merchants");
+  const L = useTranslations("lifecycle");
+  const A = useTranslations("ads");
   return (
     <Tr>
       <Td className={ad.direction === "Sell" ? "text-emerald-400" : "text-orange-400"}>
-        {ad.direction}
+        {L(ad.direction)}
       </Td>
       <Td className="text-gray-300">
         <AssetLabel ad={ad} />/{ad.fiatCurrency}
       </Td>
       <Td right num className="text-gray-200">
-        {/* `null` means the NODE could not resolve a price and said why —
-            three distinct reasons that must not be collapsed into one
-            message. The premium still shows, so the merchant's terms stay
-            legible with no number attached. */}
+        {/* `null` means the NODE could not resolve a price and said why. */}
         {ad.price === null ? (
           <span className="text-xs text-gray-500">
             {ad.pricingKind === "Floating"
               ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
-              : "Unpriced"}
+              : t("unpriced")}
           </span>
         ) : (
           <>
             {formatNumber(ad.price)}
             <span className="block text-[11px] text-gray-600">
               {ad.pricingKind === "Floating"
-                ? `Floating ${ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : ""}${
-                    ad.premiumBps !== null ? ad.premiumBps / 100 : 0
-                  }%`
-                : "Fixed"}
+                ? A("floating", { sign: ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : "", pct: ad.premiumBps !== null ? ad.premiumBps / 100 : 0 })
+                : A("fixed")}
             </span>
           </>
         )}
@@ -310,7 +310,7 @@ function AdRow({ ad }: { ad: LiveAd }) {
       </Td>
       <Td className="text-xs text-gray-400">
         {ad.paymentMethods.length === 0 ? (
-          <span className="text-gray-600">None named</span>
+          <span className="text-gray-600">{t("noneNamed")}</span>
         ) : (
           <span className="flex flex-col gap-1">
             {ad.paymentMethodLabels.map((method) => (
@@ -327,10 +327,10 @@ function AdRow({ ad }: { ad: LiveAd }) {
             href={`/orders/new?ad=${ad.id}`}
             className="inline-block whitespace-nowrap rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-hover"
           >
-            Trade
+            {t("tradeBtn")}
           </Link>
         ) : (
-          <span className="text-xs text-gray-500">{ad.status}</span>
+          <span className="text-xs text-gray-500">{A(`status.${ad.status}`)}</span>
         )}
       </Td>
     </Tr>
@@ -347,14 +347,13 @@ function AdRow({ ad }: { ad: LiveAd }) {
  * every one of its invented reviews.
  */
 function Reviews({ reviews, loading }: { reviews: LiveReview[]; loading: boolean }) {
-  if (loading) return <p className="mt-3 text-sm text-gray-500">Reading…</p>;
+  const t = useTranslations("merchants");
+  if (loading) return <p className="mt-3 text-sm text-gray-500">{t("recReading")}</p>;
 
   if (reviews.length === 0) {
     return (
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-        No reviews of this wallet on this node. Only a party to a settled trade
-        may publish one, once per trade — and reviews are gossiped, so a node
-        that has replicated less of the network reports fewer of them.
+        {t("noReviews")}
       </p>
     );
   }
@@ -380,13 +379,7 @@ function Reviews({ reviews, loading }: { reviews: LiveReview[]; loading: boolean
         ))}
       </ul>
       <p className="mt-3 max-w-2xl text-xs leading-relaxed text-gray-600">
-        Signed by somebody who really settled a trade with this wallet, and
-        nothing more than that. The author and the trade are deliberately not
-        published — both parties may review the same trade, so either would
-        rebuild the counterparty graph the protocol withholds. The date is the
-        day, not the moment, for the same reason. This is opinion; the trading
-        record beside it is computed from signed events and cannot be talked up
-        or down.
+        {t("reviewsFooter")}
       </p>
     </>
   );

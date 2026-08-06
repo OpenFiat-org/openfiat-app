@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -55,6 +56,7 @@ interface DirectoryState {
 }
 
 export function MerchantsDirectory() {
+  const t = useTranslations("merchants");
   const [state, setState] = useState<DirectoryState>({
     rows: [],
     loading: true,
@@ -77,7 +79,7 @@ export function MerchantsDirectory() {
           setState({
             rows: [],
             loading: false,
-            error: `Could not read the advertisement book from ${selection.label}.`,
+            error: t("readError", { label: selection.label }),
           });
         }
       }
@@ -89,7 +91,7 @@ export function MerchantsDirectory() {
       cancelled = true;
       window.removeEventListener(NODE_CHANGED_EVENT, load);
     };
-  }, []);
+  }, [t]);
 
   const { rows, loading, error } = state;
   const currencies = [
@@ -106,25 +108,25 @@ export function MerchantsDirectory() {
     <div>
       <MetricStrip
         items={[
-          { label: "Merchants", value: loading ? "…" : String(rows.length) },
+          { label: t("metricMerchants"), value: loading ? "…" : String(rows.length) },
           {
-            label: "Currently advertising",
+            label: t("metricAdvertising"),
             value: loading
               ? "…"
               : String(rows.filter((r) => r.offering === "Advertising").length),
           },
           {
-            label: "Paused",
+            label: t("metricPaused"),
             value: loading
               ? "…"
               : String(rows.filter((r) => r.offering === "On vacation").length),
           },
           {
-            label: "Currencies",
+            label: t("metricCurrencies"),
             value: loading ? "…" : String(currencies.length),
           },
           {
-            label: "Advertisements",
+            label: t("metricAds"),
             value: loading
               ? "…"
               : String(rows.reduce((sum, r) => sum + r.ads.length, 0)),
@@ -155,7 +157,7 @@ export function MerchantsDirectory() {
             <span
               className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`}
             />
-            {loading ? "Reading the book…" : "Live from your access node"}
+            {loading ? t("readingBook") : t("liveFromNode")}
           </span>
         )}
       </div>
@@ -165,12 +167,12 @@ export function MerchantsDirectory() {
           minWidth={940}
           head={
             <tr>
-              <Th>Merchant</Th>
-              <Th>Offering</Th>
-              <Th>Pairs</Th>
-              <Th>Payment methods</Th>
-              <Th right>Ads</Th>
-              <Th right>Advertising since</Th>
+              <Th>{t("colMerchant")}</Th>
+              <Th>{t("colOffering")}</Th>
+              <Th>{t("colPairs")}</Th>
+              <Th>{t("colPaymentMethods")}</Th>
+              <Th right>{t("colAds")}</Th>
+              <Th right>{t("colSince")}</Th>
             </tr>
           }
         >
@@ -189,12 +191,12 @@ export function MerchantsDirectory() {
                 className="px-4 py-10 text-center text-sm text-gray-500"
               >
                 {loading
-                  ? "Reading the book…"
+                  ? t("readingBook")
                   : error
-                    ? "Nothing to show — the book could not be read."
+                    ? t("nothingToShow")
                     : /* An empty book and an empty directory are the same
                          fact, and saying so is more useful than "no results". */
-                      "No wallet has published an advertisement to this node yet."}
+                      t("emptyBook")}
               </td>
             </tr>
           )}
@@ -202,12 +204,7 @@ export function MerchantsDirectory() {
       </div>
 
       <p className="mt-4 max-w-3xl text-xs leading-relaxed text-gray-500">
-        A merchant is a wallet that has published an advertisement. There is no
-        merchant register in the protocol, so this list is everyone currently
-        offering a trade — including those who have paused — and a wallet that
-        deletes its last advertisement leaves it. Names and pictures appear only
-        where the wallet published them as identity claims; the rest are drawn
-        from the key itself.
+        {t("footerNote")}
       </p>
     </div>
   );
@@ -227,6 +224,7 @@ function MerchantRows({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("merchants");
   return (
     <>
       <Tr>
@@ -243,7 +241,7 @@ function MerchantRows({
                 book uses, so one merchant is the same robot on every screen. */}
             <WalletAvatar
               seed={row.peerId}
-              label={`Merchant …${row.short}`}
+              label={t("merchantLabel", { short: row.short })}
               size={32}
             />
             <span>
@@ -251,7 +249,7 @@ function MerchantRows({
                 …{row.short}
               </span>
               <span className="block text-xs text-gray-600">
-                {open ? "Hide" : "Trading record and ads"}
+                {open ? t("hide") : t("tradingRecordAndAds")}
               </span>
             </span>
           </button>
@@ -261,7 +259,7 @@ function MerchantRows({
             href={`/merchants/${row.peerId}`}
             className="mt-1 inline-block pl-[2.625rem] text-xs text-brand hover:text-brand-hover"
           >
-            Full profile →
+            {t("fullProfile")}
           </Link>
         </Td>
         <Td py="py-5">
@@ -286,7 +284,7 @@ function MerchantRows({
           <span className="line-clamp-2 text-xs text-gray-400">
             {row.paymentMethods.length > 0
               ? row.paymentMethods.join(" · ")
-              : "None named"}
+              : t("noneNamed")}
           </span>
         </Td>
         <Td py="py-5" right num className="text-gray-300">
@@ -295,7 +293,7 @@ function MerchantRows({
         <Td py="py-5" right className="text-xs text-gray-400">
           {new Date(row.firstAdvertisedAt).toLocaleDateString()}
           <span className="block text-[11px] text-gray-600">
-            last change {sinceLabel(row.lastUpdatedAt)}
+            {t("lastChange", { since: sinceLabel(row.lastUpdatedAt) })}
           </span>
         </Td>
       </Tr>
@@ -318,6 +316,8 @@ function MerchantRows({
  * `AdvertisementStatus` values elsewhere.
  */
 function OfferingPill({ offering }: { offering: MerchantOffering }) {
+  const t = useTranslations("merchants");
+  const key = offering === "Advertising" ? "advertising" : offering === "On vacation" ? "onVacation" : "disabled";
   const tone =
     offering === "Advertising"
       ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
@@ -326,27 +326,22 @@ function OfferingPill({ offering }: { offering: MerchantOffering }) {
         : "border-amber-400/30 bg-amber-400/10 text-amber-300";
   return (
     <span
-      title={
-        offering === "Advertising"
-          ? "At least one advertisement is Active."
-          : offering === "On vacation"
-            ? "Every advertisement is in Vacation — a pause the merchant set themselves (OFS-2100 §16)."
-            : "Every advertisement is Disabled: manually turned off, or automatically because liquidity hit zero (OFS-2100 §18)."
-      }
+      title={t(`offeringTitle.${key}`)}
       className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${tone}`}
     >
-      {offering}
+      {t(`offering.${key}`)}
     </span>
   );
 }
 
 function MerchantDetail({ row }: { row: MerchantRow }) {
+  const t = useTranslations("merchants");
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
       <TradingRecord peerId={row.peerId} />
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Advertisements
+          {t("advertisements")}
         </h3>
         <ul className="mt-3 space-y-2">
           {row.ads.map((ad) => (
@@ -359,6 +354,9 @@ function MerchantDetail({ row }: { row: MerchantRow }) {
 }
 
 function AdLine({ ad }: { ad: LiveAd }) {
+  const t = useTranslations("merchants");
+  const L = useTranslations("lifecycle");
+  const A = useTranslations("ads");
   return (
     <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-md border border-white/10 px-3 py-2 text-xs">
       <span
@@ -366,46 +364,40 @@ function AdLine({ ad }: { ad: LiveAd }) {
           ad.direction === "Sell" ? "text-emerald-400" : "text-orange-400"
         }
       >
-        {ad.direction}
+        {L(ad.direction)}
       </span>
       <span className="text-gray-300">
         <AssetLabel ad={ad} />/{ad.fiatCurrency}
       </span>
       <span className="font-mono tabular-nums text-gray-200">
         {/* A price of null means the NODE could not resolve one, and it
-            says why. This used to read "no oracle price" for every case,
-            which described the app failing to read the node's quote rather
-            than anything about the advertisement. The premium still shows,
-            so the terms stay legible with no number attached. */}
+            says why. */}
         {ad.price === null
           ? ad.pricingKind === "Floating"
-            ? `Floating ${ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : ""}${
-                ad.premiumBps !== null ? ad.premiumBps / 100 : 0
-              }% — ${unpriceableLabel(ad.unpriceableReason ?? "NoOracleData").toLowerCase()}`
-            : "Unpriced"
+            ? `${A("floating", { sign: ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : "", pct: ad.premiumBps !== null ? ad.premiumBps / 100 : 0 })} — ${unpriceableLabel(ad.unpriceableReason ?? "NoOracleData").toLowerCase()}`
+            : t("unpriced")
           : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
       </span>
       {/* This screen already had the denomination right; what it had wrong
-          was the precision. Rounded to whole units, a 0.5 SOL minimum read
-          as "1" — a band the merchant never offered. */}
+          was the precision. */}
       <span className="text-gray-500">
         <TradeLimits ad={ad} />
       </span>
       <span className="inline-flex items-baseline gap-1.5 text-gray-500">
-        {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} /> free
+        {formatNumber(ad.availableLiquidity)} <AssetLabel ad={ad} /> {t("freeWord")}
       </span>
       <span className="ml-auto flex items-center gap-3">
         <span
           className={ad.status === "Active" ? "text-gray-400" : "text-gray-600"}
         >
-          {ad.status}
+          {A(`status.${ad.status}`)}
         </span>
         {ad.status === "Active" && (
           <Link
             href={`/orders/new?ad=${ad.id}`}
             className="text-brand-hover hover:underline"
           >
-            Trade →
+            {t("trade")}
           </Link>
         )}
       </span>

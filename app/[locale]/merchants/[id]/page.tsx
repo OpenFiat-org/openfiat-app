@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { MerchantProfile } from "@/components/merchants/merchant-profile";
 
 interface Params {
+  locale: string;
   id: string;
 }
 
@@ -32,11 +34,11 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { locale, id } = await params;
+  const t = await getTranslations({ locale, namespace: "merchants" });
   return {
-    title: `Merchant …${id.slice(-6)}`,
-    description:
-      "A wallet advertising on OpenFiat: the advertisements it has published, what counterparties said about it, and the trading record your access node computes for it.",
+    title: t("profileMetaTitle", { short: id.slice(-6) }),
+    description: t("profileMetaDescription"),
     // Not indexed. Which wallets are merchants is a live answer from a node,
     // and a crawler has none — it would index whoever happened to be
     // advertising when it called, under a URL that may later describe nobody.
