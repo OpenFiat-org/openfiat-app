@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import bs58 from "bs58";
 
 import {
@@ -41,6 +42,7 @@ import {
  * rather than offering a picker whose upload would have nowhere to go.
  */
 export function TradeAttachments({ settlementId }: { settlementId: string | null }) {
+  const t = useTranslations("attachments");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [items, setItems] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,11 +64,11 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
     try {
       setItems(await fetchAttachments(settlementId));
     } catch {
-      setError("Could not read attachments from your access node.");
+      setError(t("readError"));
     } finally {
       setLoading(false);
     }
-  }, [settlementId]);
+  }, [settlementId, t]);
 
   useEffect(() => {
     void refresh();
@@ -77,7 +79,7 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
     setError(null);
     const provider = currentSigner(wallet);
     if (!provider) {
-      setError("Reconnect your wallet — the signing provider is not available.");
+      setError(t("signerUnavailable"));
       return;
     }
     setBusy(true);
@@ -88,7 +90,7 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
       setCaption("");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not publish the attachment.");
+      setError(err instanceof Error ? err.message : t("publishError"));
     } finally {
       setBusy(false);
     }
@@ -97,8 +99,7 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
   if (!settlementId) {
     return (
       <p className="text-sm text-gray-500">
-        Files can be attached once the trade has a settlement. An attachment names the settlement it
-        belongs to — that is the record an arbitrator reads.
+        {t("noSettlement")}
       </p>
     );
   }
@@ -106,9 +107,9 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
   return (
     <div className="space-y-4">
       {loading && items.length === 0 ? (
-        <p className="text-sm text-gray-500">Reading attachments…</p>
+        <p className="text-sm text-gray-500">{t("reading")}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-500">Nothing attached to this trade yet.</p>
+        <p className="text-sm text-gray-500">{t("empty")}</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {items.map((item) => (
@@ -124,18 +125,18 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
                 {item.isImage ? (
                   <img
                     src={item.url}
-                    alt={item.caption || "Attached evidence"}
+                    alt={item.caption || t("imageAlt")}
                     className="h-32 w-full rounded object-cover"
                   />
                 ) : (
                   <div className="flex h-32 w-full items-center justify-center rounded bg-white/5 text-xs text-gray-400">
-                    PDF — open in a new tab
+                    {t("pdfPlaceholder")}
                   </div>
                 )}
               </a>
               {/* Rendered as text: a caption is a counterparty-supplied
                   string and must never become markup. */}
-              <p className="mt-2 truncate text-xs text-gray-300">{item.caption || "No caption"}</p>
+              <p className="mt-2 truncate text-xs text-gray-300">{item.caption || t("noCaption")}</p>
               <p className="mt-0.5 text-[11px] text-gray-600">
                 {new Date(item.createdAt).toLocaleString()} · {Math.round(item.sizeBytes / 1024)} KB
               </p>
@@ -147,9 +148,7 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
       {wallet ? (
         <div className="space-y-3 border-t border-white/10 pt-4">
           <p className="rounded-md border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200/90">
-            Anything you attach is public and permanent. It is stored on IPFS, and any gateway will
-            serve it to anyone holding the reference — which travels in records every node keeps.
-            Never attach payment details or identity documents here.
+            {t("publicWarning")}
           </p>
 
           <input
@@ -167,7 +166,7 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
             value={caption}
             maxLength={MAX_CAPTION}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder="What is this? e.g. bank transfer receipt"
+            placeholder={t("captionPlaceholder")}
             disabled={busy}
             className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
           />
@@ -180,19 +179,16 @@ export function TradeAttachments({ settlementId }: { settlementId: string | null
             disabled={!file || busy}
             className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {busy ? "Uploading and signing…" : "Attach file"}
+            {busy ? t("uploading") : t("attachFile")}
           </button>
 
           <p className="text-[11px] text-gray-600">
-            PNG, JPEG, WebP or PDF, up to {Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB. Your
-            wallet signs the record; only you and your counterparty can add to this trade, and an
-            attachment cannot be removed once published.
+            {t("fileHelp", { mb: Math.round(MAX_UPLOAD_BYTES / 1024 / 1024) })}
           </p>
         </div>
       ) : (
         <p className="border-t border-white/10 pt-4 text-sm text-gray-500">
-          Connect your wallet to attach a file. Only the buyer and the seller of a trade can add to
-          it, which is checked against the settlement rather than taken on trust.
+          {t("connectPrompt")}
         </p>
       )}
     </div>

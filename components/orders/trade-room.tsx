@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import {
   WALLET_CHANGED_EVENT,
@@ -100,6 +101,8 @@ export function TradeRoom({
   ad: LiveAd | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("tradeRoom");
+  const L = useTranslations("lifecycle");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [myPeerId, setMyPeerId] = useState<string | null>(null);
   const {
@@ -184,13 +187,13 @@ export function TradeRoom({
         <div className="rounded-md border border-white/10 px-5 py-5">
           <div className="flex flex-wrap items-center gap-4">
             <div>
-              <p className="text-xs text-gray-500">Status</p>
+              <p className="text-xs text-gray-500">{t("statusLabel")}</p>
               <p className="mt-0.5 text-lg font-semibold text-white">
-                {statusLabel}
+                {L(statusLabel.replace(/ /g, ""))}
               </p>
             </div>
             <div className="ml-auto">
-              <StatusPill status={statusLabel} />
+              <StatusPill status={statusLabel} label={L(statusLabel.replace(/ /g, ""))} />
             </div>
           </div>
 
@@ -202,7 +205,7 @@ export function TradeRoom({
                 counterpartyName={
                   parties
                     ? shortPeerId(iAmBuyer ? parties.seller : parties.buyer)
-                    : "the merchant"
+                    : t("theMerchant")
                 }
                 buy={buy}
                 terminal={terminal}
@@ -210,11 +213,10 @@ export function TradeRoom({
             </>
           ) : (
             <p className="mt-4 border-t border-white/5 pt-4 text-sm text-gray-400">
-              This reservation ended as{" "}
-              <span className="font-medium text-gray-200">
-                {reservation.state}
-              </span>{" "}
-              before escrow ever locked — no settlement exists for it.
+              {t.rich("reservationEnded", {
+                state: L(reservation.state),
+                strong: (chunks) => <span className="font-medium text-gray-200">{chunks}</span>,
+              })}
             </p>
           )}
         </div>
@@ -241,91 +243,91 @@ export function TradeRoom({
             href="/disputes"
             className="inline-block rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
           >
-            View disputes →
+            {t("viewDisputes")}
           </Link>
         )}
 
-        <Panel title="Reservation">
+        <Panel title={t("panelReservation")}>
           <div className="divide-y divide-white/5 px-4">
-            <Row label="Reservation ID" value={reservation.id} mono />
+            <Row label={t("reservationId")} value={reservation.id} mono />
             <Row
-              label="Advertisement"
+              label={t("advertisement")}
               value={reservation.advertisement_id}
               mono
               copy={reservation.advertisement_id}
             />
             {trade ? (
               <Row
-                label="Requester"
+                label={t("requester")}
                 value={label(trade.reservation.requester, iAmRequester)}
               />
             ) : (
               <Row
-                label="Requester"
+                label={t("requester")}
                 value={
                   <span className="text-gray-500">
-                    Not named in the public record
+                    {t("notNamed")}
                   </span>
                 }
               />
             )}
-            <Row label="Amount" value={amountLabel} />
-            <Row label="State" value={reservation.state} />
+            <Row label={t("amount")} value={amountLabel} />
+            <Row label={t("state")} value={L(reservation.state)} />
             <Row
-              label="Requested"
+              label={t("requested")}
               value={formatDateMs(reservation.requested_at)}
             />
-            <Row label="Updated" value={formatDateMs(reservation.updated_at)} />
-            <Row label="Expires" value={formatDateMs(reservation.expires_at)} />
+            <Row label={t("updated")} value={formatDateMs(reservation.updated_at)} />
+            <Row label={t("expires")} value={formatDateMs(reservation.expires_at)} />
           </div>
         </Panel>
 
         {settlement && (
-          <Panel title="Settlement">
+          <Panel title={t("panelSettlement")}>
             <div className="divide-y divide-white/5 px-4">
-              <Row label="Settlement ID" value={settlement.id} mono />
+              <Row label={t("settlementId")} value={settlement.id} mono />
               {parties && (
                 <>
-                  <Row label="Buyer" value={label(parties.buyer, iAmBuyer)} />
-                  <Row label="Seller" value={label(parties.seller, iAmSeller)} />
+                  <Row label={t("buyer")} value={label(parties.buyer, iAmBuyer)} />
+                  <Row label={t("seller")} value={label(parties.seller, iAmSeller)} />
                 </>
               )}
-              <Row label="State" value={settlement.state} />
+              <Row label={t("state")} value={L(settlement.state.replace(/ /g, ""))} />
               {parties?.payment_reference && (
                 <Row
-                  label="Payment reference"
+                  label={t("paymentReference")}
                   value={parties.payment_reference}
                 />
               )}
               {settlement.payment_submitted_at !== null && (
                 <Row
-                  label="Payment submitted"
+                  label={t("paymentSubmitted")}
                   value={formatDateMs(settlement.payment_submitted_at)}
                 />
               )}
               {settlement.merchant_responded_at !== null && (
                 <Row
-                  label="Merchant responded"
+                  label={t("merchantResponded")}
                   value={formatDateMs(settlement.merchant_responded_at)}
                 />
               )}
               {settlement.payment_discrepancy && (
                 <Row
-                  label="Discrepancy"
+                  label={t("discrepancy")}
                   value={settlement.payment_discrepancy}
                 />
               )}
               <Row
-                label="Created"
+                label={t("created")}
                 value={formatDateMs(settlement.created_at)}
               />
               <Row
-                label="Updated"
+                label={t("updated")}
                 value={formatDateMs(settlement.updated_at)}
               />
               <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
                 <span className="shrink-0 text-gray-500">
-                  Escrow release tx
+                  {t("escrowReleaseTx")}
                 </span>
                 {settlement.escrow_release_signature ? (
                   <span className="flex min-w-0 items-center gap-2 text-right text-gray-200">
@@ -336,7 +338,7 @@ export function TradeRoom({
                   </span>
                 ) : (
                   <span className="text-xs text-gray-500">
-                    Not yet confirmed on-chain
+                    {t("notYetConfirmed")}
                   </span>
                 )}
               </div>
@@ -347,7 +349,7 @@ export function TradeRoom({
 
       <div className="space-y-6">
         {settlement && (
-          <Panel title="Your review">
+          <Panel title={t("panelYourReview")}>
             <ReviewForm
               settlementId={settlement.id}
               counterparty={parties ? (iAmBuyer ? parties.seller : parties.buyer) : null}
@@ -369,7 +371,7 @@ export function TradeRoom({
         )}
 
         {parties && (
-          <Panel title="Trade channel">
+          <Panel title={t("panelTradeChannel")}>
             <TradeChannelPanel
               settlement={parties}
               adMethods={ad?.paymentMethods ?? []}
@@ -379,22 +381,22 @@ export function TradeRoom({
           </Panel>
         )}
 
-        <Panel title="Attachments">
+        <Panel title={t("panelAttachments")}>
           <div className="px-4 py-4">
             <TradeAttachments settlementId={settlement?.id ?? null} />
           </div>
         </Panel>
 
         {ad && (
-          <Panel title="Advertisement">
+          <Panel title={t("panelAdvertisement")}>
             <div className="divide-y divide-white/5 px-4">
               <Row
-                label="Pair"
+                label={t("pair")}
                 value={`${assetLabel(ad)}/${ad.fiatCurrency}`}
               />
-              <Row label="Merchant direction" value={ad.direction} />
+              <Row label={t("merchantDirection")} value={L(ad.direction)} />
               <Row
-                label="Price"
+                label={t("price")}
                 value={
                   ad.price === null
                     ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
@@ -402,7 +404,7 @@ export function TradeRoom({
                 }
               />
               <Row
-                label="Payment methods"
+                label={t("paymentMethods")}
                 value={ad.paymentMethodLabels.join(", ") || "—"}
               />
             </div>
@@ -457,16 +459,15 @@ function PartyView({
   asked: boolean;
   onRead: () => void;
 }) {
+  const t = useTranslations("tradeRoom");
   if (status === "no-wallet") {
     return (
       <div className="rounded-md border border-white/10 px-5 py-5">
         <p className="text-sm text-gray-300">
-          Connect the wallet that is party to this trade to act on it.
+          {t("partyConnect")}
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-          What is above is the public record — amounts, states and timing, with
-          neither party named. Who is in a trade is readable only by the people
-          in it.
+          {t("partyConnectSub")}
         </p>
       </div>
     );
@@ -476,7 +477,7 @@ function PartyView({
     return (
       <div className="rounded-md border border-red-500/30 bg-red-500/[0.04] px-5 py-5">
         <p className="text-sm font-medium text-red-300">
-          Could not read your copy of this trade
+          {t("partyReadError")}
         </p>
         <p className="mt-1 text-xs text-red-400/80">{error}</p>
         <button
@@ -484,7 +485,7 @@ function PartyView({
           onClick={onRead}
           className="mt-3 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Try again
+          {t("tryAgain")}
         </button>
       </div>
     );
@@ -494,11 +495,10 @@ function PartyView({
     return (
       <div className="rounded-md border border-white/10 px-5 py-5">
         <p className="text-sm text-gray-300">
-          The node answered, and this wallet is not a party to this trade.
+          {t("partyNotAParty")}
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-          That is a different answer from &ldquo;could not ask&rdquo;: the read
-          succeeded and returned your trades, and this is not one of them.
+          {t("partyNotAPartySub")}
         </p>
       </div>
     );
@@ -507,12 +507,10 @@ function PartyView({
   return (
     <div className="rounded-md border border-white/10 px-5 py-5">
       <p className="text-sm text-gray-300">
-        Sign once to load your own copy of this trade, and act on it.
+        {t("partySignPrompt")}
       </p>
       <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-        The public record above names nobody. Which side you are on, what you
-        can sign, and the trade channel all need the unredacted record, which
-        the node hands only to a party who proves the wallet.
+        {t("partySignPromptSub")}
       </p>
       <button
         type="button"
@@ -520,7 +518,7 @@ function PartyView({
         disabled={status === "loading"}
         className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
       >
-        {status === "loading" ? "Waiting for your wallet…" : "Load my copy of this trade"}
+        {status === "loading" ? t("waitingWallet") : t("loadMyCopy")}
       </button>
     </div>
   );

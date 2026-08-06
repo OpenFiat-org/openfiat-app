@@ -505,5 +505,268 @@
     "roleRequester": "Requester",
     "roleCounterparty": "Counterparty",
     "noTradesInState": "No trades in this state."
+  },
+  "lifecycle": {
+    "EscrowLocked": "Escrow Locked",
+    "AwaitingPayment": "Awaiting Payment",
+    "PaymentSubmitted": "Payment Submitted",
+    "MerchantReviewing": "Merchant Reviewing",
+    "Approved": "Approved",
+    "EscrowReleased": "Escrow Released",
+    "Completed": "Completed",
+    "Rejected": "Rejected",
+    "Cancelled": "Cancelled",
+    "Disputed": "Disputed",
+    "Requested": "Requested",
+    "Validated": "Validated",
+    "Accepted": "Accepted",
+    "Expired": "Expired",
+    "Buy": "Buy",
+    "Sell": "Sell"
+  },
+  "settlementSteps": {
+    "reservationLabel": "Reservation",
+    "settlementBeginsBelow": "Settlement begins below",
+    "automatic": "Automatic",
+    "yourTurn": "Your turn",
+    "waitingOn": "Waiting on {name}",
+    "EscrowLocked": {
+      "buyer": "The Solana program locked the crypto. It cannot move until this trade resolves.",
+      "seller": "Your crypto is locked in the Solana program, so the buyer can see it is really there."
+    },
+    "AwaitingPayment": {
+      "buyer": "Send the fiat using the details below, then mark it paid and attach your receipt.",
+      "seller": "The buyer sends the fiat. Nothing for you to do until they mark it paid."
+    },
+    "PaymentSubmitted": {
+      "buyer": "You have declared payment. The merchant now checks their own account.",
+      "seller": "The buyer says they have paid. Check your own account — a screenshot is not a payment."
+    },
+    "MerchantReviewing": {
+      "buyer": "The merchant is verifying the money arrived. If they do not respond, you can open a dispute.",
+      "seller": "Confirm the money arrived, or reject if it did not."
+    },
+    "Approved": {
+      "buyer": "Receipt confirmed. Release is next and happens automatically.",
+      "seller": "You confirmed receipt. The program takes it from here."
+    },
+    "EscrowReleased": {
+      "buyer": "The program sent the crypto to your wallet.",
+      "seller": "The program sent the crypto to the buyer."
+    },
+    "Completed": {
+      "buyer": "Done. Both reputations have been updated.",
+      "seller": "Done. Both reputations have been updated."
+    }
+  },
+  "tradeRoom": {
+    "metaTitle": "Trade Room",
+    "backToTrades": "← Back to My Trades",
+    "tradeHeading": "Trade {id}",
+    "couldNotRead": "Could not read this trade from the node",
+    "noReservation": "This node has no reservation with id “{id}”.",
+    "statusLabel": "Status",
+    "theMerchant": "the merchant",
+    "reservationEnded": "This reservation ended as <strong>{state}</strong> before escrow ever locked — no settlement exists for it.",
+    "viewDisputes": "View disputes →",
+    "panelReservation": "Reservation",
+    "reservationId": "Reservation ID",
+    "advertisement": "Advertisement",
+    "requester": "Requester",
+    "notNamed": "Not named in the public record",
+    "amount": "Amount",
+    "state": "State",
+    "requested": "Requested",
+    "updated": "Updated",
+    "expires": "Expires",
+    "panelSettlement": "Settlement",
+    "settlementId": "Settlement ID",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "paymentReference": "Payment reference",
+    "paymentSubmitted": "Payment submitted",
+    "merchantResponded": "Merchant responded",
+    "discrepancy": "Discrepancy",
+    "created": "Created",
+    "escrowReleaseTx": "Escrow release tx",
+    "notYetConfirmed": "Not yet confirmed on-chain",
+    "panelYourReview": "Your review",
+    "panelTradeChannel": "Trade channel",
+    "panelAttachments": "Attachments",
+    "panelAdvertisement": "Advertisement",
+    "pair": "Pair",
+    "merchantDirection": "Merchant direction",
+    "price": "Price",
+    "paymentMethods": "Payment methods",
+    "partyConnect": "Connect the wallet that is party to this trade to act on it.",
+    "partyConnectSub": "What is above is the public record — amounts, states and timing, with neither party named. Who is in a trade is readable only by the people in it.",
+    "partyReadError": "Could not read your copy of this trade",
+    "tryAgain": "Try again",
+    "partyNotAParty": "The node answered, and this wallet is not a party to this trade.",
+    "partyNotAPartySub": "That is a different answer from “could not ask”: the read succeeded and returned your trades, and this is not one of them.",
+    "partySignPrompt": "Sign once to load your own copy of this trade, and act on it.",
+    "partySignPromptSub": "The public record above names nobody. Which side you are on, what you can sign, and the trade channel all need the unredacted record, which the node hands only to a party who proves the wallet.",
+    "waitingWallet": "Waiting for your wallet…",
+    "loadMyCopy": "Load my copy of this trade"
+  },
+  "attachments": {
+    "readError": "Could not read attachments from your access node.",
+    "signerUnavailable": "Reconnect your wallet — the signing provider is not available.",
+    "publishError": "Could not publish the attachment.",
+    "noSettlement": "Files can be attached once the trade has a settlement. An attachment names the settlement it belongs to — that is the record an arbitrator reads.",
+    "reading": "Reading attachments…",
+    "empty": "Nothing attached to this trade yet.",
+    "imageAlt": "Attached evidence",
+    "pdfPlaceholder": "PDF — open in a new tab",
+    "noCaption": "No caption",
+    "publicWarning": "Anything you attach is public and permanent. It is stored on IPFS, and any gateway will serve it to anyone holding the reference — which travels in records every node keeps. Never attach payment details or identity documents here.",
+    "captionPlaceholder": "What is this? e.g. bank transfer receipt",
+    "uploading": "Uploading and signing…",
+    "attachFile": "Attach file",
+    "fileHelp": "PNG, JPEG, WebP or PDF, up to {mb} MB. Your wallet signs the record; only you and your counterparty can add to this trade, and an attachment cannot be removed once published.",
+    "connectPrompt": "Connect your wallet to attach a file. Only the buyer and the seller of a trade can add to it, which is checked against the settlement rather than taken on trust."
+  },
+  "tradeActions": {
+    "heading": "What you can do",
+    "cannotSign": "This wallet connection cannot sign — reconnect it and try again.",
+    "notNumericIdNote": "This reservation's id is not a number, so it addresses no escrow account on chain — the escrow program finds a trade escrow at a PDA seeded with the id as a <code>u64</code>. Nothing on chain can be created, read or released for it. Reservations placed by this app always can be.",
+    "factOnchainEscrow": "On-chain escrow",
+    "factHeld": "Held",
+    "factApproved": "Merchant approved",
+    "factEscrowAccount": "Escrow account",
+    "yes": "Yes",
+    "notYet": "Not yet",
+    "vaultState": {
+      "Available": "Available",
+      "Reserved": "Reserved",
+      "AwaitingFiatSettlement": "Awaiting fiat settlement",
+      "Released": "Released",
+      "Cancelled": "Cancelled",
+      "Frozen": "Frozen"
+    },
+    "escrowReading": "Reading the escrow from the cluster… If this does not resolve, the cluster could not be reached — which is not the same as there being no escrow.",
+    "escrowNone": "No escrow exists on chain for this reservation yet.",
+    "onChain": "On chain",
+    "onChainTitle": "Moves value on Solana, and costs a network fee",
+    "close": "Close",
+    "details": "Details",
+    "action": {
+      "initiate": {
+        "label": "Open the settlement",
+        "detail": "Records the buyer and the merchant against this reservation and starts the payment window. Signed by you, sent to the node — nothing moves on chain."
+      },
+      "lock-escrow": {
+        "label": "Lock the escrow",
+        "detail": "Reserves the amount in your liquidity vault, opens the trade escrow, and moves the tokens into it. One transaction, so a reservation can never be left marked against inventory with no escrow behind it."
+      },
+      "declare-paid": {
+        "label": "I have sent the payment",
+        "detail": "Tells the merchant the fiat is on its way. Only do this once you have actually sent it — the declaration is signed by you and permanent."
+      },
+      "approve": {
+        "label": "Confirm the payment arrived",
+        "detail": "Two signatures: the node records your approval, and the escrow program marks the trade approved so the tokens can be released."
+      },
+      "release": {
+        "label": "Release the escrow",
+        "detail": "Pays the buyer and the four fee treasuries out of the escrow. Anyone may submit it once the merchant has approved, and it goes through the node so the network records the confirmation."
+      },
+      "cancel-escrow": {
+        "label": "Return the tokens to the vault",
+        "detail": "Cancels the on-chain escrow and puts the merchant's tokens back in their liquidity vault. Only possible before release."
+      },
+      "cancel-reservation": {
+        "label": "Cancel this reservation",
+        "detail": "Withdraws your claim on the merchant's liquidity and frees it immediately, instead of holding it for the rest of the 30-minute window. Signed by you, sent to the node — nothing moves on chain, and only you can cancel your own reservation."
+      },
+      "cancel-settlement": {
+        "label": "Cancel the trade",
+        "detail": "Ends the settlement with nothing owed either way. Possible only while no payment has been declared — once the buyer has said they paid, neither side can walk away unilaterally."
+      },
+      "reverse-payment": {
+        "label": "I have not actually paid",
+        "detail": "Withdraws your declaration and returns the trade to awaiting payment. Only do this for a declaration made in error: it lets the merchant cancel the trade, so a payment that really has left your account must go to a dispute instead."
+      },
+      "reject-payment": {
+        "label": "The payment never arrived",
+        "detail": "Records your refusal without opening a dispute or paying a filing fee. It is your claim, not a ruling — a buyer who really did pay can still open a dispute afterwards."
+      },
+      "dispute": {
+        "label": "Open a dispute",
+        "detail": "Puts the trade in front of arbitrators. Both parties' evidence comes from the trade channel, and disclosing it to an arbitrator shares the whole conversation permanently."
+      }
+    },
+    "waiting": {
+      "observer": "You are not a party to this trade, so there is nothing here for you to sign.",
+      "merchantNoSettlement": "The taker has reserved against your advertisement but has not opened the settlement yet. Until they do, there is no record naming you as the seller to act on — and only they can cancel their own reservation.",
+      "merchantEscrowUnknown": "The cluster could not be read, so whether this trade's escrow already exists is unknown. Locking it again would fail on an account that is already there — reload before signing anything.",
+      "merchantEscrowHeld": "The escrow holds your tokens. The buyer has not declared the fiat sent yet — which is also the only window in which either of you can still walk away.",
+      "buyerEscrowUnreadable": "Whether the merchant has locked the tokens could not be read from the cluster. Do not send any money until it can be.",
+      "buyerNotLocked": "The merchant has not locked the tokens in escrow yet. Do not send any money until they have — there is nothing on chain backing this trade.",
+      "buyerAwaitingConfirm": "The merchant has been told the payment is sent and has not confirmed it yet.",
+      "approvedNoEscrow": "This settlement is approved but no escrow was ever funded for it, so there is nothing to release.",
+      "disputed": "This trade is with arbitrators. The escrow moves on their decision, not on either party's signature."
+    },
+    "discrepancy": {
+      "IncorrectAmount": "The amount was wrong",
+      "WrongReference": "The reference was wrong or missing",
+      "DuplicatePayment": "It was a duplicate of another payment",
+      "IncorrectAccount": "It was sent to the wrong account",
+      "Other": "Something else — no payment fault"
+    },
+    "referenceLabel": "Payment reference (optional)",
+    "referencePlaceholder": "What your bank or wallet put on the transfer",
+    "referenceHelp": "Whatever you type here is stored on the settlement and readable by the merchant and by any arbitrator — it is dropped from the public view for that reason, so keep it to the reference itself.",
+    "disputeLabel": "What went wrong",
+    "rejectWhatWrong": "What was wrong with it",
+    "rejectDiscrepancyHelp": "This is the field reputation counts, so pick the one that actually applies. Everything except “Something else” records a payment-accuracy fault against the buyer.",
+    "rejectOwnWords": "In your own words",
+    "rejectOwnWordsHelp": "Read by the buyer and by any arbitrator they escalate to. Nothing parses it.",
+    "reverseWarning": "Only if you have <b>not</b> actually sent the money. Withdrawing your declaration returns the trade to awaiting payment, which lets the merchant cancel it — so if the fiat really has left your account, this hands them a window to cancel out from under it. In that case open a dispute instead.",
+    "cancelSettlementWarning": "Ends the trade with nothing owed either way. If the other side has already sent the fiat but has not declared it yet, this cancels out from under their money — the protocol cannot see a bank transfer, only the declaration. Do not cancel a trade somebody has told you they are paying.",
+    "cancelReservationNote": "Frees the merchant's liquidity straight away instead of holding it for the rest of the 30-minute window. There is nothing to undo afterwards — you would place a new order.",
+    "busyInitiate": "Opening the settlement",
+    "busyLock": "Locking the escrow",
+    "busyDeclare": "Recording the payment",
+    "busyApprove": "Approving",
+    "busyRelease": "Releasing",
+    "busyCancelEscrow": "Returning the tokens",
+    "busyCancelReservation": "Cancelling the reservation",
+    "busyCancelSettlement": "Cancelling the trade",
+    "busyReverse": "Withdrawing the declaration",
+    "busyReject": "Recording the rejection",
+    "busyDispute": "Opening the dispute",
+    "busyPrompt": "{what}… approve the prompt in your wallet.",
+    "errNotNumericId": "This reservation's id is not a number, so it addresses no escrow account. Reservations placed by this app are; one from another client may not be.",
+    "errNoAdMint": "This trade's advertisement could not be read, and it is the only record of which mint the escrow settles in. Nothing on chain can be built without it.",
+    "errNoAdMerchantKey": "This trade's advertisement could not be read, and the settlement has to name the merchant's own public key from it.",
+    "errNoSettlementLock": "There is no settlement to lock an escrow against.",
+    "errBuyerNoAddress": "The buyer's peer id carries no Solana address, so no escrow can name them.",
+    "errNoSettlementDeclare": "There is no settlement to declare a payment on.",
+    "errNoSettlementApprove": "There is no settlement to approve.",
+    "errWalletBroadcasts": "This wallet cannot sign a transaction without also broadcasting it. The release has to reach Solana through the node so the network records the confirmation, so it cannot be completed from this wallet.",
+    "errPartyNoAddressRelease": "A party's peer id carries no Solana address, so no release can be built.",
+    "errNoSettlementRelease": "There is no settlement to release.",
+    "errNoEscrowCancel": "There is no escrow to cancel.",
+    "errPartyNoAddressCancel": "A party's peer id carries no Solana address, so no cancellation can be built.",
+    "errNoSettlementCancel": "There is no settlement to cancel.",
+    "errNoDeclaration": "There is no declaration to withdraw.",
+    "errNoSettlementReject": "There is no settlement to reject.",
+    "errRejectEmpty": "Say what you did or did not find — the buyer and any arbitrator read this.",
+    "errNoSettlementDispute": "There is no settlement to dispute.",
+    "errDisputeEmpty": "Say what went wrong — an arbitrator reads this.",
+    "okInitiate": "The settlement is open. The merchant can now lock the tokens in escrow.",
+    "okLock": "Escrow funded. Transaction {signature}.",
+    "okDeclare": "The merchant has been told the payment is on its way.",
+    "okApprove": "Approved, on the node and on chain. Transaction {signature}. Either party can now release the escrow.",
+    "okApproveNodeOnly": "Approved on the node. The on-chain approval could not be built: the buyer's peer id carries no Solana address.",
+    "okRelease": "The release is with the node. It will be recorded on this trade once the node has seen it confirmed for itself.",
+    "okReleaseUnwrap": "The release is with the node. It will be recorded on this trade once the node has seen it confirmed for itself — the wrapped SOL is unwrapped in the same transaction, so what arrives is SOL.",
+    "okCancelEscrow": "The tokens are back in the merchant's vault. Transaction {signature}. The off-chain records are separate — cancel the trade as well, or the settlement stays open with no escrow behind it.",
+    "okCancelReservation": "The reservation is cancelled and the merchant's liquidity is free again.",
+    "okCancelSettlement": "The trade is cancelled. If tokens are still locked in escrow, return them to the vault as well — the two records are separate.",
+    "okReverse": "Your declaration is withdrawn and the trade is awaiting payment again. The merchant can now cancel it, so send the money and declare again, or cancel yourself.",
+    "okReject": "Recorded. The buyer can still open a dispute if they believe they paid — rejecting moves the cost of escalating onto whoever is wrong, it does not decide who that is.",
+    "okDispute": "Dispute {id} is open. Arbitrators join it from the arbitration desk."
   }
 }

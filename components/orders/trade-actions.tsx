@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PublicKey } from "@solana/web3.js";
 
 import { getConnection } from "@/lib/onchain-config";
@@ -70,20 +71,18 @@ import {
 type Phase = { kind: "idle" } | { kind: "busy"; what: string } | { kind: "note"; text: string; bad: boolean };
 
 /**
- * `PaymentDiscrepancy`'s variants, in the words a merchant would use.
- *
- * The wire spellings are OFS-2300 §14's own categories and are what
- * reputation counts; the labels are for the person choosing. `Other` is
- * last and named so it does not read as the safe default — it is the one
- * value that records no fault against the buyer, which makes it the wrong
- * answer whenever a real discrepancy applies.
+ * `PaymentDiscrepancy`'s variants, in wire order. The words a merchant reads
+ * are copy, resolved from the `tradeActions` catalogue by variant; these are
+ * OFS-2300 §14's own categories and are what reputation counts. `Other` is
+ * last and stays last — it is the one value that records no fault against the
+ * buyer, so it must not read as the safe default.
  */
-const DISCREPANCIES: Array<[PaymentDiscrepancy, string]> = [
-  ["IncorrectAmount", "The amount was wrong"],
-  ["WrongReference", "The reference was wrong or missing"],
-  ["DuplicatePayment", "It was a duplicate of another payment"],
-  ["IncorrectAccount", "It was sent to the wrong account"],
-  ["Other", "Something else — no payment fault"],
+const DISCREPANCIES: PaymentDiscrepancy[] = [
+  "IncorrectAmount",
+  "WrongReference",
+  "DuplicatePayment",
+  "IncorrectAccount",
+  "Other",
 ];
 
 export function TradeActions({
@@ -101,6 +100,7 @@ export function TradeActions({
    *  guessing at the new state from what it just sent. */
   onChanged: () => void;
 }) {
+  const t = useTranslations("tradeActions");
   const [escrow, setEscrow] = useState<DecodedTradeEscrow | null | undefined>(undefined);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [reference, setReference] = useState("");
@@ -144,7 +144,7 @@ export function TradeActions({
       if (!wallet || !provider) {
         setPhase({
           kind: "note",
-          text: "This wallet connection cannot sign — reconnect it and try again.",
+          text: t("cannotSign"),
           bad: true,
         });
         return;
@@ -164,21 +164,17 @@ export function TradeActions({
         });
       }
     },
-    [wallet, onChanged, readEscrow],
+    [wallet, onChanged, readEscrow, t],
   );
 
   /** The four fixed facts every on-chain step needs, read rather than assumed. */
   const partiesFor = useCallback(
     async (merchantAddress: string, buyerAddress: string): Promise<EscrowParties> => {
       if (escrowId === null) {
-        throw new Error(
-          "This reservation's id is not a number, so it addresses no escrow account. Reservations placed by this app are; one from another client may not be.",
-        );
+        throw new Error(t("errNotNumericId"));
       }
       if (!ad) {
-        throw new Error(
-          "This trade's advertisement could not be read, and it is the only record of which mint the escrow settles in. Nothing on chain can be built without it.",
-        );
+        throw new Error(t("errNoAdMint"));
       }
       const mint = new PublicKey(ad.assetMint);
       return {
@@ -194,16 +190,14 @@ export function TradeActions({
         amount: BigInt(trade.reservation.amount.base_units),
       };
     },
-    [escrowId, trade.reservation.amount, ad],
+    [escrowId, trade.reservation.amount, ad, t],
   );
 
   const handlers: Record<TradeActionKind, () => void> = {
     initiate: () =>
-      void run("initiate", "Opening the settlement", async (provider, address) => {
+      void run("initiate", t("busyInitiate"), async (provider, address) => {
         if (!ad) {
-          throw new Error(
-            "This trade's advertisement could not be read, and the settlement has to name the merchant's own public key from it.",
-          );
+          throw new Error(t("errNoAdMerchantKey"));
         }
         await initiateSettlement(tradeIdentity(provider, address), {
           settlementId: crypto.randomUUID(),
@@ -212,16 +206,16 @@ export function TradeActions({
           sellerPublicKey: ad.merchantPublicKey,
           amount: trade.reservation.amount,
         });
-        return "The settlement is open. The merchant can now lock the tokens in escrow.";
+        return t("okInitiate");
       }),
 
     "lock-escrow": () =>
-      void run("lock-escrow", "Locking the escrow", async (provider, address) => {
+      void run("lock-escrow", t("busyLock"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to lock an escrow against.");
+        if (!settlement) throw new Error(t("errNoSettlementLock"));
         const buyerAddress = addressForPeerId(settlement.buyer);
         if (!buyerAddress) {
-          throw new Error("The buyer's peer id carries no Solana address, so no escrow can name them.");
+          throw new Error(t("errBuyerNoAddress"));
         }
         const parties = await partiesFor(address, buyerAddress);
         const fees = await fetchFeeConfig();
@@ -234,32 +228,32 @@ export function TradeActions({
           { signature, blockhash, lastValidBlockHeight },
           "confirmed",
         );
-        return `Escrow funded. Transaction ${signature}.`;
+        return t("okLock", { signature });
       }),
 
     "declare-paid": () =>
-      void run("declare-paid", "Recording the payment", async (provider, address) => {
+      void run("declare-paid", t("busyDeclare"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to declare a payment on.");
+        if (!settlement) throw new Error(t("errNoSettlementDeclare"));
         await submitPayment(
           tradeIdentity(provider, address),
           settlement.id,
           reference.trim() === "" ? null : reference.trim(),
         );
-        return "The merchant has been told the payment is on its way.";
+        return t("okDeclare");
       }),
 
     approve: () =>
-      void run("approve", "Approving", async (provider, address) => {
+      void run("approve", t("busyApprove"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to approve.");
+        if (!settlement) throw new Error(t("errNoSettlementApprove"));
         // The node first: it is the record every party reads, and an
         // on-chain approval with no protocol record behind it is a state
         // nothing in the app can explain.
         await approveSettlement(tradeIdentity(provider, address), settlement.id);
         const buyerAddress = addressForPeerId(settlement.buyer);
         if (!buyerAddress) {
-          return "Approved on the node. The on-chain approval could not be built: the buyer's peer id carries no Solana address.";
+          return t("okApproveNodeOnly");
         }
         const parties = await partiesFor(address, buyerAddress);
         const { transaction, blockhash, lastValidBlockHeight } = await buildTransaction(
@@ -271,22 +265,20 @@ export function TradeActions({
           { signature, blockhash, lastValidBlockHeight },
           "confirmed",
         );
-        return `Approved, on the node and on chain. Transaction ${signature}. Either party can now release the escrow.`;
+        return t("okApprove", { signature });
       }),
 
     release: () =>
-      void run("release", "Releasing", async (provider, address) => {
+      void run("release", t("busyRelease"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to release.");
+        if (!settlement) throw new Error(t("errNoSettlementRelease"));
         if (!provider.signTransaction) {
-          throw new Error(
-            "This wallet cannot sign a transaction without also broadcasting it. The release has to reach Solana through the node so the network records the confirmation, so it cannot be completed from this wallet.",
-          );
+          throw new Error(t("errWalletBroadcasts"));
         }
         const merchantAddress = addressForPeerId(settlement.seller);
         const buyerAddress = addressForPeerId(settlement.buyer);
         if (!merchantAddress || !buyerAddress) {
-          throw new Error("A party's peer id carries no Solana address, so no release can be built.");
+          throw new Error(t("errPartyNoAddressRelease"));
         }
         const parties = await partiesFor(merchantAddress, buyerAddress);
         const fees = await fetchFeeConfig();
@@ -295,19 +287,17 @@ export function TradeActions({
         const { transaction } = await buildTransaction(payer, plan.instructions);
         const signed = await provider.signTransaction(transaction);
         await relayRelease(signed, settlement.id);
-        return plan.unwrapping
-          ? "The release is with the node. It will be recorded on this trade once the node has seen it confirmed for itself — the wrapped SOL is unwrapped in the same transaction, so what arrives is SOL."
-          : "The release is with the node. It will be recorded on this trade once the node has seen it confirmed for itself.";
+        return plan.unwrapping ? t("okReleaseUnwrap") : t("okRelease");
       }),
 
     "cancel-escrow": () =>
-      void run("cancel-escrow", "Returning the tokens", async (provider, address) => {
+      void run("cancel-escrow", t("busyCancelEscrow"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no escrow to cancel.");
+        if (!settlement) throw new Error(t("errNoEscrowCancel"));
         const merchantAddress = addressForPeerId(settlement.seller);
         const buyerAddress = addressForPeerId(settlement.buyer);
         if (!merchantAddress || !buyerAddress) {
-          throw new Error("A party's peer id carries no Solana address, so no cancellation can be built.");
+          throw new Error(t("errPartyNoAddressCancel"));
         }
         const parties = await partiesFor(merchantAddress, buyerAddress);
         const signer = new PublicKey(address);
@@ -320,37 +310,37 @@ export function TradeActions({
           { signature, blockhash, lastValidBlockHeight },
           "confirmed",
         );
-        return `The tokens are back in the merchant's vault. Transaction ${signature}. The off-chain records are separate — cancel the trade as well, or the settlement stays open with no escrow behind it.`;
+        return t("okCancelEscrow", { signature });
       }),
 
     "cancel-reservation": () =>
-      void run("cancel-reservation", "Cancelling the reservation", async (provider, address) => {
+      void run("cancel-reservation", t("busyCancelReservation"), async (provider, address) => {
         await cancelReservation(tradeIdentity(provider, address), trade.reservation.id);
-        return "The reservation is cancelled and the merchant's liquidity is free again.";
+        return t("okCancelReservation");
       }),
 
     "cancel-settlement": () =>
-      void run("cancel-settlement", "Cancelling the trade", async (provider, address) => {
+      void run("cancel-settlement", t("busyCancelSettlement"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to cancel.");
+        if (!settlement) throw new Error(t("errNoSettlementCancel"));
         await cancelSettlement(tradeIdentity(provider, address), settlement.id);
-        return "The trade is cancelled. If tokens are still locked in escrow, return them to the vault as well — the two records are separate.";
+        return t("okCancelSettlement");
       }),
 
     "reverse-payment": () =>
-      void run("reverse-payment", "Withdrawing the declaration", async (provider, address) => {
+      void run("reverse-payment", t("busyReverse"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no declaration to withdraw.");
+        if (!settlement) throw new Error(t("errNoDeclaration"));
         await reversePayment(tradeIdentity(provider, address), settlement.id);
-        return "Your declaration is withdrawn and the trade is awaiting payment again. The merchant can now cancel it, so send the money and declare again, or cancel yourself.";
+        return t("okReverse");
       }),
 
     "reject-payment": () =>
-      void run("reject-payment", "Recording the rejection", async (provider, address) => {
+      void run("reject-payment", t("busyReject"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to reject.");
+        if (!settlement) throw new Error(t("errNoSettlementReject"));
         if (rejection.trim() === "") {
-          throw new Error("Say what you did or did not find — the buyer and any arbitrator read this.");
+          throw new Error(t("errRejectEmpty"));
         }
         await rejectSettlement(
           tradeIdentity(provider, address),
@@ -358,16 +348,16 @@ export function TradeActions({
           rejection.trim(),
           discrepancy,
         );
-        return "Recorded. The buyer can still open a dispute if they believe they paid — rejecting moves the cost of escalating onto whoever is wrong, it does not decide who that is.";
+        return t("okReject");
       }),
 
     dispute: () =>
-      void run("dispute", "Opening the dispute", async (provider, address) => {
+      void run("dispute", t("busyDispute"), async (provider, address) => {
         const settlement = trade.settlement;
-        if (!settlement) throw new Error("There is no settlement to dispute.");
-        if (reason.trim() === "") throw new Error("Say what went wrong — an arbitrator reads this.");
+        if (!settlement) throw new Error(t("errNoSettlementDispute"));
+        if (reason.trim() === "") throw new Error(t("errDisputeEmpty"));
         const id = await openDispute(tradeIdentity(provider, address), settlement.id, reason.trim());
-        return `Dispute ${id} is open. Arbitrators join it from the arbitration desk.`;
+        return t("okDispute", { id });
       }),
   };
 
@@ -375,24 +365,22 @@ export function TradeActions({
     "declare-paid": (
       <label className="block">
         <span className="block text-xs text-gray-500">
-          Payment reference (optional)
+          {t("referenceLabel")}
         </span>
         <input
           value={reference}
           onChange={(e) => setReference(e.target.value)}
-          placeholder="What your bank or wallet put on the transfer"
+          placeholder={t("referencePlaceholder")}
           className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
         />
         <span className="mt-1 block text-xs text-gray-500">
-          Whatever you type here is stored on the settlement and readable by the merchant and by
-          any arbitrator — it is dropped from the public view for that reason, so keep it to the
-          reference itself.
+          {t("referenceHelp")}
         </span>
       </label>
     ),
     dispute: (
       <label className="block">
-        <span className="block text-xs text-gray-500">What went wrong</span>
+        <span className="block text-xs text-gray-500">{t("disputeLabel")}</span>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -404,25 +392,24 @@ export function TradeActions({
     "reject-payment": (
       <div className="space-y-3">
         <label className="block">
-          <span className="block text-xs text-gray-500">What was wrong with it</span>
+          <span className="block text-xs text-gray-500">{t("rejectWhatWrong")}</span>
           <select
             value={discrepancy}
             onChange={(e) => setDiscrepancy(e.target.value as PaymentDiscrepancy)}
             className="mt-1 w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]"
           >
-            {DISCREPANCIES.map(([value, label]) => (
+            {DISCREPANCIES.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {t(`discrepancy.${value}`)}
               </option>
             ))}
           </select>
           <span className="mt-1 block text-xs leading-relaxed text-gray-500">
-            This is the field reputation counts, so pick the one that actually applies. Everything
-            except &ldquo;Something else&rdquo; records a payment-accuracy fault against the buyer.
+            {t("rejectDiscrepancyHelp")}
           </span>
         </label>
         <label className="block">
-          <span className="block text-xs text-gray-500">In your own words</span>
+          <span className="block text-xs text-gray-500">{t("rejectOwnWords")}</span>
           <textarea
             value={rejection}
             onChange={(e) => setRejection(e.target.value)}
@@ -430,58 +417,50 @@ export function TradeActions({
             className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
           />
           <span className="mt-1 block text-xs leading-relaxed text-gray-500">
-            Read by the buyer and by any arbitrator they escalate to. Nothing parses it.
+            {t("rejectOwnWordsHelp")}
           </span>
         </label>
       </div>
     ),
     "reverse-payment": (
       <p className="text-xs leading-relaxed text-amber-300">
-        Only if you have <span className="font-semibold">not</span> actually sent the money.
-        Withdrawing your declaration returns the trade to awaiting payment, which lets the merchant
-        cancel it — so if the fiat really has left your account, this hands them a window to cancel
-        out from under it. In that case open a dispute instead.
+        {t.rich("reverseWarning", { b: (chunks) => <span className="font-semibold">{chunks}</span> })}
       </p>
     ),
     "cancel-settlement": (
       <p className="text-xs leading-relaxed text-amber-300">
-        Ends the trade with nothing owed either way. If the other side has already sent the fiat but
-        has not declared it yet, this cancels out from under their money — the protocol cannot see a
-        bank transfer, only the declaration. Do not cancel a trade somebody has told you they are
-        paying.
+        {t("cancelSettlementWarning")}
       </p>
     ),
     "cancel-reservation": (
       <p className="text-xs leading-relaxed text-gray-500">
-        Frees the merchant&apos;s liquidity straight away instead of holding it for the rest of the
-        30-minute window. There is nothing to undo afterwards — you would place a new order.
+        {t("cancelReservationNote")}
       </p>
     ),
   };
 
   return (
     <div className="rounded-md border border-white/10 px-5 py-5">
-      <h2 className="text-sm font-semibold text-gray-200">What you can do</h2>
+      <h2 className="text-sm font-semibold text-gray-200">{t("heading")}</h2>
 
       {escrowId === null && (
         <p className="mt-3 text-xs leading-relaxed text-amber-300">
-          This reservation&apos;s id is not a number, so it addresses no escrow account on chain —
-          the escrow program finds a trade escrow at a PDA seeded with the id as a{" "}
-          <code className="font-mono">u64</code>. Nothing on chain can be created, read or
-          released for it. Reservations placed by this app always can be.
+          {t.rich("notNumericIdNote", {
+            code: (chunks) => <code className="font-mono">{chunks}</code>,
+          })}
         </p>
       )}
 
       {escrow !== undefined && escrow !== null && (
         <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-          <EscrowFact label="On-chain escrow" value={escrow.state} />
+          <EscrowFact label={t("factOnchainEscrow")} value={t(`vaultState.${escrow.state}`)} />
           <EscrowFact
-            label="Held"
+            label={t("factHeld")}
             value={`${formatBaseUnits(escrow.amount, trade.reservation.amount.decimals)}`}
           />
-          <EscrowFact label="Merchant approved" value={escrow.approved ? "Yes" : "Not yet"} />
+          <EscrowFact label={t("factApproved")} value={escrow.approved ? t("yes") : t("notYet")} />
           <EscrowFact
-            label="Escrow account"
+            label={t("factEscrowAccount")}
             value={escrowProgram.tradeEscrowPda(escrow.reservationId)[0].toBase58()}
             mono
           />
@@ -489,19 +468,18 @@ export function TradeActions({
       )}
       {escrow === undefined && escrowId !== null && (
         <p className="mt-3 text-xs text-gray-500">
-          Reading the escrow from the cluster… If this does not resolve, the cluster could not be
-          reached — which is not the same as there being no escrow.
+          {t("escrowReading")}
         </p>
       )}
       {escrow === null && escrowId !== null && (
         <p className="mt-3 text-xs text-gray-500">
-          No escrow exists on chain for this reservation yet.
+          {t("escrowNone")}
         </p>
       )}
 
       {waitingOn && (
         <p className="mt-4 border-l-2 border-white/15 pl-3 text-sm leading-relaxed text-gray-400">
-          {waitingOn}
+          {t(`waiting.${waitingOn}`)}
         </p>
       )}
 
@@ -511,6 +489,12 @@ export function TradeActions({
             <li key={item.kind}>
               <ActionRow
                 action={item}
+                label={t(`action.${item.kind}.label`)}
+                detail={t(`action.${item.kind}.detail`)}
+                onchainLabel={t("onChain")}
+                onchainTitle={t("onChainTitle")}
+                closeLabel={t("close")}
+                detailsLabel={t("details")}
                 expanded={open === item.kind}
                 onToggle={() => setOpen(open === item.kind ? null : item.kind)}
                 onRun={handlers[item.kind]}
@@ -523,7 +507,7 @@ export function TradeActions({
       )}
 
       {phase.kind === "busy" && (
-        <p className="mt-4 text-xs text-gray-400">{phase.what}… approve the prompt in your wallet.</p>
+        <p className="mt-4 text-xs text-gray-400">{t("busyPrompt", { what: phase.what })}</p>
       )}
       {phase.kind === "note" && (
         <p
@@ -540,6 +524,12 @@ export function TradeActions({
 
 function ActionRow({
   action,
+  label,
+  detail,
+  onchainLabel,
+  onchainTitle,
+  closeLabel,
+  detailsLabel,
   expanded,
   onToggle,
   onRun,
@@ -547,6 +537,12 @@ function ActionRow({
   input,
 }: {
   action: TradeAction;
+  label: string;
+  detail: string;
+  onchainLabel: string;
+  onchainTitle: string;
+  closeLabel: string;
+  detailsLabel: string;
   expanded: boolean;
   onToggle: () => void;
   onRun: () => void;
@@ -556,13 +552,13 @@ function ActionRow({
   return (
     <div className="rounded-md border border-white/10 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-white">{action.label}</span>
+        <span className="text-sm font-medium text-white">{label}</span>
         {action.onchain && (
           <span
             className="rounded-sm bg-brand/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-brand"
-            title="Moves value on Solana, and costs a network fee"
+            title={onchainTitle}
           >
-            On chain
+            {onchainLabel}
           </span>
         )}
         <button
@@ -570,10 +566,10 @@ function ActionRow({
           onClick={onToggle}
           className="ml-auto text-xs text-gray-500 hover:text-gray-300"
         >
-          {expanded ? "Close" : "Details"}
+          {expanded ? closeLabel : detailsLabel}
         </button>
       </div>
-      <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{action.detail}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{detail}</p>
       {expanded && input && <div className="mt-3">{input}</div>}
       <button
         type="button"
@@ -585,7 +581,7 @@ function ActionRow({
             : "bg-brand text-white hover:bg-brand-hover disabled:bg-brand/40"
         }`}
       >
-        {input && !expanded ? `${action.label}…` : action.label}
+        {input && !expanded ? `${label}…` : label}
       </button>
     </div>
   );

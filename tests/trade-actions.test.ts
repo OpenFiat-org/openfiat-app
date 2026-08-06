@@ -151,7 +151,7 @@ describe("what each party can do", () => {
       escrow: null,
     });
     expect(situation.actions).toEqual([]);
-    expect(situation.waitingOn).toMatch(/has not opened the settlement/);
+    expect(situation.waitingOn).toBe("merchantNoSettlement");
   });
 
   it("offers a merchant the escrow while none exists", () => {
@@ -185,7 +185,7 @@ describe("what each party can do", () => {
     // has decided against the trade is not held up by an unreachable RPC.
     expect(kinds(situation)).toEqual(["cancel-settlement"]);
     expect(situation.actions.every((item) => !item.onchain)).toBe(true);
-    expect(situation.waitingOn).toMatch(/could not be read/);
+    expect(situation.waitingOn).toBe("merchantEscrowUnknown");
   });
 
   it("does not let a buyer declare payment before the tokens are locked", () => {
@@ -195,7 +195,7 @@ describe("what each party can do", () => {
       escrow: null,
     });
     expect(kinds(situation)).not.toContain("declare-paid");
-    expect(situation.waitingOn).toMatch(/Do not send any money/);
+    expect(situation.waitingOn).toBe("buyerNotLocked");
   });
 
   it("says something different when the escrow could not be read", () => {
@@ -210,7 +210,7 @@ describe("what each party can do", () => {
       escrow: null,
     }).waitingOn;
     expect(unread).not.toBe(absent);
-    expect(unread).toMatch(/could not be read/);
+    expect(unread).toBe("buyerEscrowUnreadable");
   });
 
   it("lets a buyer declare payment once the escrow holds the tokens", () => {
@@ -273,7 +273,7 @@ describe("what each party can do", () => {
       side: "buyer",
       escrow: null,
     });
-    expect(situation.waitingOn).toMatch(/nothing to release/);
+    expect(situation.waitingOn).toBe("approvedNoEscrow");
   });
 
   it("offers nothing on a trade that has ended", () => {
@@ -306,7 +306,7 @@ describe("what each party can do", () => {
       escrow,
     });
     expect(situation.actions).toEqual([]);
-    expect(situation.waitingOn).toMatch(/arbitrators/);
+    expect(situation.waitingOn).toBe("disputed");
   });
 
   it("offers a stranger nothing at all, and says why", () => {
@@ -316,7 +316,7 @@ describe("what each party can do", () => {
       escrow,
     });
     expect(situation.actions).toEqual([]);
-    expect(situation.waitingOn).toMatch(/not a party/);
+    expect(situation.waitingOn).toBe("observer");
   });
 
   it("lets either party dispute a live trade", () => {

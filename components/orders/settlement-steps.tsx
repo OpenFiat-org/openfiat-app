@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { SETTLEMENT_STEPS, type SettlementStatus } from "@/lib/types";
 
 /**
@@ -20,58 +21,20 @@ import { SETTLEMENT_STEPS, type SettlementStatus } from "@/lib/types";
 
 type Actor = "you" | "counterparty" | "protocol";
 
-interface StageMeta {
-  /** Who the stage is waiting on. */
-  actor: Actor;
-  /** What happens, from the perspective of the side being described. */
-  buyer: string;
-  seller: string;
-}
-
-const STAGE: Record<string, StageMeta> = {
-  "Escrow Locked": {
-    actor: "protocol",
-    buyer: "The Solana program locked the crypto. It cannot move until this trade resolves.",
-    seller: "Your crypto is locked in the Solana program, so the buyer can see it is really there.",
-  },
-  "Awaiting Payment": {
-    actor: "you",
-    buyer: "Send the fiat using the details below, then mark it paid and attach your receipt.",
-    seller: "The buyer sends the fiat. Nothing for you to do until they mark it paid.",
-  },
-  "Payment Submitted": {
-    actor: "counterparty",
-    buyer: "You have declared payment. The merchant now checks their own account.",
-    seller: "The buyer says they have paid. Check your own account — a screenshot is not a payment.",
-  },
-  "Merchant Reviewing": {
-    actor: "counterparty",
-    buyer: "The merchant is verifying the money arrived. If they do not respond, you can open a dispute.",
-    seller: "Confirm the money arrived, or reject if it did not.",
-  },
-  Approved: {
-    actor: "protocol",
-    buyer: "Receipt confirmed. Release is next and happens automatically.",
-    seller: "You confirmed receipt. The program takes it from here.",
-  },
-  "Escrow Released": {
-    actor: "protocol",
-    buyer: "The program sent the crypto to your wallet.",
-    seller: "The program sent the crypto to the buyer.",
-  },
-  Completed: {
-    actor: "protocol",
-    buyer: "Done. Both reputations have been updated.",
-    seller: "Done. Both reputations have been updated.",
-  },
+/** Who each stage is waiting on. The prose lives in the `settlementSteps`
+ *  message namespace, keyed by the space-stripped stage name. */
+const STAGE_ACTOR: Record<string, Actor> = {
+  "Escrow Locked": "protocol",
+  "Awaiting Payment": "you",
+  "Payment Submitted": "counterparty",
+  "Merchant Reviewing": "counterparty",
+  Approved: "protocol",
+  "Escrow Released": "protocol",
+  Completed: "protocol",
 };
 
-/** Whose turn it is, in words rather than a colour. */
-function actorLabel(actor: Actor, counterpartyName: string, buy: boolean): string {
-  if (actor === "protocol") return "Automatic";
-  if (actor === "you") return buy ? "Your turn" : `Waiting on ${counterpartyName}`;
-  return buy ? `Waiting on ${counterpartyName}` : "Your turn";
-}
+/** The space-stripped stage name, used as a message key: "Escrow Locked" → "EscrowLocked". */
+const slug = (s: string) => s.replace(/ /g, "");
 
 export function SettlementSteps({
   status,
@@ -86,16 +49,26 @@ export function SettlementSteps({
   /** Rejected, Cancelled or Disputed — the happy path stopped. */
   terminal: boolean;
 }) {
+  const t = useTranslations("settlementSteps");
+  const L = useTranslations("lifecycle");
   const stepIndex = SETTLEMENT_STEPS.indexOf(status);
   const complete = status === "Completed";
+
+  /** Whose turn it is, in words rather than a colour. */
+  const actorLabel = (actor: Actor): string => {
+    if (actor === "protocol") return t("automatic");
+    const waiting = t("waitingOn", { name: counterpartyName });
+    if (actor === "you") return buy ? t("yourTurn") : waiting;
+    return buy ? waiting : t("yourTurn");
+  };
 
   return (
     <ol className="mt-5 divide-y divide-white/5 border-t border-white/5">
       {SETTLEMENT_STEPS.map((step, i) => {
         const done = complete || i < stepIndex;
         const current = !complete && !terminal && i === stepIndex;
-        const meta = STAGE[step];
-        const body = buy ? meta.buyer : meta.seller;
+        const actor = STAGE_ACTOR[step];
+        const body = t(`${slug(step)}.${buy ? "buyer" : "seller"}`);
 
         return (
           <li
@@ -122,16 +95,16 @@ export function SettlementSteps({
                     current ? "font-semibold text-white" : done ? "text-gray-300" : "text-gray-600"
                   }`}
                 >
-                  {step}
+                  {L(slug(step))}
                 </span>
                 {current && (
                   <span className="rounded-full border border-brand/40 px-1.5 text-[10px] uppercase tracking-wide text-brand-hover">
-                    {actorLabel(meta.actor, counterpartyName, buy)}
+                    {actorLabel(actor)}
                   </span>
                 )}
                 {!current && !done && (
                   <span className="text-[11px] text-gray-600">
-                    {actorLabel(meta.actor, counterpartyName, buy)}
+                    {actorLabel(actor)}
                   </span>
                 )}
               </div>

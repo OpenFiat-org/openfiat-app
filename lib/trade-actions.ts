@@ -97,9 +97,6 @@ export type TradeActionKind =
 
 export interface TradeAction {
   kind: TradeActionKind;
-  label: string;
-  /** What pressing it actually does, in one sentence. */
-  detail: string;
   /** Whether it moves value on chain, so the UI can mark it as such. */
   onchain: boolean;
   /**
@@ -110,9 +107,31 @@ export interface TradeAction {
    * the trade" and "confirm the payment arrived" are one keystroke apart in
    * a column of identical buttons, and which of them is the destructive one
    * is a property of the protocol action, not of the styling.
+   *
+   * The button's own words (label, one-line detail) are not here: they are
+   * user-facing copy, so the trade room resolves them from its message
+   * catalogue keyed by `kind`, and this stays a pure statement of the rules.
    */
   destructive?: boolean;
 }
+
+/**
+ * Why a wallet cannot move a trade right now, as a stable key rather than a
+ * sentence. The trade room turns each into localized prose — the rules
+ * belong here, the words belong to the catalogue. Every branch below that
+ * returns no action returns one of these, because "nothing to do" with no
+ * reason reads as a dead end.
+ */
+export type WaitingReason =
+  | "observer"
+  | "merchantNoSettlement"
+  | "merchantEscrowUnknown"
+  | "merchantEscrowHeld"
+  | "buyerEscrowUnreadable"
+  | "buyerNotLocked"
+  | "buyerAwaitingConfirm"
+  | "approvedNoEscrow"
+  | "disputed";
 
 export interface TradeSituation {
   /** What this wallet may do now. Empty is an ordinary answer. */
@@ -122,7 +141,7 @@ export interface TradeSituation {
    * generic "nothing to do", which reads as a dead end. `null` when the trade
    * has ended.
    */
-  waitingOn: string | null;
+  waitingOn: WaitingReason | null;
 }
 
 export interface TradeContext {
@@ -139,78 +158,21 @@ export interface TradeContext {
   escrow: DecodedTradeEscrow | null | undefined;
 }
 
+/** The rules for each action — its on-chain and destructive flags. The
+ *  label and one-line detail are user copy, resolved by the trade room from
+ *  its message catalogue keyed by the action kind. */
 const ACTIONS: Record<TradeActionKind, Omit<TradeAction, "kind">> = {
-  initiate: {
-    label: "Open the settlement",
-    detail:
-      "Records the buyer and the merchant against this reservation and starts the payment window. Signed by you, sent to the node — nothing moves on chain.",
-    onchain: false,
-  },
-  "lock-escrow": {
-    label: "Lock the escrow",
-    detail:
-      "Reserves the amount in your liquidity vault, opens the trade escrow, and moves the tokens into it. One transaction, so a reservation can never be left marked against inventory with no escrow behind it.",
-    onchain: true,
-  },
-  "declare-paid": {
-    label: "I have sent the payment",
-    detail:
-      "Tells the merchant the fiat is on its way. Only do this once you have actually sent it — the declaration is signed by you and permanent.",
-    onchain: false,
-  },
-  approve: {
-    label: "Confirm the payment arrived",
-    detail:
-      "Two signatures: the node records your approval, and the escrow program marks the trade approved so the tokens can be released.",
-    onchain: true,
-  },
-  release: {
-    label: "Release the escrow",
-    detail:
-      "Pays the buyer and the four fee treasuries out of the escrow. Anyone may submit it once the merchant has approved, and it goes through the node so the network records the confirmation.",
-    onchain: true,
-  },
-  "cancel-escrow": {
-    label: "Return the tokens to the vault",
-    detail:
-      "Cancels the on-chain escrow and puts the merchant's tokens back in their liquidity vault. Only possible before release.",
-    onchain: true,
-    destructive: true,
-  },
-  "cancel-reservation": {
-    label: "Cancel this reservation",
-    detail:
-      "Withdraws your claim on the merchant's liquidity and frees it immediately, instead of holding it for the rest of the 30-minute window. Signed by you, sent to the node — nothing moves on chain, and only you can cancel your own reservation.",
-    onchain: false,
-    destructive: true,
-  },
-  "cancel-settlement": {
-    label: "Cancel the trade",
-    detail:
-      "Ends the settlement with nothing owed either way. Possible only while no payment has been declared — once the buyer has said they paid, neither side can walk away unilaterally.",
-    onchain: false,
-    destructive: true,
-  },
-  "reverse-payment": {
-    label: "I have not actually paid",
-    detail:
-      "Withdraws your declaration and returns the trade to awaiting payment. Only do this for a declaration made in error: it lets the merchant cancel the trade, so a payment that really has left your account must go to a dispute instead.",
-    onchain: false,
-    destructive: true,
-  },
-  "reject-payment": {
-    label: "The payment never arrived",
-    detail:
-      "Records your refusal without opening a dispute or paying a filing fee. It is your claim, not a ruling — a buyer who really did pay can still open a dispute afterwards.",
-    onchain: false,
-    destructive: true,
-  },
-  dispute: {
-    label: "Open a dispute",
-    detail:
-      "Puts the trade in front of arbitrators. Both parties' evidence comes from the trade channel, and disclosing it to an arbitrator shares the whole conversation permanently.",
-    onchain: false,
-  },
+  initiate: { onchain: false },
+  "lock-escrow": { onchain: true },
+  "declare-paid": { onchain: false },
+  approve: { onchain: true },
+  release: { onchain: true },
+  "cancel-escrow": { onchain: true, destructive: true },
+  "cancel-reservation": { onchain: false, destructive: true },
+  "cancel-settlement": { onchain: false, destructive: true },
+  "reverse-payment": { onchain: false, destructive: true },
+  "reject-payment": { onchain: false, destructive: true },
+  dispute: { onchain: false },
 };
 
 function action(kind: TradeActionKind): TradeAction {
@@ -234,10 +196,7 @@ export function tradeSituation(context: TradeContext): TradeSituation {
   }
 
   if (side === "observer") {
-    return {
-      actions: [],
-      waitingOn: "You are not a party to this trade, so there is nothing here for you to sign.",
-    };
+    return { actions: [], waitingOn: "observer" };
   }
 
   if (!settlement) {
@@ -247,11 +206,7 @@ export function tradeSituation(context: TradeContext): TradeSituation {
     // only side this branch can be reached from as anything but an observer.
     return side === "buyer"
       ? { actions: [action("initiate"), action("cancel-reservation")], waitingOn: null }
-      : {
-          actions: [],
-          waitingOn:
-            "The taker has reserved against your advertisement but has not opened the settlement yet. Until they do, there is no record naming you as the seller to act on — and only they can cancel their own reservation.",
-        };
+      : { actions: [], waitingOn: "merchantNoSettlement" };
   }
 
   // The escrow is fundable exactly once: `create_trade_escrow` initializes
@@ -270,8 +225,7 @@ export function tradeSituation(context: TradeContext): TradeSituation {
           return unreadable
             ? {
                 actions: [action("cancel-settlement")],
-                waitingOn:
-                  "The cluster could not be read, so whether this trade's escrow already exists is unknown. Locking it again would fail on an account that is already there — reload before signing anything.",
+                waitingOn: "merchantEscrowUnknown",
               }
             : {
                 actions: [action("lock-escrow"), action("cancel-settlement")],
@@ -280,16 +234,13 @@ export function tradeSituation(context: TradeContext): TradeSituation {
         }
         return {
           actions: [action("cancel-settlement"), action("cancel-escrow"), action("dispute")],
-          waitingOn:
-            "The escrow holds your tokens. The buyer has not declared the fiat sent yet — which is also the only window in which either of you can still walk away.",
+          waitingOn: "merchantEscrowHeld",
         };
       }
       if (!funded) {
         return {
           actions: [action("cancel-settlement"), action("dispute")],
-          waitingOn: unreadable
-            ? "Whether the merchant has locked the tokens could not be read from the cluster. Do not send any money until it can be."
-            : "The merchant has not locked the tokens in escrow yet. Do not send any money until they have — there is nothing on chain backing this trade.",
+          waitingOn: unreadable ? "buyerEscrowUnreadable" : "buyerNotLocked",
         };
       }
       return {
@@ -314,8 +265,7 @@ export function tradeSituation(context: TradeContext): TradeSituation {
             // and it is deliberately not a cancel: reversal returns the trade
             // to `AwaitingPayment`, which re-arms the merchant's cancel.
             actions: [action("reverse-payment"), action("dispute")],
-            waitingOn:
-              "The merchant has been told the payment is sent and has not confirmed it yet.",
+            waitingOn: "buyerAwaitingConfirm",
           };
 
     case "Approved":
@@ -323,9 +273,7 @@ export function tradeSituation(context: TradeContext): TradeSituation {
       // wait on a merchant twice for the same trade.
       return {
         actions: [action("release")],
-        waitingOn: funded
-          ? null
-          : "This settlement is approved but no escrow was ever funded for it, so there is nothing to release.",
+        waitingOn: funded ? null : "approvedNoEscrow",
       };
 
     case "Completed":
@@ -334,10 +282,6 @@ export function tradeSituation(context: TradeContext): TradeSituation {
       return { actions: [], waitingOn: null };
 
     case "Disputed":
-      return {
-        actions: [],
-        waitingOn:
-          "This trade is with arbitrators. The escrow moves on their decision, not on either party's signature.",
-      };
+      return { actions: [], waitingOn: "disputed" };
   }
 }
