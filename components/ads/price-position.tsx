@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
 import { formatNumber } from "@/lib/format";
@@ -67,6 +68,7 @@ export function PricePosition({
   price: number;
   premium: number;
 }) {
+  const t = useTranslations("ads");
   const [book, setBook] = useState<BookState>({ status: "loading" });
 
   useEffect(() => {
@@ -81,14 +83,13 @@ export function PricePosition({
   }, []);
 
   if (book.status === "loading") {
-    return <p className="text-xs text-gray-500">Reading the current book…</p>;
+    return <p className="text-xs text-gray-500">{t("ppLoading")}</p>;
   }
 
   if (book.status === "error") {
     return (
       <p className="text-xs text-gray-500">
-        Could not read the current book, so there is nothing to compare this price against. That is
-        a failure to ask, not a finding that the market is empty.
+        {t("ppError")}
       </p>
     );
   }
@@ -109,9 +110,11 @@ export function PricePosition({
   if (market.length === 0) {
     return (
       <p className="text-xs text-emerald-300/90">
-        Nobody else is advertising {assetLabel ?? "this token"}/{fiat} on the{" "}
-        {direction === "Sell" ? "sell" : "buy"} side. Yours would be the only one, which means it
-        takes every order in this corridor — and sets the price.
+        {t("ppOnly", {
+          asset: assetLabel ?? t("thisToken"),
+          fiat,
+          side: direction === "Sell" ? t("ppSideSell") : t("ppSideBuy"),
+        })}
       </p>
     );
   }
@@ -123,8 +126,7 @@ export function PricePosition({
     if (premiums.length === 0) {
       return (
         <p className="text-xs text-gray-500">
-          {market.length} other advertisement{market.length === 1 ? "" : "s"} in this market, all
-          fixed-price. There is no floating premium to compare yours against.
+          {t("ppAllFixed", { count: market.length })}
         </p>
       );
     }
@@ -132,14 +134,13 @@ export function PricePosition({
     const high = Math.max(...premiums);
     return (
       <p className="text-xs text-gray-400">
-        {premiums.length} other floating advertisement{premiums.length === 1 ? "" : "s"} here quote
-        between {low >= 0 ? "+" : ""}
-        {low.toFixed(2)}% and {high >= 0 ? "+" : ""}
-        {high.toFixed(2)}% over the oracle mid. Yours is {premium >= 0 ? "+" : ""}
-        {premium}%.{" "}
-        <span className="text-gray-600">
-          Where that lands for a buyer depends on the mid, which this screen does not read.
-        </span>
+        {t.rich("ppFloatingRange", {
+          count: premiums.length,
+          low: `${low >= 0 ? "+" : ""}${low.toFixed(2)}%`,
+          high: `${high >= 0 ? "+" : ""}${high.toFixed(2)}%`,
+          mine: `${premium >= 0 ? "+" : ""}${premium}%`,
+          muted: (chunks) => <span className="text-gray-600">{chunks}</span>,
+        })}
       </p>
     );
   }
@@ -148,8 +149,7 @@ export function PricePosition({
   if (priced.length === 0 || !(price > 0)) {
     return (
       <p className="text-xs text-gray-500">
-        {market.length} other advertisement{market.length === 1 ? "" : "s"} in this market, none of
-        them currently priceable — so there is nothing to compare against yet.
+        {t("ppNonePriceable", { count: market.length })}
       </p>
     );
   }
@@ -171,14 +171,18 @@ export function PricePosition({
 
   return (
     <p className="text-xs text-gray-400">
-      <span className={better === 0 ? "text-emerald-300" : "text-gray-200"}>
-        #{better + 1} of {priced.length + 1}
-      </span>{" "}
-      at {formatNumber(price)} {fiat}. The best {direction === "Sell" ? "offer" : "bid"} here is{" "}
-      {formatNumber(best)} {fiat}.{" "}
-      <span className="text-gray-600">
-        Position in the live book as it stands, not a forecast — it moves when anyone reprices.
-      </span>
+      {t.rich("ppRanked", {
+        rank: better + 1,
+        total: priced.length + 1,
+        price: formatNumber(price),
+        fiat,
+        bestLabel: direction === "Sell" ? t("ppOffer") : t("ppBid"),
+        best: formatNumber(best),
+        strong: (chunks) => (
+          <span className={better === 0 ? "text-emerald-300" : "text-gray-200"}>{chunks}</span>
+        ),
+        muted: (chunks) => <span className="text-gray-600">{chunks}</span>,
+      })}
     </p>
   );
 }

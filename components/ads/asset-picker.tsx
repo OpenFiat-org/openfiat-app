@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PublicKey } from "@solana/web3.js";
 
 import { assetOptions, useReferenceData, type AssetOption } from "@/lib/reference";
@@ -47,6 +48,7 @@ export function AssetPicker({
   onChange: (asset: AssetOption) => void;
   walletAddress: string | null;
 }) {
+  const t = useTranslations("ads");
   const reference = useReferenceData();
   const [balances, setBalances] = useState<Map<string, bigint> | null | undefined>(undefined);
 
@@ -97,18 +99,22 @@ export function AssetPicker({
   }, [walletAddress]);
 
   if (reference.status === "loading") {
-    return <p className="text-sm text-gray-500">Asking your node which tokens it names…</p>;
+    return <p className="text-sm text-gray-500">{t("apAskingTokens")}</p>;
   }
 
   if (reference.status === "error") {
     return (
       <p className="text-sm text-amber-300">
-        Couldn&apos;t ask your access node which tokens exist ({reference.message}).{" "}
-        <button type="button" onClick={reference.retry} className="underline hover:text-amber-200">
-          Try again
-        </button>
+        {t.rich("apRefError", {
+          message: reference.message,
+          retry: (chunks) => (
+            <button type="button" onClick={reference.retry} className="underline hover:text-amber-200">
+              {chunks}
+            </button>
+          ),
+        })}
         <span className="mt-1 block text-[11px] text-gray-600">
-          This says nothing about which tokens are tradeable — only that we could not ask.
+          {t("apRefErrorSub")}
         </span>
       </p>
     );
@@ -119,8 +125,7 @@ export function AssetPicker({
   if (options.length === 0) {
     return (
       <p className="text-sm text-gray-400">
-        This node names no token mints, so there is nothing to choose from here. An advertisement
-        still needs one, so a node that publishes its mint table is needed before you can post.
+        {t("apNoMints")}
       </p>
     );
   }
@@ -154,10 +159,10 @@ export function AssetPicker({
                     {balances === undefined
                       ? ""
                       : balances === null
-                        ? "balance unavailable"
+                        ? t("apBalanceUnavailable")
                         : held === undefined
-                          ? "0 in your wallet"
-                          : `${formatBaseUnits(held, option.decimals)} in your wallet`}
+                          ? t("apInWallet", { amount: "0" })
+                          : t("apInWallet", { amount: formatBaseUnits(held, option.decimals) })}
                   </span>
                 </span>
                 {/* The address, always, next to the name. A name shown alone
@@ -168,7 +173,7 @@ export function AssetPicker({
                   className="mt-1 block font-mono text-[11px] text-gray-600"
                   title={option.mint}
                 >
-                  {shortMint(new PublicKey(option.mint))} · {option.decimals} decimals
+                  {shortMint(new PublicKey(option.mint))} · {t("apDecimals", { decimals: option.decimals })}
                 </span>
               </button>
             </li>
@@ -176,11 +181,8 @@ export function AssetPicker({
         })}
       </ul>
       <p className="mt-2 text-[11px] leading-relaxed text-gray-600">
-        Names and precisions come from your node&rsquo;s mint table, and the address is what the
-        advertisement carries. What can actually be escrowed is decided by the escrow program on
-        chain, which governance can change — so a token listed here is one this node can name, not
-        a promise that a trade in it will settle.
-        {!walletAddress && " Connect a wallet to see what you hold of each."}
+        {t("apFooter")}
+        {!walletAddress && ` ${t("apFooterConnect")}`}
       </p>
     </div>
   );

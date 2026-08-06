@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import bs58 from "bs58";
 import type { PaymentMethodCategory } from "@openfiat/sdk";
 
@@ -25,27 +26,13 @@ import {
   type SolanaProvider,
 } from "@/lib/wallet-connection";
 
-const GROUP_LABELS: Record<GroupedMethod["group"], string> = {
-  merchant: "Rails you defined",
-  suggested: "Common here",
-  others: "Everywhere else",
-};
-
 /**
- * The four categories, and what each one decides.
- *
- * Not decoration: the category is what a payment-account form derives its
- * fields from — `lib/payment-accounts.ts` turns `MobileMoney` into a phone
- * number and `BankTransfer` into an account number and branch — so choosing
- * the wrong one gives the merchant a form asking for the wrong details. The
- * hints say what each will ask for rather than restating the name.
+ * The four categories, in order. Their labels and hints are user copy,
+ * resolved from the `ads` catalogue by value — the category is what a
+ * payment-account form derives its fields from (`lib/payment-accounts.ts`),
+ * so choosing the wrong one asks the merchant for the wrong details.
  */
-const CATEGORIES: { value: PaymentMethodCategory; label: string; hint: string }[] = [
-  { value: "MobileMoney", label: "Mobile money", hint: "asks for a registered name and phone number" },
-  { value: "BankTransfer", label: "Bank transfer", hint: "asks for an account number, bank and branch" },
-  { value: "Fintech", label: "Wallet or fintech", hint: "asks for an account name and handle" },
-  { value: "Cash", label: "Cash", hint: "asks for a name and a meeting area" },
-];
+const CATEGORIES: PaymentMethodCategory[] = ["MobileMoney", "BankTransfer", "Fintech", "Cash"];
 
 /**
  * Payment-method picker: the node's per-country catalogue, type-ahead over
@@ -116,6 +103,7 @@ export function MethodPicker({
   merchant?: string | null;
   max?: number;
 }) {
+  const t = useTranslations("ads");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
@@ -196,12 +184,12 @@ export function MethodPicker({
                 name sits in the same row as a compiled-in one and reads as
                 though the network vouches for it. */}
             {!id.startsWith("builtin:") && (
-              <span className="text-[10px] uppercase tracking-wide text-brand/70">yours</span>
+              <span className="text-[10px] uppercase tracking-wide text-brand/70">{t("mpYours")}</span>
             )}
             <button
               type="button"
               onClick={() => onChange(selected.filter((x) => x !== id))}
-              aria-label={`Remove ${methodLabel(id, names)}`}
+              aria-label={t("mpRemove", { name: methodLabel(id, names) })}
               className="text-gray-500 hover:text-white"
             >
               ✕
@@ -209,10 +197,10 @@ export function MethodPicker({
           </span>
         ))}
         {selected.length === 0 && (
-          <p className="text-xs text-gray-600">No payment methods selected yet.</p>
+          <p className="text-xs text-gray-600">{t("mpNoneSelected")}</p>
         )}
         <span className="ml-auto text-[11px] tabular-nums text-gray-600">
-          {selected.length} of {max}
+          {t("mpCountOfMax", { count: selected.length, max })}
         </span>
       </div>
 
@@ -226,47 +214,40 @@ export function MethodPicker({
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           disabled={full}
-          aria-label="Search payment methods"
-          placeholder={
-            full
-              ? "Five is the most an advertisement can list — remove one to add another"
-              : "Search payment methods — try “mpesa”, “pix”, “upi”…"
-          }
+          aria-label={t("mpSearchAria")}
+          placeholder={full ? t("mpFullPlaceholder") : t("mpSearchPlaceholder")}
           className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50 disabled:cursor-not-allowed disabled:opacity-50"
         />
         {open && !full && (
           <ul className="absolute z-30 mt-1 max-h-72 w-full divide-y divide-white/5 overflow-y-auto rounded-md border border-white/15 bg-[#10151d] shadow-xl">
             {state.status === "loading" && (
-              <li className="px-3 py-2 text-sm text-gray-500">Asking the node…</li>
+              <li className="px-3 py-2 text-sm text-gray-500">{t("mpAskingNode")}</li>
             )}
             {/* Named as a failure to reach the node, never as an absence of
                 methods. The difference decides what a merchant does next. */}
             {state.status === "error" && (
               <li className="px-3 py-2 text-sm">
-                <span className="text-amber-400">Could not load payment methods.</span>{" "}
+                <span className="text-amber-400">{t("mpLoadError")}</span>{" "}
                 <button
                   type="button"
                   onClick={state.retry}
                   className="text-brand underline underline-offset-2 hover:text-white"
                 >
-                  Try again
+                  {t("mpTryAgain")}
                 </button>
                 <span className="mt-1 block text-[11px] text-gray-600">
-                  Nothing can be selected until your node answers — the node only accepts rails it
-                  can resolve.
+                  {t("mpLoadErrorSub")}
                 </span>
               </li>
             )}
             {state.status === "ready" && suggestions.length === 0 && (
               <li className="px-3 py-2 text-sm text-gray-500">
-                {query.trim()
-                  ? `Your node lists no rail matching “${query.trim()}” — you can define one below.`
-                  : "Your node lists no payment methods."}
+                {query.trim() ? t("mpNoMatch", { query: query.trim() }) : t("mpNoMethods")}
               </li>
             )}
             {suggestions.map((entry, i) => {
               const previous = suggestions[i - 1];
-              const heading = previous?.group !== entry.group ? GROUP_LABELS[entry.group] : null;
+              const heading = previous?.group !== entry.group ? t(`mpGroup.${entry.group}`) : null;
               return (
                 <li key={entry.method.id}>
                   {heading && (
@@ -282,7 +263,7 @@ export function MethodPicker({
                   >
                     {entry.method.name}
                     <span className="ml-auto text-[10px] text-gray-600">
-                      {entry.method.category}
+                      {t(`mpCategory.${entry.method.category}.label`)}
                     </span>
                   </button>
                 </li>
@@ -325,6 +306,7 @@ function DefineYourOwnRail({
   disabled: boolean;
   onDefined: (id: string) => void;
 }) {
+  const t = useTranslations("ads");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<PaymentMethodCategory>("BankTransfer");
@@ -384,8 +366,7 @@ function DefineYourOwnRail({
     return (
       <div className="mt-1.5">
         <p className="text-[11px] leading-relaxed text-gray-600">
-          These are the rails your node carries, ordered by what the country you selected actually
-          uses. Settle on something it has never heard of?{" "}
+          {t("mpDefineIntro")}{" "}
           {mine ? (
             <button
               type="button"
@@ -393,14 +374,13 @@ function DefineYourOwnRail({
               disabled={disabled}
               className="text-brand underline underline-offset-2 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Define your own rail
+              {t("mpDefineOwn")}
             </button>
           ) : (
             /* Named as a missing signer, not as a missing feature. A
                merchant told "not available" goes looking for a setting. */
             <span className="text-gray-500">
-              Connect the wallet this advertisement belongs to, with message signing, to define your
-              own rail.
+              {t("mpConnectToDefine")}
             </span>
           )}
         </p>
@@ -410,30 +390,28 @@ function DefineYourOwnRail({
 
   return (
     <div className="mt-3 rounded-md border border-white/10 bg-white/[0.02] p-3">
-      <p className="text-xs font-medium text-gray-200">Define your own rail</p>
+      <p className="text-xs font-medium text-gray-200">{t("mpDefineTitle")}</p>
       <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
-        Published to your node and gossiped to the rest, signed by your wallet — not saved in this
-        browser. Only you can put it on an advertisement; anyone reading one of yours can resolve
-        what it means.
+        {t("mpDefineNote")}
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs text-gray-500" htmlFor="define-rail-name">
-            Name
+            {t("mpName")}
           </label>
           <input
             id="define-rail-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={MAX_METHOD_NAME_CHARS * 2}
-            placeholder="e.g. Sacco Standing Order"
+            placeholder={t("mpNamePlaceholder")}
             className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
           />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-500" htmlFor="define-rail-category">
-            Kind
+            {t("mpKind")}
           </label>
           <select
             id="define-rail-category"
@@ -442,14 +420,13 @@ function DefineYourOwnRail({
             className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50 [&>option]:bg-[#10151d]"
           >
             {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
+              <option key={c} value={c}>
+                {t(`mpCategory.${c}.label`)}
               </option>
             ))}
           </select>
           <p className="mt-1 text-[11px] text-gray-600">
-            Decides what your payment-account form asks for — {" "}
-            {CATEGORIES.find((c) => c.value === category)?.hint}.
+            {t("mpKindNote", { hint: t(`mpCategory.${category}.hint`) })}
           </p>
         </div>
       </div>
@@ -460,9 +437,7 @@ function DefineYourOwnRail({
       {/* The one thing a merchant cannot find out by trying: there is no
           way back from this. Said before the button, not after. */}
       <p className="mt-3 text-[11px] leading-relaxed text-gray-600">
-        A definition cannot be edited or deleted. Its id is a digest of the name and kind, so
-        changing either publishes a <em>different</em> rail and every advertisement that chose the
-        first still carries the first. Get the name right now.
+        {t.rich("mpImmutable", { em: (chunks) => <em>{chunks}</em> })}
       </p>
 
       <div className="mt-3 flex items-center gap-3">
@@ -472,7 +447,7 @@ function DefineYourOwnRail({
           disabled={publishing || name.trim().length === 0 || problem !== null}
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
-          {publishing ? "Waiting for your wallet…" : "Publish and select"}
+          {publishing ? t("mpWaitingWallet") : t("mpPublishSelect")}
         </button>
         <button
           type="button"
@@ -482,7 +457,7 @@ function DefineYourOwnRail({
           }}
           className="text-sm text-gray-500 hover:text-gray-300"
         >
-          Cancel
+          {t("mpCancel")}
         </button>
       </div>
     </div>

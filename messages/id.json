@@ -1427,6 +1427,76 @@
     "newMetaTitle": "Pasang Iklan",
     "newMetaDescription": "Publikasikan iklan OpenFiat baru — jenis dan aset, harga, jumlah dan batas, metode pembayaran, lalu konfirmasi.",
     "newHeroTitle": "Pasang sebuah iklan",
-    "newHeroIntro": "Lima langkah, dalam urutan yang diminta setiap meja P2P: jenis dan aset, harga, jumlah dan batas, metode pembayaran, lalu tinjauan. Kemajuan Anda disimpan sebagai draf di peramban ini dan tidak ada yang ditandatangani sampai layar terakhir. Baru di sini? <link>Lihat apa yang diperlukan untuk menjadi pedagang</link>."
+    "newHeroIntro": "Lima langkah, dalam urutan yang diminta setiap meja P2P: jenis dan aset, harga, jumlah dan batas, metode pembayaran, lalu tinjauan. Kemajuan Anda disimpan sebagai draf di peramban ini dan tidak ada yang ditandatangani sampai layar terakhir. Baru di sini? <link>Lihat apa yang diperlukan untuk menjadi pedagang</link>.",
+    "ppLoading": "Membaca buku saat ini…",
+    "ppError": "Tidak dapat membaca buku saat ini, jadi tidak ada yang bisa dibandingkan dengan harga ini. Itu kegagalan bertanya, bukan temuan bahwa pasar kosong.",
+    "ppOnly": "Tidak ada orang lain yang mengiklankan {asset}/{fiat} di sisi {side}. Milik Anda akan menjadi satu-satunya, artinya ia mengambil setiap pesanan di koridor ini — dan menetapkan harga.",
+    "ppSideSell": "jual",
+    "ppSideBuy": "beli",
+    "thisToken": "token ini",
+    "ppAllFixed": "{count, plural, other {# iklan lain}} di pasar ini, semuanya berharga tetap. Tidak ada premi mengambang untuk membandingkan milik Anda.",
+    "ppFloatingRange": "{count, plural, other {# iklan mengambang lain}} di sini mengutip antara {low} dan {high} di atas titik tengah oracle. Milik Anda {mine}. <muted>Di mana itu jatuh bagi pembeli tergantung pada titik tengah, yang tidak dibaca layar ini.</muted>",
+    "ppNonePriceable": "{count, plural, other {# iklan lain}} di pasar ini, tidak satu pun yang saat ini dapat dihargai — jadi belum ada yang bisa dibandingkan.",
+    "ppRanked": "<strong>#{rank} dari {total}</strong> pada {price} {fiat}. {bestLabel} terbaik di sini adalah {best} {fiat}. <muted>Posisi dalam buku langsung apa adanya, bukan ramalan — ia bergerak saat siapa pun mengubah harga.</muted>",
+    "ppOffer": "penawaran",
+    "ppBid": "tawaran",
+    "apAskingTokens": "Menanyakan node Anda token apa yang dinamainya…",
+    "apRefError": "Tidak dapat menanyakan node akses Anda token apa yang ada ({message}). <retry>Coba lagi</retry>",
+    "apRefErrorSub": "Ini tidak mengatakan apa pun tentang token mana yang dapat diperdagangkan — hanya bahwa kami tidak dapat bertanya.",
+    "apNoMints": "Node ini tidak menamai mint token apa pun, jadi tidak ada yang bisa dipilih di sini. Sebuah iklan tetap membutuhkan satu, jadi diperlukan node yang memublikasikan tabel mint-nya sebelum Anda dapat memasang.",
+    "apBalanceUnavailable": "saldo tidak tersedia",
+    "apInWallet": "{amount} di dompet Anda",
+    "apDecimals": "{decimals} desimal",
+    "apFooter": "Nama dan presisi berasal dari tabel mint node Anda, dan alamat adalah yang dibawa iklan. Apa yang sebenarnya dapat di-escrow diputuskan oleh program escrow on-chain, yang dapat diubah tata kelola — jadi token yang tercantum di sini adalah yang dapat dinamai node ini, bukan janji bahwa transaksi di dalamnya akan diselesaikan.",
+    "apFooterConnect": "Hubungkan dompet untuk melihat berapa banyak Anda memegang masing-masing.",
+    "mpGroup": {
+      "merchant": "Rel yang Anda tetapkan",
+      "suggested": "Umum di sini",
+      "others": "Di tempat lain"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "Uang seluler",
+        "hint": "meminta nama terdaftar dan nomor telepon"
+      },
+      "BankTransfer": {
+        "label": "Transfer bank",
+        "hint": "meminta nomor rekening, bank, dan cabang"
+      },
+      "Fintech": {
+        "label": "Dompet atau fintech",
+        "hint": "meminta nama akun dan handel"
+      },
+      "Cash": {
+        "label": "Tunai",
+        "hint": "meminta nama dan area pertemuan"
+      }
+    },
+    "mpYours": "milik Anda",
+    "mpRemove": "Hapus {name}",
+    "mpNoneSelected": "Belum ada metode pembayaran yang dipilih.",
+    "mpCountOfMax": "{count} dari {max}",
+    "mpSearchAria": "Cari metode pembayaran",
+    "mpFullPlaceholder": "Lima adalah maksimum yang bisa dicantumkan sebuah iklan — hapus satu untuk menambah yang lain",
+    "mpSearchPlaceholder": "Cari metode pembayaran — coba “mpesa”, “pix”, “upi”…",
+    "mpAskingNode": "Menanyakan node…",
+    "mpLoadError": "Tidak dapat memuat metode pembayaran.",
+    "mpTryAgain": "Coba lagi",
+    "mpLoadErrorSub": "Tidak ada yang bisa dipilih sampai node Anda menjawab — node hanya menerima rel yang bisa diselesaikannya.",
+    "mpNoMatch": "Node Anda tidak mencantumkan rel yang cocok dengan “{query}” — Anda bisa menetapkan satu di bawah.",
+    "mpNoMethods": "Node Anda tidak mencantumkan metode pembayaran.",
+    "mpDefineIntro": "Ini rel yang dibawa node Anda, diurutkan berdasarkan apa yang sebenarnya digunakan negara yang Anda pilih. Menetapkan sesuatu yang belum pernah didengarnya?",
+    "mpDefineOwn": "Tetapkan rel Anda sendiri",
+    "mpConnectToDefine": "Hubungkan dompet tempat iklan ini berada, dengan penandatanganan pesan, untuk menetapkan rel Anda sendiri.",
+    "mpDefineTitle": "Tetapkan rel Anda sendiri",
+    "mpDefineNote": "Dipublikasikan ke node Anda dan disebarkan ke lainnya, ditandatangani oleh dompet Anda — tidak disimpan di peramban ini. Hanya Anda yang bisa memasangnya pada sebuah iklan; siapa pun yang membaca salah satu milik Anda bisa menyelesaikan apa artinya.",
+    "mpName": "Nama",
+    "mpNamePlaceholder": "mis. Perintah Tetap Sacco",
+    "mpKind": "Jenis",
+    "mpKindNote": "Menentukan apa yang diminta formulir akun pembayaran Anda — {hint}.",
+    "mpImmutable": "Sebuah definisi tidak dapat disunting atau dihapus. Id-nya adalah ringkasan dari nama dan jenis, jadi mengubah salah satunya memublikasikan rel yang <em>berbeda</em> dan setiap iklan yang memilih yang pertama tetap membawa yang pertama. Buat namanya benar sekarang.",
+    "mpWaitingWallet": "Menunggu dompet Anda…",
+    "mpPublishSelect": "Publikasikan dan pilih",
+    "mpCancel": "Batal"
   }
 }

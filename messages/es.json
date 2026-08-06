@@ -1427,6 +1427,76 @@
     "newMetaTitle": "Publicar anuncio",
     "newMetaDescription": "Publica un nuevo anuncio de OpenFiat — tipo y activo, precio, cantidad y límites, métodos de pago, luego confirmar.",
     "newHeroTitle": "Publicar un anuncio",
-    "newHeroIntro": "Cinco pasos, en el orden que pide toda mesa P2P: tipo y activo, precio, cantidad y límites, métodos de pago, luego revisión. Tu progreso se guarda como borrador en este navegador y nada se firma hasta la última pantalla. ¿Nuevo en esto? <link>Mira qué hace falta para ser comerciante</link>."
+    "newHeroIntro": "Cinco pasos, en el orden que pide toda mesa P2P: tipo y activo, precio, cantidad y límites, métodos de pago, luego revisión. Tu progreso se guarda como borrador en este navegador y nada se firma hasta la última pantalla. ¿Nuevo en esto? <link>Mira qué hace falta para ser comerciante</link>.",
+    "ppLoading": "Leyendo el libro actual…",
+    "ppError": "No se pudo leer el libro actual, así que no hay nada con qué comparar este precio. Eso es un fallo al preguntar, no un hallazgo de que el mercado esté vacío.",
+    "ppOnly": "Nadie más anuncia {asset}/{fiat} en el lado de {side}. El tuyo sería el único, lo que significa que toma toda orden en este corredor — y fija el precio.",
+    "ppSideSell": "venta",
+    "ppSideBuy": "compra",
+    "thisToken": "este token",
+    "ppAllFixed": "{count, plural, one {# otro anuncio} other {# otros anuncios}} en este mercado, todos de precio fijo. No hay margen flotante con el que comparar el tuyo.",
+    "ppFloatingRange": "{count, plural, one {# otro anuncio flotante} other {# otros anuncios flotantes}} aquí cotizan entre {low} y {high} sobre el punto medio del oráculo. El tuyo es {mine}. <muted>Dónde cae eso para un comprador depende del punto medio, que esta pantalla no lee.</muted>",
+    "ppNonePriceable": "{count, plural, one {# otro anuncio} other {# otros anuncios}} en este mercado, ninguno con precio actualmente — así que aún no hay nada con qué comparar.",
+    "ppRanked": "<strong>#{rank} de {total}</strong> a {price} {fiat}. La mejor {bestLabel} aquí es {best} {fiat}. <muted>Posición en el libro en vivo tal como está, no un pronóstico — se mueve cuando alguien revalúa.</muted>",
+    "ppOffer": "oferta",
+    "ppBid": "puja",
+    "apAskingTokens": "Preguntando a tu nodo qué tokens nombra…",
+    "apRefError": "No se pudo preguntar a tu nodo de acceso qué tokens existen ({message}). <retry>Reintentar</retry>",
+    "apRefErrorSub": "Esto no dice nada sobre qué tokens son negociables — solo que no pudimos preguntar.",
+    "apNoMints": "Este nodo no nombra ningún mint de token, así que aquí no hay nada que elegir. Un anuncio aún necesita uno, así que se necesita un nodo que publique su tabla de mints antes de que puedas publicar.",
+    "apBalanceUnavailable": "saldo no disponible",
+    "apInWallet": "{amount} en tu billetera",
+    "apDecimals": "{decimals} decimales",
+    "apFooter": "Los nombres y las precisiones vienen de la tabla de mints de tu nodo, y la dirección es lo que lleva el anuncio. Lo que realmente puede ponerse en custodia lo decide el programa de custodia en la cadena, que la gobernanza puede cambiar — así que un token listado aquí es uno que este nodo puede nombrar, no una promesa de que una operación en él se liquidará.",
+    "apFooterConnect": "Conecta una billetera para ver cuánto tienes de cada uno.",
+    "mpGroup": {
+      "merchant": "Rieles que definiste",
+      "suggested": "Común aquí",
+      "others": "En todas partes"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "Dinero móvil",
+        "hint": "pide un nombre registrado y un número de teléfono"
+      },
+      "BankTransfer": {
+        "label": "Transferencia bancaria",
+        "hint": "pide un número de cuenta, banco y sucursal"
+      },
+      "Fintech": {
+        "label": "Billetera o fintech",
+        "hint": "pide un nombre de cuenta y un identificador"
+      },
+      "Cash": {
+        "label": "Efectivo",
+        "hint": "pide un nombre y una zona de encuentro"
+      }
+    },
+    "mpYours": "tuyo",
+    "mpRemove": "Eliminar {name}",
+    "mpNoneSelected": "Aún no se han seleccionado métodos de pago.",
+    "mpCountOfMax": "{count} de {max}",
+    "mpSearchAria": "Buscar métodos de pago",
+    "mpFullPlaceholder": "Cinco es lo máximo que un anuncio puede listar — elimina uno para añadir otro",
+    "mpSearchPlaceholder": "Buscar métodos de pago — prueba «mpesa», «pix», «upi»…",
+    "mpAskingNode": "Preguntando al nodo…",
+    "mpLoadError": "No se pudieron cargar los métodos de pago.",
+    "mpTryAgain": "Reintentar",
+    "mpLoadErrorSub": "No se puede seleccionar nada hasta que tu nodo responda — el nodo solo acepta rieles que puede resolver.",
+    "mpNoMatch": "Tu nodo no lista ningún riel que coincida con «{query}» — puedes definir uno abajo.",
+    "mpNoMethods": "Tu nodo no lista métodos de pago.",
+    "mpDefineIntro": "Estos son los rieles que lleva tu nodo, ordenados por lo que el país que elegiste usa realmente. ¿Te decides por algo del que nunca ha oído hablar?",
+    "mpDefineOwn": "Define tu propio riel",
+    "mpConnectToDefine": "Conecta la billetera a la que pertenece este anuncio, con firma de mensajes, para definir tu propio riel.",
+    "mpDefineTitle": "Define tu propio riel",
+    "mpDefineNote": "Publicado en tu nodo y difundido al resto, firmado por tu billetera — no guardado en este navegador. Solo tú puedes ponerlo en un anuncio; cualquiera que lea uno de los tuyos puede resolver qué significa.",
+    "mpName": "Nombre",
+    "mpNamePlaceholder": "p. ej. Orden Permanente Sacco",
+    "mpKind": "Tipo",
+    "mpKindNote": "Decide qué pide tu formulario de cuenta de pago — {hint}.",
+    "mpImmutable": "Una definición no se puede editar ni eliminar. Su id es un resumen del nombre y el tipo, así que cambiar cualquiera publica un riel <em>distinto</em> y cada anuncio que eligió el primero sigue llevando el primero. Acierta el nombre ahora.",
+    "mpWaitingWallet": "Esperando a tu billetera…",
+    "mpPublishSelect": "Publicar y seleccionar",
+    "mpCancel": "Cancelar"
   }
 }

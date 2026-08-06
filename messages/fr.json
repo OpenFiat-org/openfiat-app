@@ -1427,6 +1427,76 @@
     "newMetaTitle": "Publier une annonce",
     "newMetaDescription": "Publiez une nouvelle annonce OpenFiat — type et actif, prix, montant et limites, moyens de paiement, puis confirmer.",
     "newHeroTitle": "Publier une annonce",
-    "newHeroIntro": "Cinq étapes, dans l'ordre que tout bureau P2P demande : type et actif, prix, montant et limites, moyens de paiement, puis révision. Votre progression est enregistrée comme brouillon dans ce navigateur et rien n'est signé jusqu'au dernier écran. Nouveau ici ? <link>Voyez ce qu'il faut pour être commerçant</link>."
+    "newHeroIntro": "Cinq étapes, dans l'ordre que tout bureau P2P demande : type et actif, prix, montant et limites, moyens de paiement, puis révision. Votre progression est enregistrée comme brouillon dans ce navigateur et rien n'est signé jusqu'au dernier écran. Nouveau ici ? <link>Voyez ce qu'il faut pour être commerçant</link>.",
+    "ppLoading": "Lecture du carnet actuel…",
+    "ppError": "Impossible de lire le carnet actuel, il n'y a donc rien à quoi comparer ce prix. C'est un échec à demander, pas un constat que le marché est vide.",
+    "ppOnly": "Personne d'autre n'annonce {asset}/{fiat} du côté {side}. La vôtre serait la seule, ce qui veut dire qu'elle prend chaque ordre de ce corridor — et fixe le prix.",
+    "ppSideSell": "vente",
+    "ppSideBuy": "achat",
+    "thisToken": "ce jeton",
+    "ppAllFixed": "{count, plural, one {# autre annonce} other {# autres annonces}} sur ce marché, toutes à prix fixe. Aucune prime flottante à laquelle comparer la vôtre.",
+    "ppFloatingRange": "{count, plural, one {# autre annonce flottante} other {# autres annonces flottantes}} ici cotent entre {low} et {high} au-dessus du milieu de l'oracle. La vôtre est {mine}. <muted>Où cela tombe pour un acheteur dépend du milieu, que cet écran ne lit pas.</muted>",
+    "ppNonePriceable": "{count, plural, one {# autre annonce} other {# autres annonces}} sur ce marché, aucune actuellement chiffrable — il n'y a donc encore rien à quoi comparer.",
+    "ppRanked": "<strong>#{rank} sur {total}</strong> à {price} {fiat}. La meilleure {bestLabel} ici est {best} {fiat}. <muted>Position dans le carnet en direct tel quel, pas une prévision — elle bouge quand quelqu'un révise son prix.</muted>",
+    "ppOffer": "offre",
+    "ppBid": "enchère",
+    "apAskingTokens": "Interrogation de votre nœud sur les jetons qu'il nomme…",
+    "apRefError": "Impossible de demander à votre nœud d'accès quels jetons existent ({message}). <retry>Réessayer</retry>",
+    "apRefErrorSub": "Cela ne dit rien sur les jetons échangeables — seulement que nous n'avons pas pu demander.",
+    "apNoMints": "Ce nœud ne nomme aucun mint de jeton, il n'y a donc rien à choisir ici. Une annonce en a quand même besoin d'un, un nœud publiant sa table de mints est donc nécessaire avant que vous puissiez publier.",
+    "apBalanceUnavailable": "solde indisponible",
+    "apInWallet": "{amount} dans votre portefeuille",
+    "apDecimals": "{decimals} décimales",
+    "apFooter": "Les noms et précisions viennent de la table des mints de votre nœud, et l'adresse est ce que l'annonce porte. Ce qui peut réellement être mis en séquestre est décidé par le programme de séquestre sur la chaîne, que la gouvernance peut changer — un jeton listé ici est donc un que ce nœud peut nommer, pas une promesse qu'un échange dans ce jeton se réglera.",
+    "apFooterConnect": "Connectez un portefeuille pour voir combien vous détenez de chacun.",
+    "mpGroup": {
+      "merchant": "Rails que vous avez définis",
+      "suggested": "Courant ici",
+      "others": "Partout ailleurs"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "Argent mobile",
+        "hint": "demande un nom enregistré et un numéro de téléphone"
+      },
+      "BankTransfer": {
+        "label": "Virement bancaire",
+        "hint": "demande un numéro de compte, une banque et une agence"
+      },
+      "Fintech": {
+        "label": "Portefeuille ou fintech",
+        "hint": "demande un nom de compte et un identifiant"
+      },
+      "Cash": {
+        "label": "Espèces",
+        "hint": "demande un nom et un lieu de rendez-vous"
+      }
+    },
+    "mpYours": "le vôtre",
+    "mpRemove": "Retirer {name}",
+    "mpNoneSelected": "Aucun moyen de paiement sélectionné pour l'instant.",
+    "mpCountOfMax": "{count} sur {max}",
+    "mpSearchAria": "Rechercher des moyens de paiement",
+    "mpFullPlaceholder": "Cinq est le maximum qu'une annonce peut lister — retirez-en un pour en ajouter un autre",
+    "mpSearchPlaceholder": "Rechercher des moyens de paiement — essayez « mpesa », « pix », « upi »…",
+    "mpAskingNode": "Interrogation du nœud…",
+    "mpLoadError": "Impossible de charger les moyens de paiement.",
+    "mpTryAgain": "Réessayer",
+    "mpLoadErrorSub": "Rien ne peut être sélectionné tant que votre nœud ne répond pas — le nœud n'accepte que les rails qu'il peut résoudre.",
+    "mpNoMatch": "Votre nœud ne liste aucun rail correspondant à « {query} » — vous pouvez en définir un ci-dessous.",
+    "mpNoMethods": "Votre nœud ne liste aucun moyen de paiement.",
+    "mpDefineIntro": "Voici les rails que votre nœud porte, ordonnés selon ce que le pays que vous avez choisi utilise réellement. Vous décidez pour quelque chose dont il n'a jamais entendu parler ?",
+    "mpDefineOwn": "Définissez votre propre rail",
+    "mpConnectToDefine": "Connectez le portefeuille auquel cette annonce appartient, avec la signature de messages, pour définir votre propre rail.",
+    "mpDefineTitle": "Définissez votre propre rail",
+    "mpDefineNote": "Publié sur votre nœud et diffusé au reste, signé par votre portefeuille — non enregistré dans ce navigateur. Vous seul pouvez le mettre sur une annonce ; quiconque lit l'une des vôtres peut résoudre ce qu'il signifie.",
+    "mpName": "Nom",
+    "mpNamePlaceholder": "p. ex. Ordre permanent Sacco",
+    "mpKind": "Type",
+    "mpKindNote": "Décide ce que votre formulaire de compte de paiement demande — {hint}.",
+    "mpImmutable": "Une définition ne peut être ni modifiée ni supprimée. Son id est un condensé du nom et du type, donc changer l'un ou l'autre publie un rail <em>différent</em> et chaque annonce ayant choisi le premier porte toujours le premier. Mettez le bon nom maintenant.",
+    "mpWaitingWallet": "En attente de votre portefeuille…",
+    "mpPublishSelect": "Publier et sélectionner",
+    "mpCancel": "Annuler"
   }
 }

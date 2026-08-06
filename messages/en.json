@@ -1427,6 +1427,76 @@
     "newMetaTitle": "Post Advertisement",
     "newMetaDescription": "Publish a new OpenFiat advertisement — ad type and asset, price, amount and limits, payment methods, then confirm.",
     "newHeroTitle": "Post an advertisement",
-    "newHeroIntro": "Five steps, in the order every P2P desk asks for them: ad type and asset, price, amount and limits, payment methods, then review. Your progress is saved as a draft in this browser and nothing is signed until the last screen. New to this? <link>See what it takes to be a merchant</link>."
+    "newHeroIntro": "Five steps, in the order every P2P desk asks for them: ad type and asset, price, amount and limits, payment methods, then review. Your progress is saved as a draft in this browser and nothing is signed until the last screen. New to this? <link>See what it takes to be a merchant</link>.",
+    "ppLoading": "Reading the current book…",
+    "ppError": "Could not read the current book, so there is nothing to compare this price against. That is a failure to ask, not a finding that the market is empty.",
+    "ppOnly": "Nobody else is advertising {asset}/{fiat} on the {side} side. Yours would be the only one, which means it takes every order in this corridor — and sets the price.",
+    "ppSideSell": "sell",
+    "ppSideBuy": "buy",
+    "thisToken": "this token",
+    "ppAllFixed": "{count, plural, one {# other advertisement} other {# other advertisements}} in this market, all fixed-price. There is no floating premium to compare yours against.",
+    "ppFloatingRange": "{count, plural, one {# other floating advertisement} other {# other floating advertisements}} here quote between {low} and {high} over the oracle mid. Yours is {mine}. <muted>Where that lands for a buyer depends on the mid, which this screen does not read.</muted>",
+    "ppNonePriceable": "{count, plural, one {# other advertisement} other {# other advertisements}} in this market, none of them currently priceable — so there is nothing to compare against yet.",
+    "ppRanked": "<strong>#{rank} of {total}</strong> at {price} {fiat}. The best {bestLabel} here is {best} {fiat}. <muted>Position in the live book as it stands, not a forecast — it moves when anyone reprices.</muted>",
+    "ppOffer": "offer",
+    "ppBid": "bid",
+    "apAskingTokens": "Asking your node which tokens it names…",
+    "apRefError": "Couldn't ask your access node which tokens exist ({message}). <retry>Try again</retry>",
+    "apRefErrorSub": "This says nothing about which tokens are tradeable — only that we could not ask.",
+    "apNoMints": "This node names no token mints, so there is nothing to choose from here. An advertisement still needs one, so a node that publishes its mint table is needed before you can post.",
+    "apBalanceUnavailable": "balance unavailable",
+    "apInWallet": "{amount} in your wallet",
+    "apDecimals": "{decimals} decimals",
+    "apFooter": "Names and precisions come from your node's mint table, and the address is what the advertisement carries. What can actually be escrowed is decided by the escrow program on chain, which governance can change — so a token listed here is one this node can name, not a promise that a trade in it will settle.",
+    "apFooterConnect": "Connect a wallet to see what you hold of each.",
+    "mpGroup": {
+      "merchant": "Rails you defined",
+      "suggested": "Common here",
+      "others": "Everywhere else"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "Mobile money",
+        "hint": "asks for a registered name and phone number"
+      },
+      "BankTransfer": {
+        "label": "Bank transfer",
+        "hint": "asks for an account number, bank and branch"
+      },
+      "Fintech": {
+        "label": "Wallet or fintech",
+        "hint": "asks for an account name and handle"
+      },
+      "Cash": {
+        "label": "Cash",
+        "hint": "asks for a name and a meeting area"
+      }
+    },
+    "mpYours": "yours",
+    "mpRemove": "Remove {name}",
+    "mpNoneSelected": "No payment methods selected yet.",
+    "mpCountOfMax": "{count} of {max}",
+    "mpSearchAria": "Search payment methods",
+    "mpFullPlaceholder": "Five is the most an advertisement can list — remove one to add another",
+    "mpSearchPlaceholder": "Search payment methods — try “mpesa”, “pix”, “upi”…",
+    "mpAskingNode": "Asking the node…",
+    "mpLoadError": "Could not load payment methods.",
+    "mpTryAgain": "Try again",
+    "mpLoadErrorSub": "Nothing can be selected until your node answers — the node only accepts rails it can resolve.",
+    "mpNoMatch": "Your node lists no rail matching “{query}” — you can define one below.",
+    "mpNoMethods": "Your node lists no payment methods.",
+    "mpDefineIntro": "These are the rails your node carries, ordered by what the country you selected actually uses. Settle on something it has never heard of?",
+    "mpDefineOwn": "Define your own rail",
+    "mpConnectToDefine": "Connect the wallet this advertisement belongs to, with message signing, to define your own rail.",
+    "mpDefineTitle": "Define your own rail",
+    "mpDefineNote": "Published to your node and gossiped to the rest, signed by your wallet — not saved in this browser. Only you can put it on an advertisement; anyone reading one of yours can resolve what it means.",
+    "mpName": "Name",
+    "mpNamePlaceholder": "e.g. Sacco Standing Order",
+    "mpKind": "Kind",
+    "mpKindNote": "Decides what your payment-account form asks for — {hint}.",
+    "mpImmutable": "A definition cannot be edited or deleted. Its id is a digest of the name and kind, so changing either publishes a <em>different</em> rail and every advertisement that chose the first still carries the first. Get the name right now.",
+    "mpWaitingWallet": "Waiting for your wallet…",
+    "mpPublishSelect": "Publish and select",
+    "mpCancel": "Cancel"
   }
 }

@@ -1427,6 +1427,76 @@
     "newMetaTitle": "Publicar anúncio",
     "newMetaDescription": "Publique um novo anúncio OpenFiat — tipo e ativo, preço, quantia e limites, métodos de pagamento, depois confirme.",
     "newHeroTitle": "Publicar um anúncio",
-    "newHeroIntro": "Cinco passos, na ordem que toda mesa P2P pede: tipo e ativo, preço, quantia e limites, métodos de pagamento, depois revisão. Seu progresso é salvo como rascunho neste navegador e nada é assinado até a última tela. Novo nisto? <link>Veja o que é preciso para ser comerciante</link>."
+    "newHeroIntro": "Cinco passos, na ordem que toda mesa P2P pede: tipo e ativo, preço, quantia e limites, métodos de pagamento, depois revisão. Seu progresso é salvo como rascunho neste navegador e nada é assinado até a última tela. Novo nisto? <link>Veja o que é preciso para ser comerciante</link>.",
+    "ppLoading": "Lendo o livro atual…",
+    "ppError": "Não foi possível ler o livro atual, então não há nada com que comparar este preço. Isso é uma falha ao perguntar, não uma constatação de que o mercado está vazio.",
+    "ppOnly": "Ninguém mais está anunciando {asset}/{fiat} no lado de {side}. O seu seria o único, o que significa que ele leva toda ordem neste corredor — e define o preço.",
+    "ppSideSell": "venda",
+    "ppSideBuy": "compra",
+    "thisToken": "este token",
+    "ppAllFixed": "{count, plural, one {# outro anúncio} other {# outros anúncios}} neste mercado, todos de preço fixo. Não há prêmio flutuante com que comparar o seu.",
+    "ppFloatingRange": "{count, plural, one {# outro anúncio flutuante} other {# outros anúncios flutuantes}} aqui cotam entre {low} e {high} acima do meio do oráculo. O seu é {mine}. <muted>Onde isso cai para um comprador depende do meio, que esta tela não lê.</muted>",
+    "ppNonePriceable": "{count, plural, one {# outro anúncio} other {# outros anúncios}} neste mercado, nenhum deles precificável no momento — então ainda não há nada com que comparar.",
+    "ppRanked": "<strong>#{rank} de {total}</strong> a {price} {fiat}. A melhor {bestLabel} aqui é {best} {fiat}. <muted>Posição no livro ao vivo como está, não uma previsão — ela se move quando alguém reprecifica.</muted>",
+    "ppOffer": "oferta",
+    "ppBid": "lance",
+    "apAskingTokens": "Perguntando ao seu nó quais tokens ele nomeia…",
+    "apRefError": "Não foi possível perguntar ao seu nó de acesso quais tokens existem ({message}). <retry>Tentar de novo</retry>",
+    "apRefErrorSub": "Isso não diz nada sobre quais tokens são negociáveis — apenas que não pudemos perguntar.",
+    "apNoMints": "Este nó não nomeia nenhum mint de token, então não há nada para escolher aqui. Um anúncio ainda precisa de um, então um nó que publique sua tabela de mints é necessário antes de você publicar.",
+    "apBalanceUnavailable": "saldo indisponível",
+    "apInWallet": "{amount} na sua carteira",
+    "apDecimals": "{decimals} casas decimais",
+    "apFooter": "Nomes e precisões vêm da tabela de mints do seu nó, e o endereço é o que o anúncio carrega. O que pode de fato ser custodiado é decidido pelo programa de custódia on-chain, que a governança pode mudar — então um token listado aqui é um que este nó pode nomear, não uma promessa de que uma negociação nele será liquidada.",
+    "apFooterConnect": "Conecte uma carteira para ver quanto você tem de cada.",
+    "mpGroup": {
+      "merchant": "Trilhos que você definiu",
+      "suggested": "Comum aqui",
+      "others": "Em todo o resto"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "Dinheiro móvel",
+        "hint": "pede um nome registrado e um número de telefone"
+      },
+      "BankTransfer": {
+        "label": "Transferência bancária",
+        "hint": "pede um número de conta, banco e agência"
+      },
+      "Fintech": {
+        "label": "Carteira ou fintech",
+        "hint": "pede um nome de conta e um identificador"
+      },
+      "Cash": {
+        "label": "Dinheiro",
+        "hint": "pede um nome e uma área de encontro"
+      }
+    },
+    "mpYours": "seu",
+    "mpRemove": "Remover {name}",
+    "mpNoneSelected": "Nenhum método de pagamento selecionado ainda.",
+    "mpCountOfMax": "{count} de {max}",
+    "mpSearchAria": "Buscar métodos de pagamento",
+    "mpFullPlaceholder": "Cinco é o máximo que um anúncio pode listar — remova um para adicionar outro",
+    "mpSearchPlaceholder": "Buscar métodos de pagamento — tente “mpesa”, “pix”, “upi”…",
+    "mpAskingNode": "Perguntando ao nó…",
+    "mpLoadError": "Não foi possível carregar os métodos de pagamento.",
+    "mpTryAgain": "Tentar de novo",
+    "mpLoadErrorSub": "Nada pode ser selecionado até seu nó responder — o nó só aceita trilhos que consegue resolver.",
+    "mpNoMatch": "Seu nó não lista nenhum trilho que corresponda a “{query}” — você pode definir um abaixo.",
+    "mpNoMethods": "Seu nó não lista métodos de pagamento.",
+    "mpDefineIntro": "Estes são os trilhos que seu nó carrega, ordenados pelo que o país que você escolheu realmente usa. Decidir por algo de que ele nunca ouviu falar?",
+    "mpDefineOwn": "Defina seu próprio trilho",
+    "mpConnectToDefine": "Conecte a carteira à qual este anúncio pertence, com assinatura de mensagens, para definir seu próprio trilho.",
+    "mpDefineTitle": "Defina seu próprio trilho",
+    "mpDefineNote": "Publicado no seu nó e propagado ao resto, assinado pela sua carteira — não salvo neste navegador. Só você pode colocá-lo em um anúncio; qualquer um que leia um dos seus pode resolver o que ele significa.",
+    "mpName": "Nome",
+    "mpNamePlaceholder": "ex.: Ordem Permanente Sacco",
+    "mpKind": "Tipo",
+    "mpKindNote": "Decide o que seu formulário de conta de pagamento pede — {hint}.",
+    "mpImmutable": "Uma definição não pode ser editada ou excluída. Seu id é um resumo do nome e do tipo, então mudar qualquer um publica um trilho <em>diferente</em> e cada anúncio que escolheu o primeiro ainda carrega o primeiro. Acerte o nome agora.",
+    "mpWaitingWallet": "Aguardando sua carteira…",
+    "mpPublishSelect": "Publicar e selecionar",
+    "mpCancel": "Cancelar"
   }
 }

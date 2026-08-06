@@ -1427,6 +1427,76 @@
     "newMetaTitle": "发布广告",
     "newMetaDescription": "发布一条新的 OpenFiat 广告——类型与资产、价格、数量与限额、付款方式，然后确认。",
     "newHeroTitle": "发布一条广告",
-    "newHeroIntro": "五个步骤，按每个 P2P 柜台都会询问的顺序：类型与资产、价格、数量与限额、付款方式，然后审核。你的进度会在本浏览器中保存为草稿，直到最后一屏才会签名。初次使用？<link>看看成为商家需要什么</link>。"
+    "newHeroIntro": "五个步骤，按每个 P2P 柜台都会询问的顺序：类型与资产、价格、数量与限额、付款方式，然后审核。你的进度会在本浏览器中保存为草稿，直到最后一屏才会签名。初次使用？<link>看看成为商家需要什么</link>。",
+    "ppLoading": "正在读取当前订单簿…",
+    "ppError": "无法读取当前订单簿，因此没有可与此价格比较的对象。这是询问失败，而非市场为空的结论。",
+    "ppOnly": "在{side}方，没有其他人在广告 {asset}/{fiat}。你的将是唯一的，这意味着它会承接此走廊中的每一笔订单——并设定价格。",
+    "ppSideSell": "卖出",
+    "ppSideBuy": "买入",
+    "thisToken": "此代币",
+    "ppAllFixed": "此市场中还有 {count} 条其他广告，全部为固定价格。没有可与你的相比较的浮动溢价。",
+    "ppFloatingRange": "此处还有 {count} 条其他浮动广告，报价在预言机中间价之上的 {low} 到 {high} 之间。你的是 {mine}。<muted>对买家而言这落在何处取决于中间价，而本页面不读取中间价。</muted>",
+    "ppNonePriceable": "此市场中还有 {count} 条其他广告，目前均无法定价——所以暂时没有可比较的对象。",
+    "ppRanked": "<strong>第 {rank} / 共 {total}</strong> 名，价格 {price} {fiat}。此处最优{bestLabel}为 {best} {fiat}。<muted>这是实时订单簿当前的排位，而非预测——任何人重新定价它都会变动。</muted>",
+    "ppOffer": "卖价",
+    "ppBid": "买价",
+    "apAskingTokens": "正在询问你的节点它命名了哪些代币…",
+    "apRefError": "无法向你的接入节点询问存在哪些代币（{message}）。<retry>重试</retry>",
+    "apRefErrorSub": "这并不说明哪些代币可交易——只是说明我们无法询问。",
+    "apNoMints": "此节点未命名任何代币 mint，因此这里没有可供选择的内容。广告仍需一个，所以在你发布之前需要一个发布其 mint 表的节点。",
+    "apBalanceUnavailable": "余额不可用",
+    "apInWallet": "你的钱包中有 {amount}",
+    "apDecimals": "{decimals} 位小数",
+    "apFooter": "名称和精度来自你节点的 mint 表，而地址是广告所承载的内容。实际可托管什么由链上的托管程序决定，治理可对其进行更改——因此这里列出的代币是此节点可以命名的，而非保证以它进行的交易能够结算。",
+    "apFooterConnect": "连接钱包以查看你各持有多少。",
+    "mpGroup": {
+      "merchant": "你定义的通道",
+      "suggested": "这里常用",
+      "others": "其他地方"
+    },
+    "mpCategory": {
+      "MobileMoney": {
+        "label": "移动支付",
+        "hint": "需要注册姓名和电话号码"
+      },
+      "BankTransfer": {
+        "label": "银行转账",
+        "hint": "需要账号、银行和分行"
+      },
+      "Fintech": {
+        "label": "钱包或金融科技",
+        "hint": "需要账户名和账号句柄"
+      },
+      "Cash": {
+        "label": "现金",
+        "hint": "需要姓名和碰面区域"
+      }
+    },
+    "mpYours": "你的",
+    "mpRemove": "移除 {name}",
+    "mpNoneSelected": "尚未选择付款方式。",
+    "mpCountOfMax": "{count} / {max}",
+    "mpSearchAria": "搜索付款方式",
+    "mpFullPlaceholder": "一条广告最多可列出五种——移除一种以添加另一种",
+    "mpSearchPlaceholder": "搜索付款方式——试试“mpesa”“pix”“upi”…",
+    "mpAskingNode": "正在询问节点…",
+    "mpLoadError": "无法加载付款方式。",
+    "mpTryAgain": "重试",
+    "mpLoadErrorSub": "在你的节点回应之前无法选择任何内容——节点只接受它能解析的通道。",
+    "mpNoMatch": "你的节点没有列出与“{query}”匹配的通道——你可以在下方定义一个。",
+    "mpNoMethods": "你的节点未列出任何付款方式。",
+    "mpDefineIntro": "这些是你节点承载的通道，按你所选国家实际使用的情况排序。要选定它从未听说过的通道吗？",
+    "mpDefineOwn": "定义你自己的通道",
+    "mpConnectToDefine": "连接此广告所属的钱包（需支持消息签名），以定义你自己的通道。",
+    "mpDefineTitle": "定义你自己的通道",
+    "mpDefineNote": "发布到你的节点并扩散到其余部分，由你的钱包签名——不保存在本浏览器中。只有你能将其放到广告上；任何读取你广告的人都能解析它的含义。",
+    "mpName": "名称",
+    "mpNamePlaceholder": "例如 Sacco 定期指令",
+    "mpKind": "类型",
+    "mpKindNote": "决定你的付款账户表单询问什么——{hint}。",
+    "mpImmutable": "定义无法编辑或删除。其 id 是名称和类型的摘要，因此更改任一项都会发布一条<em>不同</em>的通道，而每一条选择了第一条的广告仍承载第一条。现在就把名称写对。",
+    "mpWaitingWallet": "正在等待你的钱包…",
+    "mpPublishSelect": "发布并选择",
+    "mpCancel": "取消"
   }
 }
