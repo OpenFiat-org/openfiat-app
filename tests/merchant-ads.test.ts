@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { R } from "./refusal-translator";
 
 import {
   explainRefusal,
@@ -171,13 +172,13 @@ function refusal(name: string, code: number, retryable?: boolean) {
 
 describe("explainRefusal", () => {
   it("says what a merchant can act on", () => {
-    expect(explainRefusal(refusal("ADVERTISEMENT_NOT_FOUND", 3000, false))).toMatch(
+    expect(explainRefusal(R, refusal("ADVERTISEMENT_NOT_FOUND", 3000, false))).toMatch(
       /cannot be brought back/,
     );
     expect(
-      explainRefusal(refusal("INSUFFICIENT_AVAILABLE_LIQUIDITY", 4004, true)),
+      explainRefusal(R, refusal("INSUFFICIENT_AVAILABLE_LIQUIDITY", 4004, true)),
     ).toMatch(/no liquidity/);
-    expect(explainRefusal(refusal("INVALID_ADVERTISEMENT", 3003, false))).toMatch(
+    expect(explainRefusal(R, refusal("INVALID_ADVERTISEMENT", 3003, false))).toMatch(
       /payment method/,
     );
   });
@@ -190,8 +191,8 @@ describe("explainRefusal", () => {
    * wallet had signed badly.
    */
   it("separates a wallet that may not act from a signature that did not verify", () => {
-    const notThePublisher = explainRefusal(refusal("INVALID_IDENTITY_CLAIM", 2001, false));
-    const badSignature = explainRefusal(refusal("INVALID_SIGNATURE", 1003, false));
+    const notThePublisher = explainRefusal(R, refusal("INVALID_IDENTITY_CLAIM", 2001, false));
+    const badSignature = explainRefusal(R, refusal("INVALID_SIGNATURE", 1003, false));
 
     expect(notThePublisher).not.toBe(badSignature);
     expect(notThePublisher).toMatch(/wallet that published it/);
@@ -201,7 +202,7 @@ describe("explainRefusal", () => {
   it("passes an unrecognised failure through untouched", () => {
     // A message nobody wrote beats one that fits every failure: the whole
     // value of the node's own wording is that it is specific.
-    expect(explainRefusal(new Error("connection refused"))).toBe("connection refused");
+    expect(explainRefusal(R, new Error("connection refused"))).toBe("connection refused");
   });
 
   /*
@@ -210,10 +211,10 @@ describe("explainRefusal", () => {
    * the registry, so that judgement can only come from the node.
    */
   it("relays the node's own retryability for a code it does not recognise", () => {
-    expect(explainRefusal(refusal("SOME_FUTURE_CODE", 9999, true))).toMatch(
+    expect(explainRefusal(R, refusal("SOME_FUTURE_CODE", 9999, true))).toMatch(
       /can succeed if you try it again/,
     );
-    expect(explainRefusal(refusal("ANOTHER_FUTURE_CODE", 9998, false))).toMatch(
+    expect(explainRefusal(R, refusal("ANOTHER_FUTURE_CODE", 9998, false))).toMatch(
       /will not change this/,
     );
   });

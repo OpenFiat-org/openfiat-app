@@ -62,6 +62,7 @@ export function PlaceOrder({
 }) {
   const router = useRouter();
   const t = useTranslations("placeOrder");
+  const R = useTranslations("refusals");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [phase, setPhase] = useState<"idle" | "reserving" | "opening" | "done" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -123,7 +124,7 @@ export function PlaceOrder({
       // The whole error, not its message: which advertisement failure this
       // is — price moved, liquidity gone, amount out of limits — is in the
       // node's `error.data` and nowhere else.
-      setMessage(explainTradeRefusal(err, "reserve"));
+      setMessage(explainTradeRefusal(R, err, "reserve"));
       return;
     }
 
@@ -142,7 +143,7 @@ export function PlaceOrder({
       // the trade room can finish it.
       setPhase("error");
       setMessage(
-        t("reservationOpenFailed", { reason: explainTradeRefusal(err, "initiate") }),
+        t("reservationOpenFailed", { reason: explainTradeRefusal(R, err, "initiate") }),
       );
       return;
     }

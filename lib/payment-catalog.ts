@@ -2,6 +2,7 @@ import bs58 from "bs58";
 import type { PaymentMethodCategory, ReferenceData } from "@openfiat/sdk";
 
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+import type { RefusalTranslator } from "@/lib/node-refusal";
 import { nodeRpc } from "@/lib/node-rpc";
 import { peerIdParam } from "@/lib/wallet-param";
 import type { SolanaProvider } from "@/lib/wallet-connection";
@@ -255,15 +256,11 @@ export function nameProblem(name: string): string | null {
  * Anything unrecognised is passed through rather than replaced with a
  * generic apology, the same rule `explainRefusal` follows for ads.
  */
-export function explainDefineRefusal(message: string): string {
-  if (message.includes("UNSUPPORTED_PAYMENT_METHOD")) {
-    return "The node refused that name. Most likely it reads as a rail the network already carries: it compares what the eye sees, so case, accents, spacing, hyphens, look-alike letters from other alphabets and digits standing in for letters are all the same name to it. Retyping it with a hyphen will not help — name it after your own account instead.";
-  }
-  if (message.includes("PAYMENT_METHOD_LIMIT_REACHED")) {
-    return "You have reached the 32 definitions one wallet may publish. They cannot be deleted — every node already holds them — so this is a ceiling, not a queue.";
-  }
+export function explainDefineRefusal(t: RefusalTranslator, message: string): string {
+  if (message.includes("UNSUPPORTED_PAYMENT_METHOD")) return t("define.unsupported");
+  if (message.includes("PAYMENT_METHOD_LIMIT_REACHED")) return t("define.limitReached");
   if (message.includes("INVALID_SIGNATURE") || message.includes("INVALID_IDENTITY_CLAIM")) {
-    return "The node did not accept this wallet's signature. A definition can only be published by the wallet it names.";
+    return t("define.signature");
   }
   return message;
 }

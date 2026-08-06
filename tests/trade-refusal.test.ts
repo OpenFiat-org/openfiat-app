@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { R } from "./refusal-translator";
 
 import { sendSignedEvent } from "@/lib/arbitration";
 import { NodeRpcError, nodeRpc, ofsErrorIdentity } from "@/lib/node-rpc";
@@ -128,8 +129,8 @@ describe("what a refusal carries off the wire", () => {
 
 describe("refusals the app could not previously tell apart", () => {
   it("separates a settlement that is gone from one that has moved on", () => {
-    const gone = explainTradeRefusal(refusal("SETTLEMENT_NOT_FOUND", 5008, false));
-    const moved = explainTradeRefusal(
+    const gone = explainTradeRefusal(R, refusal("SETTLEMENT_NOT_FOUND", 5008, false));
+    const moved = explainTradeRefusal(R, 
       refusal("INVALID_SETTLEMENT_STATE", 5009, false),
       "cancel-settlement",
     );
@@ -144,8 +145,8 @@ describe("refusals the app could not previously tell apart", () => {
    * submitted") for the code that used to be 5005.
    */
   it("separates a taken settlement id from a completed trade", () => {
-    const taken = explainTradeRefusal(refusal("SETTLEMENT_ALREADY_EXISTS", 5010, false));
-    const completed = explainTradeRefusal(
+    const taken = explainTradeRefusal(R, refusal("SETTLEMENT_ALREADY_EXISTS", 5010, false));
+    const completed = explainTradeRefusal(R, 
       refusal("SETTLEMENT_ALREADY_COMPLETED", 5005, false),
     );
     expect(taken).not.toBe(completed);
@@ -161,9 +162,9 @@ describe("refusals the app could not previously tell apart", () => {
    */
   it("says something different about each way out of a trade", () => {
     const error = refusal("INVALID_SETTLEMENT_STATE", 5009, false);
-    const cancel = explainTradeRefusal(error, "cancel-settlement");
-    const reverse = explainTradeRefusal(error, "reverse-payment");
-    const reject = explainTradeRefusal(error, "reject-payment");
+    const cancel = explainTradeRefusal(R, error, "cancel-settlement");
+    const reverse = explainTradeRefusal(R, error, "reverse-payment");
+    const reject = explainTradeRefusal(R, error, "reject-payment");
 
     expect(new Set([cancel, reverse, reject]).size).toBe(3);
     expect(reverse).toMatch(/withdraw/i);
@@ -178,11 +179,11 @@ describe("refusals the app could not previously tell apart", () => {
    * `INVALID_IDENTITY_CLAIM`.
    */
   it("separates acting out of turn from a signature the node rejected", () => {
-    const outOfTurn = explainTradeRefusal(
+    const outOfTurn = explainTradeRefusal(R, 
       refusal("INVALID_IDENTITY_CLAIM", 2001, false),
       "approve",
     );
-    const badSignature = explainTradeRefusal(refusal("INVALID_SIGNATURE", 1003, false));
+    const badSignature = explainTradeRefusal(R, refusal("INVALID_SIGNATURE", 1003, false));
 
     expect(outOfTurn).not.toBe(badSignature);
     expect(outOfTurn).toMatch(/only the merchant/i);
@@ -195,7 +196,7 @@ describe("refusals the app could not previously tell apart", () => {
    */
   it("stops telling someone to retry a refusal the node calls permanent", () => {
     for (const name of ["SETTLEMENT_NOT_FOUND", "RESERVATION_NOT_FOUND"]) {
-      expect(explainTradeRefusal(refusal(name, 5008, false))).not.toMatch(
+      expect(explainTradeRefusal(R, refusal(name, 5008, false))).not.toMatch(
         /try again in a moment/i,
       );
     }
@@ -210,8 +211,8 @@ describe("a code this build has never seen", () => {
    * which is the node's own judgement, read rather than recomputed.
    */
   it("passes the node's message through with its retryability", () => {
-    const transient = explainTradeRefusal(refusal("SOME_FUTURE_CODE", 9999, true));
-    const permanent = explainTradeRefusal(refusal("ANOTHER_FUTURE_CODE", 9998, false));
+    const transient = explainTradeRefusal(R, refusal("SOME_FUTURE_CODE", 9999, true));
+    const permanent = explainTradeRefusal(R, refusal("ANOTHER_FUTURE_CODE", 9998, false));
 
     expect(transient).toMatch(/can succeed if you try it again/i);
     expect(permanent).toMatch(/trying again will not change this/i);
@@ -222,7 +223,7 @@ describe("a code this build has never seen", () => {
       ofsErrorCode: 9999,
       ofsErrorName: "SOME_FUTURE_CODE",
     });
-    const explained = explainTradeRefusal(err);
+    const explained = explainTradeRefusal(R, err);
     expect(explained).not.toMatch(/try/i);
     expect(explained).toContain("SOME_FUTURE_CODE");
   });
@@ -231,7 +232,7 @@ describe("a code this build has never seen", () => {
 describe("what is not a refusal", () => {
   it("passes a failure this app raised itself through untouched", () => {
     const message = "There is no settlement to cancel.";
-    expect(explainTradeRefusal(new Error(message), "cancel-settlement")).toBe(message);
+    expect(explainTradeRefusal(R, new Error(message), "cancel-settlement")).toBe(message);
   });
 
   /*
@@ -242,6 +243,6 @@ describe("what is not a refusal", () => {
   it("does not read an OFS name out of prose somebody typed", () => {
     const message =
       "The merchant wrote: I could not find this payment, SETTLEMENT_NOT_FOUND on my side.";
-    expect(explainTradeRefusal(new Error(message))).toBe(message);
+    expect(explainTradeRefusal(R, new Error(message))).toBe(message);
   });
 });

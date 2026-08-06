@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
+import { R } from "./refusal-translator";
 import bs58 from "bs58";
 import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
 
@@ -103,7 +104,7 @@ describe.skipIf(!ENABLED)("three refusals the app could not tell apart", () => {
 
     // The whole point: three different sentences where there was one.
     const shown = [notFound, duplicate, tooLate].map((e, i) =>
-      explainTradeRefusal(e, (["cancel-settlement", "initiate", "cancel-settlement"] as const)[i]),
+      explainTradeRefusal(R, e, (["cancel-settlement", "initiate", "cancel-settlement"] as const)[i]),
     );
     expect(new Set(shown).size).toBe(3);
   }, 30_000);

@@ -1,7 +1,7 @@
 import bs58 from "bs58";
 
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
-import { explainNodeRefusal, type RefusalCopy } from "@/lib/node-refusal";
+import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
 import type { ProposalCategory, VoteChoice } from "@/lib/live-proposals";
 import type { TradeIdentity } from "@/lib/trade-flow";
@@ -141,32 +141,8 @@ export async function castNodeVote(
  * `INVALID_IDENTITY_CLAIM` 2001, `INVALID_PROPOSAL_STATE` 7006), so the
  * guess is gone with them.
  */
-const GOVERNANCE_REFUSALS: RefusalCopy = {
-  PROPOSAL_ALREADY_EXISTS:
-    "A proposal with that id already exists on this node. Ids are network-wide and first come, first served — pick another, or open the one that holds it.",
-  INVALID_PROPOSAL_STATE:
-    "This proposal is not in a state that allows that. Reload to see its status — a withdrawn or executed proposal takes no further changes.",
-  INVALID_PROPOSAL:
-    "The node refused this proposal's own contents. Check the title, summary and category against what the screen asks for.",
-  // The node reports 7000 as permanent, and this used to answer it with
-  // "try again in a moment" — advice the registry says is wrong.
-  PROPOSAL_NOT_FOUND:
-    "This node holds no proposal with that id, and it reports that as final rather than as replication still in flight. Pick another node in Settings, or check the id.",
-  VOTING_CLOSED:
-    "Voting on this proposal has closed, so no further vote can be recorded. Reload to see the result.",
-  DUPLICATE_VOTE:
-    "This wallet has already voted on this proposal. A vote cannot be changed once it is recorded.",
-  INSUFFICIENT_VOTING_POWER:
-    "This wallet holds too little staked weight for its vote to count on this proposal. Stake more, or wait for a proposal with a lower threshold.",
-  DESERIALIZATION_ERROR:
-    "The node could not read the proposal's shape, so nothing was recorded. Nothing you can change on this screen fixes that — report it.",
-  INVALID_IDENTITY_CLAIM:
-    "The node refused this wallet for that action. Only the proposal's own author can change it.",
-  INVALID_SIGNATURE:
-    "The node did not accept this wallet's signature over that request. The signature verified against a different key than the one it names.",
-};
 
 /** What a refusal on a proposal or a vote means to whoever pressed the button. */
-export function explainGovernanceRefusal(error: unknown): string {
-  return explainNodeRefusal(error, GOVERNANCE_REFUSALS);
+export function explainGovernanceRefusal(t: RefusalTranslator, error: unknown): string {
+  return explainNodeRefusal(t, error, "governance");
 }

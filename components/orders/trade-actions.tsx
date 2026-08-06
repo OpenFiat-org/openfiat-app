@@ -101,6 +101,7 @@ export function TradeActions({
   onChanged: () => void;
 }) {
   const t = useTranslations("tradeActions");
+  const R = useTranslations("refusals");
   const [escrow, setEscrow] = useState<DecodedTradeEscrow | null | undefined>(undefined);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [reference, setReference] = useState("");
@@ -159,7 +160,7 @@ export function TradeActions({
       } catch (err) {
         setPhase({
           kind: "note",
-          text: explainTradeRefusal(err, kind),
+          text: explainTradeRefusal(R, err, kind),
           bad: true,
         });
       }

@@ -2542,5 +2542,99 @@
     "title": "OpenFiat — Intercambio P2P de stablecoins",
     "description": "Compra y vende stablecoins por fiat local en OpenFiat — el protocolo de mercado P2P descentralizado con custodia garantizada por programas de Solana.",
     "twitterDescription": "Compra y vende stablecoins por fiat local, entre pares. Custodia garantizada por programas de Solana; disputas decididas por árbitros con stake."
+  },
+  "refusals": {
+    "retryableSuffix": "{message} El nodo dice que esta puede tener éxito si lo intentas de nuevo.",
+    "notRetryableSuffix": "{message} El nodo dice que intentarlo de nuevo no cambiará esto.",
+    "trade": {
+      "SETTLEMENT_NOT_FOUND": "Este nodo no tiene ninguna liquidación con ese id, y lo reporta como definitivo y no como algo aún en camino. La causa habitual es estar conectado a un nodo distinto de aquel en el que se abrió esta operación — verifica el nodo en Ajustes, luego recarga.",
+      "INVALID_SETTLEMENT_STATE": "La operación ha avanzado más allá del estado que esa acción necesita. Recarga para ver dónde está realmente — una cancelación solo es posible antes de declarar un pago, y una reversión o un rechazo solo mientras hay uno pendiente.",
+      "SETTLEMENT_ALREADY_EXISTS": "Ya existe una liquidación en este nodo con ese id. Eso no significa que esta operación se completara — la liquidación que tiene el id puede seguir esperando un pago, o pertenecer a otras dos personas. Recarga antes de abrir otra.",
+      "SETTLEMENT_ALREADY_COMPLETED": "Esta operación ya se completó. No se puede hacer nada más con ella — recarga para ver el registro final.",
+      "SETTLEMENT_ALREADY_CANCELLED": "Esta operación ya fue cancelada. Recarga para verla; colocar una nueva orden es la única forma de avanzar.",
+      "RESERVATION_NOT_FOUND": "Este nodo no tiene ninguna reserva con ese id, y lo reporta como definitivo y no como algo aún en camino. La causa habitual es estar conectado a un nodo distinto de aquel donde se colocó la orden — verifica el nodo en Ajustes, luego recarga.",
+      "RESERVATION_ALREADY_EXISTS": "El nodo ya tiene una reserva con ese id — esta orden ya fue enviada. Recarga tus órdenes en lugar de colocarla de nuevo.",
+      "RESERVATION_EXPIRED": "La ventana de 30 minutos de esta reserva ha caducado y la liquidez del comerciante está libre de nuevo. Coloca una nueva orden para operar con él.",
+      "RESERVATION_CANCELLED": "Esta reserva ya fue cancelada, así que no queda nada sobre lo que actuar. Coloca una nueva orden para operar con este comerciante.",
+      "INVALID_RESERVATION_STATE": "Esta reserva ya no está activa, así que no queda nada que cancelar — ya fue cancelada, su ventana de 30 minutos caducó, o ya se inició una liquidación contra ella. Recarga para ver cuál.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Este anuncio ya no tiene suficiente liquidez para esa cantidad — alguien más reservó contra él primero. La liquidez vuelve cuando termina su reserva, así que la misma orden puede pasar más tarde, o puedes operar una cantidad menor ahora.",
+      "MERCHANT_OFFLINE": "El nodo del comerciante no es alcanzable ahora mismo, así que esta orden no puede colocarse. Los comerciantes vuelven; inténtalo en breve, o elige otro anuncio.",
+      "PRICE_DISAGREEMENT": "El nodo no aceptó este precio para ese anuncio. Vuelve a derivar el precio de los propios términos del anuncio, así que una cotización que se haya movido desde que la leíste debe releerse antes de ordenar. Recarga el anuncio y coloca la orden de nuevo.",
+      "ADVERTISEMENT_NOT_FOUND": "Este anuncio ya no está en el nodo, así que no se puede reservar nada contra él. Vuelve al libro y elige otro.",
+      "ADVERTISEMENT_DISABLED": "El comerciante ha retirado este anuncio, así que no se puede reservar nada contra él. Vuelve al libro y elige otro.",
+      "ADVERTISEMENT_EXPIRED": "Este anuncio ha caducado, así que no se puede reservar nada contra él. Vuelve al libro y elige otro.",
+      "DISPUTE_ALREADY_OPEN": "Ya hay una disputa abierta sobre esta operación. Síguela desde la página de disputas en lugar de abrir una segunda.",
+      "DISPUTE_CLOSED": "Esta disputa ya ha sido decidida y no admite más evidencia ni votos. Recarga para ver el fallo.",
+      "INVALID_IDENTITY_CLAIM": "El nodo rechazó esta billetera para esa acción. Solo una parte de la operación puede actuar sobre ella, y solo en su propio rol — el comprador declara el pago, el comerciante lo aprueba o lo rechaza.",
+      "INVALID_SIGNATURE": "El nodo no aceptó la firma de esta billetera sobre esa solicitud. La firma se verificó contra una clave distinta de la que nombra esta operación, así que comprueba que la billetera conectada es la que es parte de ella.",
+      "INVALID_REQUEST": "El nodo rechazó esta solicitud. En una orden la causa habitual es una cantidad fuera del mínimo y máximo del propio anuncio — compara ambos con lo que escribiste.",
+      "INVALID_PARAMETER": "El nodo rechazó uno de los valores de esta solicitud. En una orden la causa habitual es que el reloj de este dispositivo va más de cinco minutos por delante del nodo, así que revisa el reloj e inténtalo de nuevo.",
+      "NODE_NOT_SYNCHRONIZED": "Este nodo aún se está poniendo al día con la red y no aceptará eso todavía. Dale un momento e inténtalo de nuevo, o cambia a otro nodo en Ajustes."
+    },
+    "tradeByAttempt": {
+      "INVALID_SETTLEMENT_STATE": {
+        "cancel-settlement": "Demasiado tarde para cancelar — esta operación ya no espera pago. Recárgala: si el pago ha sido declarado, tu salida es aprobarlo, rechazarlo o abrir una disputa.",
+        "reverse-payment": "Demasiado tarde para retirar tu declaración — el comerciante ya actuó sobre ella. Recarga para ver si la aprobó o la rechazó. Si la rechazó y realmente enviaste el dinero, abre una disputa.",
+        "reject-payment": "No hay ninguna declaración de pago pendiente que rechazar. Recarga — o el comprador la retiró, o esta operación ya terminó.",
+        "declare-paid": "Esta operación no está esperando una declaración de pago. Recarga — o ya declaraste, o la operación terminó.",
+        "approve": "No hay ninguna declaración de pago que aprobar. Recarga — o el comprador la retiró, o esta operación ya terminó.",
+        "dispute": "Esta operación no se puede disputar desde donde está ahora. Recarga para ver su estado actual; una operación completada o cancelada no tiene disputa que abrir."
+      },
+      "SETTLEMENT_ALREADY_EXISTS": {
+        "initiate": "Ya existe una liquidación en este nodo con el id que usó esta orden. Eso es una afirmación sobre el id y no sobre tu operación — no se ha completado. Recarga la orden: si su liquidación ya está abierta, continúa desde ahí en lugar de abrir una segunda."
+      },
+      "INVALID_IDENTITY_CLAIM": {
+        "declare-paid": "Solo el comprador puede declarar un pago, y esta billetera no es el comprador en esta operación.",
+        "approve": "Solo el comerciante puede aprobar un pago, y esta billetera no es el comerciante en esta operación.",
+        "reject-payment": "Solo el comerciante puede rechazar un pago, y esta billetera no es el comerciante en esta operación.",
+        "reverse-payment": "Solo el comprador puede retirar una declaración de pago, y esta billetera no es el comprador en esta operación.",
+        "cancel-reservation": "Solo la billetera que colocó una reserva puede cancelarla, y esta no es esa billetera."
+      }
+    },
+    "ads": {
+      "ADVERTISEMENT_NOT_FOUND": "Este anuncio ya no existe en el nodo — un anuncio eliminado no puede recuperarse.",
+      "ADVERTISEMENT_EXPIRED": "Este anuncio ha caducado. Publica uno nuevo en lugar de editar este; sus términos son contra los que los takers ya firmaron.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "No hay liquidez detrás de este anuncio, así que no puede volver a estar en oferta. Añade inventario a su bóveda primero.",
+      "INVALID_ADVERTISEMENT": "No se puede operar contra esos términos: el mínimo no debe superar el máximo, y se requiere al menos un método de pago.",
+      "DUPLICATE_ADVERTISEMENT": "Este nodo ya tiene un anuncio con ese id. Recarga tus anuncios — lo más probable es que ya se publicara.",
+      "UNSUPPORTED_PAYMENT_METHOD": "Uno de los métodos de pago de este anuncio no es uno que el nodo reconozca. Elige del propio catálogo del nodo.",
+      "PAYMENT_METHOD_LIMIT_REACHED": "Has alcanzado el número máximo de definiciones de método de pago. Retira una que ya no uses antes de añadir otra — nada libera un espacio por sí solo.",
+      "INVALID_IDENTITY_CLAIM": "El nodo rechazó esta billetera para ese anuncio. Solo la billetera que lo publicó puede cambiarlo.",
+      "INVALID_SIGNATURE": "El nodo no aceptó la firma de esta billetera sobre ese anuncio. La firma se verificó contra una clave distinta de la que nombra el anuncio."
+    },
+    "governance": {
+      "PROPOSAL_ALREADY_EXISTS": "Ya existe una propuesta con ese id en este nodo. Los ids son de toda la red y por orden de llegada — elige otro, o abre la que lo tiene.",
+      "INVALID_PROPOSAL_STATE": "Esta propuesta no está en un estado que permita eso. Recarga para ver su estado — una propuesta retirada o ejecutada no admite más cambios.",
+      "INVALID_PROPOSAL": "El nodo rechazó el propio contenido de esta propuesta. Comprueba el título, el resumen y la categoría contra lo que pide la pantalla.",
+      "PROPOSAL_NOT_FOUND": "Este nodo no tiene ninguna propuesta con ese id, y lo reporta como definitivo y no como replicación aún en curso. Elige otro nodo en Ajustes, o verifica el id.",
+      "VOTING_CLOSED": "La votación de esta propuesta ha cerrado, así que no se puede registrar ningún voto más. Recarga para ver el resultado.",
+      "DUPLICATE_VOTE": "Esta billetera ya votó en esta propuesta. Un voto no puede cambiarse una vez registrado.",
+      "INSUFFICIENT_VOTING_POWER": "Esta billetera tiene muy poco peso en stake para que su voto cuente en esta propuesta. Haz staking de más, o espera a una propuesta con un umbral más bajo.",
+      "DESERIALIZATION_ERROR": "El nodo no pudo leer la forma de la propuesta, así que no se registró nada. Nada que puedas cambiar en esta pantalla lo arregla — repórtalo.",
+      "INVALID_IDENTITY_CLAIM": "El nodo rechazó esta billetera para esa acción. Solo el propio autor de la propuesta puede cambiarla.",
+      "INVALID_SIGNATURE": "El nodo no aceptó la firma de esta billetera sobre esa solicitud. La firma se verificó contra una clave distinta de la que nombra."
+    },
+    "arbitration": {
+      "DISPUTE_NOT_FOUND": "Este nodo no tiene ninguna disputa con ese id. Recarga el expediente — el caso puede haberse abierto contra un nodo distinto.",
+      "DISPUTE_CLOSED": "Este caso ha sido decidido. No admite más incorporaciones, compromisos ni revelaciones; recarga para ver el fallo.",
+      "DISPUTE_TIMEOUT": "La ventana de este caso ha expirado, así que no se puede registrar nada más contra él.",
+      "INVALID_DISPUTE_STATE": "El caso está activo pero no en la fase que esa acción necesita — el panel se llenó hace un momento, o la fase aún no ha abierto. Sigue observándolo en lugar de tratarlo como terminado.",
+      "INVALID_EVIDENCE": "El voto revelado no coincide con el compromiso que hizo esta billetera, así que fue descartado en lugar de contado. La sal en este navegador pertenece a un voto distinto del que se está revelando.",
+      "DISPUTE_ALREADY_OPEN": "Ya hay una disputa abierta sobre esa liquidación, y solo puede haber una. Trabaja el caso existente.",
+      "INVALID_IDENTITY_CLAIM": "El nodo rechazó esta billetera para esa acción: no está sentada en este caso, o no es parte de la operación tras él. Esto no es un problema de firma.",
+      "INVALID_SIGNATURE": "El nodo no aceptó la firma de esta billetera. La firma se verificó contra una clave distinta de la que nombra el payload."
+    },
+    "review": {
+      "INVALID_IDENTITY_CLAIM": "El nodo rechazó: esta billetera no fue parte de esa operación, así que no tiene derecho a reseñarla. Solo el comprador y el vendedor de una operación liquidada pueden, una reseña cada uno.",
+      "RESOURCE_ALREADY_EXISTS": "Este nodo ya tiene una reseña más nueva de esa operación por esta billetera, así que la que está en archivo es la que vale. Recarga para verla.",
+      "INVALID_PARAMETER": "El nodo rechazó la forma de la reseña. Un comentario es de {max} caracteres como máximo y no puede contener caracteres de control ni de dirección de texto.",
+      "SETTLEMENT_NOT_FOUND": "Este nodo no tiene ninguna liquidación con ese id, así que no hay operación aquí que reseñar. La causa habitual es estar conectado a un nodo distinto de aquel en el que corrió la operación — verifica el nodo en Ajustes.",
+      "INVALID_SIGNATURE": "El nodo no aceptó la firma de esta billetera sobre la reseña. La firma se verificó contra una clave distinta de la que nombra la reseña."
+    },
+    "define": {
+      "unsupported": "El nodo rechazó ese nombre. Lo más probable es que se lea como un riel que la red ya lleva: compara lo que el ojo ve, así que mayúsculas, acentos, espaciado, guiones, letras parecidas de otros alfabetos y dígitos que sustituyen letras son todos el mismo nombre para él. Reescribirlo con un guion no ayudará — nómbralo por tu propia cuenta en su lugar.",
+      "limitReached": "Has alcanzado las 32 definiciones que una billetera puede publicar. No se pueden borrar — cada nodo ya las tiene — así que esto es un techo, no una cola.",
+      "signature": "El nodo no aceptó la firma de esta billetera. Una definición solo puede publicarla la billetera que nombra."
+    }
   }
 }

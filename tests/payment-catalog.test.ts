@@ -8,6 +8,7 @@
  * as `suggested`, with the whole rest of the catalogue under `others`.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { R } from "./refusal-translator";
 
 import {
   defineMerchantMethod,
@@ -265,18 +266,18 @@ describe("what a refusal means to the merchant", () => {
     // UNSUPPORTED_PAYMENT_METHOD, so the message must not claim to know
     // which — and must say what "look-alike" covers, or the merchant retypes
     // the same name with a hyphen and is refused again.
-    const explained = explainDefineRefusal("UNSUPPORTED_PAYMENT_METHOD");
+    const explained = explainDefineRefusal(R, "UNSUPPORTED_PAYMENT_METHOD");
     expect(explained).toMatch(/already carries/);
     expect(explained).toMatch(/hyphen/);
   });
 
   it("says the definition limit is a ceiling and not a rate limit", () => {
-    const explained = explainDefineRefusal("PAYMENT_METHOD_LIMIT_REACHED");
+    const explained = explainDefineRefusal(R, "PAYMENT_METHOD_LIMIT_REACHED");
     expect(explained).toMatch(/32/);
     expect(explained).toMatch(/not a queue/);
   });
 
   it("passes an unrecognised failure through untouched", () => {
-    expect(explainDefineRefusal("connection refused")).toBe("connection refused");
+    expect(explainDefineRefusal(R, "connection refused")).toBe("connection refused");
   });
 });

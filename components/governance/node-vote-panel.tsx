@@ -68,6 +68,7 @@ export function NodeVotePanel({
 }) {
   const t = useTranslations("governance");
   const St = useTranslations("staking");
+  const R = useTranslations("refusals");
   const roleTitle = (key: string) => St(`role.${key}.title`);
   const [stakes, setStakes] = useState<StakeOption[] | null | undefined>(undefined);
   const [selected, setSelected] = useState<string | null>(null);
@@ -185,7 +186,7 @@ export function NodeVotePanel({
       onVoted();
     } catch (err) {
       setNote({
-        text: explainGovernanceRefusal(err),
+        text: explainGovernanceRefusal(R, err),
         bad: true,
       });
     } finally {

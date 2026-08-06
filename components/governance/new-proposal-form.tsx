@@ -58,6 +58,7 @@ export function slugify(title: string): string {
  */
 export function NewProposalForm() {
   const t = useTranslations("governance");
+  const R = useTranslations("refusals");
   const router = useRouter();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [title, setTitle] = useState("");
@@ -102,7 +103,7 @@ export function NewProposalForm() {
       });
       router.push(`/governance/proposal/${encodeURIComponent(created)}`);
     } catch (err) {
-      setError(explainGovernanceRefusal(err));
+      setError(explainGovernanceRefusal(R, err));
       setBusy(false);
     }
   }

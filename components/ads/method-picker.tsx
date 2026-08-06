@@ -307,6 +307,7 @@ function DefineYourOwnRail({
   onDefined: (id: string) => void;
 }) {
   const t = useTranslations("ads");
+  const R = useTranslations("refusals");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<PaymentMethodCategory>("BankTransfer");
@@ -356,7 +357,7 @@ function DefineYourOwnRail({
       setName("");
       onDefined(id);
     } catch (e: unknown) {
-      setError(explainDefineRefusal(e instanceof Error ? e.message : String(e)));
+      setError(explainDefineRefusal(R, e instanceof Error ? e.message : String(e)));
     } finally {
       setPublishing(false);
     }

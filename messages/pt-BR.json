@@ -2542,5 +2542,99 @@
     "title": "OpenFiat — Câmbio P2P de stablecoins",
     "description": "Compre e venda stablecoins por fiduciário local na OpenFiat — o protocolo de mercado P2P descentralizado com custódia garantida por programas da Solana.",
     "twitterDescription": "Compre e venda stablecoins por fiduciário local, entre pares. Custódia garantida por programas da Solana; disputas decididas por árbitros com stake."
+  },
+  "refusals": {
+    "retryableSuffix": "{message} O nó diz que esta pode dar certo se você tentar de novo.",
+    "notRetryableSuffix": "{message} O nó diz que tentar de novo não vai mudar isto.",
+    "trade": {
+      "SETTLEMENT_NOT_FOUND": "Este nó não tem nenhuma liquidação com esse id, e reporta isso como definitivo e não como algo ainda a caminho. A causa habitual é estar conectado a um nó diferente daquele em que esta negociação foi aberta — verifique o nó em Configurações, depois recarregue.",
+      "INVALID_SETTLEMENT_STATE": "A negociação avançou além do estado que essa ação precisa. Recarregue para ver onde ela realmente está — um cancelamento só é possível antes de um pagamento ser declarado, e uma reversão ou uma rejeição só enquanto há uma pendente.",
+      "SETTLEMENT_ALREADY_EXISTS": "Já existe uma liquidação neste nó com esse id. Isso não significa que esta negociação foi concluída — a liquidação que tem o id pode ainda estar esperando um pagamento, ou pertencer a outras duas pessoas. Recarregue antes de abrir outra.",
+      "SETTLEMENT_ALREADY_COMPLETED": "Esta negociação já foi concluída. Nada mais pode ser feito com ela — recarregue para ver o registro final.",
+      "SETTLEMENT_ALREADY_CANCELLED": "Esta negociação já foi cancelada. Recarregue para vê-la; colocar um novo pedido é o único caminho adiante.",
+      "RESERVATION_NOT_FOUND": "Este nó não tem nenhuma reserva com esse id, e reporta isso como definitivo e não como algo ainda a caminho. A causa habitual é estar conectado a um nó diferente daquele em que o pedido foi feito — verifique o nó em Configurações, depois recarregue.",
+      "RESERVATION_ALREADY_EXISTS": "O nó já tem uma reserva com esse id — este pedido já foi enviado. Recarregue seus pedidos em vez de fazê-lo de novo.",
+      "RESERVATION_EXPIRED": "A janela de 30 minutos desta reserva expirou e a liquidez do comerciante está livre de novo. Faça um novo pedido para negociar com ele.",
+      "RESERVATION_CANCELLED": "Esta reserva já foi cancelada, então não resta nada sobre o que agir. Faça um novo pedido para negociar com este comerciante.",
+      "INVALID_RESERVATION_STATE": "Esta reserva não está mais ativa, então não resta nada a cancelar — já foi cancelada, sua janela de 30 minutos expirou, ou uma liquidação já começou contra ela. Recarregue para ver qual.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Este anúncio não tem mais liquidez suficiente para esse valor — outra pessoa reservou contra ele primeiro. A liquidez volta quando a reserva dela termina, então o mesmo pedido pode passar mais tarde, ou você pode negociar um valor menor agora.",
+      "MERCHANT_OFFLINE": "O nó do comerciante não está acessível agora, então este pedido não pode ser feito. Os comerciantes voltam; tente de novo em breve, ou escolha outro anúncio.",
+      "PRICE_DISAGREEMENT": "O nó não aceitou este preço para esse anúncio. Ele re-deriva o preço dos próprios termos do anúncio, então uma cotação que mudou desde que você a leu tem de ser relida antes de pedir. Recarregue o anúncio e faça o pedido de novo.",
+      "ADVERTISEMENT_NOT_FOUND": "Este anúncio não está mais no nó, então nada pode ser reservado contra ele. Volte ao livro e escolha outro.",
+      "ADVERTISEMENT_DISABLED": "O comerciante removeu este anúncio, então nada pode ser reservado contra ele. Volte ao livro e escolha outro.",
+      "ADVERTISEMENT_EXPIRED": "Este anúncio expirou, então nada pode ser reservado contra ele. Volte ao livro e escolha outro.",
+      "DISPUTE_ALREADY_OPEN": "Já há uma disputa aberta nesta negociação. Acompanhe-a pela página de disputas em vez de abrir uma segunda.",
+      "DISPUTE_CLOSED": "Esta disputa foi decidida e não aceita mais provas nem votos. Recarregue para ver a decisão.",
+      "INVALID_IDENTITY_CLAIM": "O nó recusou esta carteira para essa ação. Só uma parte da negociação pode agir sobre ela, e só em seu próprio papel — o comprador declara o pagamento, o comerciante o aprova ou o rejeita.",
+      "INVALID_SIGNATURE": "O nó não aceitou a assinatura desta carteira sobre esse pedido. A assinatura verificou contra uma chave diferente daquela que esta negociação nomeia, então confira se a carteira conectada é a que é parte dela.",
+      "INVALID_REQUEST": "O nó recusou este pedido. Num pedido a causa habitual é um valor fora do mínimo e máximo do próprio anúncio — confira ambos com o que você digitou.",
+      "INVALID_PARAMETER": "O nó recusou um dos valores deste pedido. Num pedido a causa habitual é o relógio deste dispositivo estar mais de cinco minutos à frente do do nó, então confira o relógio e tente de novo.",
+      "NODE_NOT_SYNCHRONIZED": "Este nó ainda está se atualizando com a rede e não aceitará isso ainda. Dê um momento e tente de novo, ou troque para outro nó em Configurações."
+    },
+    "tradeByAttempt": {
+      "INVALID_SETTLEMENT_STATE": {
+        "cancel-settlement": "Tarde demais para cancelar — esta negociação não está mais aguardando pagamento. Recarregue-a: se o pagamento foi declarado, sua saída é aprová-lo, rejeitá-lo ou abrir uma disputa.",
+        "reverse-payment": "Tarde demais para retirar sua declaração — o comerciante já agiu sobre ela. Recarregue para ver se ele aprovou ou rejeitou. Se rejeitou e você realmente enviou o dinheiro, abra uma disputa.",
+        "reject-payment": "Não há nenhuma declaração de pagamento pendente para rejeitar. Recarregue — ou o comprador a retirou, ou esta negociação já terminou.",
+        "declare-paid": "Esta negociação não está esperando uma declaração de pagamento. Recarregue — ou você já declarou, ou a negociação terminou.",
+        "approve": "Não há nenhuma declaração de pagamento para aprovar. Recarregue — ou o comprador a retirou, ou esta negociação já terminou.",
+        "dispute": "Esta negociação não pode ser disputada de onde está agora. Recarregue para ver seu estado atual; uma negociação concluída ou cancelada não tem disputa a abrir."
+      },
+      "SETTLEMENT_ALREADY_EXISTS": {
+        "initiate": "Já existe uma liquidação neste nó com o id que este pedido usou. Isso é uma afirmação sobre o id e não sobre sua negociação — ela não foi concluída. Recarregue o pedido: se a liquidação dele já está aberta, continue de lá em vez de abrir uma segunda."
+      },
+      "INVALID_IDENTITY_CLAIM": {
+        "declare-paid": "Só o comprador pode declarar um pagamento, e esta carteira não é o comprador nesta negociação.",
+        "approve": "Só o comerciante pode aprovar um pagamento, e esta carteira não é o comerciante nesta negociação.",
+        "reject-payment": "Só o comerciante pode rejeitar um pagamento, e esta carteira não é o comerciante nesta negociação.",
+        "reverse-payment": "Só o comprador pode retirar uma declaração de pagamento, e esta carteira não é o comprador nesta negociação.",
+        "cancel-reservation": "Só a carteira que fez uma reserva pode cancelá-la, e esta não é essa carteira."
+      }
+    },
+    "ads": {
+      "ADVERTISEMENT_NOT_FOUND": "Este anúncio não existe mais no nó — um anúncio excluído não pode ser recuperado.",
+      "ADVERTISEMENT_EXPIRED": "Este anúncio expirou. Publique um novo em vez de editar este; seus termos são contra o que os tomadores já assinaram.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Não há liquidez por trás deste anúncio, então ele não pode voltar à oferta. Adicione estoque ao cofre dele primeiro.",
+      "INVALID_ADVERTISEMENT": "Não se pode negociar contra esses termos: o mínimo não deve exceder o máximo, e ao menos um método de pagamento é exigido.",
+      "DUPLICATE_ADVERTISEMENT": "Este nó já tem um anúncio com esse id. Recarregue seus anúncios — provavelmente já foi publicado.",
+      "UNSUPPORTED_PAYMENT_METHOD": "Um dos métodos de pagamento deste anúncio não é um que o nó reconhece. Escolha do próprio catálogo do nó.",
+      "PAYMENT_METHOD_LIMIT_REACHED": "Você atingiu o número máximo de definições de método de pagamento. Aposente uma que não usa mais antes de adicionar outra — nada libera um espaço sozinho.",
+      "INVALID_IDENTITY_CLAIM": "O nó recusou esta carteira para esse anúncio. Só a carteira que o publicou pode alterá-lo.",
+      "INVALID_SIGNATURE": "O nó não aceitou a assinatura desta carteira sobre esse anúncio. A assinatura verificou contra uma chave diferente daquela que o anúncio nomeia."
+    },
+    "governance": {
+      "PROPOSAL_ALREADY_EXISTS": "Já existe uma proposta com esse id neste nó. Os ids são de toda a rede e por ordem de chegada — escolha outro, ou abra a que o tem.",
+      "INVALID_PROPOSAL_STATE": "Esta proposta não está num estado que permita isso. Recarregue para ver seu status — uma proposta retirada ou executada não aceita mais alterações.",
+      "INVALID_PROPOSAL": "O nó recusou o próprio conteúdo desta proposta. Confira o título, o resumo e a categoria com o que a tela pede.",
+      "PROPOSAL_NOT_FOUND": "Este nó não tem nenhuma proposta com esse id, e reporta isso como definitivo e não como replicação ainda em curso. Escolha outro nó em Configurações, ou confira o id.",
+      "VOTING_CLOSED": "A votação desta proposta fechou, então nenhum voto a mais pode ser registrado. Recarregue para ver o resultado.",
+      "DUPLICATE_VOTE": "Esta carteira já votou nesta proposta. Um voto não pode ser mudado depois de registrado.",
+      "INSUFFICIENT_VOTING_POWER": "Esta carteira tem peso em stake pequeno demais para seu voto contar nesta proposta. Faça mais stake, ou espere uma proposta com um limiar menor.",
+      "DESERIALIZATION_ERROR": "O nó não conseguiu ler o formato da proposta, então nada foi registrado. Nada que você possa mudar nesta tela conserta isso — reporte.",
+      "INVALID_IDENTITY_CLAIM": "O nó recusou esta carteira para essa ação. Só o próprio autor da proposta pode alterá-la.",
+      "INVALID_SIGNATURE": "O nó não aceitou a assinatura desta carteira sobre esse pedido. A assinatura verificou contra uma chave diferente daquela que ela nomeia."
+    },
+    "arbitration": {
+      "DISPUTE_NOT_FOUND": "Este nó não tem nenhuma disputa com esse id. Recarregue a pauta — o caso pode ter sido aberto contra um nó diferente.",
+      "DISPUTE_CLOSED": "Este caso foi decidido. Não aceita mais adesões, compromissos ou revelações; recarregue para ver a decisão.",
+      "DISPUTE_TIMEOUT": "A janela deste caso expirou, então nada mais pode ser registrado contra ele.",
+      "INVALID_DISPUTE_STATE": "O caso está ativo mas não na fase que essa ação precisa — o painel encheu há pouco, ou a fase ainda não abriu. Continue observando-o em vez de tratá-lo como encerrado.",
+      "INVALID_EVIDENCE": "O voto revelado não bate com o compromisso que esta carteira fez, então foi descartado em vez de contado. O salt neste navegador pertence a um voto diferente do que está sendo revelado.",
+      "DISPUTE_ALREADY_OPEN": "Já há uma disputa aberta naquela liquidação, e só pode haver uma. Trabalhe o caso existente.",
+      "INVALID_IDENTITY_CLAIM": "O nó recusou esta carteira para essa ação: ela não está assentada neste caso, ou não é parte da negociação por trás dele. Isto não é um problema de assinatura.",
+      "INVALID_SIGNATURE": "O nó não aceitou a assinatura desta carteira. A assinatura verificou contra uma chave diferente daquela que o payload nomeia."
+    },
+    "review": {
+      "INVALID_IDENTITY_CLAIM": "O nó recusou: esta carteira não foi parte daquela negociação, então não tem direito de avaliá-la. Só o comprador e o vendedor de uma negociação liquidada podem, uma avaliação cada um.",
+      "RESOURCE_ALREADY_EXISTS": "Este nó já tem uma avaliação mais nova daquela negociação por esta carteira, então a que está em arquivo é a que vale. Recarregue para vê-la.",
+      "INVALID_PARAMETER": "O nó recusou o formato da avaliação. Um comentário tem no máximo {max} caracteres e não pode conter caracteres de controle ou de direção de texto.",
+      "SETTLEMENT_NOT_FOUND": "Este nó não tem nenhuma liquidação com esse id, então não há negociação aqui para avaliar. A causa habitual é estar conectado a um nó diferente daquele em que a negociação rodou — verifique o nó em Configurações.",
+      "INVALID_SIGNATURE": "O nó não aceitou a assinatura desta carteira sobre a avaliação. A assinatura verificou contra uma chave diferente daquela que a avaliação nomeia."
+    },
+    "define": {
+      "unsupported": "O nó recusou esse nome. O mais provável é que ele se leia como um trilho que a rede já carrega: ele compara o que o olho vê, então maiúsculas, acentos, espaçamento, hifens, letras parecidas de outros alfabetos e dígitos no lugar de letras são todos o mesmo nome para ele. Redigitá-lo com um hífen não vai ajudar — nomeie-o pela sua própria conta em vez disso.",
+      "limitReached": "Você atingiu as 32 definições que uma carteira pode publicar. Elas não podem ser excluídas — todo nó já as tem — então isto é um teto, não uma fila.",
+      "signature": "O nó não aceitou a assinatura desta carteira. Uma definição só pode ser publicada pela carteira que ela nomeia."
+    }
   }
 }

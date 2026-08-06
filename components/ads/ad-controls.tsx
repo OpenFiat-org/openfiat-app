@@ -58,6 +58,7 @@ export function AdStatusControl({
   onDone: () => void;
 }) {
   const t = useTranslations("ads");
+  const R = useTranslations("refusals");
   const [pending, setPending] = useState<AdvertisementStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const options = transitionsFrom(ad.status);
@@ -74,7 +75,7 @@ export function AdStatusControl({
       await setAdvertisementStatus(who, ad.id, status);
       onDone();
     } catch (err) {
-      setError(explainRefusal(err));
+      setError(explainRefusal(R, err));
     } finally {
       setPending(null);
     }
@@ -141,6 +142,7 @@ export function AdTermsDialog({
   onSaved: () => void;
 }) {
   const t = useTranslations("ads");
+  const R = useTranslations("refusals");
   const [min, setMin] = useState(String(ad.minTrade));
   const [max, setMax] = useState(String(ad.maxTrade));
   const [methods, setMethods] = useState<string[]>(ad.paymentMethods);
@@ -181,7 +183,7 @@ export function AdTermsDialog({
       });
       onSaved();
     } catch (err) {
-      setError(explainRefusal(err));
+      setError(explainRefusal(R, err));
     } finally {
       setSaving(false);
     }

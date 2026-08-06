@@ -32,8 +32,16 @@ import { ofsErrorIdentity } from "@/lib/node-rpc";
  * `ofsRetryable` produces a sentence. It never produces a second request.
  */
 
-/** What a screen says about each refusal it has words for, by OFS-8000 name. */
-export type RefusalCopy = Readonly<Record<string, string>>;
+/**
+ * A next-intl translator scoped to the `refusals` namespace, as each screen
+ * passes it in. The copy that used to live in per-domain maps here now lives
+ * in the message catalogue under `refusals.<domain>.<OFS-8000 name>`, so a
+ * refusal reads in the language the rest of the screen is in.
+ */
+export interface RefusalTranslator {
+  (key: string, values?: Record<string, string | number>): string;
+  has(key: string): boolean;
+}
 
 /**
  * The symbolic name a refusal carries, from `error.data` where the node
@@ -60,13 +68,13 @@ export function refusalName(error: unknown): string | undefined {
  * than this build, and it should still leave them knowing whether pressing
  * the button again is worth doing.
  */
-export function unexplainedRefusal(error: unknown): string {
+export function unexplainedRefusal(t: RefusalTranslator, error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   switch (ofsErrorIdentity(error).ofsRetryable) {
     case true:
-      return `${message} The node says this one can succeed if you try it again.`;
+      return t("retryableSuffix", { message });
     case false:
-      return `${message} The node says trying again will not change this.`;
+      return t("notRetryableSuffix", { message });
     default:
       // The node did not say. Silence is not "no" — an older node that
       // states no retryability would otherwise have every timeout
@@ -79,10 +87,21 @@ export function unexplainedRefusal(error: unknown): string {
  * Explains a refusal using one screen's own copy, falling back to the
  * node's message and its retryability judgement.
  *
+ * `domain` names the screen's sub-object in the `refusals` namespace
+ * (`trade`, `ads`, `governance`, `arbitration`, `review`). A code this
+ * screen has no words for — including one this build has never seen — falls
+ * through to the node's own message.
+ *
  * Takes the caught value rather than its message on purpose: the message is
  * the part that says the least.
  */
-export function explainNodeRefusal(error: unknown, copy: RefusalCopy): string {
+export function explainNodeRefusal(
+  t: RefusalTranslator,
+  error: unknown,
+  domain: string,
+  values?: Record<string, string | number>,
+): string {
   const name = refusalName(error);
-  return (name ? copy[name] : undefined) ?? unexplainedRefusal(error);
+  const key = name ? `${domain}.${name}` : undefined;
+  return key && t.has(key) ? t(key, values) : unexplainedRefusal(t, error);
 }

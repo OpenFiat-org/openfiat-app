@@ -2542,5 +2542,99 @@
     "title": "OpenFiat — Échange P2P de stablecoins",
     "description": "Achetez et vendez des stablecoins contre du fiat local sur OpenFiat — le protocole de marché P2P décentralisé avec séquestre imposé par des programmes Solana.",
     "twitterDescription": "Achetez et vendez des stablecoins contre du fiat local, de pair à pair. Séquestre imposé par des programmes Solana ; litiges tranchés par des arbitres avec stake."
+  },
+  "refusals": {
+    "retryableSuffix": "{message} Le nœud dit que celle-ci peut réussir si vous réessayez.",
+    "notRetryableSuffix": "{message} Le nœud dit que réessayer ne changera rien.",
+    "trade": {
+      "SETTLEMENT_NOT_FOUND": "Ce nœud ne détient aucun règlement avec cet id, et il le rapporte comme définitif plutôt que comme quelque chose encore en chemin. La cause habituelle est d'être connecté à un nœud différent de celui sur lequel cet échange a été ouvert — vérifiez le nœud dans les Paramètres, puis rechargez.",
+      "INVALID_SETTLEMENT_STATE": "L'échange a dépassé l'état dont cette action a besoin. Rechargez pour voir où il en est réellement — une annulation n'est possible qu'avant qu'un paiement soit déclaré, et une réversion ou un rejet uniquement tant qu'un est en cours.",
+      "SETTLEMENT_ALREADY_EXISTS": "Un règlement existe déjà sur ce nœud avec cet id. Cela ne veut pas dire que cet échange est terminé — le règlement portant l'id peut encore attendre un paiement, ou appartenir à deux autres personnes. Rechargez avant d'en ouvrir un autre.",
+      "SETTLEMENT_ALREADY_COMPLETED": "Cet échange est déjà terminé. Rien de plus ne peut lui être fait — rechargez pour voir l'enregistrement final.",
+      "SETTLEMENT_ALREADY_CANCELLED": "Cet échange a déjà été annulé. Rechargez pour le voir ; passer un nouvel ordre est la seule voie à suivre.",
+      "RESERVATION_NOT_FOUND": "Ce nœud ne détient aucune réservation avec cet id, et il le rapporte comme définitif plutôt que comme quelque chose encore en chemin. La cause habituelle est d'être connecté à un nœud différent de celui sur lequel l'ordre a été passé — vérifiez le nœud dans les Paramètres, puis rechargez.",
+      "RESERVATION_ALREADY_EXISTS": "Le nœud détient déjà une réservation avec cet id — cet ordre a déjà été soumis. Rechargez vos ordres plutôt que de le repasser.",
+      "RESERVATION_EXPIRED": "La fenêtre de 30 minutes de cette réservation a expiré et la liquidité du commerçant est de nouveau libre. Passez un nouvel ordre pour échanger avec lui.",
+      "RESERVATION_CANCELLED": "Cette réservation a déjà été annulée, il ne reste donc rien sur quoi agir. Passez un nouvel ordre pour échanger avec ce commerçant.",
+      "INVALID_RESERVATION_STATE": "Cette réservation n'est plus active, il ne reste donc rien à annuler — elle a déjà été annulée, sa fenêtre de 30 minutes a expiré, ou un règlement a déjà commencé à son encontre. Rechargez pour voir lequel.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Cette annonce n'a plus assez de liquidité pour ce montant — quelqu'un d'autre a réservé à son encontre en premier. La liquidité revient quand sa réservation se termine, donc le même ordre peut passer plus tard, ou vous pouvez échanger un montant plus petit maintenant.",
+      "MERCHANT_OFFLINE": "Le nœud du commerçant n'est pas joignable pour l'instant, cet ordre ne peut donc pas être passé. Les commerçants reviennent ; réessayez sous peu, ou choisissez une autre annonce.",
+      "PRICE_DISAGREEMENT": "Le nœud n'a pas accepté ce prix pour cette annonce. Il redérive le prix à partir des termes propres de l'annonce, donc une cotation qui a bougé depuis que vous l'avez lue doit être relue avant de commander. Rechargez l'annonce et passez l'ordre à nouveau.",
+      "ADVERTISEMENT_NOT_FOUND": "Cette annonce n'est plus sur le nœud, rien ne peut donc être réservé à son encontre. Retournez au carnet et choisissez-en une autre.",
+      "ADVERTISEMENT_DISABLED": "Le commerçant a retiré cette annonce, rien ne peut donc être réservé à son encontre. Retournez au carnet et choisissez-en une autre.",
+      "ADVERTISEMENT_EXPIRED": "Cette annonce a expiré, rien ne peut donc être réservé à son encontre. Retournez au carnet et choisissez-en une autre.",
+      "DISPUTE_ALREADY_OPEN": "Un litige est déjà ouvert sur cet échange. Suivez-le depuis la page des litiges plutôt que d'en ouvrir un second.",
+      "DISPUTE_CLOSED": "Ce litige a été tranché et n'accepte plus de preuves ni de votes. Rechargez pour voir la décision.",
+      "INVALID_IDENTITY_CLAIM": "Le nœud a refusé ce portefeuille pour cette action. Seule une partie à l'échange peut agir dessus, et seulement dans son propre rôle — l'acheteur déclare le paiement, le commerçant l'approuve ou le rejette.",
+      "INVALID_SIGNATURE": "Le nœud n'a pas accepté la signature de ce portefeuille sur cette requête. La signature a été vérifiée contre une clé différente de celle que cet échange nomme, alors vérifiez que le portefeuille connecté est celui qui y est partie.",
+      "INVALID_REQUEST": "Le nœud a refusé cette requête. Sur un ordre, la cause habituelle est un montant hors du minimum et du maximum propres à l'annonce — comparez les deux à ce que vous avez saisi.",
+      "INVALID_PARAMETER": "Le nœud a refusé l'une des valeurs de cette requête. Sur un ordre, la cause habituelle est l'horloge de cet appareil en avance de plus de cinq minutes sur celle du nœud, alors vérifiez l'horloge et réessayez.",
+      "NODE_NOT_SYNCHRONIZED": "Ce nœud rattrape encore le réseau et n'acceptera pas cela pour l'instant. Laissez-lui un moment et réessayez, ou passez à un autre nœud dans les Paramètres."
+    },
+    "tradeByAttempt": {
+      "INVALID_SETTLEMENT_STATE": {
+        "cancel-settlement": "Trop tard pour annuler — cet échange n'attend plus de paiement. Rechargez-le : si le paiement a été déclaré, votre issue est de l'approuver, de le rejeter, ou d'ouvrir un litige.",
+        "reverse-payment": "Trop tard pour retirer votre déclaration — le commerçant a déjà agi dessus. Rechargez pour voir s'il l'a approuvée ou rejetée. S'il l'a rejetée et que vous avez réellement envoyé l'argent, ouvrez un litige.",
+        "reject-payment": "Il n'y a aucune déclaration de paiement en attente à rejeter. Rechargez — soit l'acheteur l'a retirée, soit cet échange est déjà terminé.",
+        "declare-paid": "Cet échange n'attend pas de déclaration de paiement. Rechargez — soit vous avez déjà déclaré, soit l'échange est terminé.",
+        "approve": "Il n'y a aucune déclaration de paiement à approuver. Rechargez — soit l'acheteur l'a retirée, soit cet échange est déjà terminé.",
+        "dispute": "Cet échange ne peut pas être contesté d'où il en est maintenant. Rechargez pour voir son état actuel ; un échange terminé ou annulé n'a pas de litige à ouvrir."
+      },
+      "SETTLEMENT_ALREADY_EXISTS": {
+        "initiate": "Un règlement existe déjà sur ce nœud avec l'id que cet ordre a utilisé. C'est une affirmation sur l'id et non sur votre échange — il n'est pas terminé. Rechargez l'ordre : si son règlement est déjà ouvert, continuez à partir de là plutôt que d'en ouvrir un second."
+      },
+      "INVALID_IDENTITY_CLAIM": {
+        "declare-paid": "Seul l'acheteur peut déclarer un paiement, et ce portefeuille n'est pas l'acheteur sur cet échange.",
+        "approve": "Seul le commerçant peut approuver un paiement, et ce portefeuille n'est pas le commerçant sur cet échange.",
+        "reject-payment": "Seul le commerçant peut rejeter un paiement, et ce portefeuille n'est pas le commerçant sur cet échange.",
+        "reverse-payment": "Seul l'acheteur peut retirer une déclaration de paiement, et ce portefeuille n'est pas l'acheteur sur cet échange.",
+        "cancel-reservation": "Seul le portefeuille qui a passé une réservation peut l'annuler, et ce n'est pas ce portefeuille."
+      }
+    },
+    "ads": {
+      "ADVERTISEMENT_NOT_FOUND": "Cette annonce n'existe plus sur le nœud — une annonce supprimée ne peut pas être récupérée.",
+      "ADVERTISEMENT_EXPIRED": "Cette annonce a expiré. Publiez-en une nouvelle plutôt que de modifier celle-ci ; ses termes sont ce contre quoi les preneurs ont déjà signé.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Il n'y a pas de liquidité derrière cette annonce, elle ne peut donc pas revenir à l'offre. Ajoutez d'abord de l'inventaire à son coffre.",
+      "INVALID_ADVERTISEMENT": "On ne peut pas échanger contre ces termes : le minimum ne doit pas dépasser le maximum, et au moins un moyen de paiement est requis.",
+      "DUPLICATE_ADVERTISEMENT": "Ce nœud détient déjà une annonce avec cet id. Rechargez vos annonces — elle a très probablement déjà été publiée.",
+      "UNSUPPORTED_PAYMENT_METHOD": "L'un des moyens de paiement de cette annonce n'est pas reconnu par le nœud. Choisissez dans le propre catalogue du nœud.",
+      "PAYMENT_METHOD_LIMIT_REACHED": "Vous avez atteint le nombre maximum de définitions de moyens de paiement. Retirez-en une que vous n'utilisez plus avant d'en ajouter une autre — rien ne libère une place tout seul.",
+      "INVALID_IDENTITY_CLAIM": "Le nœud a refusé ce portefeuille pour cette annonce. Seul le portefeuille qui l'a publiée peut la modifier.",
+      "INVALID_SIGNATURE": "Le nœud n'a pas accepté la signature de ce portefeuille sur cette annonce. La signature a été vérifiée contre une clé différente de celle que l'annonce nomme."
+    },
+    "governance": {
+      "PROPOSAL_ALREADY_EXISTS": "Une proposition avec cet id existe déjà sur ce nœud. Les ids sont à l'échelle du réseau et premier arrivé premier servi — choisissez-en un autre, ou ouvrez celle qui le porte.",
+      "INVALID_PROPOSAL_STATE": "Cette proposition n'est pas dans un état qui le permette. Rechargez pour voir son statut — une proposition retirée ou exécutée n'accepte plus de changements.",
+      "INVALID_PROPOSAL": "Le nœud a refusé le contenu même de cette proposition. Vérifiez le titre, le résumé et la catégorie par rapport à ce que demande l'écran.",
+      "PROPOSAL_NOT_FOUND": "Ce nœud ne détient aucune proposition avec cet id, et il le rapporte comme définitif plutôt que comme une réplication encore en cours. Choisissez un autre nœud dans les Paramètres, ou vérifiez l'id.",
+      "VOTING_CLOSED": "Le vote sur cette proposition est clos, aucun vote de plus ne peut donc être enregistré. Rechargez pour voir le résultat.",
+      "DUPLICATE_VOTE": "Ce portefeuille a déjà voté sur cette proposition. Un vote ne peut pas être modifié une fois enregistré.",
+      "INSUFFICIENT_VOTING_POWER": "Ce portefeuille détient un poids staké trop faible pour que son vote compte sur cette proposition. Stakez davantage, ou attendez une proposition avec un seuil plus bas.",
+      "DESERIALIZATION_ERROR": "Le nœud n'a pas pu lire la forme de la proposition, rien n'a donc été enregistré. Rien que vous puissiez changer sur cet écran ne le corrige — signalez-le.",
+      "INVALID_IDENTITY_CLAIM": "Le nœud a refusé ce portefeuille pour cette action. Seul l'auteur même de la proposition peut la modifier.",
+      "INVALID_SIGNATURE": "Le nœud n'a pas accepté la signature de ce portefeuille sur cette requête. La signature a été vérifiée contre une clé différente de celle qu'elle nomme."
+    },
+    "arbitration": {
+      "DISPUTE_NOT_FOUND": "Ce nœud ne détient aucun litige avec cet id. Rechargez le rôle — l'affaire a peut-être été ouverte contre un nœud différent.",
+      "DISPUTE_CLOSED": "Cette affaire a été tranchée. Elle n'accepte plus d'adhésions, d'engagements ni de révélations ; rechargez pour voir la décision.",
+      "DISPUTE_TIMEOUT": "La fenêtre de cette affaire a expiré, plus rien ne peut donc être enregistré à son encontre.",
+      "INVALID_DISPUTE_STATE": "L'affaire est active mais pas à la phase dont cette action a besoin — le panel s'est rempli il y a un instant, ou la phase n'a pas encore ouvert. Continuez à la surveiller plutôt que de la traiter comme terminée.",
+      "INVALID_EVIDENCE": "Le vote révélé ne correspond pas à l'engagement pris par ce portefeuille, il a donc été écarté plutôt que compté. Le sel dans ce navigateur appartient à un vote différent de celui qui est révélé.",
+      "DISPUTE_ALREADY_OPEN": "Un litige est déjà ouvert sur ce règlement, et il ne peut y en avoir qu'un. Travaillez l'affaire existante.",
+      "INVALID_IDENTITY_CLAIM": "Le nœud a refusé ce portefeuille pour cette action : il ne siège pas sur cette affaire, ou n'est pas partie à l'échange qui la sous-tend. Ce n'est pas un problème de signature.",
+      "INVALID_SIGNATURE": "Le nœud n'a pas accepté la signature de ce portefeuille. La signature a été vérifiée contre une clé différente de celle que le payload nomme."
+    },
+    "review": {
+      "INVALID_IDENTITY_CLAIM": "Le nœud a refusé : ce portefeuille n'était pas partie à cet échange, il n'a donc pas le droit de l'évaluer. Seuls l'acheteur et le vendeur d'un échange réglé le peuvent, un avis chacun.",
+      "RESOURCE_ALREADY_EXISTS": "Ce nœud détient déjà un avis plus récent de cet échange par ce portefeuille, c'est donc celui au dossier qui fait foi. Rechargez pour le voir.",
+      "INVALID_PARAMETER": "Le nœud a refusé la forme de l'avis. Un commentaire fait au plus {max} caractères et ne peut contenir de caractères de contrôle ou de direction de texte.",
+      "SETTLEMENT_NOT_FOUND": "Ce nœud ne détient aucun règlement avec cet id, il n'y a donc pas d'échange ici à évaluer. La cause habituelle est d'être connecté à un nœud différent de celui sur lequel l'échange s'est déroulé — vérifiez le nœud dans les Paramètres.",
+      "INVALID_SIGNATURE": "Le nœud n'a pas accepté la signature de ce portefeuille sur l'avis. La signature a été vérifiée contre une clé différente de celle que l'avis nomme."
+    },
+    "define": {
+      "unsupported": "Le nœud a refusé ce nom. Il se lit très probablement comme un rail que le réseau porte déjà : il compare ce que l'œil voit, donc la casse, les accents, l'espacement, les traits d'union, les lettres ressemblantes d'autres alphabets et les chiffres tenant lieu de lettres sont tous le même nom pour lui. Le retaper avec un trait d'union n'aidera pas — nommez-le d'après votre propre compte à la place.",
+      "limitReached": "Vous avez atteint les 32 définitions qu'un portefeuille peut publier. Elles ne peuvent pas être supprimées — chaque nœud les détient déjà — c'est donc un plafond, pas une file.",
+      "signature": "Le nœud n'a pas accepté la signature de ce portefeuille. Une définition ne peut être publiée que par le portefeuille qu'elle nomme."
+    }
   }
 }

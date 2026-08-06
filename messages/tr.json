@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Cüzdanı bağla",
     "loading": "Yükleniyor…",
-    "retry": "Yeniden dene"
+    "retry": "Yeniden dene",
+    "you": "Siz"
   },
   "languageSwitcher": {
     "label": "Dil",

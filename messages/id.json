@@ -2542,5 +2542,99 @@
     "title": "OpenFiat — Bursa Stablecoin P2P",
     "description": "Beli dan jual stablecoin dengan fiat lokal di OpenFiat — protokol pasar P2P terdesentralisasi dengan escrow yang ditegakkan oleh program Solana.",
     "twitterDescription": "Beli dan jual stablecoin dengan fiat lokal, peer-to-peer. Escrow ditegakkan oleh program Solana; sengketa diputuskan oleh arbiter yang di-stake."
+  },
+  "refusals": {
+    "retryableSuffix": "{message} Node mengatakan yang ini bisa berhasil jika Anda mencobanya lagi.",
+    "notRetryableSuffix": "{message} Node mengatakan mencoba lagi tidak akan mengubah ini.",
+    "trade": {
+      "SETTLEMENT_NOT_FOUND": "Node ini tidak memegang penyelesaian dengan id itu, dan melaporkannya sebagai final alih-alih sesuatu yang masih dalam perjalanan. Penyebab yang biasa adalah terhubung ke node yang berbeda dari tempat transaksi ini dibuka — periksa node di Pengaturan, lalu muat ulang.",
+      "INVALID_SETTLEMENT_STATE": "Transaksi telah beranjak dari keadaan yang dibutuhkan tindakan itu. Muat ulang untuk melihat di mana ia sebenarnya — pembatalan hanya mungkin sebelum pembayaran dinyatakan, dan pembalikan atau penolakan hanya selama ada satu yang tertunda.",
+      "SETTLEMENT_ALREADY_EXISTS": "Sebuah penyelesaian sudah ada di node ini dengan id itu. Itu tidak berarti transaksi ini selesai — penyelesaian yang memegang id itu mungkin masih menunggu pembayaran, atau milik dua orang lain. Muat ulang sebelum membuka yang lain.",
+      "SETTLEMENT_ALREADY_COMPLETED": "Transaksi ini sudah selesai. Tidak ada yang bisa dilakukan lagi padanya — muat ulang untuk melihat catatan akhir.",
+      "SETTLEMENT_ALREADY_CANCELLED": "Transaksi ini sudah dibatalkan. Muat ulang untuk melihatnya; menempatkan pesanan baru adalah satu-satunya jalan ke depan.",
+      "RESERVATION_NOT_FOUND": "Node ini tidak memegang reservasi dengan id itu, dan melaporkannya sebagai final alih-alih sesuatu yang masih dalam perjalanan. Penyebab yang biasa adalah terhubung ke node yang berbeda dari tempat pesanan ditempatkan — periksa node di Pengaturan, lalu muat ulang.",
+      "RESERVATION_ALREADY_EXISTS": "Node sudah memegang reservasi dengan id itu — pesanan ini sudah dikirim. Muat ulang pesanan Anda alih-alih menempatkannya lagi.",
+      "RESERVATION_EXPIRED": "Jendela 30 menit reservasi ini telah lewat dan likuiditas pedagang bebas lagi. Tempatkan pesanan baru untuk bertransaksi dengannya.",
+      "RESERVATION_CANCELLED": "Reservasi ini sudah dibatalkan, jadi tidak ada lagi yang bisa ditindaklanjuti. Tempatkan pesanan baru untuk bertransaksi dengan pedagang ini.",
+      "INVALID_RESERVATION_STATE": "Reservasi ini tidak lagi aktif, jadi tidak ada lagi yang bisa dibatalkan — sudah dibatalkan, jendela 30 menitnya lewat, atau penyelesaian sudah dimulai terhadapnya. Muat ulang untuk melihat yang mana.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Iklan ini tidak lagi punya cukup likuiditas untuk jumlah itu — orang lain mereservasi terhadapnya lebih dulu. Likuiditas kembali saat reservasi mereka berakhir, jadi pesanan yang sama mungkin lolos nanti, atau Anda bisa bertransaksi jumlah lebih kecil sekarang.",
+      "MERCHANT_OFFLINE": "Node pedagang tidak terjangkau sekarang, jadi pesanan ini tidak dapat ditempatkan. Pedagang kembali; coba lagi sebentar lagi, atau pilih iklan lain.",
+      "PRICE_DISAGREEMENT": "Node tidak menerima harga ini untuk iklan itu. Ia menurunkan ulang harga dari ketentuan iklan itu sendiri, jadi kutipan yang telah bergerak sejak Anda membacanya harus dibaca ulang sebelum memesan. Muat ulang iklan dan tempatkan pesanan lagi.",
+      "ADVERTISEMENT_NOT_FOUND": "Iklan ini tidak lagi ada di node, jadi tidak ada yang bisa direservasi terhadapnya. Kembali ke buku dan pilih yang lain.",
+      "ADVERTISEMENT_DISABLED": "Pedagang telah menurunkan iklan ini, jadi tidak ada yang bisa direservasi terhadapnya. Kembali ke buku dan pilih yang lain.",
+      "ADVERTISEMENT_EXPIRED": "Iklan ini telah kedaluwarsa, jadi tidak ada yang bisa direservasi terhadapnya. Kembali ke buku dan pilih yang lain.",
+      "DISPUTE_ALREADY_OPEN": "Sengketa sudah terbuka pada transaksi ini. Ikuti dari halaman sengketa alih-alih membuka yang kedua.",
+      "DISPUTE_CLOSED": "Sengketa ini telah diputuskan dan tidak menerima bukti atau suara lagi. Muat ulang untuk melihat putusan.",
+      "INVALID_IDENTITY_CLAIM": "Node menolak dompet ini untuk tindakan itu. Hanya pihak dalam transaksi yang dapat bertindak atasnya, dan hanya dalam perannya sendiri — pembeli menyatakan pembayaran, pedagang menyetujui atau menolaknya.",
+      "INVALID_SIGNATURE": "Node tidak menerima tanda tangan dompet ini atas permintaan itu. Tanda tangan terverifikasi terhadap kunci yang berbeda dari yang dinamai transaksi ini, jadi pastikan dompet yang terhubung adalah yang menjadi pihaknya.",
+      "INVALID_REQUEST": "Node menolak permintaan ini. Pada pesanan, penyebab yang biasa adalah jumlah di luar minimum dan maksimum iklan itu sendiri — bandingkan keduanya dengan yang Anda ketik.",
+      "INVALID_PARAMETER": "Node menolak salah satu nilai permintaan ini. Pada pesanan, penyebab yang biasa adalah jam perangkat ini lebih dari lima menit di depan jam node, jadi periksa jam dan coba lagi.",
+      "NODE_NOT_SYNCHRONIZED": "Node ini masih menyusul jaringan dan belum akan menerima itu. Beri ia waktu sejenak dan coba lagi, atau beralih ke node lain di Pengaturan."
+    },
+    "tradeByAttempt": {
+      "INVALID_SETTLEMENT_STATE": {
+        "cancel-settlement": "Terlambat untuk membatalkan — transaksi ini tidak lagi menunggu pembayaran. Muat ulang: jika pembayaran telah dinyatakan, jalan keluar Anda adalah menyetujuinya, menolaknya, atau membuka sengketa.",
+        "reverse-payment": "Terlambat untuk menarik pernyataan Anda — pedagang sudah bertindak atasnya. Muat ulang untuk melihat apakah mereka menyetujui atau menolak. Jika mereka menolak dan Anda benar-benar mengirim uangnya, buka sengketa.",
+        "reject-payment": "Tidak ada pernyataan pembayaran tertunda untuk ditolak. Muat ulang — entah pembeli menariknya, atau transaksi ini sudah berakhir.",
+        "declare-paid": "Transaksi ini tidak menunggu pernyataan pembayaran. Muat ulang — entah Anda sudah menyatakan, atau transaksinya berakhir.",
+        "approve": "Tidak ada pernyataan pembayaran untuk disetujui. Muat ulang — entah pembeli menariknya, atau transaksi ini sudah berakhir.",
+        "dispute": "Transaksi ini tidak dapat disengketakan dari keadaannya sekarang. Muat ulang untuk melihat keadaannya saat ini; transaksi yang selesai atau dibatalkan tidak punya sengketa untuk dibuka."
+      },
+      "SETTLEMENT_ALREADY_EXISTS": {
+        "initiate": "Sebuah penyelesaian sudah ada di node ini dengan id yang digunakan pesanan ini. Itu pernyataan tentang id dan bukan tentang transaksi Anda — ia belum selesai. Muat ulang pesanan: jika penyelesaiannya sudah terbuka, lanjutkan dari sana alih-alih membuka yang kedua."
+      },
+      "INVALID_IDENTITY_CLAIM": {
+        "declare-paid": "Hanya pembeli yang dapat menyatakan pembayaran, dan dompet ini bukan pembeli pada transaksi ini.",
+        "approve": "Hanya pedagang yang dapat menyetujui pembayaran, dan dompet ini bukan pedagang pada transaksi ini.",
+        "reject-payment": "Hanya pedagang yang dapat menolak pembayaran, dan dompet ini bukan pedagang pada transaksi ini.",
+        "reverse-payment": "Hanya pembeli yang dapat menarik pernyataan pembayaran, dan dompet ini bukan pembeli pada transaksi ini.",
+        "cancel-reservation": "Hanya dompet yang menempatkan reservasi yang dapat membatalkannya, dan ini bukan dompet itu."
+      }
+    },
+    "ads": {
+      "ADVERTISEMENT_NOT_FOUND": "Iklan ini tidak lagi ada di node — iklan yang dihapus tidak dapat dikembalikan.",
+      "ADVERTISEMENT_EXPIRED": "Iklan ini telah kedaluwarsa. Publikasikan yang baru alih-alih menyunting ini; ketentuannya adalah yang telah ditandatangani para pengambil.",
+      "INSUFFICIENT_AVAILABLE_LIQUIDITY": "Tidak ada likuiditas di balik iklan ini, jadi ia tidak bisa kembali ditawarkan. Tambahkan inventaris ke brankasnya dulu.",
+      "INVALID_ADVERTISEMENT": "Ketentuan itu tidak dapat ditransaksikan: minimum tidak boleh melebihi maksimum, dan setidaknya satu metode pembayaran diperlukan.",
+      "DUPLICATE_ADVERTISEMENT": "Node ini sudah memegang iklan dengan id itu. Muat ulang iklan Anda — kemungkinan besar sudah dipublikasikan.",
+      "UNSUPPORTED_PAYMENT_METHOD": "Salah satu metode pembayaran pada iklan ini bukan yang dikenali node. Pilih dari katalog node sendiri.",
+      "PAYMENT_METHOD_LIMIT_REACHED": "Anda telah mencapai jumlah maksimum definisi metode pembayaran. Pensiunkan satu yang tidak lagi Anda pakai sebelum menambah lagi — tidak ada yang membebaskan slot dengan sendirinya.",
+      "INVALID_IDENTITY_CLAIM": "Node menolak dompet ini untuk iklan itu. Hanya dompet yang memublikasikannya yang dapat mengubahnya.",
+      "INVALID_SIGNATURE": "Node tidak menerima tanda tangan dompet ini atas iklan itu. Tanda tangan terverifikasi terhadap kunci yang berbeda dari yang dinamai iklan."
+    },
+    "governance": {
+      "PROPOSAL_ALREADY_EXISTS": "Proposal dengan id itu sudah ada di node ini. Id bersifat seluruh jaringan dan siapa cepat dia dapat — pilih yang lain, atau buka yang memegangnya.",
+      "INVALID_PROPOSAL_STATE": "Proposal ini tidak dalam keadaan yang mengizinkan itu. Muat ulang untuk melihat statusnya — proposal yang ditarik atau dieksekusi tidak menerima perubahan lagi.",
+      "INVALID_PROPOSAL": "Node menolak isi proposal ini sendiri. Periksa judul, ringkasan, dan kategori terhadap yang diminta layar.",
+      "PROPOSAL_NOT_FOUND": "Node ini tidak memegang proposal dengan id itu, dan melaporkannya sebagai final alih-alih replikasi yang masih berlangsung. Pilih node lain di Pengaturan, atau periksa id.",
+      "VOTING_CLOSED": "Pemungutan suara proposal ini ditutup, jadi tidak ada suara lagi yang bisa dicatat. Muat ulang untuk melihat hasilnya.",
+      "DUPLICATE_VOTE": "Dompet ini sudah memilih pada proposal ini. Suara tidak dapat diubah setelah dicatat.",
+      "INSUFFICIENT_VOTING_POWER": "Dompet ini memegang bobot stake terlalu kecil untuk suaranya dihitung pada proposal ini. Stake lebih banyak, atau tunggu proposal dengan ambang lebih rendah.",
+      "DESERIALIZATION_ERROR": "Node tidak dapat membaca bentuk proposal, jadi tidak ada yang dicatat. Tidak ada yang bisa Anda ubah di layar ini yang memperbaikinya — laporkan.",
+      "INVALID_IDENTITY_CLAIM": "Node menolak dompet ini untuk tindakan itu. Hanya penulis proposal itu sendiri yang dapat mengubahnya.",
+      "INVALID_SIGNATURE": "Node tidak menerima tanda tangan dompet ini atas permintaan itu. Tanda tangan terverifikasi terhadap kunci yang berbeda dari yang dinamainya."
+    },
+    "arbitration": {
+      "DISPUTE_NOT_FOUND": "Node ini tidak memegang sengketa dengan id itu. Muat ulang daftar perkara — kasus mungkin dibuka terhadap node yang berbeda.",
+      "DISPUTE_CLOSED": "Kasus ini telah diputuskan. Ia tidak menerima gabungan, komitmen, atau pengungkapan lagi; muat ulang untuk melihat putusan.",
+      "DISPUTE_TIMEOUT": "Jendela kasus ini telah kedaluwarsa, jadi tidak ada lagi yang bisa dicatat terhadapnya.",
+      "INVALID_DISPUTE_STATE": "Kasus aktif tetapi tidak pada fase yang dibutuhkan tindakan itu — panel terisi sesaat lalu, atau fasenya belum terbuka. Terus pantau alih-alih menganggapnya berakhir.",
+      "INVALID_EVIDENCE": "Suara yang diungkapkan tidak cocok dengan komitmen yang dibuat dompet ini, jadi dibuang alih-alih dihitung. Salt di peramban ini milik suara yang berbeda dari yang sedang diungkapkan.",
+      "DISPUTE_ALREADY_OPEN": "Sengketa sudah terbuka pada penyelesaian itu, dan hanya boleh ada satu. Kerjakan kasus yang ada.",
+      "INVALID_IDENTITY_CLAIM": "Node menolak dompet ini untuk tindakan itu: ia tidak duduk pada kasus ini, atau bukan pihak dalam transaksi di baliknya. Ini bukan masalah tanda tangan.",
+      "INVALID_SIGNATURE": "Node tidak menerima tanda tangan dompet ini. Tanda tangan terverifikasi terhadap kunci yang berbeda dari yang dinamai payload."
+    },
+    "review": {
+      "INVALID_IDENTITY_CLAIM": "Node menolak: dompet ini bukan pihak dalam transaksi itu, jadi ia tidak berhak mengulasnya. Hanya pembeli dan penjual dari transaksi yang terselesaikan yang boleh, satu ulasan masing-masing.",
+      "RESOURCE_ALREADY_EXISTS": "Node ini sudah memegang ulasan yang lebih baru atas transaksi itu oleh dompet ini, jadi yang di berkas itulah yang berlaku. Muat ulang untuk melihatnya.",
+      "INVALID_PARAMETER": "Node menolak bentuk ulasan. Komentar paling banyak {max} karakter dan tidak boleh memuat karakter kontrol atau arah teks.",
+      "SETTLEMENT_NOT_FOUND": "Node ini tidak memegang penyelesaian dengan id itu, jadi tidak ada transaksi di sini untuk diulas. Penyebab yang biasa adalah terhubung ke node yang berbeda dari tempat transaksi berjalan — periksa node di Pengaturan.",
+      "INVALID_SIGNATURE": "Node tidak menerima tanda tangan dompet ini atas ulasan. Tanda tangan terverifikasi terhadap kunci yang berbeda dari yang dinamai ulasan."
+    },
+    "define": {
+      "unsupported": "Node menolak nama itu. Kemungkinan besar ia terbaca sebagai rel yang sudah dibawa jaringan: ia membandingkan apa yang dilihat mata, jadi kapitalisasi, aksen, spasi, tanda hubung, huruf mirip dari abjad lain, dan angka yang menggantikan huruf semuanya nama yang sama baginya. Mengetiknya ulang dengan tanda hubung tidak akan membantu — namai berdasarkan akun Anda sendiri sebagai gantinya.",
+      "limitReached": "Anda telah mencapai 32 definisi yang boleh dipublikasikan satu dompet. Mereka tidak bisa dihapus — setiap node sudah memegangnya — jadi ini plafon, bukan antrean.",
+      "signature": "Node tidak menerima tanda tangan dompet ini. Sebuah definisi hanya bisa dipublikasikan oleh dompet yang dinamainya."
+    }
   }
 }

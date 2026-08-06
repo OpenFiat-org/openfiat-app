@@ -1,6 +1,6 @@
 import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
-import { explainNodeRefusal, type RefusalCopy } from "@/lib/node-refusal";
+import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { NodeRpcError, type NodeErrorData } from "@/lib/node-rpc";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
 import type { SolanaProvider } from "@/lib/wallet-connection";
@@ -200,27 +200,9 @@ export async function sendSignedEvent(
  * answers to "you are not seated on this case" — an authorization refusal
  * that says nothing about the signature.
  */
-const ARBITRATION_REFUSALS: RefusalCopy = {
-  DISPUTE_NOT_FOUND:
-    "This node holds no dispute with that id. Reload the docket — the case may have been opened against a different node.",
-  DISPUTE_CLOSED:
-    "This case has been decided. It takes no further joins, commitments or reveals; reload to see the ruling.",
-  DISPUTE_TIMEOUT:
-    "This case's window has expired, so nothing further can be recorded against it.",
-  INVALID_DISPUTE_STATE:
-    "The case is live but not at the phase that action needs — the panel filled a moment ago, or the phase has not opened yet. Keep watching it rather than treating it as over.",
-  INVALID_EVIDENCE:
-    "The revealed vote does not match the commitment this wallet made, so it was discarded rather than counted. The salt in this browser belongs to a different vote than the one being revealed.",
-  DISPUTE_ALREADY_OPEN:
-    "A dispute is already open on that settlement, and only one may be. Work the existing case.",
-  INVALID_IDENTITY_CLAIM:
-    "The node refused this wallet for that action: it is not seated on this case, or is not a party to the trade behind it. This is not a signature problem.",
-  INVALID_SIGNATURE:
-    "The node did not accept this wallet's signature. The signature verified against a different key than the one the payload names.",
-};
 
-export function explainArbitrationRefusal(error: unknown): string {
-  return explainNodeRefusal(error, ARBITRATION_REFUSALS);
+export function explainArbitrationRefusal(t: RefusalTranslator, error: unknown): string {
+  return explainNodeRefusal(t, error, "arbitration");
 }
 
 export interface ArbitratorIdentity {

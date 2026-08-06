@@ -76,6 +76,7 @@ export function ReviewForm({
   isParty: boolean | null;
 }) {
   const t = useTranslations("reviews");
+  const R = useTranslations("refusals");
   const { status, data, error, read, forget } = useSignedRead<MyReview[]>(myReviews, MY_REVIEWS);
   const existing = myReviewOf(data, settlementId, myPeerId);
 
@@ -139,7 +140,7 @@ export function ReviewForm({
       setNote({ text: t("published"), bad: false });
     } catch (err) {
       setNote({
-        text: explainReviewRefusal(err),
+        text: explainReviewRefusal(R, err),
         bad: true,
       });
     } finally {

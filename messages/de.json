@@ -3,7 +3,8 @@
   "common": {
     "connectWallet": "Wallet verbinden",
     "loading": "Wird geladen…",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "you": "Sie"
   },
   "languageSwitcher": {
     "label": "Sprache",

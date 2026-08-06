@@ -75,6 +75,7 @@ type Busy = { what: string } | null;
 export function ArbitrationConsole() {
   const t = useTranslations("arbitrate");
   const D = useTranslations("disputes");
+  const R = useTranslations("refusals");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [endpoint, setEndpoint] = useState<string>(() => readNodeSelection().url);
   const [disputes, setDisputes] = useState<PublicDispute[] | null>(null);
@@ -136,7 +137,7 @@ export function ArbitrationConsole() {
       setNote(await fn());
       await refresh();
     } catch (err) {
-      setNote(t("failed", { reason: explainArbitrationRefusal(err) }));
+      setNote(t("failed", { reason: explainArbitrationRefusal(R, err) }));
     } finally {
       setBusy(null);
     }

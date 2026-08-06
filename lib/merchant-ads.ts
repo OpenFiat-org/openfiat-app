@@ -1,7 +1,7 @@
 import bs58 from "bs58";
 
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
-import { explainNodeRefusal, type RefusalCopy } from "@/lib/node-refusal";
+import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -181,32 +181,8 @@ export async function publishAdvertisement(
  * passed through untouched rather than replaced with a generic apology: a
  * message nobody wrote is more useful than one that fits every failure.
  */
-const AD_REFUSALS: RefusalCopy = {
-  ADVERTISEMENT_NOT_FOUND:
-    "This advertisement no longer exists on the node — a deleted advertisement cannot be brought back.",
-  ADVERTISEMENT_EXPIRED:
-    "This advertisement has expired. Publish a fresh one rather than editing this; its terms are what takers already signed against.",
-  INSUFFICIENT_AVAILABLE_LIQUIDITY:
-    "There is no liquidity behind this advertisement, so it cannot go back on offer. Add inventory to its vault first.",
-  INVALID_ADVERTISEMENT:
-    "Those terms cannot be traded against: the minimum must not exceed the maximum, and at least one payment method is required.",
-  DUPLICATE_ADVERTISEMENT:
-    "This node already holds an advertisement with that id. Reload your advertisements — it was most likely published already.",
-  UNSUPPORTED_PAYMENT_METHOD:
-    "One of the payment methods on this advertisement is not one the node recognises. Pick from the node's own catalogue.",
-  PAYMENT_METHOD_LIMIT_REACHED:
-    "You have reached the maximum number of payment method definitions. Retire one you no longer use before adding another — nothing frees a slot on its own.",
-  // 2001, which is what an unauthorised update actually arrives as — an
-  // authorization refusal rather than a cryptographic one. These shared
-  // one sentence, so a wallet that was simply not the publisher was told
-  // its signature had failed.
-  INVALID_IDENTITY_CLAIM:
-    "The node refused this wallet for that advertisement. Only the wallet that published it can change it.",
-  INVALID_SIGNATURE:
-    "The node did not accept this wallet's signature over that advertisement. The signature verified against a different key than the one the advertisement names.",
-};
-
-/** What a refusal on an advertisement means to the merchant who caused it. */
-export function explainRefusal(error: unknown): string {
-  return explainNodeRefusal(error, AD_REFUSALS);
+/** What a refusal on an advertisement means to the merchant who caused it.
+ *  Copy lives in `refusals.ads.*`; `t` is `useTranslations("refusals")`. */
+export function explainRefusal(t: RefusalTranslator, error: unknown): string {
+  return explainNodeRefusal(t, error, "ads");
 }

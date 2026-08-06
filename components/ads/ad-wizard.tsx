@@ -72,6 +72,7 @@ const labelCls = "mb-1 block text-xs text-gray-500";
 export function AdWizard() {
   const t = useTranslations("ads");
   const L = useTranslations("lifecycle");
+  const R = useTranslations("refusals");
   const [draft, setDraft] = useState<AdDraft>(EMPTY_AD_DRAFT);
   const [loaded, setLoaded] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -253,7 +254,7 @@ export function AdWizard() {
       localStorage.removeItem(AD_DRAFT_KEY);
       setPublished(id);
     } catch (err) {
-      setPublishError(explainRefusal(err));
+      setPublishError(explainRefusal(R, err));
     } finally {
       setPublishing(false);
     }
