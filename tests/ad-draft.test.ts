@@ -77,9 +77,9 @@ describe("the wizard's step order", () => {
 
 describe("step 1 — ad type and asset", () => {
   it("needs a token and a currency", () => {
-    expect(problems({ mint: "" })[1]).toContain("Choose the token you will be paid in.");
-    expect(problems({ fiat: "" })[1]).toContain(
-      "Choose the fiat currency you will trade against.",
+    expect(problems({ mint: "" })[1].map((p) => p.key)).toContain("chooseToken");
+    expect(problems({ fiat: "" })[1].map((p) => p.key)).toContain(
+      "chooseFiat",
     );
     expect(problems({})[1]).toEqual([]);
   });
@@ -88,8 +88,8 @@ describe("step 1 — ad type and asset", () => {
     // Every amount on the record is base units plus decimals. Publishing
     // against a guessed precision scales the limits by a power of ten, and
     // nothing downstream notices.
-    expect(problems({}, null)[1]).toContain(
-      "Your node does not name this token, so its precision is unknown. Choose another.",
+    expect(problems({}, null)[1].map((p) => p.key)).toContain(
+      "tokenUnnamed",
     );
   });
 });
@@ -105,69 +105,69 @@ describe("step 2 — price", () => {
   });
 
   it("refuses a fixed price of zero", () => {
-    expect(problems({ price: "0" })[2]).toContain("Enter a fixed price greater than 0.");
-    expect(problems({ price: "" })[2]).toContain("Enter a fixed price greater than 0.");
+    expect(problems({ price: "0" })[2].map((p) => p.key)).toContain("fixedPricePositive");
+    expect(problems({ price: "" })[2].map((p) => p.key)).toContain("fixedPricePositive");
   });
 
   it("holds a floating premium inside the range the node enforces", () => {
     const floating = { pricingType: "Floating" as const, premium: "0.8" };
     expect(problems(floating)[2]).toEqual([]);
-    expect(problems({ ...floating, premium: "-6" })[2]).toContain(
-      "A premium must be between -5% and +5%.",
+    expect(problems({ ...floating, premium: "-6" })[2].map((p) => p.key)).toContain(
+      "premiumRange",
     );
-    expect(problems({ ...floating, premium: "5.1" })[2]).toContain(
-      "A premium must be between -5% and +5%.",
+    expect(problems({ ...floating, premium: "5.1" })[2].map((p) => p.key)).toContain(
+      "premiumRange",
     );
     // Zero is a real answer — it tracks the mid exactly — and must not be
     // mistaken for "nothing entered".
     expect(problems({ ...floating, premium: "0" })[2]).toEqual([]);
-    expect(problems({ ...floating, premium: "" })[2]).toContain(
-      "Enter a premium — 0 tracks the oracle mid exactly.",
+    expect(problems({ ...floating, premium: "" })[2].map((p) => p.key)).toContain(
+      "enterPremium",
     );
   });
 
   it("asks a floating advertisement for its own price precision", () => {
     const floating = { pricingType: "Floating" as const, premium: "0" };
     expect(priceDecimalsFor({ ...COMPLETE, ...floating, priceDecimals: "0" })).toBe(0);
-    expect(problems({ ...floating, priceDecimals: "13" })[2]).toContain(
-      "Price decimals must be a whole number between 0 and 12.",
+    expect(problems({ ...floating, priceDecimals: "13" })[2].map((p) => p.key)).toContain(
+      "priceDecimalsRange",
     );
-    expect(problems({ ...floating, priceDecimals: "2.5" })[2]).toContain(
-      "Price decimals must be a whole number between 0 and 12.",
+    expect(problems({ ...floating, priceDecimals: "2.5" })[2].map((p) => p.key)).toContain(
+      "priceDecimalsRange",
     );
   });
 });
 
 describe("step 3 — amount and limits", () => {
   it("needs a total and a workable pair of limits", () => {
-    expect(problems({ totalAmount: "0" })[3]).toContain(
-      "Enter the total amount you are putting on offer.",
+    expect(problems({ totalAmount: "0" })[3].map((p) => p.key)).toContain(
+      "enterTotal",
     );
-    expect(problems({ minOrder: "0" })[3]).toContain("Enter a minimum order amount.");
-    expect(problems({ minOrder: "500", maxOrder: "100" })[3]).toContain(
-      "The maximum order must be at least the minimum.",
+    expect(problems({ minOrder: "0" })[3].map((p) => p.key)).toContain("enterMin");
+    expect(problems({ minOrder: "500", maxOrder: "100" })[3].map((p) => p.key)).toContain(
+      "maxAtLeastMin",
     );
   });
 
   it("refuses limits no order could satisfy", () => {
     // An advertisement whose minimum exceeds its total sits in the book,
     // quotes a price and refuses every reservation — worse than not posting.
-    expect(problems({ totalAmount: "100", minOrder: "500", maxOrder: "900" })[3]).toContain(
-      "The minimum order is larger than the total on offer, so no order could be filled.",
+    expect(problems({ totalAmount: "100", minOrder: "500", maxOrder: "900" })[3].map((p) => p.key)).toContain(
+      "minLargerThanTotal",
     );
-    expect(problems({ totalAmount: "100", minOrder: "10", maxOrder: "900" })[3]).toContain(
-      "The maximum order is larger than the total on offer.",
+    expect(problems({ totalAmount: "100", minOrder: "10", maxOrder: "900" })[3].map((p) => p.key)).toContain(
+      "maxLargerThanTotal",
     );
   });
 });
 
 describe("step 4 — payment methods", () => {
   it("needs at least one and allows at most five", () => {
-    expect(problems({ methods: [] })[4]).toContain("Select at least one payment method.");
+    expect(problems({ methods: [] })[4].map((p) => p.key)).toContain("selectMethod");
     const five = Array.from({ length: MAX_PAYMENT_METHODS }, (_, i) => `Rail ${i}`);
     expect(problems({ methods: five })[4]).toEqual([]);
-    expect(problems({ methods: [...five, "One too many"] })[4]).toContain(
-      "An advertisement can list at most 5.",
+    expect(problems({ methods: [...five, "One too many"] })[4].map((p) => p.key)).toContain(
+      "atMostMethods",
     );
   });
 });

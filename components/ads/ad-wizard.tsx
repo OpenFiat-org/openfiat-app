@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import bs58 from "bs58";
 
@@ -15,6 +16,7 @@ import {
   priceDecimalsFor,
   stepProblems,
   type AdDraft,
+  type AdProblem,
 } from "@/lib/ad-draft";
 import { assetOptions, useReferenceData, type AssetOption } from "@/lib/reference";
 import { tradingSymbol } from "@/lib/asset-display";
@@ -68,6 +70,8 @@ const labelCls = "mb-1 block text-xs text-gray-500";
  * the network has.
  */
 export function AdWizard() {
+  const t = useTranslations("ads");
+  const L = useTranslations("lifecycle");
   const [draft, setDraft] = useState<AdDraft>(EMPTY_AD_DRAFT);
   const [loaded, setLoaded] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -172,20 +176,24 @@ export function AdWizard() {
   const backing = useVaultBacking(wallet?.address ?? null, draft.mint || null);
   const cover = backing.kind === "found" ? vaultCovers(backing.vault, draft.totalAmount) : null;
   const total = Number(draft.totalAmount) || 0;
-  const backingProblems =
+  const backingProblems: AdProblem[] =
     total <= 0
       ? []
       : backing.kind === "none"
-        ? [
-            "This wallet has no liquidity vault for that token, so nothing backs this advertisement — every reservation against it would fail. Open one from Wallet → Deposit first.",
-          ]
+        ? [{ key: "backingNoVault" }]
         : cover !== null && !cover.covered
           ? [
-              `Your vault holds ${formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0)} available, less than the ${formatNumber(total)} on offer here.`,
+              {
+                key: "backingShort",
+                values: {
+                  available: formatBaseUnits(cover.available, backing.kind === "found" ? backing.vault.decimals : 0),
+                  total: formatNumber(total),
+                },
+              },
             ]
           : [];
 
-  const stepErrors: Record<number, string[]> = {
+  const stepErrors: Record<number, AdProblem[]> = {
     ...problems,
     3: [...problems[3]!, ...backingProblems],
   };
@@ -203,13 +211,11 @@ export function AdWizard() {
   async function publish() {
     const signer = currentSigner(wallet);
     if (!wallet || !signer) {
-      setPublishError("Connect a wallet before publishing — it is what signs the advertisement.");
+      setPublishError(t("publishNoWallet"));
       return;
     }
     if (!asset) {
-      setPublishError(
-        "The token's precision comes from your node's mint table, and that answer is not in hand. Reload once the node is reachable.",
-      );
+      setPublishError(t("publishNoAsset"));
       return;
     }
     setPublishing(true);
@@ -257,25 +263,28 @@ export function AdWizard() {
     return (
       <div className="border-y border-white/5 py-14 text-center">
         <p className="text-2xl text-emerald-400">✓</p>
-        <h2 className="mt-3 text-lg font-semibold text-white">Advertisement posted</h2>
+        <h2 className="mt-3 text-lg font-semibold text-white">{t("posted")}</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-          {draft.direction} {assetName ?? "your token"} for {draft.fiat} ·{" "}
-          {draft.pricingType === "Fixed"
-            ? `Fixed ${draft.price}`
-            : `Floating ${Number(draft.premium) >= 0 ? "+" : ""}${draft.premium}%`}{" "}
-          · orders {formatNumber(Number(draft.minOrder))}–{formatNumber(Number(draft.maxOrder))}{" "}
-          {assetName ?? ""}.
+          {t("postedSummary", {
+            direction: L(draft.direction),
+            asset: assetName ?? t("yourToken"),
+            fiat: draft.fiat,
+            price:
+              draft.pricingType === "Fixed"
+                ? t("fixedPrice", { price: draft.price })
+                : t("floating", { sign: Number(draft.premium) >= 0 ? "+" : "", pct: draft.premium }),
+            range: `${formatNumber(Number(draft.minOrder))}–${formatNumber(Number(draft.maxOrder))} ${assetName ?? ""}`.trim(),
+          })}
         </p>
         <p className="mx-auto mt-3 max-w-md font-mono text-xs text-gray-500">{published}</p>
         <p className="mx-auto mt-2 max-w-md text-xs text-gray-500">
-          Signed by your wallet and accepted by the node, which gossips it to the rest of the
-          network. Edit it, pause it or take it down from My Ads.
+          {t("postedNote")}
         </p>
         <Link
           href="/ads"
           className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
         >
-          Go to My Ads
+          {t("goToMyAds")}
         </Link>
       </div>
     );
@@ -291,7 +300,7 @@ export function AdWizard() {
             const done = n < step && stepDone(n);
             const current = n === step;
             return (
-              <li key={label} className="flex items-center gap-2">
+              <li key={label} className="flex items-center gap-2" data-step={label}>
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold ${
                     done
@@ -304,7 +313,7 @@ export function AdWizard() {
                   {done ? "✓" : n}
                 </span>
                 <span className={`text-sm ${current ? "font-medium text-white" : "text-gray-500"}`}>
-                  {label}
+                  {t(`step.${i}`)}
                 </span>
               </li>
             );
@@ -312,9 +321,9 @@ export function AdWizard() {
         </ol>
         {resumed && (
           <span className="ml-auto flex items-center gap-2 text-xs text-amber-300">
-            Draft restored
+            {t("draftRestored")}
             <button onClick={discard} className="text-gray-400 underline hover:text-white">
-              Discard draft
+              {t("discardDraft")}
             </button>
           </span>
         )}
@@ -324,7 +333,7 @@ export function AdWizard() {
         {step === 1 && (
           <div className="space-y-8">
             <div>
-              <p className={labelCls}>I want to</p>
+              <p className={labelCls}>{t("iWantTo")}</p>
               {/* Stacked on a phone. These two carry a label and a line of
                   explanation each, and side by side at 375px the
                   explanation wraps to four lines and the buttons stop
@@ -344,17 +353,17 @@ export function AdWizard() {
                     <span
                       className={`font-semibold ${d === "Sell" ? "text-orange-400" : "text-emerald-400"}`}
                     >
-                      {d}
+                      {L(d)}
                     </span>
                     <span className="mt-0.5 block text-xs text-gray-500">
-                      {d === "Sell" ? "You sell crypto for fiat" : "You buy crypto with fiat"}
+                      {d === "Sell" ? t("sellExplain") : t("buyExplain")}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <p className={labelCls}>Asset</p>
+              <p className={labelCls}>{t("asset")}</p>
               <AssetPicker
                 value={draft.mint}
                 onChange={(option) => patch({ mint: option.mint })}
@@ -362,7 +371,7 @@ export function AdWizard() {
               />
             </div>
             <div>
-              <p className={labelCls}>Fiat currency</p>
+              <p className={labelCls}>{t("fiatCurrency")}</p>
               <CurrencyCombobox value={draft.fiat} onChange={(code) => patch({ fiat: code })} />
             </div>
           </div>
@@ -371,7 +380,7 @@ export function AdWizard() {
         {step === 2 && (
           <div className="max-w-xl space-y-6">
             <div>
-              <p className={labelCls}>Price type</p>
+              <p className={labelCls}>{t("priceType")}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {(["Fixed", "Floating"] as const).map((p) => (
                   <button
@@ -384,11 +393,9 @@ export function AdWizard() {
                         : "border-white/10 text-gray-400 hover:text-white"
                     }`}
                   >
-                    <span className="font-medium">{p}</span>
+                    <span className="font-medium">{p === "Fixed" ? t("fixed") : t("floatingLabel")}</span>
                     <span className="mt-0.5 block text-xs text-gray-500">
-                      {p === "Fixed"
-                        ? "One price, until you change it"
-                        : "Tracks the oracle mid, refreshed continuously"}
+                      {p === "Fixed" ? t("fixedExplain") : t("floatingExplain")}
                     </span>
                   </button>
                 ))}
@@ -398,7 +405,7 @@ export function AdWizard() {
             {draft.pricingType === "Fixed" ? (
               <div>
                 <label className={labelCls} htmlFor="ad-price">
-                  Price — {draft.fiat || "fiat"} per {assetName ?? "unit"}
+                  {t("priceLabel", { fiat: draft.fiat || t("fiatWord"), asset: assetName ?? t("unitWord") })}
                 </label>
                 <input
                   id="ad-price"
@@ -408,16 +415,14 @@ export function AdWizard() {
                   className={inputCls}
                 />
                 <p className="mt-1.5 text-[11px] text-gray-600">
-                  Signed at exactly the precision you type: {priceDecimalsFor(draft)} decimal
-                  place{priceDecimalsFor(draft) === 1 ? "" : "s"}. A fixed price does not move
-                  until you edit it from My Ads.
+                  {t("fixedPriceNote", { count: priceDecimalsFor(draft) })}
                 </p>
               </div>
             ) : (
               <>
                 <div>
                   <label className={labelCls} htmlFor="ad-premium">
-                    Price margin (%, −{PREMIUM_LIMIT_PCT} to +{PREMIUM_LIMIT_PCT})
+                    {t("priceMargin", { limit: PREMIUM_LIMIT_PCT })}
                   </label>
                   <input
                     id="ad-premium"
@@ -427,13 +432,12 @@ export function AdWizard() {
                     className={inputCls}
                   />
                   <p className="mt-1.5 text-[11px] text-gray-600">
-                    Applied over the median of every current oracle record for this pair. 0 tracks
-                    the mid exactly.
+                    {t("premiumNote")}
                   </p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="ad-price-decimals">
-                    Price decimals for {draft.fiat || "this currency"}
+                    {t("priceDecimalsLabel", { fiat: draft.fiat || t("thisCurrency") })}
                   </label>
                   <input
                     id="ad-price-decimals"
@@ -445,10 +449,7 @@ export function AdWizard() {
                     className={inputCls}
                   />
                   <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
-                    How many places the resolved price is quoted to — 2 for most currencies, 0 for
-                    ones with no subunit in daily use. Asked rather than inferred: a floating ad
-                    carries no typed price to take it from, and a currency-to-decimals table here
-                    would mis-round every currency missing from it.
+                    {t("priceDecimalsNote")}
                   </p>
                 </div>
               </>
@@ -476,7 +477,7 @@ export function AdWizard() {
             <div>
               <div className="flex items-center justify-between">
                 <label className={labelCls} htmlFor="ad-total">
-                  Total trading amount ({assetName ?? "asset"})
+                  {t("totalAmount", { asset: assetName ?? t("assetWord") })}
                 </label>
                 <VaultBackingStatus backing={backing} amount={draft.totalAmount} />
               </div>
@@ -488,14 +489,14 @@ export function AdWizard() {
                 className={inputCls}
               />
               <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
-                Checked against your on-chain liquidity vault for this mint, against its{" "}
-                <span className="text-gray-500">available</span> balance — the only figure a
-                reservation can draw on. A vault&rsquo;s lifetime total includes tokens that have
-                already settled and left.{" "}
-                <Link href="/wallet" className="text-gray-400 underline hover:text-white">
-                  Your vaults
-                </Link>{" "}
-                are on the Wallet page.
+                {t.rich("totalNote", {
+                  avail: (chunks) => <span className="text-gray-500">{chunks}</span>,
+                  vaults: (chunks) => (
+                    <Link href="/wallet" className="text-gray-400 underline hover:text-white">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </p>
             </div>
             {/* Minimum and maximum, one above the other on a phone — same
@@ -503,7 +504,7 @@ export function AdWizard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className={labelCls} htmlFor="ad-min">
-                  Minimum order ({assetName ?? "asset"})
+                  {t("minOrder", { asset: assetName ?? t("assetWord") })}
                 </label>
                 <input
                   id="ad-min"
@@ -515,7 +516,7 @@ export function AdWizard() {
               </div>
               <div>
                 <label className={labelCls} htmlFor="ad-max">
-                  Maximum order ({assetName ?? "asset"})
+                  {t("maxOrder", { asset: assetName ?? t("assetWord") })}
                 </label>
                 <input
                   id="ad-max"
@@ -532,8 +533,7 @@ export function AdWizard() {
                 merchant type a KES figure into a field the protocol reads as
                 USDC. */}
             <p className="text-[11px] leading-relaxed text-gray-600">
-              All three are in {assetName ?? "the asset"}, not in {draft.fiat || "fiat"} — that
-              is the unit the record carries them in.
+              {t("threeInAsset", { asset: assetName ?? t("theAsset"), fiat: draft.fiat || t("fiatWord") })}
             </p>
           </div>
         )}
@@ -542,7 +542,7 @@ export function AdWizard() {
           <div className="max-w-xl space-y-6">
             <div>
               <label className={labelCls} htmlFor="ad-country">
-                Where you settle fiat
+                {t("whereSettle")}
               </label>
               <CountrySelect
                 id="ad-country"
@@ -550,17 +550,15 @@ export function AdWizard() {
                 onChange={(code) => patch({ country: code })}
                 countries={reference.status === "ready" ? reference.data.countries : []}
                 className={inputCls}
-                placeholder="Any country — show every rail"
+                placeholder={t("anyCountry")}
               />
               <p className="mt-1.5 text-[11px] leading-relaxed text-gray-600">
-                Only used to order the suggestions below: your node knows which rails that country
-                actually uses. It is not part of the advertisement — the record carries payment
-                methods and a currency, and no country.
+                {t("countryNote")}
               </p>
             </div>
             <div>
               <p className={labelCls}>
-                Payment methods buyers can pay you with (up to {MAX_PAYMENT_METHODS})
+                {t("methodsLabel", { max: MAX_PAYMENT_METHODS })}
               </p>
               <MethodPicker
                 selected={draft.methods}
@@ -579,9 +577,7 @@ export function AdWizard() {
               * selector on this wizard was.
               */}
             <p className="border-l-2 border-white/10 pl-3 text-[11px] leading-relaxed text-gray-500">
-              There is no payment-time-limit setting here. On Binance a merchant picks one; on this
-              protocol the payment window belongs to the reservation and is set by the node, so an
-              advertisement has no field for it and this screen does not pretend to offer one.
+              {t("noTimeLimit")}
             </p>
           </div>
         )}
@@ -591,32 +587,30 @@ export function AdWizard() {
             <dl className="divide-y divide-white/5 border-y border-white/5">
               {[
                 [
-                  "Ad type",
-                  draft.direction === "Sell"
-                    ? "Sell — you sell crypto for fiat"
-                    : "Buy — you buy crypto with fiat",
+                  t("reviewAdType"),
+                  draft.direction === "Sell" ? t("reviewSell") : t("reviewBuy"),
                 ],
-                ["Asset", asset ? `${assetName} · ${asset.decimals} decimals` : "—"],
+                [t("asset"), asset ? t("reviewAssetVal", { asset: assetName ?? "", decimals: asset.decimals }) : "—"],
                 // In full, not shortened: this is the last screen before a
                 // merchant commits, and the address is the only thing that
                 // says which token they will actually be paid in.
-                ["Mint", draft.mint],
-                ["Fiat currency", draft.fiat],
+                [t("reviewMint"), draft.mint],
+                [t("fiatCurrency"), draft.fiat],
                 [
-                  "Price",
+                  t("colPrice"),
                   draft.pricingType === "Fixed"
-                    ? `Fixed — ${draft.price} ${draft.fiat}`
-                    : `Floating — oracle mid ${Number(draft.premium) >= 0 ? "+" : ""}${draft.premium}%`,
+                    ? t("reviewFixed", { price: draft.price, fiat: draft.fiat })
+                    : t("reviewFloating", { sign: Number(draft.premium) >= 0 ? "+" : "", pct: draft.premium }),
                 ],
                 [
-                  "Total on offer",
+                  t("reviewTotal"),
                   `${formatNumber(total)} ${assetName ?? ""}`.trim(),
                 ],
                 [
-                  "Order limits",
+                  t("reviewLimits"),
                   `${formatNumber(Number(draft.minOrder))} – ${formatNumber(Number(draft.maxOrder))} ${assetName ?? ""}`.trim(),
                 ],
-                ["Payment methods", draft.methods.join(" · ")],
+                [t("paymentMethods"), draft.methods.join(" · ")],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
                   <dt className="shrink-0 text-gray-500">{label}</dt>
@@ -634,13 +628,14 @@ export function AdWizard() {
               * stale merchant minimum.
               */}
             <p className="mt-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-4 py-3 text-sm leading-relaxed text-amber-200">
-              This screen does not read your merchant bond, so it cannot tell you whether the node
-              will accept this. Check where you stand on{" "}
-              <Link href="/become-a-merchant" className="font-medium text-amber-100 underline">
-                Become a merchant
-              </Link>
-              . Your vault backing for this token{" "}
-              {backingProblems.length === 0 ? "was checked on the previous step" : "is short — see step 3"}.
+              {t.rich("bondNote", {
+                link: (chunks) => (
+                  <Link href="/become-a-merchant" className="font-medium text-amber-100 underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}{" "}
+              {backingProblems.length === 0 ? t("backingChecked") : t("backingShortStep")}
             </p>
           </div>
         )}
@@ -649,10 +644,10 @@ export function AdWizard() {
           <ul className="mt-4 max-w-xl space-y-1.5">
             {stepErrors[step]!.map((err) => (
               <li
-                key={err}
+                key={err.key}
                 className="border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-1.5 text-xs text-amber-200"
               >
-                {err}
+                {t(`problem.${err.key}`, err.values)}
               </li>
             ))}
           </ul>
@@ -665,7 +660,7 @@ export function AdWizard() {
             onClick={() => patch({ step: step - 1 })}
             className="rounded-md border border-white/15 px-5 py-2 text-sm text-gray-300 hover:bg-white/5"
           >
-            ← Back
+            {t("back")}
           </button>
         )}
         {step < AD_STEPS.length ? (
@@ -674,7 +669,7 @@ export function AdWizard() {
             disabled={!stepDone(step)}
             className="rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continue →
+            {t("continue")}
           </button>
         ) : (
           <button
@@ -682,16 +677,14 @@ export function AdWizard() {
             disabled={!completeThrough(stepErrors, AD_STEPS.length) || publishing || !wallet}
             className="rounded-md bg-emerald-600 px-6 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {publishing ? "Signing…" : "Confirm to post"}
+            {publishing ? t("signing") : t("confirmToPost")}
           </button>
         )}
         {publishError ? (
           <p className="text-[11px] text-red-300">{publishError}</p>
         ) : (
           <p className="text-[11px] text-gray-600">
-            {wallet
-              ? "Posting costs one wallet signature. Everything above is local until then."
-              : "Connect a wallet to post — it is what signs the advertisement."}
+            {wallet ? t("postingNote") : t("connectToPost")}
           </p>
         )}
       </div>
@@ -708,34 +701,33 @@ export function AdWizard() {
  * lookup as a shortfall — see `useVaultBacking`.
  */
 function VaultBackingStatus({ backing, amount }: { backing: VaultBacking; amount: string }) {
+  const t = useTranslations("ads");
   const base = "text-xs";
   switch (backing.kind) {
     case "unkeyed":
-      return (
-        <span className={`${base} text-gray-500`}>Connect a wallet and pick an asset to check backing</span>
-      );
+      return <span className={`${base} text-gray-500`}>{t("backingUnkeyed")}</span>;
     case "loading":
-      return <span className={`${base} text-gray-500`}>Checking your vault…</span>;
+      return <span className={`${base} text-gray-500`}>{t("backingLoading")}</span>;
     case "error":
       return (
         <span className={`${base} text-amber-300/80`} title={backing.message}>
-          Could not reach the cluster — backing unverified, not unbacked
+          {t("backingError")}
         </span>
       );
     case "none":
-      return <span className={`${base} text-red-300`}>No vault for this token on this wallet</span>;
+      return <span className={`${base} text-red-300`}>{t("backingNone")}</span>;
     case "found": {
       const cover = vaultCovers(backing.vault, amount);
       const available = formatBaseUnits(backing.vault.available, backing.vault.decimals);
       if (cover === null) {
         // The typed amount has more precision than the mint has decimals, so
         // there is no quantity to compare yet.
-        return <span className={`${base} text-gray-500`}>{available} available in your vault</span>;
+        return <span className={`${base} text-gray-500`}>{t("backingAvailable", { available })}</span>;
       }
       return cover.covered ? (
-        <span className={`${base} text-emerald-400`}>Backed — {available} available</span>
+        <span className={`${base} text-emerald-400`}>{t("backingBacked", { available })}</span>
       ) : (
-        <span className={`${base} text-red-300`}>Only {available} available in your vault</span>
+        <span className={`${base} text-red-300`}>{t("backingOnly", { available })}</span>
       );
     }
   }

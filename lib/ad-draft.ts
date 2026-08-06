@@ -160,68 +160,69 @@ export function priceDecimalsFor(draft: AdDraft): number {
  * not answered or does not name it — which is itself a reason the step
  * cannot be finished, since the record's amounts need its precision.
  */
+/**
+ * One reason a step is unfinished, as a stable message key plus any values
+ * it interpolates. The wizard resolves it to the merchant's language — the
+ * rules live here, the words in the `ads` message catalogue.
+ */
+export interface AdProblem {
+  key: string;
+  values?: Record<string, string | number>;
+}
+
 export function stepProblems(
   draft: AdDraft,
   asset: AssetOption | null,
   max = MAX_PAYMENT_METHODS,
-): Record<number, string[]> {
+): Record<number, AdProblem[]> {
   const premium = Number(draft.premium);
   const price = Number(draft.price);
   const total = Number(draft.totalAmount);
   const min = Number(draft.minOrder);
   const max_ = Number(draft.maxOrder);
   const decimals = Number(draft.priceDecimals);
+  const p = (key: string, values?: Record<string, string | number>): AdProblem => ({ key, values });
 
   return {
     1: [
-      ...(draft.mint ? [] : ["Choose the token you will be paid in."]),
-      ...(draft.mint && !asset
-        ? ["Your node does not name this token, so its precision is unknown. Choose another."]
-        : []),
-      ...(draft.fiat ? [] : ["Choose the fiat currency you will trade against."]),
+      ...(draft.mint ? [] : [p("chooseToken")]),
+      ...(draft.mint && !asset ? [p("tokenUnnamed")] : []),
+      ...(draft.fiat ? [] : [p("chooseFiat")]),
     ],
     2:
       draft.pricingType === "Fixed"
         ? [
-            ...(price > 0 ? [] : ["Enter a fixed price greater than 0."]),
-            ...(typedDecimals(draft.price) > 12
-              ? ["A price cannot carry more than 12 decimal places."]
-              : []),
+            ...(price > 0 ? [] : [p("fixedPricePositive")]),
+            ...(typedDecimals(draft.price) > 12 ? [p("priceMaxDecimals")] : []),
           ]
         : [
-            ...(draft.premium.trim() === "" || Number.isNaN(premium)
-              ? ["Enter a premium — 0 tracks the oracle mid exactly."]
-              : []),
+            ...(draft.premium.trim() === "" || Number.isNaN(premium) ? [p("enterPremium")] : []),
             ...(Math.abs(premium) > PREMIUM_LIMIT_PCT
-              ? [`A premium must be between -${PREMIUM_LIMIT_PCT}% and +${PREMIUM_LIMIT_PCT}%.`]
+              ? [p("premiumRange", { limit: PREMIUM_LIMIT_PCT })]
               : []),
             ...(Number.isInteger(decimals) && decimals >= 0 && decimals <= 12
               ? []
-              : ["Price decimals must be a whole number between 0 and 12."]),
+              : [p("priceDecimalsRange")]),
           ],
     3: [
-      ...(total > 0 ? [] : ["Enter the total amount you are putting on offer."]),
-      ...(min > 0 ? [] : ["Enter a minimum order amount."]),
-      ...(max_ >= min ? [] : ["The maximum order must be at least the minimum."]),
+      ...(total > 0 ? [] : [p("enterTotal")]),
+      ...(min > 0 ? [] : [p("enterMin")]),
+      ...(max_ >= min ? [] : [p("maxAtLeastMin")]),
       // An order nobody can place is worse than no advertisement: it sits in
       // the book, quotes a price, and refuses every reservation.
-      ...(min > 0 && total > 0 && min > total
-        ? ["The minimum order is larger than the total on offer, so no order could be filled."]
-        : []),
-      ...(max_ > 0 && total > 0 && max_ > total
-        ? ["The maximum order is larger than the total on offer."]
-        : []),
+      ...(min > 0 && total > 0 && min > total ? [p("minLargerThanTotal")] : []),
+      ...(max_ > 0 && total > 0 && max_ > total ? [p("maxLargerThanTotal")] : []),
     ],
     4: [
-      ...(draft.methods.length >= 1 ? [] : ["Select at least one payment method."]),
-      ...(draft.methods.length > max ? [`An advertisement can list at most ${max}.`] : []),
+      ...(draft.methods.length >= 1 ? [] : [p("selectMethod")]),
+      ...(draft.methods.length > max ? [p("atMostMethods", { max })] : []),
     ],
     5: [],
   };
 }
 
 /** Whether every step up to and including `step` is finished. */
-export function completeThrough(problems: Record<number, string[]>, step: number): boolean {
+export function completeThrough(problems: Record<number, unknown[]>, step: number): boolean {
   for (let n = 1; n <= step; n++) if ((problems[n] ?? []).length > 0) return false;
   return true;
 }
