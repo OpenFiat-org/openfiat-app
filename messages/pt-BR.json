@@ -2520,5 +2520,21 @@
     "currencyHeading": "Câmbio P2P em {country} — {code}",
     "currencyBody": "{code} circula em {country} ao lado de {primaryName} ({currency}), e costuma carregar o livro mais profundo dos dois. A custódia é travada na Solana antes de você pagar e liberada só depois de verificado o recebimento; a OpenFiat nunca assume a custódia dos seus {code}.",
     "otherMarketsHere": "Outros mercados aqui:"
+  },
+  "accessNode": {
+    "changeTitle": "Nó de acesso — clique para trocar",
+    "modalTitle": "Nó de acesso",
+    "modalSubtitle": "O cluster {cluster}. Cada nó é contatado diretamente — o status e a latência abaixo são medidos, não declarados.",
+    "close": "Fechar",
+    "checking": "verificando…",
+    "unreachable": "inalcançável",
+    "connected": "Conectado",
+    "useThisNode": "Usar este nó",
+    "customNode": "Nó personalizado",
+    "connect": "Conectar",
+    "checkingBtn": "Verificando…",
+    "enterHostError": "Digite um endereço host:porta, ex. p2p.mynode.example:9000",
+    "reachableMsg": "✓ alcançável — {ms} ms",
+    "customFooter": "Envia uma requisição getHealth real ao endereço acima antes de trocar."
   }
 }

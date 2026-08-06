@@ -2520,5 +2520,21 @@
     "currencyHeading": "تبادل P2P في {country} — {code}",
     "currencyBody": "يتداول {code} في {country} إلى جانب {primaryName} ({currency})، وغالبًا ما يحمل الدفتر الأعمق بينهما. يُقفَل الحجز على Solana قبل أن تدفع ولا يُحرَّر إلا بعد التحقّق من الاستلام؛ OpenFiat لا يحتجز {code} الخاصة بك أبدًا.",
     "otherMarketsHere": "أسواق أخرى هنا:"
+  },
+  "accessNode": {
+    "changeTitle": "عقدة الوصول — انقر للتغيير",
+    "modalTitle": "عقدة الوصول",
+    "modalSubtitle": "عنقود {cluster}. يُتّصَل بكل نود مباشرةً — الحالة وزمن الاستجابة أدناه مقيسان لا مُعلَنان.",
+    "close": "إغلاق",
+    "checking": "جارٍ التحقّق…",
+    "unreachable": "غير قابل للوصول",
+    "connected": "متّصل",
+    "useThisNode": "استخدم هذه النود",
+    "customNode": "نود مخصّص",
+    "connect": "اتصال",
+    "checkingBtn": "جارٍ التحقّق…",
+    "enterHostError": "أدخل عنوان host:port، مثل p2p.mynode.example:9000",
+    "reachableMsg": "✓ قابل للوصول — {ms} مِلّي",
+    "customFooter": "يرسل طلب getHealth حقيقيًا إلى العنوان أعلاه قبل التبديل."
   }
 }

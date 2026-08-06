@@ -2520,5 +2520,21 @@
     "currencyHeading": "{country} में P2P एक्सचेंज — {code}",
     "currencyBody": "{code} {country} में {primaryName} ({currency}) के साथ प्रचलित है, और अक्सर दोनों में से गहरी बुक रखता है। आपके भुगतान से पहले एस्क्रो Solana पर लॉक होता है और केवल प्राप्ति सत्यापित होने के बाद ही रिलीज़ होता है; OpenFiat कभी आपके {code} की अभिरक्षा नहीं लेता।",
     "otherMarketsHere": "यहाँ अन्य बाज़ार:"
+  },
+  "accessNode": {
+    "changeTitle": "एक्सेस नोड — बदलने के लिए क्लिक करें",
+    "modalTitle": "एक्सेस नोड",
+    "modalSubtitle": "{cluster} क्लस्टर। हर नोड से सीधे संपर्क किया जाता है — नीचे की स्थिति और विलंबता मापी गई हैं, घोषित नहीं।",
+    "close": "बंद करें",
+    "checking": "जाँच हो रही…",
+    "unreachable": "अपहुँच",
+    "connected": "कनेक्टेड",
+    "useThisNode": "यह नोड उपयोग करें",
+    "customNode": "कस्टम नोड",
+    "connect": "कनेक्ट करें",
+    "checkingBtn": "जाँच हो रही…",
+    "enterHostError": "एक host:port पता दर्ज करें, उदा. p2p.mynode.example:9000",
+    "reachableMsg": "✓ पहुँच योग्य — {ms} ms",
+    "customFooter": "बदलने से पहले ऊपर के पते पर एक असली getHealth अनुरोध भेजता है।"
   }
 }

@@ -2520,5 +2520,21 @@
     "currencyHeading": "P2P Exchange in {country} — {code}",
     "currencyBody": "{code} circulates in {country} alongside {primaryName} ({currency}), and often carries the deeper book of the two. Escrow is locked on Solana before you pay and released only after receipt is verified; OpenFiat never takes custody of your {code}.",
     "otherMarketsHere": "Other markets here:"
+  },
+  "accessNode": {
+    "changeTitle": "Access node — click to change",
+    "modalTitle": "Access node",
+    "modalSubtitle": "The {cluster} cluster. Each node is contacted directly — status and latency below are measured, not declared.",
+    "close": "Close",
+    "checking": "checking…",
+    "unreachable": "unreachable",
+    "connected": "Connected",
+    "useThisNode": "Use this node",
+    "customNode": "Custom node",
+    "connect": "Connect",
+    "checkingBtn": "Checking…",
+    "enterHostError": "Enter a host:port address, e.g. p2p.mynode.example:9000",
+    "reachableMsg": "✓ reachable — {ms} ms",
+    "customFooter": "Sends a real getHealth request to the address above before switching."
   }
 }

@@ -2520,5 +2520,21 @@
     "currencyHeading": "P2P-обмен в стране {country} — {code}",
     "currencyBody": "{code} обращается в стране {country} наряду с {primaryName} ({currency}) и часто несёт более глубокий стакан из двух. Эскроу блокируется в Solana до того, как вы платите, и освобождается только после подтверждения получения; OpenFiat никогда не берёт ваши {code} на хранение.",
     "otherMarketsHere": "Другие рынки здесь:"
+  },
+  "accessNode": {
+    "changeTitle": "Узел доступа — нажмите, чтобы сменить",
+    "modalTitle": "Узел доступа",
+    "modalSubtitle": "Кластер {cluster}. С каждым узлом связываются напрямую — статус и задержка ниже измерены, а не заявлены.",
+    "close": "Закрыть",
+    "checking": "проверка…",
+    "unreachable": "недостижим",
+    "connected": "Подключено",
+    "useThisNode": "Использовать этот узел",
+    "customNode": "Свой узел",
+    "connect": "Подключить",
+    "checkingBtn": "Проверка…",
+    "enterHostError": "Введите адрес host:port, напр. p2p.mynode.example:9000",
+    "reachableMsg": "✓ достижим — {ms} мс",
+    "customFooter": "Перед переключением отправляет настоящий запрос getHealth на адрес выше."
   }
 }

@@ -2520,5 +2520,21 @@
     "currencyHeading": "{country}的 P2P 交易所 — {code}",
     "currencyBody": "{code} 在{country}与 {primaryName}（{currency}）一并流通，且常常是两者中更深的盘口。托管在你付款之前锁定于 Solana，仅在收款经核实后才释放；OpenFiat 从不保管你的 {code}。",
     "otherMarketsHere": "此处的其他市场："
+  },
+  "accessNode": {
+    "changeTitle": "接入节点——点击更改",
+    "modalTitle": "接入节点",
+    "modalSubtitle": "{cluster} 集群。每个节点都被直接联系——下方的状态和延迟是测得的，而非声明的。",
+    "close": "关闭",
+    "checking": "检查中…",
+    "unreachable": "不可达",
+    "connected": "已连接",
+    "useThisNode": "使用此节点",
+    "customNode": "自定义节点",
+    "connect": "连接",
+    "checkingBtn": "检查中…",
+    "enterHostError": "输入 host:port 地址，例如 p2p.mynode.example:9000",
+    "reachableMsg": "✓ 可达 — {ms} 毫秒",
+    "customFooter": "切换前会向上方地址发送一次真实的 getHealth 请求。"
   }
 }

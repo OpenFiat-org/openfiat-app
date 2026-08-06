@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Client } from "@openfiat/sdk";
 
 import { NETWORK_LABEL } from "@/lib/node-endpoint";
@@ -18,6 +19,7 @@ import {
  * way to change it. It lives in the footer because it is true of every page.
  */
 export function NodeChip() {
+  const t = useTranslations("accessNode");
   const [selection, setSelection] = useState<NodeSelection | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -38,7 +40,7 @@ export function NodeChip() {
       <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 text-xs text-gray-300 hover:border-white/25"
-        title="Access node — click to change"
+        title={t("changeTitle")}
       >
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
         <span className="tabular-nums">{label}</span>
@@ -77,6 +79,7 @@ function AccessNodeModal({
   selection: NodeSelection | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("accessNode");
   const [host, setHost] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
@@ -113,7 +116,7 @@ function AccessNodeModal({
   async function connectCustom() {
     const value = host.trim();
     if (!/^[\w.-]+:\d{2,5}$/.test(value)) {
-      setError("Enter a host:port address, e.g. p2p.mynode.example:9000");
+      setError(t("enterHostError"));
       return;
     }
     setError("");
@@ -125,7 +128,7 @@ function AccessNodeModal({
       setError(unreachableReason(value));
       return;
     }
-    setError(`✓ reachable — ${ms} ms`);
+    setError(t("reachableMsg", { ms }));
     selectNode(`custom:${value}`);
   }
 
@@ -137,13 +140,12 @@ function AccessNodeModal({
       >
         <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <h2 className="text-base font-semibold text-white">Access node</h2>
+            <h2 className="text-base font-semibold text-white">{t("modalTitle")}</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              The {NETWORK_LABEL} cluster. Each node is contacted directly — status and latency below
-              are measured, not declared.
+              {t("modalSubtitle", { cluster: NETWORK_LABEL })}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label={t("close")}>✕</button>
         </div>
 
         <ul className="max-h-72 divide-y divide-white/5 overflow-y-auto">
@@ -161,19 +163,19 @@ function AccessNodeModal({
                   <p className="font-mono text-gray-200">{n.label}</p>
                   <p className="text-xs text-gray-500">
                     {n.chainMode} ·{" "}
-                    {probing ? "checking…" : reachable ? `${ms} ms` : "unreachable"}
+                    {probing ? t("checking") : reachable ? `${ms} ms` : t("unreachable")}
                   </p>
                 </div>
                 {selection?.id === n.id ? (
                   <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
-                    Connected
+                    {t("connected")}
                   </span>
                 ) : (
                   <button
                     onClick={() => selectNode(n.id)}
                     className="rounded-md border border-white/15 px-3 py-1 text-xs text-gray-300 hover:bg-white/5"
                   >
-                    Use this node
+                    {t("useThisNode")}
                   </button>
                 )}
               </li>
@@ -182,7 +184,7 @@ function AccessNodeModal({
         </ul>
 
         <div className="border-t border-white/10 px-5 py-4">
-          <p className="text-xs font-medium text-gray-300">Custom node</p>
+          <p className="text-xs font-medium text-gray-300">{t("customNode")}</p>
           <div className="mt-2 flex gap-2">
             <input
               value={host}
@@ -195,12 +197,12 @@ function AccessNodeModal({
               disabled={checking}
               className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {checking ? "Checking…" : "Connect"}
+              {checking ? t("checkingBtn") : t("connect")}
             </button>
           </div>
           {error && <p className="mt-1.5 text-xs text-amber-300">{error}</p>}
           <p className="mt-2 text-[11px] text-gray-600">
-            Sends a real getHealth request to the address above before switching.
+            {t("customFooter")}
           </p>
         </div>
       </div>

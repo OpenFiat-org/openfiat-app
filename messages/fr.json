@@ -2520,5 +2520,21 @@
     "currencyHeading": "Échange P2P au {country} — {code}",
     "currencyBody": "{code} circule au {country} aux côtés de {primaryName} ({currency}), et porte souvent le carnet le plus profond des deux. Le séquestre est verrouillé sur Solana avant que vous payiez et libéré seulement après vérification de la réception ; OpenFiat ne prend jamais la garde de vos {code}.",
     "otherMarketsHere": "Autres marchés ici :"
+  },
+  "accessNode": {
+    "changeTitle": "Nœud d'accès — cliquez pour changer",
+    "modalTitle": "Nœud d'accès",
+    "modalSubtitle": "Le cluster {cluster}. Chaque nœud est contacté directement — le statut et la latence ci-dessous sont mesurés, non déclarés.",
+    "close": "Fermer",
+    "checking": "vérification…",
+    "unreachable": "injoignable",
+    "connected": "Connecté",
+    "useThisNode": "Utiliser ce nœud",
+    "customNode": "Nœud personnalisé",
+    "connect": "Connecter",
+    "checkingBtn": "Vérification…",
+    "enterHostError": "Saisissez une adresse hôte:port, p. ex. p2p.mynode.example:9000",
+    "reachableMsg": "✓ joignable — {ms} ms",
+    "customFooter": "Envoie une vraie requête getHealth à l'adresse ci-dessus avant de changer."
   }
 }

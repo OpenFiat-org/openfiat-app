@@ -2520,5 +2520,21 @@
     "currencyHeading": "Bursa P2P di {country} — {code}",
     "currencyBody": "{code} beredar di {country} bersama {primaryName} ({currency}), dan sering membawa buku yang lebih dalam di antara keduanya. Escrow dikunci di Solana sebelum Anda membayar dan dilepaskan hanya setelah penerimaan diverifikasi; OpenFiat tidak pernah menahan {code} Anda.",
     "otherMarketsHere": "Pasar lain di sini:"
+  },
+  "accessNode": {
+    "changeTitle": "Node akses — klik untuk mengubah",
+    "modalTitle": "Node akses",
+    "modalSubtitle": "Kluster {cluster}. Setiap node dihubungi langsung — status dan latensi di bawah diukur, bukan dinyatakan.",
+    "close": "Tutup",
+    "checking": "memeriksa…",
+    "unreachable": "tak terjangkau",
+    "connected": "Terhubung",
+    "useThisNode": "Gunakan node ini",
+    "customNode": "Node khusus",
+    "connect": "Hubungkan",
+    "checkingBtn": "Memeriksa…",
+    "enterHostError": "Masukkan alamat host:port, mis. p2p.mynode.example:9000",
+    "reachableMsg": "✓ terjangkau — {ms} ms",
+    "customFooter": "Mengirim permintaan getHealth nyata ke alamat di atas sebelum beralih."
   }
 }
