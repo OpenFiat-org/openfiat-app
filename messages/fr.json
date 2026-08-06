@@ -932,5 +932,42 @@
     "publishNewAvatar": "Publier le nouvel avatar",
     "publishAvatar": "Publier l'avatar",
     "avFooter": "L'image est d'abord téléversée, puis relue depuis une passerelle pour confirmer qu'elle est bien là, et alors seulement votre portefeuille signe la revendication. Rien ne va sur la chaîne et aucun frais de transaction n'est payé."
+  },
+  "faucet": {
+    "metaTitle": "Robinet",
+    "metaDescription": "Obtenez du SOL de devnet, de l'USDC fictif, de l'USDT fictif et de l'OPEN sur Solana devnet pour les tests.",
+    "heroTitle": "Robinet",
+    "heroIntro": "Envoie du SOL de devnet, de l'USDC fictif, de l'USDT fictif et de l'OPEN vers n'importe quelle adresse Solana devnet, pour tester cette app. Le SOL couvre les frais de transaction et le loyer des comptes ; l'OPEN sert à staker un rôle du protocole.",
+    "notReal": "Ce ne sont pas de vrais USDC ou USDT. Ce sont des jetons fictifs frappés uniquement pour les tests sur Solana devnet, échangeables contre rien, et sans aucune valeur.",
+    "separateService": "Ce robinet est un service distinct du protocole OpenFiat et du réseau de nœuds — il ne frappe que des jetons de test, et ne touche jamais au séquestre, au staking ni à la gouvernance.",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "USDC fictif",
+      "USDT": "USDT fictif",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "frais de transaction et loyer des comptes",
+      "USDC": "échanger et régler",
+      "USDT": "échanger et régler",
+      "OPEN": "staker dans un rôle"
+    },
+    "signerUnavailable": "Votre portefeuille n'est pas disponible pour signer. Reconnectez-le et réessayez.",
+    "faucetUnreachable": "Impossible de joindre le service du robinet. Réessayez sous peu.",
+    "sent": "Envoyé",
+    "sentToAddress": "{amounts} envoyés à votre adresse sur devnet.",
+    "and": " et ",
+    "requestMore": "Demander plus",
+    "panelTitle": "Demander des jetons de test",
+    "walletLabel": "Portefeuille",
+    "walletNote": "Les jetons vont au portefeuille que vous avez connecté. On vous demandera de signer un court message prouvant que vous le contrôlez — aucune transaction n'est créée, et rien ne quitte votre portefeuille.",
+    "connectPrompt": "Connectez un portefeuille pour demander des jetons de test.",
+    "assetsLabel": "Actifs",
+    "assetsNote": "Le SOL paie les frais de transaction et le loyer des comptes, et l'OPEN sert à staker un rôle — sans les deux, l'intégration s'arrête à mi-chemin. L'OPEN provient d'une réserve finie plutôt que d'être frappé, il peut donc s'épuiser.",
+    "signCheck": "Vérifiez votre portefeuille…",
+    "requesting": "Demande en cours…",
+    "signSend": "Signer et envoyer les jetons de test",
+    "connectFirst": "Connectez d'abord un portefeuille",
+    "rateLimited": "Montant fixe par demande, limité par portefeuille et par adresse IP — non ajustable par l'utilisateur."
   }
 }

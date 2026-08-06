@@ -932,5 +932,42 @@
     "publishNewAvatar": "Publikasikan avatar baru",
     "publishAvatar": "Publikasikan avatar",
     "avFooter": "Gambar diunggah dulu, lalu dibaca kembali dari gateway untuk memastikan ia benar-benar ada, dan barulah dompet Anda menandatangani klaim. Tidak ada yang masuk on-chain dan tidak ada biaya transaksi yang dibayar."
+  },
+  "faucet": {
+    "metaTitle": "Faucet",
+    "metaDescription": "Dapatkan SOL devnet, USDC tiruan, USDT tiruan, dan OPEN di Solana devnet untuk pengujian.",
+    "heroTitle": "Faucet",
+    "heroIntro": "Mengirim SOL devnet, USDC tiruan, USDT tiruan, dan OPEN ke alamat Solana devnet mana pun, untuk menguji aplikasi ini. SOL menutupi biaya transaksi dan sewa akun; OPEN adalah yang digunakan untuk men-stake sebuah peran protokol.",
+    "notReal": "Ini bukan USDC atau USDT asli. Ini token tiruan yang dicetak semata-mata untuk pengujian di Solana devnet, tidak dapat ditukar dengan apa pun, dan tidak bernilai.",
+    "separateService": "Faucet ini adalah layanan yang terpisah dari protokol OpenFiat dan jaringan node — ia hanya mencetak token uji, dan tidak pernah menyentuh escrow, staking, atau tata kelola.",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "USDC tiruan",
+      "USDT": "USDT tiruan",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "biaya transaksi dan sewa akun",
+      "USDC": "bertransaksi dan menyelesaikan",
+      "USDT": "bertransaksi dan menyelesaikan",
+      "OPEN": "men-stake ke sebuah peran"
+    },
+    "signerUnavailable": "Dompet Anda tidak tersedia untuk menandatangani. Hubungkan ulang dan coba lagi.",
+    "faucetUnreachable": "Tidak dapat menjangkau layanan faucet. Coba lagi sebentar lagi.",
+    "sent": "Terkirim",
+    "sentToAddress": "{amounts} dikirim ke alamat Anda di devnet.",
+    "and": " dan ",
+    "requestMore": "Minta lagi",
+    "panelTitle": "Minta token uji",
+    "walletLabel": "Dompet",
+    "walletNote": "Token menuju dompet yang telah Anda hubungkan. Anda akan diminta menandatangani pesan singkat yang membuktikan Anda mengendalikannya — tidak ada transaksi yang dibuat, dan tidak ada yang keluar dari dompet Anda.",
+    "connectPrompt": "Hubungkan dompet untuk meminta token uji.",
+    "assetsLabel": "Aset",
+    "assetsNote": "SOL membayar biaya transaksi dan sewa akun, dan OPEN adalah yang digunakan untuk men-stake sebuah peran — tanpa keduanya, orientasi berhenti di tengah jalan. OPEN berasal dari stok terbatas alih-alih dicetak, jadi ia bisa habis.",
+    "signCheck": "Periksa dompet Anda…",
+    "requesting": "Meminta…",
+    "signSend": "Tanda tangani dan kirim token uji",
+    "connectFirst": "Hubungkan dompet dulu",
+    "rateLimited": "Jumlah tetap per permintaan, dibatasi lajunya per dompet dan per alamat IP — tidak dapat disesuaikan pengguna."
   }
 }

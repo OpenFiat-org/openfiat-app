@@ -932,5 +932,42 @@
     "publishNewAvatar": "发布新头像",
     "publishAvatar": "发布头像",
     "avFooter": "图片先被上传，然后从网关读回以确认它确实存在，之后你的钱包才为该声明签名。不会上链，也不支付交易手续费。"
+  },
+  "faucet": {
+    "metaTitle": "水龙头",
+    "metaDescription": "在 Solana devnet 上获取用于测试的 devnet SOL、模拟 USDC、模拟 USDT 和 OPEN。",
+    "heroTitle": "水龙头",
+    "heroIntro": "向任意 Solana devnet 地址发送 devnet SOL、模拟 USDC、模拟 USDT 和 OPEN，用于测试本应用。SOL 用于支付交易手续费和账户租金；OPEN 用于质押协议角色。",
+    "notReal": "这些不是真正的 USDC 或 USDT。它们是仅用于在 Solana devnet 上测试而铸造的模拟代币，不可兑换任何东西，也没有任何价值。",
+    "separateService": "此水龙头是独立于 OpenFiat 协议和节点网络的服务——它只铸造测试代币，绝不触及托管、质押或治理。",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "模拟 USDC",
+      "USDT": "模拟 USDT",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "交易手续费和账户租金",
+      "USDC": "交易与结算",
+      "USDT": "交易与结算",
+      "OPEN": "质押到某个角色"
+    },
+    "signerUnavailable": "你的钱包无法用于签名。请重新连接后再试。",
+    "faucetUnreachable": "无法连接到水龙头服务。请稍后重试。",
+    "sent": "已发送",
+    "sentToAddress": "{amounts} 已发送到你在 devnet 上的地址。",
+    "and": " 和 ",
+    "requestMore": "再请求一次",
+    "panelTitle": "请求测试代币",
+    "walletLabel": "钱包",
+    "walletNote": "代币会发送到你已连接的钱包。系统会要求你签署一条简短消息以证明你控制它——不会创建任何交易，也不会有任何东西离开你的钱包。",
+    "connectPrompt": "连接钱包以请求测试代币。",
+    "assetsLabel": "资产",
+    "assetsNote": "SOL 用于支付交易手续费和账户租金，OPEN 用于质押角色——两者缺一，入门流程都会中途停止。OPEN 来自有限的存量而非铸造，因此可能会用尽。",
+    "signCheck": "请查看你的钱包…",
+    "requesting": "正在请求…",
+    "signSend": "签名并发送测试代币",
+    "connectFirst": "请先连接钱包",
+    "rateLimited": "每次请求金额固定，按钱包和 IP 地址限速——不可由用户调整。"
   }
 }

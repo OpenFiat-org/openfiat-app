@@ -932,5 +932,42 @@
     "publishNewAvatar": "Publicar nuevo avatar",
     "publishAvatar": "Publicar avatar",
     "avFooter": "La imagen se sube primero, luego se vuelve a leer desde un gateway para confirmar que realmente está ahí, y solo entonces tu billetera firma el reclamo. Nada va a la cadena ni se paga comisión de transacción."
+  },
+  "faucet": {
+    "metaTitle": "Grifo",
+    "metaDescription": "Obtén SOL de devnet, USDC simulado, USDT simulado y OPEN en Solana devnet para pruebas.",
+    "heroTitle": "Grifo",
+    "heroIntro": "Envía SOL de devnet, USDC simulado, USDT simulado y OPEN a cualquier dirección de Solana devnet, para probar esta app. SOL cubre las comisiones de transacción y la renta de cuentas; OPEN es con lo que se stakea un rol del protocolo.",
+    "notReal": "No son USDC ni USDT reales. Son tokens simulados acuñados solo para pruebas en Solana devnet, no canjeables por nada y sin valor alguno.",
+    "separateService": "Este grifo es un servicio separado del protocolo OpenFiat y de la red de nodos: solo acuña tokens de prueba y nunca toca la custodia, el staking ni la gobernanza.",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "USDC simulado",
+      "USDT": "USDT simulado",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "comisiones de transacción y renta de cuentas",
+      "USDC": "operar y liquidar",
+      "USDT": "operar y liquidar",
+      "OPEN": "stakear en un rol"
+    },
+    "signerUnavailable": "Tu billetera no está disponible para firmar. Reconéctala e inténtalo de nuevo.",
+    "faucetUnreachable": "No se pudo contactar con el servicio del grifo. Inténtalo de nuevo en breve.",
+    "sent": "Enviado",
+    "sentToAddress": "{amounts} enviados a tu dirección en devnet.",
+    "and": " y ",
+    "requestMore": "Solicitar más",
+    "panelTitle": "Solicitar tokens de prueba",
+    "walletLabel": "Billetera",
+    "walletNote": "Los tokens van a la billetera que has conectado. Se te pedirá firmar un mensaje corto que demuestre que la controlas — no se crea ninguna transacción y nada sale de tu billetera.",
+    "connectPrompt": "Conecta una billetera para solicitar tokens de prueba.",
+    "assetsLabel": "Activos",
+    "assetsNote": "SOL paga las comisiones de transacción y la renta de cuentas, y OPEN es con lo que se stakea un rol — sin ambos, la incorporación se detiene a medias. OPEN proviene de una reserva finita en lugar de acuñarse, así que puede agotarse.",
+    "signCheck": "Revisa tu billetera…",
+    "requesting": "Solicitando…",
+    "signSend": "Firmar y enviar tokens de prueba",
+    "connectFirst": "Conecta una billetera primero",
+    "rateLimited": "Cantidad fija por solicitud, con límite de frecuencia por billetera y por dirección IP — no ajustable por el usuario."
   }
 }

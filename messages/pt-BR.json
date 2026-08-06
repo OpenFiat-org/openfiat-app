@@ -932,5 +932,42 @@
     "publishNewAvatar": "Publicar novo avatar",
     "publishAvatar": "Publicar avatar",
     "avFooter": "A imagem é enviada primeiro, depois lida de volta de um gateway para confirmar que realmente está lá, e só então sua carteira assina a declaração. Nada vai on-chain e nenhuma taxa de transação é paga."
+  },
+  "faucet": {
+    "metaTitle": "Torneira",
+    "metaDescription": "Obtenha SOL de devnet, USDC simulado, USDT simulado e OPEN na Solana devnet para testes.",
+    "heroTitle": "Torneira",
+    "heroIntro": "Envia SOL de devnet, USDC simulado, USDT simulado e OPEN para qualquer endereço da Solana devnet, para testar este app. SOL cobre taxas de transação e aluguel de contas; OPEN é o que se usa para fazer stake de um papel do protocolo.",
+    "notReal": "Estes não são USDC ou USDT reais. São tokens simulados cunhados apenas para testes na Solana devnet, não resgatáveis por nada e sem valor algum.",
+    "separateService": "Esta torneira é um serviço separado do protocolo OpenFiat e da rede de nós — ela só cunha tokens de teste, e nunca toca em custódia, staking ou governança.",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "USDC simulado",
+      "USDT": "USDT simulado",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "taxas de transação e aluguel de contas",
+      "USDC": "negociar e liquidar",
+      "USDT": "negociar e liquidar",
+      "OPEN": "fazer stake em um papel"
+    },
+    "signerUnavailable": "Sua carteira não está disponível para assinar. Reconecte-a e tente de novo.",
+    "faucetUnreachable": "Não foi possível alcançar o serviço da torneira. Tente de novo em instantes.",
+    "sent": "Enviado",
+    "sentToAddress": "{amounts} enviados para o seu endereço na devnet.",
+    "and": " e ",
+    "requestMore": "Solicitar mais",
+    "panelTitle": "Solicitar tokens de teste",
+    "walletLabel": "Carteira",
+    "walletNote": "Os tokens vão para a carteira que você conectou. Você será solicitado a assinar uma mensagem curta provando que a controla — nenhuma transação é criada, e nada sai da sua carteira.",
+    "connectPrompt": "Conecte uma carteira para solicitar tokens de teste.",
+    "assetsLabel": "Ativos",
+    "assetsNote": "SOL paga as taxas de transação e o aluguel de contas, e OPEN é o que se usa para fazer stake de um papel — sem os dois, o onboarding para na metade. OPEN vem de um estoque finito em vez de ser cunhado, então pode acabar.",
+    "signCheck": "Verifique sua carteira…",
+    "requesting": "Solicitando…",
+    "signSend": "Assinar e enviar tokens de teste",
+    "connectFirst": "Conecte uma carteira primeiro",
+    "rateLimited": "Quantidade fixa por solicitação, com limite de taxa por carteira e por endereço IP — não ajustável pelo usuário."
   }
 }

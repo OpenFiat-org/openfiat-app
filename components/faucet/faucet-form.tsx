@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Panel } from "@/components/panel";
 import { shortSig } from "@/lib/format";
 import {
@@ -16,16 +17,11 @@ const inputCls =
 const labelCls = "mb-1 block text-xs text-gray-500";
 
 /**
- * Every asset the faucet dispenses, each with what it is actually *for* —
- * a tester who takes only the stablecoins gets stuck several steps later
- * with no idea why, so the reason belongs next to the checkbox.
+ * Every asset the faucet dispenses. What each is actually *for* lives beside
+ * the checkbox as copy (`faucet.assetWhy.*`) — a tester who takes only the
+ * stablecoins gets stuck several steps later with no idea why.
  */
-const ASSET_OPTIONS: Array<{ symbol: FaucetAssetSymbol; label: string; why: string }> = [
-  { symbol: "SOL", label: "SOL", why: "transaction fees and account rent" },
-  { symbol: "USDC", label: "mock USDC", why: "trade and settle" },
-  { symbol: "USDT", label: "mock USDT", why: "trade and settle" },
-  { symbol: "OPEN", label: "OPEN", why: "stake into a role" },
-];
+const ASSET_SYMBOLS: FaucetAssetSymbol[] = ["SOL", "USDC", "USDT", "OPEN"];
 
 type RequestState =
   | { phase: "idle" }
@@ -51,6 +47,7 @@ type RequestState =
  * them later.
  */
 export function FaucetForm() {
+  const t = useTranslations("faucet");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [selected, setSelected] = useState<FaucetAssetSymbol[]>(["SOL", "USDC", "USDT", "OPEN"]);
   const [state, setState] = useState<RequestState>({ phase: "idle" });
@@ -77,7 +74,7 @@ export function FaucetForm() {
     if (!signer) {
       setState({
         phase: "error",
-        message: "Your wallet is not available to sign. Reconnect it and try again.",
+        message: t("signerUnavailable"),
       });
       return;
     }
@@ -93,7 +90,7 @@ export function FaucetForm() {
       const message =
         err instanceof FaucetRequestError
           ? err.message
-          : "Could not reach the faucet service. Try again shortly.";
+          : t("faucetUnreachable");
       setState({ phase: "error", message });
     }
   }
@@ -103,12 +100,13 @@ export function FaucetForm() {
       <Panel>
         <div className="px-4 py-14 text-center">
           <p className="text-2xl text-emerald-400">✓</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">Sent</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">{t("sent")}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {Object.entries(state.amounts)
-              .map(([symbol, amount]) => `${amount} ${symbol}`)
-              .join(" and ")}{" "}
-            sent to your address on devnet.
+            {t("sentToAddress", {
+              amounts: Object.entries(state.amounts)
+                .map(([symbol, amount]) => `${amount} ${symbol}`)
+                .join(t("and")),
+            })}
           </p>
           <a
             href={`https://explorer.solana.com/tx/${state.signature}?cluster=devnet`}
@@ -123,7 +121,7 @@ export function FaucetForm() {
               onClick={() => setState({ phase: "idle" })}
               className="mt-6 inline-block rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
             >
-              Request more
+              {t("requestMore")}
             </button>
           </div>
         </div>
@@ -132,47 +130,44 @@ export function FaucetForm() {
   }
 
   return (
-    <Panel title="Request test tokens">
+    <Panel title={t("panelTitle")}>
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6">
-          <p className={labelCls}>Wallet</p>
+          <p className={labelCls}>{t("walletLabel")}</p>
           {wallet ? (
             <>
               <p className={`${inputCls} truncate`}>{wallet.address}</p>
               <p className="mt-1.5 text-[11px] text-gray-600">
-                Tokens go to the wallet you have connected. You will be asked to sign a short message
-                proving you control it — no transaction is created, and nothing leaves your wallet.
+                {t("walletNote")}
               </p>
             </>
           ) : (
             <p className="rounded-md border border-white/10 px-3 py-2 text-sm text-gray-400">
-              Connect a wallet to request test tokens.
+              {t("connectPrompt")}
             </p>
           )}
         </div>
 
         <div className="px-4 py-6">
-          <p className={labelCls}>Assets</p>
+          <p className={labelCls}>{t("assetsLabel")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {ASSET_OPTIONS.map((opt) => (
+            {ASSET_SYMBOLS.map((symbol) => (
               <button
-                key={opt.symbol}
-                onClick={() => toggleAsset(opt.symbol)}
+                key={symbol}
+                onClick={() => toggleAsset(symbol)}
                 className={`rounded-md border px-3.5 py-2 text-left text-sm transition-colors ${
-                  selected.includes(opt.symbol)
+                  selected.includes(symbol)
                     ? "border-brand/50 bg-brand/10 text-white"
                     : "border-white/10 text-gray-400 hover:text-white"
                 }`}
               >
-                <span className="block">{opt.label}</span>
-                <span className="block text-[11px] text-gray-500">{opt.why}</span>
+                <span className="block">{t(`assetLabel.${symbol}`)}</span>
+                <span className="block text-[11px] text-gray-500">{t(`assetWhy.${symbol}`)}</span>
               </button>
             ))}
           </div>
           <p className="mt-2 text-[11px] text-gray-600">
-            SOL pays transaction fees and account rent, and OPEN is what a role is staked with — without
-            both, onboarding stops partway. OPEN comes from a finite stash rather than being minted, so it
-            can run out.
+            {t("assetsNote")}
           </p>
         </div>
 
@@ -184,15 +179,15 @@ export function FaucetForm() {
             className="w-full rounded-md bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {state.phase === "signing"
-              ? "Check your wallet…"
+              ? t("signCheck")
               : state.phase === "requesting"
-                ? "Requesting…"
+                ? t("requesting")
                 : wallet
-                  ? "Sign and send test tokens"
-                  : "Connect a wallet first"}
+                  ? t("signSend")
+                  : t("connectFirst")}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-600">
-            Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable.
+            {t("rateLimited")}
           </p>
         </div>
       </div>

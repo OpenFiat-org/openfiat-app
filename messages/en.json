@@ -932,5 +932,42 @@
     "publishNewAvatar": "Publish new avatar",
     "publishAvatar": "Publish avatar",
     "avFooter": "The image is uploaded first, then read back from a gateway to confirm it is really there, and only then does your wallet sign the claim. Nothing goes on chain and no transaction fee is paid."
+  },
+  "faucet": {
+    "metaTitle": "Faucet",
+    "metaDescription": "Get devnet SOL, mock USDC, mock USDT and OPEN on Solana devnet for testing.",
+    "heroTitle": "Faucet",
+    "heroIntro": "Sends devnet SOL, mock USDC, mock USDT and OPEN to any Solana devnet address, for testing this app. SOL covers transaction fees and account rent; OPEN is what a protocol role is staked with.",
+    "notReal": "These are not real USDC or USDT. They are mock tokens minted solely for testing on Solana devnet, redeemable for nothing, and worth nothing.",
+    "separateService": "This faucet is a separate service from the OpenFiat protocol and node network — it only mints test tokens, and never touches escrow, staking, or governance.",
+    "assetLabel": {
+      "SOL": "SOL",
+      "USDC": "mock USDC",
+      "USDT": "mock USDT",
+      "OPEN": "OPEN"
+    },
+    "assetWhy": {
+      "SOL": "transaction fees and account rent",
+      "USDC": "trade and settle",
+      "USDT": "trade and settle",
+      "OPEN": "stake into a role"
+    },
+    "signerUnavailable": "Your wallet is not available to sign. Reconnect it and try again.",
+    "faucetUnreachable": "Could not reach the faucet service. Try again shortly.",
+    "sent": "Sent",
+    "sentToAddress": "{amounts} sent to your address on devnet.",
+    "and": " and ",
+    "requestMore": "Request more",
+    "panelTitle": "Request test tokens",
+    "walletLabel": "Wallet",
+    "walletNote": "Tokens go to the wallet you have connected. You will be asked to sign a short message proving you control it — no transaction is created, and nothing leaves your wallet.",
+    "connectPrompt": "Connect a wallet to request test tokens.",
+    "assetsLabel": "Assets",
+    "assetsNote": "SOL pays transaction fees and account rent, and OPEN is what a role is staked with — without both, onboarding stops partway. OPEN comes from a finite stash rather than being minted, so it can run out.",
+    "signCheck": "Check your wallet…",
+    "requesting": "Requesting…",
+    "signSend": "Sign and send test tokens",
+    "connectFirst": "Connect a wallet first",
+    "rateLimited": "Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable."
   }
 }
