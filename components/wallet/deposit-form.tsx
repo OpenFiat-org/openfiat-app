@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { Panel } from "@/components/panel";
@@ -116,6 +117,7 @@ function optionLabel(address: string, mints: ReferenceMint[] | null | undefined)
 }
 
 export function DepositForm({ initialMint }: { initialMint?: string }) {
+  const t = useTranslations("walletForms");
   // Names come from the node, never from a table here — see `nameForMint`.
   const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
@@ -139,7 +141,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     try {
       mint = new PublicKey(mintText.trim());
     } catch {
-      setLookupError("That is not a valid Solana address.");
+      setLookupError(t("invalidAddress"));
       return;
     }
     try {
@@ -159,7 +161,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
         held?.decimals ??
         DEPOSITABLE_MINTS.find((m) => m.address === mint.toBase58())?.decimals;
       if (decimals === undefined) {
-        setLookupError("Could not read this mint's decimals.");
+        setLookupError(t("noDecimals"));
         return;
       }
       // Read after the vault, because whether the vault has to be created
@@ -172,7 +174,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
       // A failed lookup is not "you hold nothing" — say which it is.
       setLookupError(err instanceof Error ? err.message : String(err));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (wallet) void resolve(wallet.address, mintInput);
@@ -199,7 +201,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
     if (!provider) {
       setSubmit({
         phase: "error",
-        message: "This wallet connection can't sign — reconnect with a real extension.",
+        message: t("signerError"),
       });
       return;
     }
@@ -236,7 +238,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
       });
       void resolve(wallet.address, mintInput);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Transaction failed or was rejected.";
+      const message = err instanceof Error ? err.message : t("txFailed");
       // `deposit_liquidity` checks a ban record that `withdraw_liquidity`
       // has no equivalent of, so a deposit can fail for a reason a
       // withdrawal never will. Naming it beats showing a raw program error.
@@ -244,7 +246,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
       setSubmit({
         phase: "error",
         message: banned
-          ? "The escrow program rejected this deposit because this wallet is banned. A ban blocks deposits only — withdrawing what you already hold is unaffected."
+          ? t("depBanned")
           : message,
       });
     }
@@ -255,12 +257,13 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
       <Panel>
         <div className="px-4 py-14 text-center">
           <p className="text-2xl text-emerald-400">✓</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">Deposit confirmed on devnet</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">{t("depDoneTitle")}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {submit.amount} moved from your wallet into your liquidity vault
-            {submit.created ? ", and the vault was created in the same transaction" : ""}
-            {submit.wrapped ? ", wrapped and unwrapped along the way so nothing was left behind" : ""}. Your
-            Available balance rose by the full amount and can back a sell advertisement now.
+            {t("depDoneSummary", {
+              amount: submit.amount,
+              created: String(submit.created),
+              wrapped: String(submit.wrapped),
+            })}
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -275,7 +278,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
               href="/wallet"
               className="rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
             >
-              Back to Wallet
+              {t("backToWallet")}
             </Link>
             <button
               onClick={() => {
@@ -284,7 +287,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
               }}
               className="rounded-md border border-white/15 px-6 py-2 text-sm font-medium text-gray-200 hover:bg-white/5"
             >
-              Deposit again
+              {t("depositAgain")}
             </button>
           </div>
         </div>
@@ -296,24 +299,20 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
   const native = resolved !== null && resolved.wrap !== null;
 
   return (
-    <Panel title="Deposit into a liquidity vault">
+    <Panel title={t("depPanelTitle")}>
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6 text-sm leading-relaxed text-gray-400">
           <p>
-            This moves tokens out of your wallet and into a liquidity vault owned by the escrow program. It
-            is not a transfer between your own accounts.
+            {t("depIntro1")}
           </p>
           <p className="mt-2.5">
-            While the tokens sit there, the program can reserve them against a buyer&apos;s order and release
-            them on settlement without asking you to sign again — that is what makes a sell advertisement
-            fillable. Anything not reserved stays yours to withdraw at any time, and no one else can withdraw
-            it.
+            {t("depIntro2")}
           </p>
         </div>
 
         <div className="px-4 py-6">
           <label htmlFor="mint" className="mb-1 block text-xs text-gray-500">
-            Token mint
+            {t("tokenMint")}
           </label>
           <select
             id="mint"
@@ -329,12 +328,12 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
                 {optionLabel(m.address, mints)}
               </option>
             ))}
-            <option value="custom">Another mint address…</option>
+            <option value="custom">{t("anotherMint")}</option>
           </select>
           <input
             value={mintInput}
             onChange={(e) => setMintInput(e.target.value)}
-            placeholder="Mint address"
+            placeholder={t("mintPlaceholder")}
             className={`mt-2 font-mono text-xs ${inputCls}`}
           />
           {/*
@@ -344,30 +343,28 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
             * token because two names looked alike loses the tokens.
             */}
           <p className="mt-1.5 text-[11px] text-gray-600">
-            Names come from the node you are connected to, not from this app — no devnet mint here
-            publishes on-chain metadata of its own. Check the address. SOL&apos;s address is wrapped
-            SOL&apos;s, which is what the vault actually holds.
+            {t("depNamesNote")}
           </p>
           {known && <p className="mt-1.5 text-xs text-gray-500">{known.note}</p>}
           {known && !known.obtainable && (
             <p className="mt-1.5 text-xs text-amber-300">
-              You cannot obtain this token on devnet, so a deposit will only work if you already hold some.
+              {t("depCannotObtain")}
             </p>
           )}
         </div>
 
         {lookupError && (
           <div className="px-4 py-6">
-            <p className="text-sm font-medium text-red-300">Could not read this mint from devnet</p>
+            <p className="text-sm font-medium text-red-300">{t("depLookupErrorTitle")}</p>
             <p className="mt-1 text-xs text-gray-500">
-              This is a failed lookup, not a zero balance.
+              {t("failedLookup")}
             </p>
             <p className="mt-2 font-mono text-xs text-red-400/80">{lookupError}</p>
             <button
               onClick={() => wallet && void resolve(wallet.address, mintInput)}
               className="mt-3 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
             >
-              Retry
+              {t("retry")}
             </button>
           </div>
         )}
@@ -376,17 +373,17 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
           <div className="px-4 py-6">
             <div className="flex items-center justify-between">
               <label htmlFor="amount" className="mb-1 block text-xs text-gray-500">
-                Amount
+                {t("amount")}
               </label>
               <span className="text-xs tabular-nums text-gray-500">
-                {native ? "You can deposit" : "In your wallet"}:{" "}
+                {native ? t("youCanDeposit") : t("inYourWallet")}:{" "}
                 {formatBaseUnits(heldAmount, resolved.decimals)}
                 {heldAmount > 0n && (
                   <button
                     onClick={() => setAmount(formatBaseUnits(heldAmount, resolved.decimals).replace(/,/g, ""))}
                     className="ml-2 text-brand hover:text-brand-hover"
                   >
-                    Max
+                    {t("max")}
                   </button>
                 )}
               </span>
@@ -402,8 +399,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
 
             {resolved.held === null && !native && (
               <p className="mt-2 text-xs text-amber-300">
-                This wallet has no token account for this mint, so it holds none of it and there is nothing
-                to deposit.
+                {t("depNoTokenAccount")}
               </p>
             )}
             {/*
@@ -415,66 +411,47 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
               */}
             {resolved.wrap && (
               <p className="mt-2 text-xs text-gray-500">
-                Your wallet holds {formatBaseUnits(resolved.wrap.lamports, resolved.decimals)} SOL.{" "}
-                {formatBaseUnits(resolved.wrap.reserved, resolved.decimals)} of it is held back for the
-                transaction fee
-                {resolved.vault === null ? " and the rent for the two accounts your vault is made of" : ""}
-                {resolved.wrap.refunded > 0n
-                  ? `, of which ${formatBaseUnits(resolved.wrap.refunded, resolved.decimals)} is rent for the wrapped-SOL account and comes straight back when it is closed in the same transaction`
-                  : ""}
-                .
-                {resolved.wrap.wrapped > 0n && (
-                  <>
-                    {" "}
-                    You also already hold {formatBaseUnits(resolved.wrap.wrapped, resolved.decimals)} wrapped
-                    SOL, which this deposit spends before wrapping anything new.
-                  </>
-                )}
+                {t("depWrapNote", {
+                  sol: formatBaseUnits(resolved.wrap.lamports, resolved.decimals),
+                  reserved: formatBaseUnits(resolved.wrap.reserved, resolved.decimals),
+                  createVault: String(resolved.vault === null),
+                  hasRefund: String(resolved.wrap.refunded > 0n),
+                  refunded: formatBaseUnits(resolved.wrap.refunded, resolved.decimals),
+                  hasWrapped: String(resolved.wrap.wrapped > 0n),
+                  wrapped: formatBaseUnits(resolved.wrap.wrapped, resolved.decimals),
+                })}
               </p>
             )}
             {amount.trim() !== "" && raw === null && (
               <p className="mt-2 text-xs text-amber-300">
-                Enter a number with no more than {resolved.decimals} decimal places — this mint cannot
-                represent a smaller amount.
+                {t("depTooManyDecimals", { decimals: resolved.decimals })}
               </p>
             )}
             {overBalance && (
               <p className="mt-2 text-xs text-amber-300">
-                More than your wallet holds ({formatBaseUnits(heldAmount, resolved.decimals)}).
+                {t("depOverBalance", { held: formatBaseUnits(heldAmount, resolved.decimals) })}
               </p>
             )}
 
             <div className="mt-4 rounded-md border border-white/10 bg-white/[0.02] px-3.5 py-3 text-xs text-gray-400">
               {resolved.vault ? (
                 <p>
-                  Your vault for this mint currently has{" "}
-                  <span className="tabular-nums text-emerald-300">
-                    {formatBaseUnits(resolved.vault.available, resolved.decimals)}
-                  </span>{" "}
-                  available.
-                  {raw !== null && raw > 0n && !overBalance && (
-                    <>
-                      {" "}
-                      After this deposit it will have{" "}
-                      <span className="tabular-nums text-emerald-300">
-                        {formatBaseUnits(resolved.vault.available + raw, resolved.decimals)}
-                      </span>
-                      .
-                    </>
-                  )}
+                  {t.rich("depVaultCurrent", {
+                    available: formatBaseUnits(resolved.vault.available, resolved.decimals),
+                    after: String(raw !== null && raw > 0n && !overBalance),
+                    newAvailable:
+                      raw !== null ? formatBaseUnits(resolved.vault.available + raw, resolved.decimals) : "",
+                    n: (chunks) => <span className="tabular-nums text-emerald-300">{chunks}</span>,
+                  })}
                 </p>
               ) : (
                 <p>
-                  You have no vault for this mint yet. One will be created in the same transaction, which
-                  costs a small amount of SOL in rent, and the deposit will land in it.
+                  {t("depNoVaultYet")}
                 </p>
               )}
               {native && (
                 <p className="mt-2 border-t border-white/10 pt-2 text-gray-500">
-                  The escrow program can only hold a token account, so this transaction wraps your SOL, makes
-                  the deposit, and closes the wrapped account again — in that order, in one transaction. You
-                  never hold wrapped SOL, and a failure at any step leaves nothing behind, because either the
-                  whole transaction lands or none of it does.
+                  {t("depWrapMechanics")}
                 </p>
               )}
             </div>
@@ -482,7 +459,7 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
         )}
 
         <div className="px-4 py-6">
-          {!wallet && <p className="mb-2 text-center text-xs text-amber-300">Connect a wallet to deposit.</p>}
+          {!wallet && <p className="mb-2 text-center text-xs text-amber-300">{t("connectToDeposit")}</p>}
           {submit.phase === "error" && (
             <p className="mb-2 text-center text-xs text-red-300">{submit.message}</p>
           )}
@@ -492,16 +469,15 @@ export function DepositForm({ initialMint }: { initialMint?: string }) {
             className="w-full rounded-md bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submit.phase === "signing"
-              ? "Confirm in wallet…"
+              ? t("confirmInWallet")
               : submit.phase === "confirming"
-                ? "Confirming on devnet…"
+                ? t("confirmingDevnet")
                 : resolved?.vault === null && resolved !== null
-                  ? "Create vault and deposit"
-                  : "Deposit into vault"}
+                  ? t("createVaultDeposit")
+                  : t("depositIntoVault")}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-600">
-            One transaction to the openfiat-escrow program on Solana devnet. Your wallet will show you
-            exactly what it signs.
+            {t("depFooterNote")}
           </p>
         </div>
       </div>

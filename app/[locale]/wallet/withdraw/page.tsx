@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { WithdrawForm } from "@/components/wallet/withdraw-form";
 
-export const metadata: Metadata = {
-  title: "Withdraw",
-  description: "Take tokens back out of a liquidity vault on Solana devnet.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "walletForms" });
+  return { title: t("wdMetaTitle"), description: t("wdMetaDescription") };
+}
 
 export default async function WithdrawPage({
   searchParams,
@@ -14,11 +21,16 @@ export default async function WithdrawPage({
   const query = await searchParams;
   const mint = Array.isArray(query.mint) ? query.mint[0] : query.mint;
 
+  return <WithdrawPageBody mint={mint} />;
+}
+
+function WithdrawPageBody({ mint }: { mint: string | undefined }) {
+  const t = useTranslations("walletForms");
   return (
     <section className="max-w-2xl">
-      <h1 className="text-xl font-semibold text-white">Withdraw from a vault</h1>
+      <h1 className="text-xl font-semibold text-white">{t("wdHeroTitle")}</h1>
       <p className="mt-1 text-sm text-gray-400">
-        Move available vault balance back to your own wallet. A real transaction on Solana devnet.
+        {t("wdHeroIntro")}
       </p>
       <div className="mt-8">
         <WithdrawForm initialMint={mint} />

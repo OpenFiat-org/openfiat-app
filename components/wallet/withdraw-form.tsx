@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { Panel } from "@/components/panel";
@@ -70,6 +71,7 @@ type SubmitState =
  * transaction and not two.
  */
 export function WithdrawForm({ initialMint }: { initialMint?: string }) {
+  const t = useTranslations("walletForms");
   // Names come from the node, never from a table here — see `nameForMint`.
   const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
@@ -150,7 +152,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
     if (!provider) {
       setSubmit({
         phase: "error",
-        message: "This wallet connection can't sign — reconnect with a real extension.",
+        message: t("signerError"),
       });
       return;
     }
@@ -182,16 +184,14 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
       });
       void load(wallet.address);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Transaction failed or was rejected.";
+      const message = err instanceof Error ? err.message : t("txFailed");
       // Distinct from the deposit path on purpose: `withdraw_liquidity` has
       // no ban check at all, and its one precondition is the available
       // balance. Sharing one message would misdescribe both.
       const insufficient = /InsufficientAvailableLiquidity/i.test(message);
       setSubmit({
         phase: "error",
-        message: insufficient
-          ? "The program rejected this withdrawal: the vault's available balance is lower than the amount requested. Reserved and pending-settlement balances cannot be withdrawn until those trades close."
-          : message,
+        message: insufficient ? t("wdInsufficient") : message,
       });
     }
   }
@@ -201,14 +201,9 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
       <Panel>
         <div className="px-4 py-14 text-center">
           <p className="text-2xl text-emerald-400">✓</p>
-          <h2 className="mt-3 text-lg font-semibold text-white">Withdrawal confirmed on devnet</h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">{t("wdDoneTitle")}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
-            {submit.amount} left the vault and is{" "}
-            {submit.asSol
-              ? "in your wallet as SOL — the wrapped-SOL account it passed through was closed in the same transaction"
-              : "in your wallet's token account"}
-            . The vault&apos;s Available balance fell by the same amount, so anything you advertise against it
-            should come down too.
+            {t("wdDoneSummary", { amount: submit.amount, asSol: String(submit.asSol) })}
           </p>
           <a
             href={`https://explorer.solana.com/tx/${submit.signature}?cluster=devnet`}
@@ -223,7 +218,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
               href="/wallet"
               className="rounded-md bg-brand px-6 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
             >
-              Back to Wallet
+              {t("backToWallet")}
             </Link>
             <button
               onClick={() => {
@@ -232,7 +227,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
               }}
               className="rounded-md border border-white/15 px-6 py-2 text-sm font-medium text-gray-200 hover:bg-white/5"
             >
-              Withdraw again
+              {t("withdrawAgain")}
             </button>
           </div>
         </div>
@@ -244,7 +239,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
     return (
       <Panel>
         <p className="px-4 py-8 text-sm text-gray-400">
-          Connect a wallet to withdraw from the liquidity vaults it owns.
+          {t("wdConnect")}
         </p>
       </Panel>
     );
@@ -254,16 +249,16 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
     return (
       <Panel>
         <div className="px-4 py-6">
-          <p className="text-sm font-medium text-red-300">Could not read your vaults from Solana devnet</p>
+          <p className="text-sm font-medium text-red-300">{t("wdReadError")}</p>
           <p className="mt-1 text-sm text-gray-400">
-            The lookup failed, so this is not a statement that you have nothing to withdraw.
+            {t("wdReadErrorSub")}
           </p>
           <p className="mt-2 font-mono text-xs text-red-400/80">{error}</p>
           <button
             onClick={() => void load(wallet.address)}
             className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
           >
-            Retry
+            {t("retry")}
           </button>
         </div>
       </Panel>
@@ -273,7 +268,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
   if (vaults === null) {
     return (
       <Panel>
-        <p className="px-4 py-8 text-sm text-gray-500">Reading your vaults from devnet…</p>
+        <p className="px-4 py-8 text-sm text-gray-500">{t("wdReading")}</p>
       </Panel>
     );
   }
@@ -283,14 +278,14 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
       <Panel>
         <div className="px-4 py-8">
           <p className="text-sm text-gray-300">
-            This wallet owns no liquidity vaults, so there is nothing to withdraw.
+            {t("wdNoVaults")}
           </p>
-          <p className="mt-1.5 text-sm text-gray-500">That is the chain&apos;s answer, not a failed lookup.</p>
+          <p className="mt-1.5 text-sm text-gray-500">{t("wdNoVaultsSub")}</p>
           <Link
             href="/wallet/deposit"
             className="mt-4 inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
           >
-            Deposit instead
+            {t("wdDepositInstead")}
           </Link>
         </div>
       </Panel>
@@ -298,25 +293,20 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
   }
 
   return (
-    <Panel title="Withdraw from a liquidity vault">
+    <Panel title={t("wdPanelTitle")}>
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6 text-sm leading-relaxed text-gray-400">
           <p>
-            This takes tokens back out of the escrow program&apos;s custody and returns them to your wallet,
-            in one transaction you sign — into your own token account, or as plain SOL if the vault holds
-            SOL.
+            {t("wdIntro1")}
           </p>
           <p className="mt-2.5">
-            You can only withdraw what is <span className="text-emerald-300">Available</span>. Balance
-            reserved against an open order, or already funded into a trade escrow, stays where it is until
-            that trade settles, is cancelled, or expires — the program rejects a withdrawal that reaches into
-            it.
+            {t.rich("wdIntro2", { avail: (chunks) => <span className="text-emerald-300">{chunks}</span> })}
           </p>
         </div>
 
         <div className="px-4 py-6">
           <label htmlFor="vault" className="mb-1 block text-xs text-gray-500">
-            Vault
+            {t("vault")}
           </label>
           <select
             id="vault"
@@ -343,7 +333,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
                   : v.mint.toBase58();
               return (
                 <option key={v.address.toBase58()} value={v.mint.toBase58()}>
-                  {label} — {formatBaseUnits(v.available, v.decimals)} available
+                  {t("wdVaultOption", { label, available: formatBaseUnits(v.available, v.decimals) })}
                 </option>
               );
             })}
@@ -354,10 +344,10 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
           <div className="px-4 py-6">
             <div className="flex items-center justify-between">
               <label htmlFor="amount" className="mb-1 block text-xs text-gray-500">
-                Amount
+                {t("amount")}
               </label>
               <span className="text-xs tabular-nums text-gray-500">
-                Available: {formatBaseUnits(vault.available, vault.decimals)}
+                {t("availableLabel")}: {formatBaseUnits(vault.available, vault.decimals)}
                 {vault.available > 0n && (
                   <button
                     onClick={() =>
@@ -365,7 +355,7 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
                     }
                     className="ml-2 text-brand hover:text-brand-hover"
                   >
-                    Max
+                    {t("max")}
                   </button>
                 )}
               </span>
@@ -381,27 +371,21 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
 
             {vault.available === 0n && (
               <p className="mt-2 text-xs text-amber-300">
-                This vault has nothing available.{" "}
                 {vault.reserved > 0n || vault.pendingSettlement > 0n
-                  ? "Its balance is committed to open trades."
-                  : "Everything it held has already settled away."}
+                  ? t("wdNothingAvailableCommitted")
+                  : t("wdNothingAvailableSettled")}
               </p>
             )}
             {amount.trim() !== "" && raw === null && vault.available > 0n && (
               <p className="mt-2 text-xs text-amber-300">
-                Enter a number with no more than {vault.decimals} decimal places — this mint cannot represent
-                a smaller amount.
+                {t("wdTooManyDecimals", { decimals: vault.decimals })}
               </p>
             )}
             {overAvailable && (
               <p className="mt-2 text-xs text-amber-300">
-                More than this vault has available ({formatBaseUnits(vault.available, vault.decimals)}).
+                {t("wdOverAvailable", { available: formatBaseUnits(vault.available, vault.decimals) })}
                 {vault.reserved > 0n && (
-                  <>
-                    {" "}
-                    A further {formatBaseUnits(vault.reserved, vault.decimals)} is reserved and cannot be
-                    withdrawn.
-                  </>
+                  <> {t("wdReservedNote", { reserved: formatBaseUnits(vault.reserved, vault.decimals) })}</>
                 )}
               </p>
             )}
@@ -409,28 +393,23 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
             {unwraps ? (
               <div className="mt-4 space-y-2 text-xs text-gray-500">
                 <p>
-                  Arrives as <span className="text-gray-300">SOL</span>, spendable straight away. The program
-                  can only pay into a wrapped-SOL token account, so this transaction opens one, takes the
-                  withdrawal into it, and closes it again — all before you see the result. You never hold
-                  wrapped SOL, and nothing is left behind if any step fails, because all of it is one
-                  transaction.
+                  {t.rich("wdUnwrapNote", { sol: (chunks) => <span className="text-gray-300">{chunks}</span> })}
                 </p>
                 {existingWrapped !== null && existingWrapped > 0n && (
                   <p className="text-amber-300">
-                    You are already holding {formatBaseUnits(existingWrapped, vault.decimals)} wrapped SOL.
-                    Closing the account returns that to you as SOL as well, so expect{" "}
-                    {raw !== null && raw > 0n
-                      ? formatBaseUnits(existingWrapped + raw, vault.decimals)
-                      : `${formatBaseUnits(existingWrapped, vault.decimals)} plus the amount withdrawn`}{" "}
-                    SOL in total.
+                    {t("wdExistingWrapped", {
+                      existing: formatBaseUnits(existingWrapped, vault.decimals),
+                      total:
+                        raw !== null && raw > 0n
+                          ? formatBaseUnits(existingWrapped + raw, vault.decimals)
+                          : t("wdPlusWithdrawn", { existing: formatBaseUnits(existingWrapped, vault.decimals) }),
+                    })}
                   </p>
                 )}
               </div>
             ) : (
               <p className="mt-4 text-xs text-gray-500">
-                Goes to your own associated token account for this mint, created in the same transaction if
-                you do not have one. To send it anywhere else, transfer from your wallet afterwards — the
-                program only pays out to a token account of this exact mint.
+                {t("wdTokenAccountNote")}
               </p>
             )}
           </div>
@@ -446,13 +425,13 @@ export function WithdrawForm({ initialMint }: { initialMint?: string }) {
             className="w-full rounded-md bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submit.phase === "signing"
-              ? "Confirm in wallet…"
+              ? t("confirmInWallet")
               : submit.phase === "confirming"
-                ? "Confirming on devnet…"
-                : "Withdraw to my wallet"}
+                ? t("confirmingDevnet")
+                : t("wdWithdrawBtn")}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-600">
-            One transaction to the openfiat-escrow program on Solana devnet.
+            {t("wdFooterNote")}
           </p>
         </div>
       </div>
