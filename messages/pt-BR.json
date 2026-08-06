@@ -2002,5 +2002,206 @@
     "wouldHandJoiner": "O que este nó entregaria a quem entrasse",
     "noLocation": "Sem localização",
     "snapshotRootNote": "Um snapshot carrega uma raiz de estado de 32 bytes, e esta página deliberadamente não a mostra. Renderizar um digest aqui se leria como verificação, e nada que um navegador faz verifica nada sobre isso: as verificações de assinatura e registro que um nó faz estabelecem que os bytes são o que o anunciante disse, não que o anunciante disse a verdade — por isso o <em>primeiro</em> snapshot de um nó tem que vir de uma âncora fixada e não de quem quer que tenha respondido. O produtor é mostrado em vez disso, porque essa é a parte que você pode consultar no <sr>registro de serviços</sr>."
+  },
+  "providers": {
+    "metaTitle": "Provedores de serviço",
+    "metaDescription": "O Registro de Serviços da OpenFiat (OFS-1500) — descoberta sem permissão para provedores de notificação, oráculo, inteligência de risco, snapshot, gateway e API.",
+    "heroTitle": "Provedores de serviço",
+    "heroDescription": "O Registro de Serviços (OFS-1500) é sem permissão: qualquer um pode registrar um serviço — endpoints, versões de protocolo, capacidades, preços — assinado com sua carteira, e ser descoberto por nós e comerciantes por toda a rede.",
+    "registerCta": "Registrar um serviço →",
+    "filterAll": "Todos",
+    "providerType": {
+      "Notification Provider": "Notificações",
+      "Oracle Provider": "Oráculos de preço",
+      "Risk Intelligence Provider": "Inteligência de risco",
+      "Snapshot Provider": "Snapshots",
+      "Merchant Gateway": "Gateways de comerciante",
+      "Public API Node": "Nós de API"
+    },
+    "readError": "Não foi possível ler o registro de {label}.",
+    "metricRegistered": "Serviços registrados",
+    "metricNotifications": "Notificações",
+    "metricOracles": "Oráculos",
+    "metricRiskIntel": "Intel. de risco",
+    "metricSnapshots": "Snapshots",
+    "metricPublicApi": "API pública",
+    "readingRegistry": "Lendo o registro…",
+    "liveFromNode": "Ao vivo do seu nó de acesso",
+    "colProvider": "Provedor",
+    "colType": "Tipo",
+    "colRegion": "Região (declarada)",
+    "colCapabilities": "Capacidades",
+    "colPricing": "Preço",
+    "colLastHeard": "Última notícia",
+    "colStatus": "Status",
+    "moreCaps": "+{n} mais",
+    "noneOfType": "Nenhum provedor deste tipo registrado ainda.",
+    "dirFooter": "Nomes, logos e regiões vêm do próprio registro assinado de cada provedor. A assinatura prova que o registro chegou a você inalterado; não prova nada sobre o nome — qualquer um pode registrar um serviço com qualquer nome, e o registro deliberadamente não distribui nomes exclusivos. O ID de serviço sob cada linha é a parte que a identifica. Os logos são obtidos do seu nó de acesso por hash de conteúdo, então ninguém sabe que você olhou.",
+    "health": {
+      "Online": "Online",
+      "Offline": "Offline",
+      "Degraded": "Degradado",
+      "Maintenance": "Manutenção"
+    },
+    "notInRegistry": "<m>{id}</m> não está no registro{hasNode, select, yes { que {node} reporta} other {}}.",
+    "notInRegistryNote": "Um nó responde a partir do registro que replicou, então um nó de acesso diferente pode conhecê-lo. Serviços também expiram quando seu provedor para de enviar atualizações de saúde.",
+    "allServices": "← Todos os serviços",
+    "brandingTitle": "Como este provedor se apresenta",
+    "brandingFooter": "Os quatro são declarados pelo provedor em seu próprio registro assinado. A assinatura prova que o registro chegou a você inalterado e nada mais: ninguém verifica que o nome é seu para usar, e o registro deliberadamente não distribui nomes exclusivos. Julgue esta entrada pelo ID de serviço e pela chave do provedor abaixo.",
+    "brandingLogoNote": "O logo é obtido do seu nó de acesso por hash de conteúdo (<cid>{value}</cid>), nunca do próprio servidor do provedor — então ver esta página não lhes diz nada.",
+    "regTitle": "Registro",
+    "rowServiceId": "ID de serviço",
+    "rowType": "Tipo",
+    "rowRegion": "Região",
+    "regionDeclared": "{region} (declarada, não verificada)",
+    "regionNotDeclared": "Não declarada",
+    "rowPricing": "Preço",
+    "freeWord": "Grátis",
+    "rowPayoutWallet": "Carteira de pagamento",
+    "payoutNone": "Nenhuma declarada — este serviço não cobra",
+    "reachTitle": "Alcançabilidade",
+    "noEndpoint": "Nenhum endpoint declarado. Provedores alcançados por gossip em vez de diretamente não precisam de um.",
+    "claimsTitle": "O que este serviço afirma poder fazer",
+    "noneDeclared": "Nenhuma declarada.",
+    "claimChain": "Cadeia",
+    "chainClaim": {
+      "RpcConnected": "Afirma estar conectado por RPC",
+      "GossipOnly": "Afirma ser só-gossip",
+      "none": "Nenhum modo de cadeia declarado"
+    },
+    "gossipLag": "Respostas on-chain chegam a ele em segunda mão via gossip, então podem atrasar.",
+    "claimContent": "Conteúdo",
+    "servesContentYes": "Afirma guardar e servir conteúdo do protocolo — pode entregar um anexo ou um avatar por si mesmo.",
+    "servesContentNo": "Não afirma servir conteúdo, então os anexos têm que vir de outro lugar.",
+    "claimRetention": "Retenção",
+    "retentionClaim": "Afirma manter conteúdo {window} — é até onde ele pode responder por evidência.",
+    "retentionNone": "Nenhuma janela de retenção declarada.",
+    "claimSnapshots": "Snapshots",
+    "snapshotsClaim": "Afirma produzir snapshots que outros nós podem obter.",
+    "claimAlsoDeclared": "Também declaradas",
+    "alsoDeclaredNote": "Capacidades para as quais este build do app não tem leitura. Mostradas como o nó as escreveu em vez de descartadas.",
+    "speaksOfs": "Fala OFS {list}",
+    "ofsNone": "— nenhuma declarada",
+    "detailClaimsFooter": "Tudo acima é uma afirmação. Um registro é assinado pela própria chave do provedor e diz o que seu operador configurou; nada nesta página o verifica. Uma afirmação de cadeia é barata de checar — um nó que não lê a Solana não pode responder <code>getChainStatus</code> com um slot — e <link>Nós e pares</link> pergunta a cada nó que lista e mostra a resposta ao lado da afirmação.",
+    "identityHealthTitle": "Identidade e saúde",
+    "rowProvider": "Provedor",
+    "rowRegistered": "Registrado",
+    "rowLastHealth": "Última atualização de saúde",
+    "healthFooter": "O registro anota um estado de saúde e quando foi atualizado pela última vez, não um percentual de uptime — então esta página mostra quando o provedor foi ouvido pela última vez em vez de um número que o protocolo não mede.",
+    "idMetaTitle": "Serviço",
+    "idMetaDescription": "Uma entrada no Registro de Serviços da OpenFiat (OFS-1500), lida ao vivo do seu nó de acesso.",
+    "idHeroDescription": "Uma entrada do Registro de Serviços (OFS-1500), lida ao vivo do seu nó de acesso. Cada campo abaixo é um que o registro de fato carrega.",
+    "feeTitle": "Quanto esta taxa custa em outro token",
+    "loadingTokenList": "Carregando a lista de tokens do nó…",
+    "tokenListError": "Não foi possível carregar a lista de tokens do nó, então só {token} é oferecido aqui. <retry>Tentar de novo</retry>",
+    "askingNode": "Perguntando ao nó…",
+    "feeFailed": "Seu nó de acesso não respondeu. Isso não é um preço de zero nem uma taxa impagável — é uma pergunta que nunca foi feita.",
+    "feeUnknownService": "Este nó não tem serviço sob esse id, então não tem taxa a cotar. Outro nó pode conhecê-lo.",
+    "feeFooter": "Uma leitura para exibição, não um compromisso. Dois nós podem legitimamente responder diferente, porque cada um resolve contra os registros de oráculo que por acaso tem — e passado o instante em que uma cotação expira não há cotação alguma, só o que a taxa fez depois. O número ao qual alguém estaria vinculado é o que ele assina.",
+    "quoteFree": "Este serviço não declarou preço, então não há nada a converter e nada a dever. Um preço ausente já significa grátis — não há um ajuste \"grátis\" separado para procurar.",
+    "quoteNative": "Ele já cobra neste token, então nenhuma taxa está envolvida — o que significa que nenhum feed de oráculo expirado pode tornar esta taxa impagável.",
+    "quoteSettleable": "Convertido dos {fee} declarados a {rate} {symbol} por unidade, válido até {until}. Arredondado para cima, deliberadamente: uma taxa liquidada em um token substituto nunca vale menos que a declarada, então o pagador paga menos de uma unidade-base a mais.",
+    "notSettleable": "Não liquidável em {symbol} agora.",
+    "unsettleable": {
+      "StaleOracleData": "Provedores publicam sim este par, mas toda taxa para ele expirou — então não há taxa atual a que converter. O feed geralmente volta; a taxa não muda de qualquer forma.",
+      "NoOracleData": "Nenhum oráculo precifica este par de forma alguma, então não há nada a que converter. Esperar não vai ajudar — a taxa é pagável no token que o provedor declarou.",
+      "UnknownSettlementToken": "Seu nó de acesso não pode dizer quantas unidades-base é um daquele token, então recusa converter em vez de adivinhar um expoente.",
+      "RateOutOfRange": "A taxa lida não era utilizável — não um número positivo finito. Uma taxa que converte para nada não é a taxa que o provedor declarou."
+    },
+    "unsettleableTrail": " A taxa em si permanece inalterada e continua pagável no token que o provedor declarou.",
+    "regMetaTitle": "Registrar um serviço",
+    "regMetaDescription": "Registre-se como provedor de serviço OpenFiat — gateway de notificação, oráculo de preço, provedor de snapshot, inteligência de risco, gateway de comerciante ou nó de API pública. Sem permissão: um evento de registro assinado, sem solicitação e sem aprovação.",
+    "regHeroTitle": "Registrar um serviço",
+    "regHeroDescription": "O Registro de Serviços é sem permissão. Registrar é um evento assinado que você publica na rede — não há solicitação, nem revisor, nem ninguém que possa recusá-lo. O que segue é o que o protocolo exige, e o que acontece depois.",
+    "stepsTitle": "Como funciona, de ponta a ponta",
+    "step": {
+      "runService": {
+        "title": "Execute o serviço",
+        "body": "Suba o que quer que você esteja oferecendo — um gateway de Telegram, um oráculo de FX, um host de snapshots, um nó de API pública. O registro anuncia serviços que existem; ele não os provisiona."
+      },
+      "identity": {
+        "title": "Estabeleça sua identidade",
+        "body": "Gere o par de chaves do nó e tenha uma carteira pronta para assinar. O peer ID sai do par de chaves; a chave pública é publicada junto a ele."
+      },
+      "signEvent": {
+        "title": "Assine um evento de registro",
+        "body": "Monte os campos abaixo, assine-os com sua carteira e publique. O evento se propaga pelo protocolo de gossip — sem registrador, sem fila, sem aprovação."
+      },
+      "healthUpdates": {
+        "title": "Publique atualizações de saúde",
+        "body": "Provedores anunciam periodicamente Online, Manutenção, Degradado ou Offline. Os clientes usam isso para contornar você quando está fora do ar — e se você parar de publicar por completo, seu registro expira sozinho e para de aparecer na descoberta."
+      },
+      "getSelected": {
+        "title": "Seja selecionado",
+        "body": "Os clientes consultam seu registro local e escolhem entre provedores por região, latência, capacidades e preço. Estar listado não é ser usado; você compete com todos os outros que oferecem o mesmo serviço."
+      }
+    },
+    "regEventTitle": "O que um evento de registro contém",
+    "reg": {
+      "serviceId": {
+        "label": "ID de serviço",
+        "detail": "Globalmente único, e permanente — mudar endpoints ou preços nunca o muda (§8)."
+      },
+      "serviceType": {
+        "label": "Tipo de serviço",
+        "detail": "Um dos tipos do registro. Um provedor pode executar vários serviços, cada um com seu próprio ID."
+      },
+      "providerIdentity": {
+        "label": "Identidade do provedor",
+        "detail": "A carteira, a identidade do nó, o peer ID e a chave pública acima."
+      },
+      "networkEndpoints": {
+        "label": "Endpoints de rede",
+        "detail": "Onde os clientes alcançam o serviço. Vários endpoints são normais — um por região."
+      },
+      "supportedVersions": {
+        "label": "Versões de protocolo suportadas",
+        "detail": "Para que um cliente possa saber se consegue falar com você antes de tentar."
+      },
+      "region": {
+        "label": "Região geográfica",
+        "detail": "Quais regiões você atende, se quiser dizer. Autodeclarada e não verificada — nada no protocolo mede onde um serviço está, e nunca medirá: geolocalizar um endpoint responderia onde seu socket termina, que é uma pergunta diferente de quem você atende. Os clientes a veem rotulada como declarada."
+      },
+      "capabilities": {
+        "label": "Capacidades",
+        "detail": "O que o serviço de fato faz — pares de moedas para um oráculo, canais para um gateway, retenção para snapshots."
+      },
+      "branding": {
+        "label": "Marca",
+        "detail": "Um nome, uma frase, um logo e um site, tudo opcional. O logo é um CID de IPFS em vez de uma URL, então os espectadores o obtêm de seu próprio nó de acesso e ninguém sabe quem olhou seu anúncio. Nomes não são exclusivos: o registro não impedirá outro de registrar o seu, então seu ID de serviço é o que o identifica."
+      },
+      "pricing": {
+        "label": "Preço",
+        "detail": "Se você cobra. Opcional, e anunciado como metadado em vez de imposto pelo registro."
+      },
+      "timestampSignature": {
+        "label": "Carimbo de tempo e assinatura",
+        "detail": "O evento é assinado e propagado via gossip para a rede. Não há nada a submeter a ninguém."
+      }
+    },
+    "identityTitle": "Identidade que você precisa primeiro",
+    "identity": {
+      "wallet": {
+        "label": "Endereço da carteira",
+        "detail": "Assina o registro e cada atualização posterior. Quem detém esta chave controla a entrada do serviço."
+      },
+      "nodeIdentity": {
+        "label": "Identidade do nó",
+        "detail": "O nome sob o qual seu nó se publica, estável entre reinícios."
+      },
+      "peerId": {
+        "label": "Peer ID",
+        "detail": "Derivado do par de chaves do seu nó. É o que um cliente disca, e o que prova que ele alcançou você e não alguém anunciando seu hostname."
+      },
+      "publicKey": {
+        "label": "Chave pública",
+        "detail": "Publicada para que qualquer um possa verificar suas assinaturas sem pedi-la a você."
+      }
+    },
+    "serviceTypesTitle": "Tipos de serviço",
+    "serviceTypesNote": "A governança pode adicionar tipos ao longo do tempo. Um provedor pode executar vários serviços; cada um recebe seu próprio ID de serviço.",
+    "noStakeTitle": "Sem stake, sem permissão",
+    "noStakeBody": "O registro em si não pede nada além de uma assinatura. Especificações de serviço individuais podem exigir um stake — um provedor de inteligência de risco cujos dados movem disputas tem mais a responder do que um host de snapshots — mas isso é definido pelo serviço, não pelo registro com o qual você está se registrando.",
+    "seeRegistered": "Ver quem já está registrado"
   }
 }

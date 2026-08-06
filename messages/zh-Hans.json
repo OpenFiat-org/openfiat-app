@@ -2002,5 +2002,206 @@
     "wouldHandJoiner": "此节点会交给加入者的那个",
     "noLocation": "无位置",
     "snapshotRootNote": "快照携带一个 32 字节的状态根，而本页有意不显示它。在此渲染一个摘要会被读作验证，而浏览器所做的任何事都不对其验证任何东西：节点执行的签名和注册检查确立了这些字节是通告者所说的，而非通告者说了真话——这正是为什么一个节点的<em>第一个</em>快照必须来自一个固定的锚点，而非来自任何作答者。取而代之显示的是生产者，因为那是你可以在<sr>服务注册表</sr>中查到的部分。"
+  },
+  "providers": {
+    "metaTitle": "服务提供方",
+    "metaDescription": "OpenFiat 服务注册表（OFS-1500）——面向通知、预言机、风险情报、快照、网关和 API 提供方的无需许可的发现。",
+    "heroTitle": "服务提供方",
+    "heroDescription": "服务注册表（OFS-1500）无需许可：任何人都可以注册一项服务——端点、协议版本、能力、定价——用其钱包签名，并被全网的节点和商家发现。",
+    "registerCta": "注册一项服务 →",
+    "filterAll": "全部",
+    "providerType": {
+      "Notification Provider": "通知",
+      "Oracle Provider": "价格预言机",
+      "Risk Intelligence Provider": "风险情报",
+      "Snapshot Provider": "快照",
+      "Merchant Gateway": "商家网关",
+      "Public API Node": "API 节点"
+    },
+    "readError": "无法从 {label} 读取注册表。",
+    "metricRegistered": "已注册服务",
+    "metricNotifications": "通知",
+    "metricOracles": "预言机",
+    "metricRiskIntel": "风险情报",
+    "metricSnapshots": "快照",
+    "metricPublicApi": "公开 API",
+    "readingRegistry": "正在读取注册表…",
+    "liveFromNode": "来自你接入节点的实时数据",
+    "colProvider": "提供方",
+    "colType": "类型",
+    "colRegion": "地区（声明）",
+    "colCapabilities": "能力",
+    "colPricing": "定价",
+    "colLastHeard": "最近听闻",
+    "colStatus": "状态",
+    "moreCaps": "+{n} 更多",
+    "noneOfType": "尚无此类型的提供方注册。",
+    "dirFooter": "名称、图标和地区都来自每个提供方自己的签名注册。签名证明记录未经篡改地到达你手中；它不证明关于名称的任何事——任何人都可以用任何名称注册服务，而注册表有意不发放独占名称。每行下方的服务 ID 才是标识它的部分。图标按内容哈希从你的接入节点获取，因此无人知晓你曾查看。",
+    "health": {
+      "Online": "在线",
+      "Offline": "离线",
+      "Degraded": "降级",
+      "Maintenance": "维护中"
+    },
+    "notInRegistry": "<m>{id}</m> 不在注册表中{hasNode, select, yes {（{node} 所报告的）} other {}}。",
+    "notInRegistryNote": "节点从它已复制的注册表作答，因此不同的接入节点可能知道它。当提供方停止发送健康更新时，服务也会过期。",
+    "allServices": "← 所有服务",
+    "brandingTitle": "此提供方如何呈现自己",
+    "brandingFooter": "这四项都由提供方在其自己的签名注册中声明。签名证明记录未经篡改地到达你手中，仅此而已：无人核实该名称是否归其所用，而注册表有意不发放独占名称。请以下方的服务 ID 和提供方密钥来评判此条目。",
+    "brandingLogoNote": "图标按内容哈希从你的接入节点获取（<cid>{value}</cid>），绝不从提供方自己的服务器获取——因此查看此页不会向他们透露任何信息。",
+    "regTitle": "注册",
+    "rowServiceId": "服务 ID",
+    "rowType": "类型",
+    "rowRegion": "地区",
+    "regionDeclared": "{region}（声明，未验证）",
+    "regionNotDeclared": "未声明",
+    "rowPricing": "定价",
+    "freeWord": "免费",
+    "rowPayoutWallet": "支付钱包",
+    "payoutNone": "未声明——此服务不收费",
+    "reachTitle": "可达性",
+    "noEndpoint": "未声明端点。通过 gossip 而非直接联系的提供方不需要端点。",
+    "claimsTitle": "此服务声称能做什么",
+    "noneDeclared": "未声明。",
+    "claimChain": "链",
+    "chainClaim": {
+      "RpcConnected": "声称 RPC 连接",
+      "GossipOnly": "声称仅-gossip",
+      "none": "未声明链模式"
+    },
+    "gossipLag": "链上答案通过 gossip 二手到达它，因此可能滞后。",
+    "claimContent": "内容",
+    "servesContentYes": "声称持有并提供协议内容——它可以自行交付附件或头像。",
+    "servesContentNo": "不声称提供内容，因此附件必须来自其他地方。",
+    "claimRetention": "保留",
+    "retentionClaim": "声称保留内容 {window}——这就是它能为证据回溯多远。",
+    "retentionNone": "未声明保留窗口。",
+    "claimSnapshots": "快照",
+    "snapshotsClaim": "声称生产其他节点可获取的快照。",
+    "claimAlsoDeclared": "另有声明",
+    "alsoDeclaredNote": "此 app build 无从解读的能力。按节点所写显示，而非丢弃。",
+    "speaksOfs": "支持 OFS {list}",
+    "ofsNone": "——未声明",
+    "detailClaimsFooter": "以上一切都是声明。注册由提供方自己的密钥签名，说明其运营者所配置的内容；此页不对其作任何验证。链声明便于核查——一个不读取 Solana 的节点无法以 slot 回答 <code>getChainStatus</code>——而 <link>节点与对等方</link> 会询问它所列的每个节点，并在声明旁显示答案。",
+    "identityHealthTitle": "身份与健康",
+    "rowProvider": "提供方",
+    "rowRegistered": "注册于",
+    "rowLastHealth": "最近健康更新",
+    "healthFooter": "注册表记录一个健康状态及其最近刷新时间，而非在线率——因此此页显示提供方最近被听闻的时间，而非协议并不测量的数字。",
+    "idMetaTitle": "服务",
+    "idMetaDescription": "OpenFiat 服务注册表（OFS-1500）中的一个条目，从你的接入节点实时读取。",
+    "idHeroDescription": "一个服务注册表条目（OFS-1500），从你的接入节点实时读取。下方每个字段都是注册表实际携带的。",
+    "feeTitle": "此费用换成另一种代币是多少",
+    "loadingTokenList": "正在加载节点的代币列表…",
+    "tokenListError": "无法加载节点的代币列表，因此这里只提供 {token}。<retry>重试</retry>",
+    "askingNode": "正在询问节点…",
+    "feeFailed": "你的接入节点未作答。这不是零价格，也不是无法支付的费用——这是一个从未被问出的问题。",
+    "feeUnknownService": "此节点下没有以该 id 命名的服务，因此没有可报的费用。另一个节点可能知道它。",
+    "feeFooter": "这是用于显示的读取，而非承诺。两个节点可以合理地给出不同答案，因为各自根据其恰好持有的预言机记录来解析——而过了报价过期的那一刻就根本没有报价，只有此后汇率的走向。任何人会受其约束的数字，是他们所签署的那个。",
+    "quoteFree": "此服务未声明价格，因此没有可转换的，也没有欠付的。价格缺失即意味着免费——没有单独的“免费”设置可寻。",
+    "quoteNative": "它已经以此代币计费，因此不涉及汇率——这意味着任何失效的预言机数据源都无法使此费用无法支付。",
+    "quoteSettleable": "从声明的 {fee} 按每单位 {rate} {symbol} 转换而来，有效期至 {until}。有意向上取整：以替代代币结算的费用绝不会低于所声明的费用，因此付款方多付不到一个基本单位。",
+    "notSettleable": "目前无法以 {symbol} 结算。",
+    "unsettleable": {
+      "StaleOracleData": "提供方确实发布此交易对，但它的每一条汇率都已过期——因此没有可供转换的当前汇率。数据源通常会恢复；无论如何费用不变。",
+      "NoOracleData": "没有任何预言机为此交易对定价，因此没有可供转换的。等待无济于事——费用可以用提供方所声明的代币支付。",
+      "UnknownSettlementToken": "你的接入节点无法说明该代币的一个等于多少基本单位，因此它拒绝转换，而不是猜测指数。",
+      "RateOutOfRange": "读到的汇率不可用——不是一个有限的正数。一个转换为零的费用不是提供方所声明的费用。"
+    },
+    "unsettleableTrail": " 费用本身不变，仍可用提供方所声明的代币支付。",
+    "regMetaTitle": "注册一项服务",
+    "regMetaDescription": "注册成为 OpenFiat 服务提供方——通知网关、价格预言机、快照提供方、风险情报、商家网关或公开 API 节点。无需许可：一个签名的注册事件，无需申请也无需批准。",
+    "regHeroTitle": "注册一项服务",
+    "regHeroDescription": "服务注册表无需许可。注册是你发布到网络的一个签名事件——没有申请，没有审核人，也没有人能拒绝你。接下来是协议所要求的内容，以及之后会发生什么。",
+    "stepsTitle": "从头到尾如何运作",
+    "step": {
+      "runService": {
+        "title": "运行服务",
+        "body": "把你要提供的东西搭起来——一个 Telegram 网关、一个外汇预言机、一个快照主机、一个公开 API 节点。注册表宣传已存在的服务；它并不为它们供给资源。"
+      },
+      "identity": {
+        "title": "建立你的身份",
+        "body": "生成节点密钥对，并准备好一个用于签名的钱包。peer ID 从密钥对得出；公钥随其一起发布。"
+      },
+      "signEvent": {
+        "title": "签署一个注册事件",
+        "body": "汇集下方字段，用你的钱包签名，然后发布。事件通过 gossip 协议传播——没有注册员，没有队列，没有批准。"
+      },
+      "healthUpdates": {
+        "title": "发布健康更新",
+        "body": "提供方定期宣告在线、维护、降级或离线。客户端用它在你宕机时绕过你——而如果你完全停止发布，你的注册会自行过期并不再出现在发现中。"
+      },
+      "getSelected": {
+        "title": "被选中",
+        "body": "客户端查询其本地注册表，并按地区、延迟、能力和价格在提供方之间选择。被列出不等于被使用；你在与提供相同服务的所有其他人竞争。"
+      }
+    },
+    "regEventTitle": "一个注册事件包含什么",
+    "reg": {
+      "serviceId": {
+        "label": "服务 ID",
+        "detail": "全局唯一且永久——更改端点或定价永远不会改变它（§8）。"
+      },
+      "serviceType": {
+        "label": "服务类型",
+        "detail": "注册表诸类型之一。一个提供方可以运行多项服务，每项各有其自己的 ID。"
+      },
+      "providerIdentity": {
+        "label": "提供方身份",
+        "detail": "上述钱包、节点身份、peer ID 和公钥。"
+      },
+      "networkEndpoints": {
+        "label": "网络端点",
+        "detail": "客户端在何处联系该服务。多个端点是正常的——每个地区一个。"
+      },
+      "supportedVersions": {
+        "label": "支持的协议版本",
+        "detail": "以便客户端在尝试之前就能判断它是否能与你对话。"
+      },
+      "region": {
+        "label": "地理区域",
+        "detail": "你服务哪些地区，如果你愿意说的话。自我声明且未验证——协议中没有任何东西测量一项服务在何处，也永远不会：对端点进行地理定位会回答你的套接字在何处终结，而这与你服务谁是不同的问题。客户端看到它标注为已声明。"
+      },
+      "capabilities": {
+        "label": "能力",
+        "detail": "该服务实际做什么——预言机的货币对、网关的渠道、快照的保留。"
+      },
+      "branding": {
+        "label": "品牌",
+        "detail": "一个名称、一句话、一个图标和一个网站，全部可选。图标是 IPFS CID 而非 URL，因此查看者从他们自己的接入节点获取它，无人得知谁看了你的条目。名称不是独占的：注册表不会阻止别人注册你的名称，因此你的服务 ID 才是标识你的东西。"
+      },
+      "pricing": {
+        "label": "定价",
+        "detail": "如果你收费。可选，且作为元数据宣传，而非由注册表强制执行。"
+      },
+      "timestampSignature": {
+        "label": "时间戳与签名",
+        "detail": "事件被签名并 gossip 到网络。没有任何东西需要提交给任何人。"
+      }
+    },
+    "identityTitle": "你首先需要的身份",
+    "identity": {
+      "wallet": {
+        "label": "钱包地址",
+        "detail": "签署注册及此后每次更新。持有此密钥者控制该服务条目。"
+      },
+      "nodeIdentity": {
+        "label": "节点身份",
+        "detail": "你的节点用以发布自身的名称，重启后保持稳定。"
+      },
+      "peerId": {
+        "label": "Peer ID",
+        "detail": "从你的节点密钥对派生。这是客户端拨号的对象，也是证明它联系到的是你而非某个宣传你主机名的人的东西。"
+      },
+      "publicKey": {
+        "label": "公钥",
+        "detail": "公开发布，使任何人无需向你索要即可验证你的签名。"
+      }
+    },
+    "serviceTypesTitle": "服务类型",
+    "serviceTypesNote": "治理可能随时间增加类型。一个提供方可以运行多项服务；每项各获其自己的服务 ID。",
+    "noStakeTitle": "无需质押，无需许可",
+    "noStakeBody": "注册表本身只要求一个签名。个别服务规范可能要求质押——一个数据会左右争议的风险情报提供方比快照主机有更多要负责的——但那由服务规定，而非由你所注册的注册表规定。",
+    "seeRegistered": "查看谁已经注册"
   }
 }

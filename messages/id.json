@@ -2002,5 +2002,206 @@
     "wouldHandJoiner": "Yang akan diserahkan node ini kepada yang bergabung",
     "noLocation": "Tidak ada lokasi",
     "snapshotRootNote": "Sebuah snapshot membawa root keadaan 32-byte, dan halaman ini sengaja tidak menampilkannya. Merender digest di sini akan terbaca sebagai verifikasi, dan tidak ada yang dilakukan peramban yang memverifikasi apa pun tentangnya: pemeriksaan tanda tangan dan pendaftaran yang dilakukan node menetapkan bahwa byte adalah yang dikatakan pengumum, bukan bahwa pengumum berkata benar — itulah sebabnya snapshot <em>pertama</em> sebuah node harus datang dari jangkar yang dipatok alih-alih dari siapa pun yang menjawab. Produsennya ditampilkan sebagai gantinya, karena itulah bagian yang dapat Anda cari di <sr>registri layanan</sr>."
+  },
+  "providers": {
+    "metaTitle": "Penyedia layanan",
+    "metaDescription": "Registri Layanan OpenFiat (OFS-1500) — penemuan tanpa izin untuk penyedia notifikasi, orakel, intelijen risiko, snapshot, gateway, dan API.",
+    "heroTitle": "Penyedia layanan",
+    "heroDescription": "Registri Layanan (OFS-1500) tanpa izin: siapa pun dapat mendaftarkan layanan — endpoint, versi protokol, kapabilitas, harga — ditandatangani dengan dompetnya, dan ditemukan oleh node serta pedagang di seluruh jaringan.",
+    "registerCta": "Daftarkan layanan →",
+    "filterAll": "Semua",
+    "providerType": {
+      "Notification Provider": "Notifikasi",
+      "Oracle Provider": "Orakel harga",
+      "Risk Intelligence Provider": "Intelijen risiko",
+      "Snapshot Provider": "Snapshot",
+      "Merchant Gateway": "Gateway pedagang",
+      "Public API Node": "Node API"
+    },
+    "readError": "Tidak dapat membaca registri dari {label}.",
+    "metricRegistered": "Layanan terdaftar",
+    "metricNotifications": "Notifikasi",
+    "metricOracles": "Orakel",
+    "metricRiskIntel": "Intel risiko",
+    "metricSnapshots": "Snapshot",
+    "metricPublicApi": "API publik",
+    "readingRegistry": "Membaca registri…",
+    "liveFromNode": "Langsung dari node akses Anda",
+    "colProvider": "Penyedia",
+    "colType": "Tipe",
+    "colRegion": "Wilayah (dinyatakan)",
+    "colCapabilities": "Kapabilitas",
+    "colPricing": "Harga",
+    "colLastHeard": "Terakhir terdengar",
+    "colStatus": "Status",
+    "moreCaps": "+{n} lagi",
+    "noneOfType": "Belum ada penyedia tipe ini yang terdaftar.",
+    "dirFooter": "Nama, logo, dan wilayah berasal dari pendaftaran bertanda tangan milik masing-masing penyedia. Tanda tangan membuktikan catatan sampai kepada Anda tanpa diubah; ia tidak membuktikan apa pun tentang nama — siapa pun dapat mendaftarkan layanan dengan nama apa pun, dan registri sengaja tidak membagikan nama eksklusif. ID Layanan di bawah setiap baris adalah bagian yang mengidentifikasinya. Logo diambil dari node akses Anda berdasarkan hash konten, jadi tidak ada yang tahu Anda melihat.",
+    "health": {
+      "Online": "Online",
+      "Offline": "Offline",
+      "Degraded": "Terdegradasi",
+      "Maintenance": "Pemeliharaan"
+    },
+    "notInRegistry": "<m>{id}</m> tidak ada di registri{hasNode, select, yes { yang dilaporkan {node}} other {}}.",
+    "notInRegistryNote": "Sebuah node menjawab dari registri yang telah direplikasinya, jadi node akses yang berbeda mungkin mengenalnya. Layanan juga kedaluwarsa ketika penyedianya berhenti mengirim pembaruan kesehatan.",
+    "allServices": "← Semua layanan",
+    "brandingTitle": "Bagaimana penyedia ini menampilkan dirinya",
+    "brandingFooter": "Keempatnya dinyatakan oleh penyedia dalam pendaftaran bertanda tangannya sendiri. Tanda tangan membuktikan catatan sampai kepada Anda tanpa diubah dan tidak lebih: tidak ada yang memeriksa bahwa nama itu miliknya untuk dipakai, dan registri sengaja tidak membagikan nama eksklusif. Nilai entri ini dari ID Layanan dan kunci penyedia di bawah.",
+    "brandingLogoNote": "Logo diambil dari node akses Anda berdasarkan hash konten (<cid>{value}</cid>), tidak pernah dari server penyedia sendiri — jadi melihat halaman ini tidak memberi tahu mereka apa pun.",
+    "regTitle": "Pendaftaran",
+    "rowServiceId": "ID Layanan",
+    "rowType": "Tipe",
+    "rowRegion": "Wilayah",
+    "regionDeclared": "{region} (dinyatakan, tidak terverifikasi)",
+    "regionNotDeclared": "Tidak dinyatakan",
+    "rowPricing": "Harga",
+    "freeWord": "Gratis",
+    "rowPayoutWallet": "Dompet pembayaran",
+    "payoutNone": "Tidak ada yang dinyatakan — layanan ini tidak menagih",
+    "reachTitle": "Keterjangkauan",
+    "noEndpoint": "Tidak ada endpoint yang dinyatakan. Penyedia yang dijangkau lewat gossip alih-alih langsung tidak memerlukannya.",
+    "claimsTitle": "Apa yang diklaim dapat dilakukan layanan ini",
+    "noneDeclared": "Tidak ada yang dinyatakan.",
+    "claimChain": "Rantai",
+    "chainClaim": {
+      "RpcConnected": "Mengklaim terhubung RPC",
+      "GossipOnly": "Mengklaim gossip-saja",
+      "none": "Tidak ada mode rantai yang dinyatakan"
+    },
+    "gossipLag": "Jawaban on-chain sampai kepadanya dari tangan kedua lewat gossip, jadi bisa tertinggal.",
+    "claimContent": "Konten",
+    "servesContentYes": "Mengklaim menyimpan dan menyajikan konten protokol — ia dapat menyerahkan lampiran atau avatar sendiri.",
+    "servesContentNo": "Tidak mengklaim menyajikan konten, jadi lampiran harus datang dari tempat lain.",
+    "claimRetention": "Retensi",
+    "retentionClaim": "Mengklaim menyimpan konten {window} — sejauh itulah ia dapat menjawab untuk bukti.",
+    "retentionNone": "Tidak ada jendela retensi yang dinyatakan.",
+    "claimSnapshots": "Snapshot",
+    "snapshotsClaim": "Mengklaim memproduksi snapshot yang dapat diambil node lain.",
+    "claimAlsoDeclared": "Juga dinyatakan",
+    "alsoDeclaredNote": "Kapabilitas yang tidak dapat dibaca build aplikasi ini. Ditampilkan sebagaimana node menuliskannya alih-alih dibuang.",
+    "speaksOfs": "Berbicara OFS {list}",
+    "ofsNone": "— tidak ada yang dinyatakan",
+    "detailClaimsFooter": "Semua di atas adalah klaim. Pendaftaran ditandatangani oleh kunci penyedia sendiri dan menyatakan apa yang dikonfigurasi operatornya; tidak ada di halaman ini yang memverifikasinya. Klaim rantai murah untuk diperiksa — node yang tidak membaca Solana tidak dapat menjawab <code>getChainStatus</code> dengan slot — dan <link>Node & peer</link> menanyakan setiap node yang dicantumkannya dan menampilkan jawabannya di samping klaim.",
+    "identityHealthTitle": "Identitas dan kesehatan",
+    "rowProvider": "Penyedia",
+    "rowRegistered": "Terdaftar",
+    "rowLastHealth": "Pembaruan kesehatan terakhir",
+    "healthFooter": "Registri mencatat status kesehatan dan kapan terakhir disegarkan, bukan persentase uptime — jadi halaman ini menampilkan kapan penyedia terakhir terdengar alih-alih angka yang tidak diukur protokol.",
+    "idMetaTitle": "Layanan",
+    "idMetaDescription": "Satu entri dalam Registri Layanan OpenFiat (OFS-1500), dibaca langsung dari node akses Anda.",
+    "idHeroDescription": "Sebuah entri Registri Layanan (OFS-1500), dibaca langsung dari node akses Anda. Setiap bidang di bawah adalah yang benar-benar dibawa registri.",
+    "feeTitle": "Berapa biaya ini dalam token lain",
+    "loadingTokenList": "Memuat daftar token node…",
+    "tokenListError": "Tidak dapat memuat daftar token node, jadi hanya {token} yang ditawarkan di sini. <retry>Coba lagi</retry>",
+    "askingNode": "Menanyakan node…",
+    "feeFailed": "Node akses Anda tidak menjawab. Itu bukan harga nol dan bukan biaya yang tak terbayar — itu pertanyaan yang tidak pernah ditanyakan.",
+    "feeUnknownService": "Node ini tidak punya layanan dengan id itu, jadi tidak ada biaya untuk dikutip. Node lain mungkin mengenalnya.",
+    "feeFooter": "Bacaan untuk ditampilkan, bukan komitmen. Dua node dapat sah menjawab berbeda, karena masing-masing menyelesaikan terhadap catatan orakel yang kebetulan dimilikinya — dan setelah saat sebuah kutipan kedaluwarsa tidak ada kutipan sama sekali, hanya apa yang dilakukan kurs berikutnya. Angka yang mengikat siapa pun adalah yang mereka tandatangani.",
+    "quoteFree": "Layanan ini tidak menyatakan harga, jadi tidak ada yang dikonversi dan tidak ada yang terutang. Harga yang tak ada sudah berarti gratis — tidak ada pengaturan \"gratis\" terpisah yang perlu dicari.",
+    "quoteNative": "Ia sudah menagih dalam token ini, jadi tidak ada kurs yang terlibat — yang berarti tidak ada feed orakel kedaluwarsa yang bisa membuat biaya ini tak terbayar.",
+    "quoteSettleable": "Dikonversi dari {fee} yang dinyatakan pada {rate} {symbol} per unit, berlaku hingga {until}. Dibulatkan ke atas, dengan sengaja: biaya yang diselesaikan dalam token pengganti tidak pernah bernilai kurang dari yang dinyatakan, jadi pembayar membayar kurang dari satu unit dasar lebih.",
+    "notSettleable": "Tidak dapat diselesaikan dalam {symbol} saat ini.",
+    "unsettleable": {
+      "StaleOracleData": "Penyedia memang memublikasikan pasangan ini, tetapi setiap kursnya telah kedaluwarsa — jadi tidak ada kurs terkini untuk dikonversi. Feed biasanya kembali; biaya tidak berubah bagaimanapun.",
+      "NoOracleData": "Tidak ada orakel yang menghargai pasangan ini sama sekali, jadi tidak ada yang bisa dikonversi. Menunggu tidak akan membantu — biaya dapat dibayar dalam token yang dinyatakan penyedia.",
+      "UnknownSettlementToken": "Node akses Anda tidak dapat menyatakan berapa unit dasar satu token itu, jadi ia menolak mengonversi alih-alih menebak eksponen.",
+      "RateOutOfRange": "Kurs yang dibaca tidak dapat dipakai — bukan angka positif berhingga. Biaya yang dikonversi menjadi nol bukanlah biaya yang dinyatakan penyedia."
+    },
+    "unsettleableTrail": " Biayanya sendiri tidak berubah dan tetap dapat dibayar dalam token yang dinyatakan penyedia.",
+    "regMetaTitle": "Daftarkan layanan",
+    "regMetaDescription": "Daftar sebagai penyedia layanan OpenFiat — gateway notifikasi, orakel harga, penyedia snapshot, intelijen risiko, gateway pedagang, atau node API publik. Tanpa izin: sebuah peristiwa pendaftaran bertanda tangan, tanpa lamaran dan tanpa persetujuan.",
+    "regHeroTitle": "Daftarkan layanan",
+    "regHeroDescription": "Registri Layanan tanpa izin. Mendaftar adalah peristiwa bertanda tangan yang Anda publikasikan ke jaringan — tidak ada lamaran, tidak ada peninjau, dan tidak ada yang dapat menolak Anda. Berikut ini adalah yang dipersyaratkan protokol, dan apa yang terjadi setelahnya.",
+    "stepsTitle": "Bagaimana cara kerjanya, dari awal sampai akhir",
+    "step": {
+      "runService": {
+        "title": "Jalankan layanan",
+        "body": "Dirikan apa pun yang Anda tawarkan — gateway Telegram, orakel FX, host snapshot, node API publik. Registri mengiklankan layanan yang ada; ia tidak menyediakannya."
+      },
+      "identity": {
+        "title": "Tetapkan identitas Anda",
+        "body": "Buat pasangan kunci node dan siapkan dompet untuk menandatangani. Peer ID keluar dari pasangan kunci; kunci publik dipublikasikan bersamanya."
+      },
+      "signEvent": {
+        "title": "Tandatangani peristiwa pendaftaran",
+        "body": "Susun bidang-bidang di bawah, tandatangani dengan dompet Anda, dan publikasikan. Peristiwa menyebar lewat protokol gossip — tanpa pendaftar, tanpa antrean, tanpa persetujuan."
+      },
+      "healthUpdates": {
+        "title": "Publikasikan pembaruan kesehatan",
+        "body": "Penyedia secara berkala mengiklankan Online, Pemeliharaan, Terdegradasi, atau Offline. Klien memakainya untuk memutari Anda saat Anda down — dan jika Anda berhenti memublikasikan sama sekali, pendaftaran Anda kedaluwarsa dengan sendirinya dan berhenti muncul dalam penemuan."
+      },
+      "getSelected": {
+        "title": "Terpilih",
+        "body": "Klien menanyai registri lokalnya dan memilih di antara penyedia berdasarkan wilayah, latensi, kapabilitas, dan harga. Terdaftar bukan berarti terpakai; Anda bersaing dengan semua orang lain yang menawarkan layanan yang sama."
+      }
+    },
+    "regEventTitle": "Apa yang dimuat peristiwa pendaftaran",
+    "reg": {
+      "serviceId": {
+        "label": "ID Layanan",
+        "detail": "Unik secara global, dan permanen — mengubah endpoint atau harga tidak pernah mengubahnya (§8)."
+      },
+      "serviceType": {
+        "label": "Tipe layanan",
+        "detail": "Salah satu tipe registri. Seorang penyedia dapat menjalankan beberapa layanan, masing-masing dengan ID-nya sendiri."
+      },
+      "providerIdentity": {
+        "label": "Identitas penyedia",
+        "detail": "Dompet, identitas node, peer ID, dan kunci publik di atas."
+      },
+      "networkEndpoints": {
+        "label": "Endpoint jaringan",
+        "detail": "Tempat klien menjangkau layanan. Beberapa endpoint itu normal — satu per wilayah."
+      },
+      "supportedVersions": {
+        "label": "Versi protokol yang didukung",
+        "detail": "Agar klien dapat mengetahui apakah ia bisa berbicara dengan Anda sebelum mencoba."
+      },
+      "region": {
+        "label": "Wilayah geografis",
+        "detail": "Wilayah mana yang Anda layani, jika Anda ingin menyatakannya. Dinyatakan sendiri dan tidak terverifikasi — tidak ada di protokol yang mengukur di mana suatu layanan berada, dan tidak akan pernah: menggeolokasi endpoint akan menjawab di mana soket Anda berakhir, yang merupakan pertanyaan berbeda dari siapa yang Anda layani. Klien melihatnya dilabeli sebagai dinyatakan."
+      },
+      "capabilities": {
+        "label": "Kapabilitas",
+        "detail": "Apa yang benar-benar dilakukan layanan — pasangan mata uang untuk orakel, kanal untuk gateway, retensi untuk snapshot."
+      },
+      "branding": {
+        "label": "Merek",
+        "detail": "Sebuah nama, sebuah kalimat, sebuah logo, dan sebuah situs, semuanya opsional. Logo adalah CID IPFS alih-alih URL, jadi pemirsa mengambilnya dari node akses mereka sendiri dan tidak ada yang tahu siapa yang melihat entri Anda. Nama tidak eksklusif: registri tidak akan menghalangi orang lain mendaftarkan nama Anda, jadi ID Layanan Anda-lah yang mengidentifikasi Anda."
+      },
+      "pricing": {
+        "label": "Harga",
+        "detail": "Jika Anda menagih. Opsional, dan diiklankan sebagai metadata alih-alih ditegakkan oleh registri."
+      },
+      "timestampSignature": {
+        "label": "Cap waktu dan tanda tangan",
+        "detail": "Peristiwa ditandatangani dan disebarkan lewat gossip ke jaringan. Tidak ada yang perlu diserahkan kepada siapa pun."
+      }
+    },
+    "identityTitle": "Identitas yang Anda perlukan lebih dulu",
+    "identity": {
+      "wallet": {
+        "label": "Alamat dompet",
+        "detail": "Menandatangani pendaftaran dan setiap pembaruan berikutnya. Siapa pun yang memegang kunci ini mengendalikan entri layanan."
+      },
+      "nodeIdentity": {
+        "label": "Identitas node",
+        "detail": "Nama yang dipublikasikan node Anda tentang dirinya, stabil di seluruh restart."
+      },
+      "peerId": {
+        "label": "Peer ID",
+        "detail": "Berasal dari pasangan kunci node Anda. Inilah yang dihubungi klien, dan yang membuktikan ia menjangkau Anda alih-alih seseorang yang mengiklankan hostname Anda."
+      },
+      "publicKey": {
+        "label": "Kunci publik",
+        "detail": "Dipublikasikan agar siapa pun dapat memverifikasi tanda tangan Anda tanpa memintanya kepada Anda."
+      }
+    },
+    "serviceTypesTitle": "Tipe layanan",
+    "serviceTypesNote": "Tata kelola dapat menambah tipe seiring waktu. Seorang penyedia dapat menjalankan beberapa layanan; masing-masing mendapat ID Layanannya sendiri.",
+    "noStakeTitle": "Tanpa stake, tanpa izin",
+    "noStakeBody": "Registri itu sendiri tidak meminta apa pun selain tanda tangan. Spesifikasi layanan individual mungkin memerlukan stake — penyedia intelijen risiko yang datanya menggerakkan sengketa punya lebih banyak yang harus dipertanggungjawabkan daripada host snapshot — tetapi itu ditetapkan oleh layanan, bukan oleh registri tempat Anda mendaftar.",
+    "seeRegistered": "Lihat siapa yang sudah terdaftar"
   }
 }

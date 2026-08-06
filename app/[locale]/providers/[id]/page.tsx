@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/page-hero";
 import { ProviderDetail } from "@/components/providers/provider-detail";
 
-export const metadata: Metadata = {
-  title: "Service",
-  description:
-    "One entry in the OpenFiat Service Registry (OFS-1500), read live from your access node.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "providers" });
+  return { title: t("idMetaTitle"), description: t("idMetaDescription") };
+}
 
 /**
  * Dynamic, with no `generateStaticParams`.
@@ -27,9 +32,10 @@ export const metadata: Metadata = {
 export default async function ProviderPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { locale, id } = await params;
+  const t = await getTranslations({ locale, namespace: "providers" });
 
   return (
     <>
@@ -40,7 +46,7 @@ export default async function ProviderPage({
           `app/settings/page.tsx`, which is where it was found. */}
       <PageHero
         title={decodeURIComponent(id)}
-        description="A Service Registry entry (OFS-1500), read live from your access node. Every field below is one the registry actually carries."
+        description={t("idHeroDescription")}
       />
       <section className="mt-10 max-w-3xl">
         <ProviderDetail serviceId={decodeURIComponent(id)} />

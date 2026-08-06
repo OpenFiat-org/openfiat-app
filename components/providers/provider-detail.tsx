@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import { ProviderFeeQuote } from "@/components/providers/fee-quote";
@@ -15,8 +16,15 @@ import {
   readBranding,
   type RecordWithBranding,
 } from "@/lib/live-providers";
-import { chainModeClaim, readCapabilities } from "@/lib/node-capabilities";
+import { readCapabilities } from "@/lib/node-capabilities";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
+
+/** Known health states get a translated label over the canonical tone; others pass through. */
+function healthLabel(t: (k: string) => string, status: string): string {
+  return ["Online", "Offline", "Degraded", "Maintenance"].includes(status)
+    ? t(`health.${status}`)
+    : status;
+}
 
 /**
  * One service, as the selected node's Service Registry reports it.
@@ -37,6 +45,7 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  * were using uptime to ask.
  */
 export function ProviderDetail({ serviceId }: { serviceId: string }) {
+  const t = useTranslations("providers");
   const [record, setRecord] = useState<RecordWithBranding | null>(null);
   const [nodeLabel, setNodeLabel] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,25 +65,27 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
   }, [load]);
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Reading the registry…</p>;
+    return <p className="text-sm text-gray-500">{t("readingRegistry")}</p>;
   }
 
   if (!record) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
         <p className="text-sm text-gray-300">
-          <span className="font-mono">{serviceId}</span> is not in the registry
-          {nodeLabel && <> that {nodeLabel} reports</>}.
+          {t.rich("notInRegistry", {
+            id: serviceId,
+            hasNode: nodeLabel ? "yes" : "no",
+            node: nodeLabel,
+            m: (chunks) => <span className="font-mono">{chunks}</span>,
+          })}
         </p>
         {/* Not "does not exist": a node answers from what it has replicated,
             and another node may know this service perfectly well. */}
         <p className="mt-2 text-xs text-gray-500">
-          A node answers from the registry it has replicated, so a different
-          access node may know it. Services also expire when their provider
-          stops sending health updates.
+          {t("notInRegistryNote")}
         </p>
         <Link href="/providers" className="mt-4 inline-block text-sm text-brand-hover hover:underline">
-          ← All services
+          {t("allServices")}
         </Link>
       </div>
     );
@@ -97,7 +108,7 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
         * that there was no claim.
         */}
       {branding && (
-        <Panel title="How this provider presents itself">
+        <Panel title={t("brandingTitle")}>
           <div className="px-4 py-4">
             <div className="flex items-start gap-4">
               {branding.logoUrl && (
@@ -135,17 +146,14 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
               </div>
             </div>
             <p className="mt-4 border-t border-white/5 pt-3 text-xs leading-relaxed text-gray-500">
-              All four of these are declared by the provider in its own signed registration.
-              The signature proves the record reached you unaltered and proves nothing else:
-              nobody checks that the name is theirs to use, and the registry deliberately does
-              not hand out exclusive names. Judge this entry by the Service ID and provider key
-              below.
+              {t("brandingFooter")}
               {branding.logoCid && (
                 <>
                   {" "}
-                  The logo is fetched from your access node by content hash (
-                  <span className="font-mono break-all">{branding.logoCid}</span>), never from
-                  the provider&apos;s own server — so viewing this page tells them nothing.
+                  {t.rich("brandingLogoNote", {
+                    cid: (chunks) => <span className="font-mono break-all">{chunks}</span>,
+                    value: branding.logoCid,
+                  })}
                 </>
               )}
             </p>
@@ -154,17 +162,17 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
       )}
 
       <Panel
-        title="Registration"
-        action={<StatusPill status={record.health} />}
+        title={t("regTitle")}
+        action={<StatusPill status={record.health} label={healthLabel(t, record.health)} />}
       >
         <div className="divide-y divide-white/5 px-4">
-          <Row label="Service ID" value={record.service_id} mono />
+          <Row label={t("rowServiceId")} value={record.service_id} mono />
           <Row
-            label="Type"
+            label={t("rowType")}
             value={
               <span className="flex items-center gap-2">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
-                {type}
+                {t(`providerType.${type}`)}
               </span>
             }
           />
@@ -178,11 +186,11 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
             * `docs/region-is-declared.md` in openfiat-core.
             */}
           <Row
-            label="Region"
-            value={record.region ? `${record.region} (declared, unverified)` : "Not declared"}
+            label={t("rowRegion")}
+            value={record.region ? t("regionDeclared", { region: record.region }) : t("regionNotDeclared")}
           />
           {/* Absent pricing means free (OFS-4100 §9.5) — not unknown. */}
-          <Row label="Pricing" value={formatPricing(record.pricing) ?? "Free"} />
+          <Row label={t("rowPricing")} value={formatPricing(record.pricing) ?? t("freeWord")} />
           {/*
             * The operator's own business, and this is their page rather
             * than a directory row — the services list deliberately does
@@ -196,8 +204,8 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
             * charging, which OFS-4100 §9.5 allows.
             */}
           <Row
-            label="Payout wallet"
-            value={record.payout_wallet ?? "None declared — this service is not charging"}
+            label={t("rowPayoutWallet")}
+            value={record.payout_wallet ?? t("payoutNone")}
             mono={Boolean(record.payout_wallet)}
           />
         </div>
@@ -214,12 +222,11 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
         declaredMint={record.pricing?.token_mint ?? null}
       />
 
-      <Panel title="Reachability">
+      <Panel title={t("reachTitle")}>
         <div className="px-4 py-4">
           {record.endpoints.length === 0 ? (
             <p className="text-sm text-gray-500">
-              No endpoint declared. Providers reached over gossip rather than
-              directly do not need one.
+              {t("noEndpoint")}
             </p>
           ) : (
             <ul className="space-y-1.5">
@@ -233,10 +240,10 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
         </div>
       </Panel>
 
-      <Panel title="What this service claims it can do">
+      <Panel title={t("claimsTitle")}>
         <div className="px-4 py-4">
           {record.capabilities.length === 0 ? (
-            <p className="text-sm text-gray-500">None declared.</p>
+            <p className="text-sm text-gray-500">{t("noneDeclared")}</p>
           ) : (
             <>
               {/*
@@ -248,32 +255,30 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
                 * here gets a checkmark; see lib/node-capabilities.ts.
                 */}
               <dl className="space-y-2 text-sm">
-                <Claim label="Chain">
-                  {chainModeClaim(claims.chainMode)}
+                <Claim label={t("claimChain")}>
+                  {t(`chainClaim.${claims.chainMode ?? "none"}`)}
                   {claims.chainMode === "GossipOnly" && (
                     <span className="block text-xs text-gray-500">
-                      On-chain answers reach it second-hand over gossip, so they can lag.
+                      {t("gossipLag")}
                     </span>
                   )}
                 </Claim>
-                <Claim label="Content">
-                  {claims.servesContent
-                    ? "Claims to hold and serve protocol content — it can hand over an attachment or an avatar itself."
-                    : "Does not claim to serve content, so attachments have to come from somewhere else."}
+                <Claim label={t("claimContent")}>
+                  {claims.servesContent ? t("servesContentYes") : t("servesContentNo")}
                 </Claim>
-                <Claim label="Retention">
+                <Claim label={t("claimRetention")}>
                   {claims.retention
-                    ? `Claims to keep content ${claims.retention} — that is how far back it can answer for evidence.`
-                    : "No retention window declared."}
+                    ? t("retentionClaim", { window: claims.retention })
+                    : t("retentionNone")}
                 </Claim>
                 {claims.producesSnapshots && (
-                  <Claim label="Snapshots">Claims to produce snapshots other nodes can fetch.</Claim>
+                  <Claim label={t("claimSnapshots")}>{t("snapshotsClaim")}</Claim>
                 )}
                 {/* Anything this build has no reading for, shown as itself.
                     The vocabulary grows, and a page that renders only the
                     four it knows hides the fifth without saying so. */}
                 {claims.unrecognised.length > 0 && (
-                  <Claim label="Also declared">
+                  <Claim label={t("claimAlsoDeclared")}>
                     <span className="flex flex-wrap gap-1.5">
                       {claims.unrecognised.map((capability) => (
                         <span
@@ -285,8 +290,7 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
                       ))}
                     </span>
                     <span className="block text-xs text-gray-500">
-                      Capabilities this build of the app has no reading for. Shown as the node
-                      wrote them rather than dropped.
+                      {t("alsoDeclaredNote")}
                     </span>
                   </Claim>
                 )}
@@ -305,28 +309,27 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
             </>
           )}
           <p className="mt-4 text-xs leading-relaxed text-gray-500">
-            Speaks OFS{" "}
-            {record.supported_ofs.length > 0
-              ? record.supported_ofs.join(", ")
-              : "— none declared"}
+            {t("speaksOfs", {
+              list: record.supported_ofs.length > 0 ? record.supported_ofs.join(", ") : t("ofsNone"),
+            })}
           </p>
           <p className="mt-2 text-xs leading-relaxed text-gray-500">
-            All of the above is a claim. A registration is signed by the provider&apos;s own key and
-            says what its operator configured; nothing on this page verifies it. A chain claim is
-            cheap to check — a node that is not reading Solana cannot answer{" "}
-            <code className="font-mono">getChainStatus</code> with a slot — and{" "}
-            <Link href="/network" className="text-brand-hover hover:underline">
-              Nodes &amp; peers
-            </Link>{" "}
-            asks every node it lists and shows the answer beside the claim.
+            {t.rich("detailClaimsFooter", {
+              code: (chunks) => <code className="font-mono">{chunks}</code>,
+              link: (chunks) => (
+                <Link href="/network" className="text-brand-hover hover:underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </Panel>
 
-      <Panel title="Identity and health">
+      <Panel title={t("identityHealthTitle")}>
         <div className="divide-y divide-white/5 px-4">
           <Row
-            label="Provider"
+            label={t("rowProvider")}
             value={
               <span className="inline-flex items-center gap-2">
                 {/* Same seed as the directory row this page was reached from,
@@ -340,21 +343,19 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
               </span>
             }
           />
-          <Row label="Registered" value={formatMoment(record.registered_at)} />
+          <Row label={t("rowRegistered")} value={formatMoment(record.registered_at)} />
           <Row
-            label="Last health update"
+            label={t("rowLastHealth")}
             value={`${formatMoment(record.last_health_update)} · ${sinceLabel(record.last_health_update)}`}
           />
         </div>
         <p className="px-4 pb-4 pt-1 text-xs text-gray-500">
-          The registry records a health state and when it was last refreshed,
-          not an uptime percentage — so this page shows when the provider was
-          last heard from rather than a figure the protocol does not measure.
+          {t("healthFooter")}
         </p>
       </Panel>
 
       <Link href="/providers" className="inline-block text-sm text-brand-hover hover:underline">
-        ← All services
+        {t("allServices")}
       </Link>
     </div>
   );

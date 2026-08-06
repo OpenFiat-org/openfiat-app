@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
 import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/provider-display";
@@ -12,15 +13,24 @@ import { MetricStrip } from "@/components/metrics";
 import { StatusPill } from "@/components/status-pill";
 import { WalletAvatar } from "@/components/wallet-avatar";
 
-const FILTERS: Array<{ key: ServiceType | "All"; label: string }> = [
-  { key: "All", label: "All" },
-  ...(Object.entries(PROVIDER_TYPES) as Array<[ServiceType, string]>).map(([key, label]) => ({ key, label })),
+/** The service-type filter keys, in display order; labels come from the catalogue. */
+const FILTER_KEYS: Array<ServiceType | "All"> = [
+  "All",
+  ...(Object.keys(PROVIDER_TYPES) as ServiceType[]),
 ];
+
+/** Known health states get a translated label over the canonical tone; others pass through. */
+function healthLabel(t: (k: string) => string, status: string): string {
+  return ["Online", "Offline", "Degraded", "Maintenance"].includes(status)
+    ? t(`health.${status}`)
+    : status;
+}
 
 interface DirectoryState {
   rows: DirectoryRow[];
   loading: boolean;
-  error: string | null;
+  /** The node label a failed read was against, or null when there was no error. */
+  errorLabel: string | null;
 }
 
 /**
@@ -49,7 +59,7 @@ function useProviderRows(): DirectoryState {
   const [state, setState] = useState<DirectoryState>({
     rows: [],
     loading: true,
-    error: null,
+    errorLabel: null,
   });
 
   useEffect(() => {
@@ -57,17 +67,13 @@ function useProviderRows(): DirectoryState {
 
     async function load() {
       const selection = readNodeSelection();
-      setState((s) => ({ ...s, loading: true, error: null }));
+      setState((s) => ({ ...s, loading: true, errorLabel: null }));
       try {
         const rows = await fetchLiveProviders(selection.url);
-        if (!cancelled) setState({ rows, loading: false, error: null });
+        if (!cancelled) setState({ rows, loading: false, errorLabel: null });
       } catch {
         if (!cancelled) {
-          setState({
-            rows: [],
-            loading: false,
-            error: `Could not read the registry from ${selection.label}.`,
-          });
+          setState({ rows: [], loading: false, errorLabel: selection.label });
         }
       }
     }
@@ -93,58 +99,60 @@ function useProviderRows(): DirectoryState {
  * worse than an absent one, because a reader cannot tell it is missing.
  */
 export function ProvidersMetrics() {
-  const { rows, loading, error } = useProviderRows();
+  const t = useTranslations("providers");
+  const { rows, loading, errorLabel } = useProviderRows();
   const count = (type: ServiceType) => rows.filter((r) => r.type === type).length;
 
-  if (error) {
-    return <p className="mt-6 text-sm text-amber-300">{error}</p>;
+  if (errorLabel) {
+    return <p className="mt-6 text-sm text-amber-300">{t("readError", { label: errorLabel })}</p>;
   }
 
   return (
     <MetricStrip
       items={[
-        { label: "Registered services", value: loading ? "…" : String(rows.length) },
-        { label: "Notifications", value: loading ? "…" : String(count("Notification Provider")) },
-        { label: "Oracles", value: loading ? "…" : String(count("Oracle Provider")) },
-        { label: "Risk intel", value: loading ? "…" : String(count("Risk Intelligence Provider")) },
-        { label: "Snapshots", value: loading ? "…" : String(count("Snapshot Provider")) },
-        { label: "Public API", value: loading ? "…" : String(count("Public API Node")) },
+        { label: t("metricRegistered"), value: loading ? "…" : String(rows.length) },
+        { label: t("metricNotifications"), value: loading ? "…" : String(count("Notification Provider")) },
+        { label: t("metricOracles"), value: loading ? "…" : String(count("Oracle Provider")) },
+        { label: t("metricRiskIntel"), value: loading ? "…" : String(count("Risk Intelligence Provider")) },
+        { label: t("metricSnapshots"), value: loading ? "…" : String(count("Snapshot Provider")) },
+        { label: t("metricPublicApi"), value: loading ? "…" : String(count("Public API Node")) },
       ]}
     />
   );
 }
 
 export function ProvidersDirectory() {
+  const t = useTranslations("providers");
   const [filter, setFilter] = useState<ServiceType | "All">("All");
-  const { rows, loading, error } = useProviderRows();
+  const { rows, loading, errorLabel } = useProviderRows();
   const visible = filter === "All" ? rows : rows.filter((p) => p.type === filter);
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
+          {FILTER_KEYS.map((key) => (
             <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
+              key={key}
+              onClick={() => setFilter(key)}
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                filter === f.key
+                filter === key
                   ? "border-brand/50 bg-brand/10 text-brand-hover"
                   : "border-white/10 text-gray-400 hover:text-white"
               }`}
             >
-              {f.label}
+              {key === "All" ? t("filterAll") : t(`providerType.${key}`)}
             </button>
           ))}
         </div>
-        {error ? (
-          <span className="text-xs text-amber-300">{error}</span>
+        {errorLabel ? (
+          <span className="text-xs text-amber-300">{t("readError", { label: errorLabel })}</span>
         ) : (
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
             <span
               className={`h-1.5 w-1.5 rounded-full ${loading ? "bg-amber-400" : "bg-emerald-400"}`}
             />
-            {loading ? "Reading the registry…" : "Live from your access node"}
+            {loading ? t("readingRegistry") : t("liveFromNode")}
           </span>
         )}
       </div>
@@ -154,16 +162,16 @@ export function ProvidersDirectory() {
           minWidth={960}
           head={
             <tr>
-              <Th>Provider</Th>
-              <Th>Type</Th>
+              <Th>{t("colProvider")}</Th>
+              <Th>{t("colType")}</Th>
               {/* Headed "declared" because it is. Nothing observes where
                   a provider is — see docs/region-is-declared.md in
                   openfiat-core for why deriving it was rejected. */}
-              <Th>Region (declared)</Th>
-              <Th>Capabilities</Th>
-              <Th>Pricing</Th>
-              <Th right>Last heard from</Th>
-              <Th right>Status</Th>
+              <Th>{t("colRegion")}</Th>
+              <Th>{t("colCapabilities")}</Th>
+              <Th>{t("colPricing")}</Th>
+              <Th right>{t("colLastHeard")}</Th>
+              <Th right>{t("colStatus")}</Th>
             </tr>
           }
         >
@@ -221,12 +229,12 @@ export function ProvidersDirectory() {
                     identity
                   )}
                 </Td>
-                <Td py="py-5" className={`text-sm ${color.text}`}>{PROVIDER_TYPES[p.type]}</Td>
+                <Td py="py-5" className={`text-sm ${color.text}`}>{t(`providerType.${p.type}`)}</Td>
                 <Td py="py-5" className="text-gray-400">{p.region}</Td>
                 <Td py="py-5" className="max-w-64">
                   <span className="line-clamp-2 text-xs text-gray-400">
                     {p.capabilities.slice(0, 3).join(" · ")}
-                    {p.capabilities.length > 3 && ` +${p.capabilities.length - 3} more`}
+                    {p.capabilities.length > 3 && ` ${t("moreCaps", { n: p.capabilities.length - 3 })}`}
                   </span>
                 </Td>
                 <Td py="py-5" className="text-xs text-gray-400">{p.priceLabel}</Td>
@@ -238,24 +246,20 @@ export function ProvidersDirectory() {
                     {sinceLabel(p.lastHealthUpdate)}
                   </span>
                 </Td>
-                <Td py="py-5" right><StatusPill status={p.status} /></Td>
+                <Td py="py-5" right><StatusPill status={p.status} label={healthLabel(t, p.status)} /></Td>
               </Tr>
             );
           })}
           {visible.length === 0 && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
-                No providers of this type registered yet.
+                {t("noneOfType")}
               </td>
             </tr>
           )}
         </DataTable>
         <p className="mt-3 text-xs leading-relaxed text-gray-600">
-          Names, logos and regions come from each provider&apos;s own signed registration. The
-          signature proves the record reached you unaltered; it proves nothing about the name —
-          anyone can register a service under any name, and the registry deliberately does not
-          hand out exclusive ones. The Service ID under each row is the part that identifies it.
-          Logos are fetched from your access node by content hash, so nobody learns you looked.
+          {t("dirFooter")}
         </p>
       </div>
     </div>

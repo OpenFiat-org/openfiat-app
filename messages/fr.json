@@ -2002,5 +2002,206 @@
     "wouldHandJoiner": "Celui que ce nœud remettrait à un arrivant",
     "noLocation": "Aucun emplacement",
     "snapshotRootNote": "Un snapshot porte une racine d'état de 32 octets, et cette page ne l'affiche délibérément pas. Afficher un condensé ici se lirait comme une vérification, et rien de ce que fait un navigateur ne vérifie quoi que ce soit à son sujet : les vérifications de signature et d'enregistrement qu'un nœud effectue établissent que les octets sont ce que l'annonceur a dit, non que l'annonceur a dit vrai — c'est pourquoi le <em>premier</em> snapshot d'un nœud doit venir d'une ancre épinglée et non de quiconque a répondu. Le producteur est montré à la place, car c'est la partie que vous pouvez rechercher dans le <sr>registre des services</sr>."
+  },
+  "providers": {
+    "metaTitle": "Fournisseurs de services",
+    "metaDescription": "Le Registre des Services OpenFiat (OFS-1500) — découverte sans permission pour les fournisseurs de notifications, d'oracles, de renseignement sur les risques, de snapshots, de passerelles et d'API.",
+    "heroTitle": "Fournisseurs de services",
+    "heroDescription": "Le Registre des Services (OFS-1500) est sans permission : n'importe qui peut enregistrer un service — endpoints, versions de protocole, capacités, tarifs — signé avec son portefeuille, et se faire découvrir par les nœuds et les commerçants de tout le réseau.",
+    "registerCta": "Enregistrer un service →",
+    "filterAll": "Tous",
+    "providerType": {
+      "Notification Provider": "Notifications",
+      "Oracle Provider": "Oracles de prix",
+      "Risk Intelligence Provider": "Renseignement sur les risques",
+      "Snapshot Provider": "Snapshots",
+      "Merchant Gateway": "Passerelles de commerçant",
+      "Public API Node": "Nœuds d'API"
+    },
+    "readError": "Impossible de lire le registre depuis {label}.",
+    "metricRegistered": "Services enregistrés",
+    "metricNotifications": "Notifications",
+    "metricOracles": "Oracles",
+    "metricRiskIntel": "Rens. risques",
+    "metricSnapshots": "Snapshots",
+    "metricPublicApi": "API publique",
+    "readingRegistry": "Lecture du registre…",
+    "liveFromNode": "En direct de votre nœud d'accès",
+    "colProvider": "Fournisseur",
+    "colType": "Type",
+    "colRegion": "Région (déclarée)",
+    "colCapabilities": "Capacités",
+    "colPricing": "Tarif",
+    "colLastHeard": "Dernières nouvelles",
+    "colStatus": "Statut",
+    "moreCaps": "+{n} de plus",
+    "noneOfType": "Aucun fournisseur de ce type enregistré pour l'instant.",
+    "dirFooter": "Les noms, logos et régions proviennent du propre enregistrement signé de chaque fournisseur. La signature prouve que l'enregistrement vous est parvenu inaltéré ; elle ne prouve rien sur le nom — n'importe qui peut enregistrer un service sous n'importe quel nom, et le registre ne distribue délibérément pas de noms exclusifs. L'ID de service sous chaque ligne est la partie qui l'identifie. Les logos sont récupérés depuis votre nœud d'accès par hachage de contenu, donc personne ne sait que vous avez regardé.",
+    "health": {
+      "Online": "En ligne",
+      "Offline": "Hors ligne",
+      "Degraded": "Dégradé",
+      "Maintenance": "Maintenance"
+    },
+    "notInRegistry": "<m>{id}</m> n'est pas dans le registre{hasNode, select, yes { que {node} rapporte} other {}}.",
+    "notInRegistryNote": "Un nœud répond depuis le registre qu'il a répliqué, donc un autre nœud d'accès peut le connaître. Les services expirent aussi quand leur fournisseur cesse d'envoyer des mises à jour de santé.",
+    "allServices": "← Tous les services",
+    "brandingTitle": "Comment ce fournisseur se présente",
+    "brandingFooter": "Les quatre sont déclarés par le fournisseur dans son propre enregistrement signé. La signature prouve que l'enregistrement vous est parvenu inaltéré et rien d'autre : personne ne vérifie que le nom lui appartient, et le registre ne distribue délibérément pas de noms exclusifs. Jugez cette entrée par l'ID de service et la clé du fournisseur ci-dessous.",
+    "brandingLogoNote": "Le logo est récupéré depuis votre nœud d'accès par hachage de contenu (<cid>{value}</cid>), jamais depuis le propre serveur du fournisseur — donc consulter cette page ne leur apprend rien.",
+    "regTitle": "Enregistrement",
+    "rowServiceId": "ID de service",
+    "rowType": "Type",
+    "rowRegion": "Région",
+    "regionDeclared": "{region} (déclarée, non vérifiée)",
+    "regionNotDeclared": "Non déclarée",
+    "rowPricing": "Tarif",
+    "freeWord": "Gratuit",
+    "rowPayoutWallet": "Portefeuille de versement",
+    "payoutNone": "Aucun déclaré — ce service ne facture pas",
+    "reachTitle": "Joignabilité",
+    "noEndpoint": "Aucun endpoint déclaré. Les fournisseurs joints par gossip plutôt que directement n'en ont pas besoin.",
+    "claimsTitle": "Ce que ce service affirme pouvoir faire",
+    "noneDeclared": "Aucune déclarée.",
+    "claimChain": "Chaîne",
+    "chainClaim": {
+      "RpcConnected": "Se déclare connecté par RPC",
+      "GossipOnly": "Se déclare gossip-seul",
+      "none": "Aucun mode de chaîne déclaré"
+    },
+    "gossipLag": "Les réponses on-chain lui parviennent de seconde main par gossip, donc elles peuvent être en retard.",
+    "claimContent": "Contenu",
+    "servesContentYes": "Affirme détenir et servir du contenu de protocole — il peut remettre une pièce jointe ou un avatar lui-même.",
+    "servesContentNo": "N'affirme pas servir du contenu, donc les pièces jointes doivent venir d'ailleurs.",
+    "claimRetention": "Rétention",
+    "retentionClaim": "Affirme conserver le contenu {window} — c'est jusqu'où il peut répondre pour des preuves.",
+    "retentionNone": "Aucune fenêtre de rétention déclarée.",
+    "claimSnapshots": "Snapshots",
+    "snapshotsClaim": "Affirme produire des snapshots que d'autres nœuds peuvent récupérer.",
+    "claimAlsoDeclared": "Aussi déclarées",
+    "alsoDeclaredNote": "Capacités que ce build de l'app ne sait pas lire. Affichées telles que le nœud les a écrites plutôt que supprimées.",
+    "speaksOfs": "Parle OFS {list}",
+    "ofsNone": "— aucune déclarée",
+    "detailClaimsFooter": "Tout ce qui précède est une déclaration. Un enregistrement est signé par la propre clé du fournisseur et dit ce que son opérateur a configuré ; rien sur cette page ne le vérifie. Une déclaration de chaîne est peu coûteuse à vérifier — un nœud qui ne lit pas Solana ne peut pas répondre à <code>getChainStatus</code> avec un slot — et <link>Nœuds et pairs</link> interroge chaque nœud qu'il liste et montre la réponse à côté de la déclaration.",
+    "identityHealthTitle": "Identité et santé",
+    "rowProvider": "Fournisseur",
+    "rowRegistered": "Enregistré",
+    "rowLastHealth": "Dernière mise à jour de santé",
+    "healthFooter": "Le registre enregistre un état de santé et sa dernière actualisation, pas un pourcentage de disponibilité — cette page montre donc quand le fournisseur a donné signe de vie pour la dernière fois plutôt qu'un chiffre que le protocole ne mesure pas.",
+    "idMetaTitle": "Service",
+    "idMetaDescription": "Une entrée du Registre des Services OpenFiat (OFS-1500), lue en direct depuis votre nœud d'accès.",
+    "idHeroDescription": "Une entrée du Registre des Services (OFS-1500), lue en direct depuis votre nœud d'accès. Chaque champ ci-dessous est un que le registre porte réellement.",
+    "feeTitle": "Combien coûte ces frais dans un autre token",
+    "loadingTokenList": "Chargement de la liste de tokens du nœud…",
+    "tokenListError": "Impossible de charger la liste de tokens du nœud, donc seul {token} est proposé ici. <retry>Réessayer</retry>",
+    "askingNode": "Interrogation du nœud…",
+    "feeFailed": "Votre nœud d'accès n'a pas répondu. Ce n'est ni un prix nul ni des frais impayables — c'est une question qui n'a jamais été posée.",
+    "feeUnknownService": "Ce nœud n'a aucun service sous cet id, il n'a donc aucuns frais à coter. Un autre nœud peut le connaître.",
+    "feeFooter": "Une lecture d'affichage, pas un engagement. Deux nœuds peuvent légitimement répondre différemment, car chacun résout par rapport aux enregistrements d'oracle qu'il détient — et passé l'instant où une cotation expire il n'y a plus de cotation du tout, seulement ce que le taux a fait ensuite. Le chiffre auquel quiconque serait tenu est celui qu'il signe.",
+    "quoteFree": "Ce service n'a déclaré aucun prix, il n'y a donc rien à convertir et rien à devoir. Un prix absent signifie déjà gratuit — il n'y a pas de réglage \"gratuit\" séparé à chercher.",
+    "quoteNative": "Il facture déjà dans ce token, donc aucun taux n'est en jeu — ce qui signifie qu'aucun flux d'oracle expiré ne peut jamais rendre ces frais impayables.",
+    "quoteSettleable": "Converti depuis les {fee} déclarés à {rate} {symbol} par unité, valable jusqu'au {until}. Arrondi au supérieur, délibérément : des frais réglés dans un token de substitution ne valent jamais moins que ceux déclarés, donc le payeur paie moins d'une unité de base en plus.",
+    "notSettleable": "Non réglable en {symbol} pour l'instant.",
+    "unsettleable": {
+      "StaleOracleData": "Des fournisseurs publient bien cette paire, mais chaque taux pour elle a expiré — il n'y a donc pas de taux courant auquel convertir. Le flux revient généralement ; les frais sont inchangés dans les deux cas.",
+      "NoOracleData": "Aucun oracle ne cote cette paire du tout, il n'y a donc rien à convertir. Attendre n'aidera pas — les frais sont payables dans le token que le fournisseur a déclaré.",
+      "UnknownSettlementToken": "Votre nœud d'accès ne peut pas dire combien d'unités de base vaut un de ce token, il refuse donc de convertir plutôt que de deviner un exposant.",
+      "RateOutOfRange": "Le taux lu n'était pas utilisable — pas un nombre positif fini. Des frais qui se convertissent en rien ne sont pas les frais que le fournisseur a déclarés."
+    },
+    "unsettleableTrail": " Les frais eux-mêmes sont inchangés et restent payables dans le token que le fournisseur a déclaré.",
+    "regMetaTitle": "Enregistrer un service",
+    "regMetaDescription": "Enregistrez-vous comme fournisseur de service OpenFiat — passerelle de notifications, oracle de prix, fournisseur de snapshots, renseignement sur les risques, passerelle de commerçant ou nœud d'API publique. Sans permission : un événement d'enregistrement signé, sans candidature ni approbation.",
+    "regHeroTitle": "Enregistrer un service",
+    "regHeroDescription": "Le Registre des Services est sans permission. S'enregistrer est un événement signé que vous publiez sur le réseau — pas de candidature, pas de relecteur, et personne qui puisse vous refuser. Ce qui suit est ce que le protocole exige, et ce qui se passe ensuite.",
+    "stepsTitle": "Comment ça marche, de bout en bout",
+    "step": {
+      "runService": {
+        "title": "Faites tourner le service",
+        "body": "Montez ce que vous offrez — une passerelle Telegram, un oracle de change, un hôte de snapshots, un nœud d'API publique. Le registre annonce les services qui existent ; il ne les provisionne pas."
+      },
+      "identity": {
+        "title": "Établissez votre identité",
+        "body": "Générez la paire de clés du nœud et ayez un portefeuille prêt à signer. Le peer ID découle de la paire de clés ; la clé publique est publiée à ses côtés."
+      },
+      "signEvent": {
+        "title": "Signez un événement d'enregistrement",
+        "body": "Assemblez les champs ci-dessous, signez-les avec votre portefeuille, et publiez. L'événement se propage par le protocole gossip — pas de registraire, pas de file, pas d'approbation."
+      },
+      "healthUpdates": {
+        "title": "Publiez des mises à jour de santé",
+        "body": "Les fournisseurs annoncent périodiquement En ligne, Maintenance, Dégradé ou Hors ligne. Les clients s'en servent pour vous contourner quand vous êtes en panne — et si vous cessez complètement de publier, votre enregistrement expire de lui-même et cesse d'apparaître dans la découverte."
+      },
+      "getSelected": {
+        "title": "Soyez sélectionné",
+        "body": "Les clients interrogent leur registre local et choisissent entre les fournisseurs selon la région, la latence, les capacités et le prix. Être listé n'est pas être utilisé ; vous êtes en concurrence avec tous les autres offrant le même service."
+      }
+    },
+    "regEventTitle": "Ce que contient un événement d'enregistrement",
+    "reg": {
+      "serviceId": {
+        "label": "ID de service",
+        "detail": "Globalement unique, et permanent — changer d'endpoints ou de tarifs ne le change jamais (§8)."
+      },
+      "serviceType": {
+        "label": "Type de service",
+        "detail": "L'un des types du registre. Un fournisseur peut faire tourner plusieurs services, chacun avec son propre ID."
+      },
+      "providerIdentity": {
+        "label": "Identité du fournisseur",
+        "detail": "Le portefeuille, l'identité du nœud, le peer ID et la clé publique ci-dessus."
+      },
+      "networkEndpoints": {
+        "label": "Endpoints réseau",
+        "detail": "Où les clients joignent le service. Plusieurs endpoints sont normaux — un par région."
+      },
+      "supportedVersions": {
+        "label": "Versions de protocole prises en charge",
+        "detail": "Pour qu'un client puisse savoir s'il peut vous parler avant d'essayer."
+      },
+      "region": {
+        "label": "Région géographique",
+        "detail": "Quelles régions vous servez, si vous voulez le dire. Autodéclarée et non vérifiée — rien dans le protocole ne mesure où se trouve un service, et rien ne le fera jamais : géolocaliser un endpoint répondrait à l'endroit où se termine votre socket, ce qui est une question différente de qui vous servez. Les clients la voient étiquetée comme déclarée."
+      },
+      "capabilities": {
+        "label": "Capacités",
+        "detail": "Ce que le service fait réellement — des paires de devises pour un oracle, des canaux pour une passerelle, de la rétention pour des snapshots."
+      },
+      "branding": {
+        "label": "Image de marque",
+        "detail": "Un nom, une phrase, un logo et un site web, tous optionnels. Le logo est un CID IPFS plutôt qu'une URL, donc les spectateurs le récupèrent depuis leur propre nœud d'accès et personne ne sait qui a regardé votre annonce. Les noms ne sont pas exclusifs : le registre n'empêchera pas quelqu'un d'autre d'enregistrer le vôtre, donc votre ID de service est ce qui vous identifie."
+      },
+      "pricing": {
+        "label": "Tarif",
+        "detail": "Si vous facturez. Optionnel, et annoncé comme métadonnée plutôt qu'imposé par le registre."
+      },
+      "timestampSignature": {
+        "label": "Horodatage et signature",
+        "detail": "L'événement est signé et diffusé par gossip au réseau. Il n'y a rien à soumettre à personne."
+      }
+    },
+    "identityTitle": "L'identité dont vous avez d'abord besoin",
+    "identity": {
+      "wallet": {
+        "label": "Adresse du portefeuille",
+        "detail": "Signe l'enregistrement et chaque mise à jour ultérieure. Quiconque détient cette clé contrôle l'entrée du service."
+      },
+      "nodeIdentity": {
+        "label": "Identité du nœud",
+        "detail": "Le nom sous lequel votre nœud se publie, stable au fil des redémarrages."
+      },
+      "peerId": {
+        "label": "Peer ID",
+        "detail": "Dérivé de la paire de clés de votre nœud. C'est ce qu'un client compose, et ce qui prouve qu'il vous a atteint et non quelqu'un annonçant votre hostname."
+      },
+      "publicKey": {
+        "label": "Clé publique",
+        "detail": "Publiée pour que quiconque puisse vérifier vos signatures sans vous la demander."
+      }
+    },
+    "serviceTypesTitle": "Types de service",
+    "serviceTypesNote": "La gouvernance peut ajouter des types au fil du temps. Un fournisseur peut faire tourner plusieurs services ; chacun reçoit son propre ID de service.",
+    "noStakeTitle": "Sans stake, sans permission",
+    "noStakeBody": "Le registre lui-même ne demande rien d'autre qu'une signature. Des spécifications de service individuelles peuvent exiger un stake — un fournisseur de renseignement sur les risques dont les données font bouger des litiges a plus à répondre qu'un hôte de snapshots — mais cela est fixé par le service, pas par le registre auprès duquel vous vous enregistrez.",
+    "seeRegistered": "Voir qui est déjà enregistré"
   }
 }

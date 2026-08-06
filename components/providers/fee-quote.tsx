@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { shortMint } from "@/lib/earnings";
@@ -8,7 +9,6 @@ import { formatNumber } from "@/lib/format";
 import {
   amountText,
   fetchFeeQuote,
-  UNSETTLEABLE_NOTE,
   type FeeQuote,
 } from "@/lib/live-fee-quote";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
@@ -53,6 +53,7 @@ export function ProviderFeeQuote({
   /** The mint the service declared its price in, or `null` when it declared none. */
   declaredMint: string | null;
 }) {
+  const t = useTranslations("providers");
   const reference = useReferenceData();
   const [mint, setMint] = useState<string>(DEVNET_OPEN_MINT);
   const [quote, setQuote] = useState<FeeQuote | null>(null);
@@ -93,7 +94,7 @@ export function ProviderFeeQuote({
   ].filter((address) => address !== declaredMint);
 
   return (
-    <Panel title="What this fee costs in another token">
+    <Panel title={t("feeTitle")}>
       <div className="px-4 py-4">
         <div className="flex flex-wrap items-center gap-2">
           {options.map((address) => (
@@ -111,34 +112,35 @@ export function ProviderFeeQuote({
             </button>
           ))}
           {reference.status === "loading" && (
-            <span className="text-xs text-gray-600">Loading the node&apos;s token list…</span>
+            <span className="text-xs text-gray-600">{t("loadingTokenList")}</span>
           )}
           {reference.status === "error" && (
             /* Not an empty picker: an empty list of tokens would read as
                "the network has none", which is a claim made out of a failed
                request. See `lib/reference.ts`. */
             <span className="text-xs text-amber-300">
-              Could not load the node&apos;s token list, so only {PROTOCOL_TOKEN_NAME} is offered
-              here.{" "}
-              <button type="button" onClick={reference.retry} className="underline">
-                Retry
-              </button>
+              {t.rich("tokenListError", {
+                token: PROTOCOL_TOKEN_NAME,
+                retry: (chunks) => (
+                  <button type="button" onClick={reference.retry} className="underline">
+                    {chunks}
+                  </button>
+                ),
+              })}
             </span>
           )}
         </div>
 
         <div className="mt-4 text-sm">
           {loading ? (
-            <p className="text-gray-500">Asking the node…</p>
+            <p className="text-gray-500">{t("askingNode")}</p>
           ) : failed ? (
             <p className="text-amber-300">
-              Your access node did not answer. That is not a price of zero and not an unpayable
-              fee — it is a question that was never asked.
+              {t("feeFailed")}
             </p>
           ) : unknownService ? (
             <p className="text-gray-400">
-              This node has no service under that id, so it has no fee to quote. Another node may
-              know it.
+              {t("feeUnknownService")}
             </p>
           ) : quote ? (
             <QuoteBody quote={quote} symbol={optionLabel(mint, reference)} />
@@ -146,10 +148,7 @@ export function ProviderFeeQuote({
         </div>
 
         <p className="mt-4 border-t border-white/5 pt-3 text-xs leading-relaxed text-gray-500">
-          A display read, not a commitment. Two nodes can legitimately answer differently, because
-          each resolves against the oracle records it happens to hold — and past the instant a
-          quote expires there is no quote at all, only whatever the rate did next. The number
-          anybody would be bound to is the one they sign.
+          {t("feeFooter")}
         </p>
       </div>
     </Panel>
@@ -174,12 +173,11 @@ function optionLabel(address: string, reference: ReferenceState): string {
 }
 
 function QuoteBody({ quote, symbol }: { quote: FeeQuote; symbol: string }) {
+  const t = useTranslations("providers");
   if (quote.status === "free") {
     return (
       <p className="text-gray-300">
-        This service declared no price, so there is nothing to convert and nothing to owe. An
-        absent price already means free — there is no separate &quot;free&quot; setting to look
-        for.
+        {t("quoteFree")}
       </p>
     );
   }
@@ -191,8 +189,7 @@ function QuoteBody({ quote, symbol }: { quote: FeeQuote; symbol: string }) {
           {amountText(quote.fee)} {symbol}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          It already bills in this token, so no rate is involved — which means no lapsed oracle
-          feed can ever make this fee unpayable.
+          {t("quoteNative")}
         </p>
       </>
     );
@@ -205,10 +202,12 @@ function QuoteBody({ quote, symbol }: { quote: FeeQuote; symbol: string }) {
           {amountText(quote.settlementAmount)} {symbol}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          Converted from the declared {amountText(quote.fee)} at {formatNumber(quote.rate, 6)}{" "}
-          {symbol} per unit, good until {new Date(quote.expiresAt).toLocaleString()}. Rounded up,
-          deliberately: a fee settled in a substitute token is never worth less than the one that
-          was declared, so the payer pays under a base unit more.
+          {t("quoteSettleable", {
+            fee: amountText(quote.fee),
+            rate: formatNumber(quote.rate, 6),
+            symbol,
+            until: new Date(quote.expiresAt).toLocaleString(),
+          })}
         </p>
       </>
     );
@@ -218,10 +217,9 @@ function QuoteBody({ quote, symbol }: { quote: FeeQuote; symbol: string }) {
     <>
       {/* No figure anywhere on this branch. There is nothing to accidentally
           read as zero, which is the point. */}
-      <p className="text-amber-300">Not settleable in {symbol} right now.</p>
+      <p className="text-amber-300">{t("notSettleable", { symbol })}</p>
       <p className="mt-1 text-xs leading-relaxed text-gray-500">
-        {UNSETTLEABLE_NOTE[quote.reason]} The fee itself is unchanged and remains payable in the
-        token the provider declared.
+        {t(`unsettleable.${quote.reason}`)}{t("unsettleableTrail")}
       </p>
     </>
   );

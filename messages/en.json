@@ -2002,5 +2002,206 @@
     "wouldHandJoiner": "The one this node would hand a joiner",
     "noLocation": "No location",
     "snapshotRootNote": "A snapshot carries a 32-byte state root, and this page deliberately does not show it. Rendering a digest here would read as verification, and nothing a browser does verifies anything about it: the signature and registration checks a node performs establish that the bytes are what the announcer said, not that the announcer told the truth — which is why a node's <em>first</em> snapshot has to come from a pinned anchor rather than from whoever answered. The producer is shown instead, because that is the part you can look up in the <sr>service registry</sr>."
+  },
+  "providers": {
+    "metaTitle": "Service Providers",
+    "metaDescription": "The OpenFiat Service Registry (OFS-1500) — permissionless discovery for notification, oracle, risk-intelligence, snapshot, gateway, and API providers.",
+    "heroTitle": "Service Providers",
+    "heroDescription": "The Service Registry (OFS-1500) is permissionless: anyone can register a service — endpoints, protocol versions, capabilities, pricing — signed by their wallet, and get discovered by nodes and merchants across the network.",
+    "registerCta": "Register a service →",
+    "filterAll": "All",
+    "providerType": {
+      "Notification Provider": "Notifications",
+      "Oracle Provider": "Price Oracles",
+      "Risk Intelligence Provider": "Risk Intelligence",
+      "Snapshot Provider": "Snapshots",
+      "Merchant Gateway": "Merchant Gateways",
+      "Public API Node": "API Nodes"
+    },
+    "readError": "Could not read the registry from {label}.",
+    "metricRegistered": "Registered services",
+    "metricNotifications": "Notifications",
+    "metricOracles": "Oracles",
+    "metricRiskIntel": "Risk intel",
+    "metricSnapshots": "Snapshots",
+    "metricPublicApi": "Public API",
+    "readingRegistry": "Reading the registry…",
+    "liveFromNode": "Live from your access node",
+    "colProvider": "Provider",
+    "colType": "Type",
+    "colRegion": "Region (declared)",
+    "colCapabilities": "Capabilities",
+    "colPricing": "Pricing",
+    "colLastHeard": "Last heard from",
+    "colStatus": "Status",
+    "moreCaps": "+{n} more",
+    "noneOfType": "No providers of this type registered yet.",
+    "dirFooter": "Names, logos and regions come from each provider's own signed registration. The signature proves the record reached you unaltered; it proves nothing about the name — anyone can register a service under any name, and the registry deliberately does not hand out exclusive ones. The Service ID under each row is the part that identifies it. Logos are fetched from your access node by content hash, so nobody learns you looked.",
+    "health": {
+      "Online": "Online",
+      "Offline": "Offline",
+      "Degraded": "Degraded",
+      "Maintenance": "Maintenance"
+    },
+    "notInRegistry": "<m>{id}</m> is not in the registry{hasNode, select, yes { that {node} reports} other {}}.",
+    "notInRegistryNote": "A node answers from the registry it has replicated, so a different access node may know it. Services also expire when their provider stops sending health updates.",
+    "allServices": "← All services",
+    "brandingTitle": "How this provider presents itself",
+    "brandingFooter": "All four of these are declared by the provider in its own signed registration. The signature proves the record reached you unaltered and proves nothing else: nobody checks that the name is theirs to use, and the registry deliberately does not hand out exclusive names. Judge this entry by the Service ID and provider key below.",
+    "brandingLogoNote": "The logo is fetched from your access node by content hash (<cid>{value}</cid>), never from the provider's own server — so viewing this page tells them nothing.",
+    "regTitle": "Registration",
+    "rowServiceId": "Service ID",
+    "rowType": "Type",
+    "rowRegion": "Region",
+    "regionDeclared": "{region} (declared, unverified)",
+    "regionNotDeclared": "Not declared",
+    "rowPricing": "Pricing",
+    "freeWord": "Free",
+    "rowPayoutWallet": "Payout wallet",
+    "payoutNone": "None declared — this service is not charging",
+    "reachTitle": "Reachability",
+    "noEndpoint": "No endpoint declared. Providers reached over gossip rather than directly do not need one.",
+    "claimsTitle": "What this service claims it can do",
+    "noneDeclared": "None declared.",
+    "claimChain": "Chain",
+    "chainClaim": {
+      "RpcConnected": "Claims RPC-connected",
+      "GossipOnly": "Claims gossip-only",
+      "none": "No chain mode declared"
+    },
+    "gossipLag": "On-chain answers reach it second-hand over gossip, so they can lag.",
+    "claimContent": "Content",
+    "servesContentYes": "Claims to hold and serve protocol content — it can hand over an attachment or an avatar itself.",
+    "servesContentNo": "Does not claim to serve content, so attachments have to come from somewhere else.",
+    "claimRetention": "Retention",
+    "retentionClaim": "Claims to keep content {window} — that is how far back it can answer for evidence.",
+    "retentionNone": "No retention window declared.",
+    "claimSnapshots": "Snapshots",
+    "snapshotsClaim": "Claims to produce snapshots other nodes can fetch.",
+    "claimAlsoDeclared": "Also declared",
+    "alsoDeclaredNote": "Capabilities this build of the app has no reading for. Shown as the node wrote them rather than dropped.",
+    "speaksOfs": "Speaks OFS {list}",
+    "ofsNone": "— none declared",
+    "detailClaimsFooter": "All of the above is a claim. A registration is signed by the provider's own key and says what its operator configured; nothing on this page verifies it. A chain claim is cheap to check — a node that is not reading Solana cannot answer <code>getChainStatus</code> with a slot — and <link>Nodes & peers</link> asks every node it lists and shows the answer beside the claim.",
+    "identityHealthTitle": "Identity and health",
+    "rowProvider": "Provider",
+    "rowRegistered": "Registered",
+    "rowLastHealth": "Last health update",
+    "healthFooter": "The registry records a health state and when it was last refreshed, not an uptime percentage — so this page shows when the provider was last heard from rather than a figure the protocol does not measure.",
+    "idMetaTitle": "Service",
+    "idMetaDescription": "One entry in the OpenFiat Service Registry (OFS-1500), read live from your access node.",
+    "idHeroDescription": "A Service Registry entry (OFS-1500), read live from your access node. Every field below is one the registry actually carries.",
+    "feeTitle": "What this fee costs in another token",
+    "loadingTokenList": "Loading the node's token list…",
+    "tokenListError": "Could not load the node's token list, so only {token} is offered here. <retry>Retry</retry>",
+    "askingNode": "Asking the node…",
+    "feeFailed": "Your access node did not answer. That is not a price of zero and not an unpayable fee — it is a question that was never asked.",
+    "feeUnknownService": "This node has no service under that id, so it has no fee to quote. Another node may know it.",
+    "feeFooter": "A display read, not a commitment. Two nodes can legitimately answer differently, because each resolves against the oracle records it happens to hold — and past the instant a quote expires there is no quote at all, only whatever the rate did next. The number anybody would be bound to is the one they sign.",
+    "quoteFree": "This service declared no price, so there is nothing to convert and nothing to owe. An absent price already means free — there is no separate \"free\" setting to look for.",
+    "quoteNative": "It already bills in this token, so no rate is involved — which means no lapsed oracle feed can ever make this fee unpayable.",
+    "quoteSettleable": "Converted from the declared {fee} at {rate} {symbol} per unit, good until {until}. Rounded up, deliberately: a fee settled in a substitute token is never worth less than the one that was declared, so the payer pays under a base unit more.",
+    "notSettleable": "Not settleable in {symbol} right now.",
+    "unsettleable": {
+      "StaleOracleData": "Providers do publish this pair, but every rate for it has expired — so there is no current rate to convert at. The feed usually comes back; the fee is unchanged either way.",
+      "NoOracleData": "No oracle prices this pair at all, so there is nothing to convert at. Waiting will not help — the fee is payable in the token the provider declared.",
+      "UnknownSettlementToken": "Your access node cannot say how many base units one of that token is, so it refuses to convert rather than guess an exponent.",
+      "RateOutOfRange": "The rate read was not usable — not a finite positive number. A fee that converts to nothing is not the fee the provider declared."
+    },
+    "unsettleableTrail": " The fee itself is unchanged and remains payable in the token the provider declared.",
+    "regMetaTitle": "Register a service",
+    "regMetaDescription": "Register as an OpenFiat service provider — notification gateway, price oracle, snapshot provider, risk intelligence, merchant gateway or public API node. Permissionless: a signed registration event, no application and no approval.",
+    "regHeroTitle": "Register a service",
+    "regHeroDescription": "The Service Registry is permissionless. Registering is a signed event you publish to the network — there is no application, no reviewer, and nobody who can refuse you. What follows is what the protocol requires, and what happens after.",
+    "stepsTitle": "How it works, end to end",
+    "step": {
+      "runService": {
+        "title": "Run the service",
+        "body": "Stand up whatever you are offering — a Telegram gateway, an FX oracle, a snapshot host, a public API node. The registry advertises services that exist; it does not provision them."
+      },
+      "identity": {
+        "title": "Establish your identity",
+        "body": "Generate the node key pair and have a wallet ready to sign with. The peer ID falls out of the key pair; the public key is published alongside it."
+      },
+      "signEvent": {
+        "title": "Sign a registration event",
+        "body": "Assemble the fields below, sign them with your wallet, and publish. The event propagates over the gossip protocol — no registrar, no queue, no approval."
+      },
+      "healthUpdates": {
+        "title": "Publish health updates",
+        "body": "Providers periodically advertise Online, Maintenance, Degraded or Offline. Clients use it to route around you when you are down — and if you stop publishing entirely, your registration expires on its own and stops appearing in discovery."
+      },
+      "getSelected": {
+        "title": "Get selected",
+        "body": "Clients query their local registry and choose between providers on region, latency, capabilities and price. Being listed is not being used; you are competing with everyone else offering the same service."
+      }
+    },
+    "regEventTitle": "What a registration event contains",
+    "reg": {
+      "serviceId": {
+        "label": "Service ID",
+        "detail": "Globally unique, and permanent — changing endpoints or pricing never changes it (§8)."
+      },
+      "serviceType": {
+        "label": "Service type",
+        "detail": "One of the registry's types. A provider may run several services, each with its own ID."
+      },
+      "providerIdentity": {
+        "label": "Provider identity",
+        "detail": "The wallet, node identity, peer ID and public key above."
+      },
+      "networkEndpoints": {
+        "label": "Network endpoints",
+        "detail": "Where clients reach the service. Multiple endpoints are normal — one per region."
+      },
+      "supportedVersions": {
+        "label": "Supported protocol versions",
+        "detail": "So a client can tell whether it can talk to you before it tries."
+      },
+      "region": {
+        "label": "Geographic region",
+        "detail": "Which regions you serve, if you want to say. Self-declared and unverified — nothing in the protocol measures where a service is, and nothing ever will: geolocating an endpoint would answer where your socket terminates, which is a different question from who you serve. Clients see it labelled as declared."
+      },
+      "capabilities": {
+        "label": "Capabilities",
+        "detail": "What the service actually does — currency pairs for an oracle, channels for a gateway, retention for snapshots."
+      },
+      "branding": {
+        "label": "Branding",
+        "detail": "A name, a sentence, a logo and a website, all optional. The logo is an IPFS CID rather than a URL, so viewers fetch it from their own access node and nobody learns who looked at your listing. Names are not exclusive: the registry will not stop someone else registering yours, so your Service ID is what identifies you."
+      },
+      "pricing": {
+        "label": "Pricing",
+        "detail": "If you charge. Optional, and advertised as metadata rather than enforced by the registry."
+      },
+      "timestampSignature": {
+        "label": "Timestamp and signature",
+        "detail": "The event is signed and gossiped to the network. There is nothing to submit to anyone."
+      }
+    },
+    "identityTitle": "Identity you need first",
+    "identity": {
+      "wallet": {
+        "label": "Wallet address",
+        "detail": "Signs the registration and every later update. Whoever holds this key controls the service entry."
+      },
+      "nodeIdentity": {
+        "label": "Node identity",
+        "detail": "The name your node publishes itself under, stable across restarts."
+      },
+      "peerId": {
+        "label": "Peer ID",
+        "detail": "Derived from your node's key pair. This is what a client dials, and what proves it reached you rather than someone advertising your hostname."
+      },
+      "publicKey": {
+        "label": "Public key",
+        "detail": "Published so anyone can verify your signatures without asking you for it."
+      }
+    },
+    "serviceTypesTitle": "Service types",
+    "serviceTypesNote": "Governance may add types over time. A provider may run several services; each gets its own Service ID.",
+    "noStakeTitle": "No stake, no permission",
+    "noStakeBody": "The registry itself asks for nothing but a signature. Individual service specifications may require a stake — a risk intelligence provider whose data moves disputes has more to answer for than a snapshot host — but that is set by the service, not by the registry you are registering with.",
+    "seeRegistered": "See who is already registered"
   }
 }
