@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeDirection } from "@/lib/types";
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
@@ -73,9 +74,9 @@ const ALL_ASSETS = null;
 
 type SortKey = "price" | "limits";
 
-const SORT_LABELS: Record<SortKey, string> = {
-  price: "Best price",
-  limits: "Highest limits",
+const SORT_KEYS: Record<SortKey, "sortBestPrice" | "sortHighestLimits"> = {
+  price: "sortBestPrice",
+  limits: "sortHighestLimits",
 };
 
 const selectCls =
@@ -99,6 +100,7 @@ export function P2PExchange({
   rememberPreference?: boolean;
   savePreference?: string;
 }) {
+  const t = useTranslations("exchange");
   const [tab, setTab] = useState<TradeDirection>("Buy");
   /*
    * `null` is "all assets", and it is the default.
@@ -270,6 +272,7 @@ export function P2PExchange({
   const assetName = asset === ALL_ASSETS
     ? null
     : ((named ?? []).find((entry) => entry.symbol === asset)?.label ?? asset);
+  const cryptoWord = t("cryptoFallback");
 
   return (
     <div>
@@ -277,8 +280,12 @@ export function P2PExchange({
         <PageHero
           compact
           variant={tab === "Sell" ? "flow-rev" : "flow"}
-          title={`${tab} ${assetName ?? "crypto"} with ${fiat} via P2P`}
-          description="Trade stablecoins peer-to-peer. Escrow is locked on Solana before you pay; OpenFiat never holds your fiat."
+          title={t("heroTitle", {
+            buying: String(tab === "Buy"),
+            asset: assetName ?? cryptoWord,
+            fiat,
+          })}
+          description={t("heroDescription")}
         />
       )}
 
@@ -297,7 +304,7 @@ export function P2PExchange({
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              {d}
+              {t(d === "Buy" ? "buy" : "sell")}
             </button>
           ))}
         </div>
@@ -305,7 +312,7 @@ export function P2PExchange({
             this the row pushed the whole page into a horizontal scroll —
             on the landing page, at the width most visitors arrive at. */}
         <div className="flex flex-wrap gap-1">
-          <AssetPill label="All assets" selected={asset === ALL_ASSETS} onSelect={() => setAsset(ALL_ASSETS)} />
+          <AssetPill label={t("allAssets")} selected={asset === ALL_ASSETS} onSelect={() => setAsset(ALL_ASSETS)} />
           {/* Nothing while the node is being asked. A pill row assembled from
               a guess and then rearranged under the pointer is worse than one
               that arrives a moment late. */}
@@ -327,7 +334,7 @@ export function P2PExchange({
           <Link
             href="/open"
             className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-            title="OPEN is in presale — it has no peer-to-peer market until mainnet"
+            title={t("openTitle")}
           >
             <AssetIcon asset="OPEN" size={16} />
             OPEN
@@ -351,23 +358,17 @@ export function P2PExchange({
           never the ability to see what a row is denominated in.
         */}
         {named === null && (
-          <p className="basis-full text-xs text-gray-500">
-            Could not ask this node which assets it names, so the book below is unfiltered. This says
-            nothing about which assets are traded — only that we could not ask.
-          </p>
+          <p className="basis-full text-xs text-gray-500">{t("namedNull")}</p>
         )}
         {named?.length === 0 && (
-          <p className="basis-full text-xs text-gray-500">
-            This node names no assets, so there is nothing to filter the book by. Advertisements are
-            still shown, each against the mint address it carries.
-          </p>
+          <p className="basis-full text-xs text-gray-500">{t("namedEmpty")}</p>
         )}
         <p className="ml-auto text-xs text-gray-500">
-          Buying crypto with fiat?{" "}
-          <Link href="/guide/buy" className="text-brand hover:text-brand-hover">How to buy →</Link>
+          {t("buyingPrompt")}{" "}
+          <Link href="/guide/buy" className="text-brand hover:text-brand-hover">{t("howToBuy")}</Link>
           <span className="mx-2 text-gray-700">·</span>
-          Cashing out to fiat?{" "}
-          <Link href="/guide/sell" className="text-brand hover:text-brand-hover">How to sell →</Link>
+          {t("sellingPrompt")}{" "}
+          <Link href="/guide/sell" className="text-brand hover:text-brand-hover">{t("howToSell")}</Link>
         </p>
       </div>
 
@@ -379,8 +380,8 @@ export function P2PExchange({
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-            placeholder="Amount"
-            aria-label={`Amount in ${fiat}`}
+            placeholder={t("amountPlaceholder")}
+            aria-label={t("amountAria", { fiat })}
             className="w-32 bg-transparent py-2 text-sm tabular-nums text-white outline-none placeholder:text-gray-600"
           />
           <span className="text-xs text-gray-500">{fiat}</span>
@@ -388,46 +389,46 @@ export function P2PExchange({
         <CurrencyCombobox value={fiat} onChange={chooseFiat} priorityCodes={LIQUID_CURRENCIES} />
         {methodOptions.length > 0 && (
           <select value={method} onChange={(e) => setMethod(e.target.value)} className={selectCls}>
-            <option value="">All payment methods</option>
+            <option value="">{t("allPaymentMethods")}</option>
             {methodOptions.map((m) => (
               <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>
         )}
         <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls}>
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-            <option key={k} value={k}>Sort: {SORT_LABELS[k]}</option>
+          {(Object.keys(SORT_KEYS) as SortKey[]).map((k) => (
+            <option key={k} value={k}>{t("sortPrefix", { label: t(SORT_KEYS[k]) })}</option>
           ))}
         </select>
         <span className="text-xs text-gray-600">
-          {ads !== null && `${rows.length} advertiser${rows.length === 1 ? "" : "s"}`}
+          {ads !== null && t("advertiserCount", { count: rows.length })}
         </span>
       </div>
 
       <div className="mt-6">
         {error ? (
           <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-            <p className="text-sm font-medium text-red-300">Could not read the advertisement book from the node</p>
+            <p className="text-sm font-medium text-red-300">{t("bookError")}</p>
             <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
             <button
               onClick={() => void load()}
               className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
             >
-              Retry
+              {t("retry")}
             </button>
           </div>
         ) : ads === null ? (
-          <p className="p-6 text-sm text-gray-500">Reading the advertisement book…</p>
+          <p className="p-6 text-sm text-gray-500">{t("reading")}</p>
         ) : (
           <DataTable
             minWidth={860}
             head={
               <tr>
-                <Th>Advertiser</Th>
-                <Th right>Price</Th>
-                <Th right>Available / Limits</Th>
-                <Th>Payment methods</Th>
-                <Th right>Trade</Th>
+                <Th>{t("colAdvertiser")}</Th>
+                <Th right>{t("colPrice")}</Th>
+                <Th right>{t("colLimits")}</Th>
+                <Th>{t("colPaymentMethods")}</Th>
+                <Th right>{t("colTrade")}</Th>
               </tr>
             }
           >
@@ -445,28 +446,27 @@ export function P2PExchange({
                 <td colSpan={5} className="px-4 py-12">
                   <div className="mx-auto max-w-xl text-center">
                     <p className="text-sm text-gray-300">
-                      Nobody is advertising {asset ? `${asset}/${fiat}` : `anything in ${fiat}`} yet.
+                      {t("emptyPair", { hasAsset: String(asset !== ALL_ASSETS), asset: asset ?? "", fiat })}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                      This market is empty rather than closed. The first merchant in a corridor sets the price and takes
-                      every order in it — if you can settle {fiat}, that could be you.
+                      {t("emptyBody", { fiat })}
                     </p>
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                       <Link
                         href="/become-a-merchant"
                         className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
                       >
-                        Become a merchant
+                        {t("becomeMerchant")}
                       </Link>
                       <Link
                         href="/ads/new"
                         className="rounded-md border border-white/15 px-4 py-2.5 text-sm text-gray-200 hover:border-white/30"
                       >
-                        Post the first advertisement
+                        {t("postFirstAd")}
                       </Link>
                     </div>
                     <p className="mt-4 text-xs text-gray-600">
-                      Or trade a different pair — try another asset or currency above.
+                      {t("tryDifferentPair")}
                     </p>
                   </div>
                 </td>
@@ -480,7 +480,7 @@ export function P2PExchange({
           depend on the token — so with no asset selected it says "crypto"
           rather than naming one the reader did not pick. */}
       {showExplainer && (
-        <HomeExplainer asset={assetName ?? "crypto"} fiat={fiat} buying={tab === "Buy"} />
+        <HomeExplainer asset={assetName ?? cryptoWord} fiat={fiat} buying={tab === "Buy"} />
       )}
     </div>
   );
@@ -535,6 +535,7 @@ function AdRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("exchange");
   const buy = userDirection === "Buy";
 
   return (
@@ -547,8 +548,8 @@ function AdRow({
             adds no information the row did not already state, but it makes
             the same counterparty recognisable across the book. */}
         <span className="flex items-center gap-2.5" title={ad.merchantPeerId}>
-          <WalletAvatar seed={ad.merchantPeerId} label={`Merchant …${ad.merchantShort}`} size={32} />
-          <span className="font-mono text-sm text-gray-300">Merchant …{ad.merchantShort}</span>
+          <WalletAvatar seed={ad.merchantPeerId} label={t("merchantLabel", { short: ad.merchantShort })} size={32} />
+          <span className="font-mono text-sm text-gray-300">{t("merchantLabel", { short: ad.merchantShort })}</span>
         </span>
       </Td>
       <Td right num py="py-6">
@@ -557,8 +558,11 @@ function AdRow({
         </p>
         <p className="mt-1 text-[11px] text-gray-600">
           {ad.pricingKind === "Floating"
-            ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}%`
-            : "Fixed"}
+            ? t("floating", {
+                sign: (ad.premiumBps ?? 0) >= 0 ? "+" : "",
+                pct: ((ad.premiumBps ?? 0) / 100).toFixed(2),
+              })
+            : t("fixed")}
         </p>
       </Td>
       <Td right num py="py-6">
@@ -590,7 +594,7 @@ function AdRow({
             buy ? "bg-emerald-600 hover:bg-emerald-500" : "bg-orange-600 hover:bg-orange-500"
           }`}
         >
-          {open ? "Hide" : `${userDirection} ${assetLabel(ad)}`}
+          {open ? t("hide") : t("tradeAction", { direction: t(buy ? "buy" : "sell"), asset: assetLabel(ad) })}
         </button>
       </Td>
     </Tr>
