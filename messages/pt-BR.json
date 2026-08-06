@@ -768,5 +768,32 @@
     "okReverse": "Sua declaração foi retirada e a negociação está aguardando pagamento de novo. O comerciante já pode cancelá-la, então envie o dinheiro e declare de novo, ou cancele você mesmo.",
     "okReject": "Registrado. O comprador ainda pode abrir uma disputa se acreditar que pagou — recusar transfere o custo de escalar para quem estiver errado, não decide quem é.",
     "okDispute": "A disputa {id} está aberta. Os árbitros entram nela a partir da mesa de arbitragem."
+  },
+  "tradeChannel": {
+    "intro": "Detalhes de pagamento e mensagens são criptografados neste navegador e selados para cada leitor. Um nó guarda o fato de que uma entrada existe, quem a escreveu e quando — nunca seu conteúdo.",
+    "reading": "Lendo…",
+    "readChannel": "Ler o canal desta negociação",
+    "readers": "Leitores",
+    "nobodyYet": "Ninguém ainda",
+    "granted": "{count} concedidos",
+    "entriesLabel": "Entradas",
+    "notPublished": "Você não publicou uma chave de criptografia, então ainda ninguém pode selar detalhes de pagamento ou mensagens para você. Publicar uma pede que sua carteira assine a mesma mensagem duas vezes — a segunda assinatura é a verificação de que sua carteira assina de forma determinística, sem a qual uma chave derivada hoje não poderia ser derivada de novo.",
+    "keyMismatch": "Sua carteira agora deriva uma chave de criptografia diferente da publicada na rede. Publicar a nova permite que as pessoas te alcancem novamente e não recuperará nada selado sob a chave antiga — essas concessões já estão replicadas e não podem ser reendereçadas.",
+    "publishKeyBtn": "Publicar minha chave de criptografia",
+    "publishNewKeyBtn": "Publicar minha nova chave de criptografia",
+    "counterpartyNotEnrolled": "A outra parte ainda não publicou uma chave de criptografia, então não há a que selar um canal. Ela publica uma na primeira vez que abre esta negociação. Nada está errado do seu lado e nada aqui vai mudar até que ela o faça.",
+    "startChannel": "Iniciar o canal",
+    "grantsUnreadable": "Este canal tem leitores, e nenhuma das concessões nele está endereçada à sua chave de criptografia atual. As entradas abaixo existem e não estão vazias; aqui são ilegíveis. Isso acontece quando o canal foi iniciado antes de você publicar esta chave.",
+    "nothingWritten": "Nada foi escrito neste canal ainda.",
+    "messagePlaceholder": "Envie uma mensagem à outra parte",
+    "sendMessage": "Enviar mensagem",
+    "sendPaymentDetails": "Enviar meus detalhes de pagamento",
+    "entryPaymentDetails": "detalhes de pagamento",
+    "entryMessage": "mensagem",
+    "sealed": "Selado. Este navegador não tem nenhuma chave que o abra — o que não é o mesmo que estar vazio.",
+    "reference": "Referência",
+    "connectPrompt": "Conecte uma carteira — um canal só responde às próprias partes da liquidação.",
+    "keyPublished": "Sua chave de criptografia está publicada. Qualquer pessoa com quem você negocie pode agora selar detalhes de pagamento e mensagens para ela, e você pode abri-los em qualquer dispositivo onde esta carteira esteja.",
+    "channelStarted": "Chave do canal gerada e concedida a ambas as partes."
   }
 }

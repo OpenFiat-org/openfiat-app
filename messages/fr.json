@@ -768,5 +768,32 @@
     "okReverse": "Votre déclaration est retirée et l'échange est de nouveau en attente de paiement. Le commerçant peut maintenant l'annuler, alors envoyez l'argent et déclarez à nouveau, ou annulez vous-même.",
     "okReject": "Enregistré. L'acheteur peut encore ouvrir un litige s'il pense avoir payé — refuser fait porter le coût de l'escalade à celui qui a tort, cela ne décide pas qui c'est.",
     "okDispute": "Le litige {id} est ouvert. Les arbitres le rejoignent depuis le bureau d'arbitrage."
+  },
+  "tradeChannel": {
+    "intro": "Les détails de paiement et les messages sont chiffrés dans ce navigateur et scellés pour chaque lecteur. Un nœud conserve le fait qu'une entrée existe, qui l'a écrite et quand — jamais son contenu.",
+    "reading": "Lecture…",
+    "readChannel": "Lire le canal de cet échange",
+    "readers": "Lecteurs",
+    "nobodyYet": "Personne encore",
+    "granted": "{count} accordés",
+    "entriesLabel": "Entrées",
+    "notPublished": "Vous n'avez pas publié de clé de chiffrement, donc personne ne peut encore vous sceller de détails de paiement ni de messages. En publier une demande à votre portefeuille de signer deux fois le même message — la seconde signature est la vérification que votre portefeuille signe de façon déterministe, sans laquelle une clé dérivée aujourd'hui ne pourrait pas être redérivée.",
+    "keyMismatch": "Votre portefeuille dérive maintenant une clé de chiffrement différente de celle publiée sur le réseau. Publier la nouvelle permet aux gens de vous joindre à nouveau et ne récupérera rien de scellé sous l'ancienne clé — ces octrois sont déjà répliqués et ne peuvent pas être réadressés.",
+    "publishKeyBtn": "Publier ma clé de chiffrement",
+    "publishNewKeyBtn": "Publier ma nouvelle clé de chiffrement",
+    "counterpartyNotEnrolled": "L'autre partie n'a pas encore publié de clé de chiffrement, il n'y a donc rien à quoi sceller un canal. Elle en publie une la première fois qu'elle ouvre cet échange. Rien ne va mal de votre côté et rien ici ne changera tant qu'elle ne l'a pas fait.",
+    "startChannel": "Démarrer le canal",
+    "grantsUnreadable": "Ce canal a des lecteurs, et aucun des octrois qui s'y trouvent n'est adressé à votre clé de chiffrement actuelle. Les entrées ci-dessous existent et ne sont pas vides ; elles sont illisibles ici. Cela arrive quand le canal a été démarré avant que vous ne publiiez cette clé.",
+    "nothingWritten": "Rien n'a encore été écrit dans ce canal.",
+    "messagePlaceholder": "Écrire à l'autre partie",
+    "sendMessage": "Envoyer le message",
+    "sendPaymentDetails": "Envoyer mes détails de paiement",
+    "entryPaymentDetails": "détails de paiement",
+    "entryMessage": "message",
+    "sealed": "Scellé. Ce navigateur ne détient aucune clé qui l'ouvre — ce n'est pas la même chose qu'il soit vide.",
+    "reference": "Référence",
+    "connectPrompt": "Connectez un portefeuille — un canal ne répond qu'aux propres parties du règlement.",
+    "keyPublished": "Votre clé de chiffrement est publiée. Toute personne avec qui vous échangez peut maintenant y sceller des détails de paiement et des messages, et vous pouvez les ouvrir sur tout appareil où se trouve ce portefeuille.",
+    "channelStarted": "Clé du canal générée et accordée aux deux parties."
   }
 }

@@ -768,5 +768,32 @@
     "okReverse": "Your declaration is withdrawn and the trade is awaiting payment again. The merchant can now cancel it, so send the money and declare again, or cancel yourself.",
     "okReject": "Recorded. The buyer can still open a dispute if they believe they paid — rejecting moves the cost of escalating onto whoever is wrong, it does not decide who that is.",
     "okDispute": "Dispute {id} is open. Arbitrators join it from the arbitration desk."
+  },
+  "tradeChannel": {
+    "intro": "Payment details and messages are encrypted in this browser and sealed to each reader. A node holds the fact that an entry exists, who wrote it and when — never its content.",
+    "reading": "Reading…",
+    "readChannel": "Read this trade's channel",
+    "readers": "Readers",
+    "nobodyYet": "Nobody yet",
+    "granted": "{count} granted",
+    "entriesLabel": "Entries",
+    "notPublished": "You have not published an encryption key, so nobody can seal payment details or messages to you yet. Publishing one asks your wallet to sign the same message twice — the second signature is the check that your wallet signs deterministically, without which a key derived today could not be derived again.",
+    "keyMismatch": "Your wallet now derives a different encryption key from the one published on the network. Publishing the new one lets people reach you again and will not recover anything sealed under the old key — those grants are already replicated and cannot be re-addressed.",
+    "publishKeyBtn": "Publish my encryption key",
+    "publishNewKeyBtn": "Publish my new encryption key",
+    "counterpartyNotEnrolled": "The other party has not published an encryption key yet, so there is nothing to seal a channel to. They publish one the first time they open this trade. Nothing is wrong on your side and nothing here will change until they do.",
+    "startChannel": "Start the channel",
+    "grantsUnreadable": "This channel has readers, and none of the grants on it are addressed to your current encryption key. The entries below exist and are not empty; they are unreadable here. That happens when the channel was started before you published this key.",
+    "nothingWritten": "Nothing has been written into this channel yet.",
+    "messagePlaceholder": "Message the other party",
+    "sendMessage": "Send message",
+    "sendPaymentDetails": "Send my payment details",
+    "entryPaymentDetails": "payment details",
+    "entryMessage": "message",
+    "sealed": "Sealed. This browser holds no key that opens it — that is not the same as it being empty.",
+    "reference": "Reference",
+    "connectPrompt": "Connect a wallet — a channel answers only to the settlement's own parties.",
+    "keyPublished": "Your encryption key is published. Anyone you trade with can now seal payment details and messages to it, and you can open them on any device this wallet is on.",
+    "channelStarted": "Channel key generated and granted to both parties."
   }
 }

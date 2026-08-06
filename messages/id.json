@@ -768,5 +768,32 @@
     "okReverse": "Pernyataan Anda ditarik dan transaksi menunggu pembayaran lagi. Pedagang kini dapat membatalkannya, jadi kirim uangnya dan nyatakan lagi, atau batalkan sendiri.",
     "okReject": "Tercatat. Pembeli tetap dapat membuka sengketa jika mereka yakin telah membayar — menolak memindahkan biaya eskalasi kepada siapa pun yang salah, ia tidak memutuskan siapa itu.",
     "okDispute": "Sengketa {id} terbuka. Arbiter bergabung dari meja arbitrase."
+  },
+  "tradeChannel": {
+    "intro": "Detail pembayaran dan pesan dienkripsi di peramban ini dan disegel untuk setiap pembaca. Node menyimpan fakta bahwa suatu entri ada, siapa yang menulisnya dan kapan — tidak pernah isinya.",
+    "reading": "Membaca…",
+    "readChannel": "Baca kanal transaksi ini",
+    "readers": "Pembaca",
+    "nobodyYet": "Belum ada",
+    "granted": "{count} diberikan",
+    "entriesLabel": "Entri",
+    "notPublished": "Anda belum memublikasikan kunci enkripsi, sehingga belum ada yang bisa menyegel detail pembayaran atau pesan kepada Anda. Memublikasikannya meminta dompet Anda menandatangani pesan yang sama dua kali — tanda tangan kedua adalah pemeriksaan bahwa dompet Anda menandatangani secara deterministik, yang tanpanya kunci yang diturunkan hari ini tidak dapat diturunkan lagi.",
+    "keyMismatch": "Dompet Anda kini menurunkan kunci enkripsi yang berbeda dari yang dipublikasikan di jaringan. Memublikasikan yang baru memungkinkan orang menjangkau Anda lagi dan tidak akan memulihkan apa pun yang disegel di bawah kunci lama — pemberian itu sudah direplikasi dan tidak dapat dialamatkan ulang.",
+    "publishKeyBtn": "Publikasikan kunci enkripsi saya",
+    "publishNewKeyBtn": "Publikasikan kunci enkripsi baru saya",
+    "counterpartyNotEnrolled": "Pihak lain belum memublikasikan kunci enkripsi, jadi tidak ada tempat untuk menyegel kanal. Mereka memublikasikannya saat pertama kali membuka transaksi ini. Tidak ada yang salah di pihak Anda dan tidak ada yang berubah di sini sampai mereka melakukannya.",
+    "startChannel": "Mulai kanal",
+    "grantsUnreadable": "Kanal ini memiliki pembaca, dan tidak satu pun pemberian di dalamnya dialamatkan ke kunci enkripsi Anda saat ini. Entri di bawah ada dan tidak kosong; mereka tidak terbaca di sini. Itu terjadi ketika kanal dimulai sebelum Anda memublikasikan kunci ini.",
+    "nothingWritten": "Belum ada yang ditulis ke kanal ini.",
+    "messagePlaceholder": "Kirim pesan ke pihak lain",
+    "sendMessage": "Kirim pesan",
+    "sendPaymentDetails": "Kirim detail pembayaran saya",
+    "entryPaymentDetails": "detail pembayaran",
+    "entryMessage": "pesan",
+    "sealed": "Tersegel. Peramban ini tidak memegang kunci yang membukanya — itu tidak sama dengan kosong.",
+    "reference": "Referensi",
+    "connectPrompt": "Hubungkan dompet — kanal hanya menjawab pihak-pihak dari penyelesaian itu sendiri.",
+    "keyPublished": "Kunci enkripsi Anda dipublikasikan. Siapa pun yang bertransaksi dengan Anda kini dapat menyegel detail pembayaran dan pesan kepadanya, dan Anda dapat membukanya di perangkat mana pun tempat dompet ini berada.",
+    "channelStarted": "Kunci kanal dibuat dan diberikan kepada kedua pihak."
   }
 }

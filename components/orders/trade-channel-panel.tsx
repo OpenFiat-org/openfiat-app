@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { CopyButton } from "@/components/copy-button";
 import { PeerIdentity } from "@/components/peer-identity";
@@ -91,6 +92,7 @@ export function TradeChannelPanel({
   wallet: WalletConnection | null;
   myPeerId: string | null;
 }) {
+  const t = useTranslations("tradeChannel");
   const [channel, setChannel] = useState<WireTradeChannel | null>(null);
   const [key, setKey] = useState<ChannelKey | null>(null);
   const [identity, setIdentity] = useState<EnrolmentState | null>(null);
@@ -135,7 +137,7 @@ export function TradeChannelPanel({
   const read = useCallback(async () => {
     const provider = currentSigner(wallet);
     if (!wallet || !provider) {
-      setStatus("Connect a wallet — a channel answers only to the settlement's own parties.");
+      setStatus(t("connectPrompt"));
       return;
     }
     setBusy(true);
@@ -167,7 +169,7 @@ export function TradeChannelPanel({
     } finally {
       setBusy(false);
     }
-  }, [wallet, settlement.id, myPeerId, counterparty.publicKey]);
+  }, [wallet, settlement.id, myPeerId, counterparty.publicKey, t]);
 
   /** Publish this wallet's encryption key, so the other side can seal to it. */
   const publishKey = useCallback(async () => {
@@ -183,16 +185,14 @@ export function TradeChannelPanel({
         // which key is current. A first publication has nothing to replace.
         identity?.status === "mismatch" ? identity.publishedClaimId : null,
       );
-      setStatus(
-        "Your encryption key is published. Anyone you trade with can now seal payment details and messages to it, and you can open them on any device this wallet is on.",
-      );
+      setStatus(t("keyPublished"));
       await read();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [wallet, identity, read]);
+  }, [wallet, identity, read, t]);
 
   /**
    * Start the channel: one key, granted to the counterparty and to yourself.
@@ -228,14 +228,14 @@ export function TradeChannelPanel({
       );
       rememberChannelKey(settlement.id, fresh);
       setKey(fresh);
-      setStatus("Channel key generated and granted to both parties.");
+      setStatus(t("channelStarted"));
       await read();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [wallet, settlement.id, counterparty.peerId, theirKey, identity, read]);
+  }, [wallet, settlement.id, counterparty.peerId, theirKey, identity, read, t]);
 
   const post = useCallback(
     async (kind: "PaymentDetails" | "Message", plaintext: string) => {
@@ -276,8 +276,7 @@ export function TradeChannelPanel({
   return (
     <div className="px-4 py-4">
       <p className="text-xs leading-relaxed text-gray-500">
-        Payment details and messages are encrypted in this browser and sealed to each reader. A
-        node holds the fact that an entry exists, who wrote it and when — never its content.
+        {t("intro")}
       </p>
 
       {!channel && (
@@ -287,7 +286,7 @@ export function TradeChannelPanel({
           disabled={busy}
           className="mt-3 w-full rounded-md border border-white/10 py-2 text-sm text-gray-200 hover:border-white/20 disabled:opacity-50"
         >
-          {busy ? "Reading…" : "Read this trade's channel"}
+          {busy ? t("reading") : t("readChannel")}
         </button>
       )}
 
@@ -295,15 +294,15 @@ export function TradeChannelPanel({
         <>
           <dl className="mt-3 space-y-1 text-xs">
             <div className="flex justify-between gap-3 border-t border-white/5 pt-1.5">
-              <dt className="text-gray-500">Readers</dt>
+              <dt className="text-gray-500">{t("readers")}</dt>
               <dd className="text-right text-gray-200">
                 {channel.grants.length === 0
-                  ? "Nobody yet"
-                  : `${new Set(channel.grants.map((g) => g.recipient)).size} granted`}
+                  ? t("nobodyYet")
+                  : t("granted", { count: new Set(channel.grants.map((g) => g.recipient)).size })}
               </dd>
             </div>
             <div className="flex justify-between gap-3 border-t border-white/5 pt-1.5">
-              <dt className="text-gray-500">Entries</dt>
+              <dt className="text-gray-500">{t("entriesLabel")}</dt>
               <dd className="text-right text-gray-200">{channel.entries.length}</dd>
             </div>
           </dl>
@@ -314,19 +313,9 @@ export function TradeChannelPanel({
               className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
             >
               {identity.status === "not-published" ? (
-                <p>
-                  You have not published an encryption key, so nobody can seal payment details or
-                  messages to you yet. Publishing one asks your wallet to sign the same message
-                  twice — the second signature is the check that your wallet signs deterministically,
-                  without which a key derived today could not be derived again.
-                </p>
+                <p>{t("notPublished")}</p>
               ) : (
-                <p>
-                  Your wallet now derives a different encryption key from the one published on the
-                  network. Publishing the new one lets people reach you again and will not recover
-                  anything sealed under the old key — those grants are already replicated and cannot
-                  be re-addressed.
-                </p>
+                <p>{t("keyMismatch")}</p>
               )}
               <button
                 type="button"
@@ -335,8 +324,8 @@ export function TradeChannelPanel({
                 className="mt-2 w-full rounded-md border border-amber-400/40 py-2 text-xs font-semibold text-amber-100 hover:border-amber-300/60 disabled:opacity-50"
               >
                 {identity.status === "not-published"
-                  ? "Publish my encryption key"
-                  : "Publish my new encryption key"}
+                  ? t("publishKeyBtn")
+                  : t("publishNewKeyBtn")}
               </button>
             </div>
           )}
@@ -346,9 +335,7 @@ export function TradeChannelPanel({
               data-testid="counterparty-not-enrolled"
               className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
             >
-              The other party has not published an encryption key yet, so there is nothing to seal a
-              channel to. They publish one the first time they open this trade. Nothing is wrong on
-              your side and nothing here will change until they do.
+              {t("counterpartyNotEnrolled")}
             </p>
           )}
 
@@ -359,7 +346,7 @@ export function TradeChannelPanel({
               disabled={busy || !theirKey || identity?.status !== "ready"}
               className="mt-3 w-full rounded-md bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
             >
-              Start the channel
+              {t("startChannel")}
             </button>
           )}
 
@@ -368,9 +355,7 @@ export function TradeChannelPanel({
               data-testid="grants-unreadable"
               className="mt-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200"
             >
-              This channel has readers, and none of the grants on it are addressed to your current
-              encryption key. The entries below exist and are not empty; they are unreadable here.
-              That happens when the channel was started before you published this key.
+              {t("grantsUnreadable")}
             </p>
           )}
 
@@ -384,7 +369,7 @@ export function TradeChannelPanel({
             ))}
             {entries.length === 0 && (
               <li className="text-xs text-gray-500">
-                Nothing has been written into this channel yet.
+                {t("nothingWritten")}
               </li>
             )}
           </ul>
@@ -395,7 +380,7 @@ export function TradeChannelPanel({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={2}
-                placeholder="Message the other party"
+                placeholder={t("messagePlaceholder")}
                 className="w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
               />
               <div className="flex flex-wrap gap-2">
@@ -405,7 +390,7 @@ export function TradeChannelPanel({
                   disabled={busy || draft.trim() === ""}
                   className="flex-1 rounded-md border border-white/10 py-2 text-xs text-gray-200 hover:border-white/20 disabled:opacity-40"
                 >
-                  Send message
+                  {t("sendMessage")}
                 </button>
                 {iAmSeller && usable.length > 0 && (
                   <button
@@ -426,7 +411,7 @@ export function TradeChannelPanel({
                     disabled={busy}
                     className="flex-1 rounded-md border border-white/10 py-2 text-xs text-gray-200 hover:border-white/20 disabled:opacity-40"
                   >
-                    Send my payment details
+                    {t("sendPaymentDetails")}
                   </button>
                 )}
               </div>
@@ -441,17 +426,18 @@ export function TradeChannelPanel({
 }
 
 function ChannelEntryRow({ entry, isMine }: { entry: ReadEntry; isMine: boolean }) {
+  const t = useTranslations("tradeChannel");
   const details = entry.text ? decodePaymentDetails(entry.text) : null;
   return (
     <li className="rounded-md border border-white/10 p-3">
       <div className="flex flex-wrap items-baseline gap-2 text-xs">
         <PeerIdentity peer={entry.author} isYou={isMine} />
-        <span className="text-gray-500">{entry.kind === "PaymentDetails" ? "payment details" : "message"}</span>
+        <span className="text-gray-500">{entry.kind === "PaymentDetails" ? t("entryPaymentDetails") : t("entryMessage")}</span>
         <span className="ml-auto text-gray-600">{formatDateMs(entry.postedAt)}</span>
       </div>
       {entry.sealed ? (
         <p className="mt-2 text-xs text-gray-500">
-          Sealed. This browser holds no key that opens it — that is not the same as it being empty.
+          {t("sealed")}
         </p>
       ) : details ? (
         <dl className="mt-2 space-y-1">
@@ -466,7 +452,7 @@ function ChannelEntryRow({ entry, isMine }: { entry: ReadEntry; isMine: boolean 
           ))}
           {details.reference && (
             <div className="flex items-center justify-between gap-2 text-xs">
-              <dt className="text-gray-500">Reference</dt>
+              <dt className="text-gray-500">{t("reference")}</dt>
               <dd className="font-mono text-gray-200">{details.reference}</dd>
             </div>
           )}

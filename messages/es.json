@@ -768,5 +768,32 @@
     "okReverse": "Tu declaración está retirada y la operación vuelve a esperar pago. El comerciante ya puede cancelarla, así que envía el dinero y declara de nuevo, o cancela tú mismo.",
     "okReject": "Registrado. El comprador aún puede abrir una disputa si cree que pagó: rechazar traslada el coste de escalar a quien esté equivocado, no decide quién es.",
     "okDispute": "La disputa {id} está abierta. Los árbitros se unen a ella desde la mesa de arbitraje."
+  },
+  "tradeChannel": {
+    "intro": "Los datos de pago y los mensajes se cifran en este navegador y se sellan para cada lector. Un nodo guarda el hecho de que una entrada existe, quién la escribió y cuándo, nunca su contenido.",
+    "reading": "Leyendo…",
+    "readChannel": "Leer el canal de esta operación",
+    "readers": "Lectores",
+    "nobodyYet": "Nadie aún",
+    "granted": "{count} concedidos",
+    "entriesLabel": "Entradas",
+    "notPublished": "No has publicado una clave de cifrado, así que todavía nadie puede sellarte datos de pago ni mensajes. Publicar una pide a tu billetera firmar el mismo mensaje dos veces: la segunda firma es la comprobación de que tu billetera firma de forma determinista, sin la cual una clave derivada hoy no podría volver a derivarse.",
+    "keyMismatch": "Tu billetera ahora deriva una clave de cifrado distinta de la publicada en la red. Publicar la nueva permite que la gente vuelva a alcanzarte y no recuperará nada sellado bajo la clave antigua: esas concesiones ya están replicadas y no pueden redireccionarse.",
+    "publishKeyBtn": "Publicar mi clave de cifrado",
+    "publishNewKeyBtn": "Publicar mi nueva clave de cifrado",
+    "counterpartyNotEnrolled": "La otra parte aún no ha publicado una clave de cifrado, así que no hay a qué sellar un canal. La publican la primera vez que abren esta operación. No hay nada mal en tu lado y nada cambiará aquí hasta que lo hagan.",
+    "startChannel": "Iniciar el canal",
+    "grantsUnreadable": "Este canal tiene lectores, y ninguna de las concesiones que tiene está dirigida a tu clave de cifrado actual. Las entradas de abajo existen y no están vacías; aquí son ilegibles. Eso ocurre cuando el canal se inició antes de que publicaras esta clave.",
+    "nothingWritten": "Aún no se ha escrito nada en este canal.",
+    "messagePlaceholder": "Escribe a la otra parte",
+    "sendMessage": "Enviar mensaje",
+    "sendPaymentDetails": "Enviar mis datos de pago",
+    "entryPaymentDetails": "datos de pago",
+    "entryMessage": "mensaje",
+    "sealed": "Sellado. Este navegador no tiene ninguna clave que lo abra, lo cual no es lo mismo que esté vacío.",
+    "reference": "Referencia",
+    "connectPrompt": "Conecta una billetera: un canal solo responde a las propias partes de la liquidación.",
+    "keyPublished": "Tu clave de cifrado está publicada. Cualquiera con quien operes puede ahora sellarle datos de pago y mensajes, y puedes abrirlos en cualquier dispositivo donde esté esta billetera.",
+    "channelStarted": "Clave del canal generada y concedida a ambas partes."
   }
 }
