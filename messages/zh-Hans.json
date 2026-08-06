@@ -1761,5 +1761,76 @@
     "youGetRoughly": "你大约获得",
     "amountIn": "以 {symbol} 计的金额",
     "oracleMidNote": "按 {rate} {currency} 的预言机中间价。广告主的定价高于或低于它，因此你所接受报价上的数字才是最终数字。"
+  },
+  "open": {
+    "metaTitle": "OPEN 代币 — 预售",
+    "metaDescription": "在官方预售中购买 OPEN：OpenFiat 协议的实用与治理代币——商家保证金、节点和仲裁员质押、治理投票以及协议费用。",
+    "heroTitle": "OPEN 代币",
+    "heroDescription": "OpenFiat 协议的实用与治理代币。OPEN 的 P2P 交易和兑换将在网络上线时解锁——在那之前，OPEN 仅通过官方销售提供。",
+    "salePhases": "销售阶段",
+    "colPhase": "阶段",
+    "colPrice": "价格",
+    "colAllocation": "分配",
+    "phaseName": {
+      "communityPresale": "社区预售",
+      "publicSale": "公开销售",
+      "mainnet": "主网 — P2P 与兑换"
+    },
+    "phaseNote": {
+      "communityPresale": "完整的社区预售额度。预售 OPEN 在领取时解锁——没有归属期（§2）。",
+      "publicSale": "预售结束时，针对同一额度剩余部分的第二个更高价格阶段。",
+      "mainnet": "销售阶段之后没有固定汇率，因此不显示数字。"
+    },
+    "phaseAllocation": {
+      "communityPresale": "200,000,000 OPEN",
+      "publicSale": "预售未售出的剩余部分",
+      "mainnet": "市场定价"
+    },
+    "phasesNote": "这些是 OFS-4100 §2–3 所固定的条款，而非时间表。某个阶段是否开放是链上的事实——上方面板读取销售账户并说明其发现。",
+    "whatOpenDoes": "OPEN 有什么用",
+    "utility": {
+      "merchantBonds": {
+        "title": "商家保证金",
+        "description": "发布广告需要保证金。最低额度是链上质押参数，因此从链上读取而非在此打印。",
+        "link": "查看实时最低额度"
+      },
+      "staking": {
+        "title": "节点与仲裁员质押",
+        "description": "运营者质押 OPEN 以服务网络，仲裁员质押以获得争议席位资格。每个角色都有自己的下限和自己的解质押期。",
+        "link": "为某个角色质押"
+      },
+      "governanceVoting": {
+        "title": "治理投票",
+        "description": "按 OPEN 加权的投票决定 OFIP——费用、资产、国库支出。",
+        "link": "查看提案"
+      },
+      "protocolFees": {
+        "title": "协议费用",
+        "description": "结算、争议和服务费用累积到四个协议国库。",
+        "link": "查看治理"
+      }
+    },
+    "scamWarning": "OPEN 仅通过此官方销售页面出售。其他任何场外交易报价、私信或“提前解锁”都是骗局。"
+  },
+  "buyOpen": {
+    "titleLoading": "OPEN 预售",
+    "reading": "正在从链上读取销售账户…",
+    "titleNotOpen": "OPEN 预售 — 未开放",
+    "titleState": "OPEN 预售 — {state}",
+    "noSaleInit": "{cluster} 上尚未初始化任何销售。预售程序已部署，但其 SaleConfig 账户不存在，因此目前没有可参与的对象。",
+    "thisCluster": "此集群",
+    "readErrorMsg": "无法读取销售账户：{message}",
+    "readError": "无法读取销售账户。",
+    "unavailableBody": "不会用任何数字来代替进行中的销售本应有的数字。已筹集多少、钱包可以贡献多少以及销售何时结束都是该账户上的字段，因此没有账户就没有答案——而“已筹集为零”本身就是对一个正在进行的销售的断言。",
+    "saleConfigPda": "SaleConfig PDA {pda} — 无账户",
+    "termsFixed": "下面的条款是 OFS-4100 §2–3 所固定的，这与销售正在进行是两回事。在 devnet 上，<link>OPEN 已经可用于质押</link>。",
+    "raisedLabel": "已筹集，来自销售账户",
+    "minMaxNote": "每个钱包最低 {min} · 最高 {max} USDC，如销售账户所记录。未售出的 OPEN 转入公开销售，价格为 {publicPrice} USDC/OPEN——这是一个声明的条款，而非已部署的条款。",
+    "noSoftCap": "无软顶：没有需要筹集的最低额度，因此以此为由的贡献不可退款（OFS-4100 §3）。",
+    "calcLabel": "权益计算器 — USDC",
+    "wouldEntitle": "将使你有权获得",
+    "belowMin": "低于该销售的 {min} USDC 最低额度。",
+    "aboveMax": "高于该销售的 {max} USDC 最高额度。",
+    "calcNote": "这是一个计算器，而非购买——此应用尚无法构建 <code>contribute</code> 指令，此处也不签署任何内容。其算术是程序自身的：1 OPEN = {price} USDC，仅按两种铸币的小数位缩放，没有其他。"
   }
 }

@@ -1761,5 +1761,76 @@
     "youGetRoughly": "Anda dapat, kira-kira",
     "amountIn": "Jumlah dalam {symbol}",
     "oracleMidNote": "Pada nilai tengah orakel {rate} {currency}. Pengiklan mematok harga di atas atau di bawahnya, jadi angka pada penawaran yang Anda terima itulah yang berlaku."
+  },
+  "open": {
+    "metaTitle": "Token OPEN — Prapenjualan",
+    "metaDescription": "Beli OPEN di prapenjualan resmi: token utilitas dan tata kelola protokol OpenFiat — jaminan pedagang, staking node dan arbiter, pemungutan suara tata kelola, dan biaya protokol.",
+    "heroTitle": "Token OPEN",
+    "heroDescription": "Token utilitas dan tata kelola protokol OpenFiat. Perdagangan P2P dan penukaran OPEN terbuka saat jaringan aktif — sampai saat itu, OPEN hanya tersedia melalui penjualan resmi.",
+    "salePhases": "Fase penjualan",
+    "colPhase": "Fase",
+    "colPrice": "Harga",
+    "colAllocation": "Alokasi",
+    "phaseName": {
+      "communityPresale": "Prapenjualan Komunitas",
+      "publicSale": "Penjualan Publik",
+      "mainnet": "Mainnet — P2P & penukaran"
+    },
+    "phaseNote": {
+      "communityPresale": "Seluruh keranjang Prapenjualan Komunitas. OPEN prapenjualan terbuka saat klaim — tidak ada vesting (§2).",
+      "publicSale": "Fase kedua berharga lebih tinggi terhadap sisa keranjang yang sama saat prapenjualan ditutup.",
+      "mainnet": "Tidak ada kurs tetap setelah fase penjualan, jadi tidak ada angka yang ditampilkan."
+    },
+    "phaseAllocation": {
+      "communityPresale": "200.000.000 OPEN",
+      "publicSale": "Sisa prapenjualan yang tak terjual",
+      "mainnet": "Harga pasar"
+    },
+    "phasesNote": "Ketentuan sebagaimana ditetapkan OFS-4100 §2–3, bukan jadwal. Apakah suatu fase terbuka adalah fakta tentang rantai — panel di atas membaca akun penjualan dan menyampaikan apa yang ditemukannya.",
+    "whatOpenDoes": "Apa yang dilakukan OPEN",
+    "utility": {
+      "merchantBonds": {
+        "title": "Jaminan pedagang",
+        "description": "Memublikasikan iklan memerlukan jaminan. Minimumnya adalah parameter staking on-chain, jadi dibaca dari rantai alih-alih dicetak di sini.",
+        "link": "Lihat minimum langsung"
+      },
+      "staking": {
+        "title": "Staking node & arbiter",
+        "description": "Operator men-stake OPEN untuk melayani jaringan, dan arbiter men-stake agar memenuhi syarat untuk kursi sengketa. Setiap peran punya batas bawah dan periode unbonding-nya sendiri.",
+        "link": "Stake untuk sebuah peran"
+      },
+      "governanceVoting": {
+        "title": "Pemungutan suara tata kelola",
+        "description": "Suara berbobot OPEN memutuskan OFIP — biaya, aset, pengeluaran kas.",
+        "link": "Lihat proposal"
+      },
+      "protocolFees": {
+        "title": "Biaya protokol",
+        "description": "Biaya penyelesaian, sengketa, dan layanan terkumpul ke empat kas protokol.",
+        "link": "Lihat tata kelola"
+      }
+    },
+    "scamWarning": "OPEN hanya dijual melalui halaman penjualan resmi ini. Penawaran OTC, DM, atau \"buka lebih awal\" di tempat lain adalah penipuan."
+  },
+  "buyOpen": {
+    "titleLoading": "Prapenjualan OPEN",
+    "reading": "Membaca akun penjualan dari rantai…",
+    "titleNotOpen": "Prapenjualan OPEN — belum dibuka",
+    "titleState": "Prapenjualan OPEN — {state}",
+    "noSaleInit": "Belum ada penjualan yang diinisialisasi di {cluster}. Program prapenjualan sudah diterapkan, tetapi akun SaleConfig-nya tidak ada, jadi belum ada yang bisa dikontribusikan.",
+    "thisCluster": "kluster ini",
+    "readErrorMsg": "Akun penjualan tidak dapat dibaca: {message}",
+    "readError": "Akun penjualan tidak dapat dibaca.",
+    "unavailableBody": "Tidak ada yang ditampilkan menggantikan angka-angka yang dimiliki penjualan yang sedang berjalan. Berapa yang terkumpul, berapa yang boleh dikontribusikan sebuah dompet, dan kapan penjualan ditutup semuanya adalah bidang pada akun itu, jadi tanpa akun tidak ada jawaban — dan terkumpul nol itu sendiri akan menjadi klaim tentang penjualan yang sedang berjalan.",
+    "saleConfigPda": "PDA SaleConfig {pda} — tidak ada akun",
+    "termsFixed": "Ketentuan di bawah adalah yang ditetapkan OFS-4100 §2–3, yang berbeda dari penjualan yang aktif. Di devnet, <link>OPEN sudah dapat dipakai untuk staking</link>.",
+    "raisedLabel": "Terkumpul, dari akun penjualan",
+    "minMaxNote": "Min {min} · maks {max} USDC per dompet, sebagaimana dicatat akun penjualan. OPEN yang tak terjual berpindah ke Penjualan Publik pada {publicPrice} USDC/OPEN — ketentuan yang dinyatakan, bukan yang diterapkan.",
+    "noSoftCap": "Tanpa soft cap: tidak ada minimum yang harus dikumpulkan, jadi kontribusi tidak dapat dikembalikan atas dasar itu (OFS-4100 §3).",
+    "calcLabel": "Kalkulator hak — USDC",
+    "wouldEntitle": "Akan memberi Anda hak atas",
+    "belowMin": "Di bawah minimum penjualan {min} USDC.",
+    "aboveMax": "Di atas maksimum penjualan {max} USDC.",
+    "calcNote": "Sebuah kalkulator, bukan pembelian — aplikasi ini belum bisa membangun instruksi <code>contribute</code>, dan tidak ada di sini yang menandatangani apa pun. Aritmetikanya milik program itu sendiri: 1 OPEN = {price} USDC, diskalakan oleh selisih desimal kedua mint dan tidak lebih."
   }
 }

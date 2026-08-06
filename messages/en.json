@@ -1761,5 +1761,76 @@
     "youGetRoughly": "You get, roughly",
     "amountIn": "Amount in {symbol}",
     "oracleMidNote": "At the oracle mid of {rate} {currency}. Advertisers price above or below it, so the figure on the offer you accept is the one that counts."
+  },
+  "open": {
+    "metaTitle": "OPEN Token — Presale",
+    "metaDescription": "Buy OPEN in the official presale: the utility and governance token of the OpenFiat protocol — merchant bonds, node and arbitrator staking, governance voting, and protocol fees.",
+    "heroTitle": "OPEN Token",
+    "heroDescription": "The utility and governance token of the OpenFiat protocol. OPEN P2P trading and swapping unlock when the network goes live — until then, OPEN is only available through the official sale.",
+    "salePhases": "Sale phases",
+    "colPhase": "Phase",
+    "colPrice": "Price",
+    "colAllocation": "Allocation",
+    "phaseName": {
+      "communityPresale": "Community Presale",
+      "publicSale": "Public Sale",
+      "mainnet": "Mainnet — P2P & swaps"
+    },
+    "phaseNote": {
+      "communityPresale": "The full Community Presale bucket. Presale OPEN unlocks at claim — there is no vesting (§2).",
+      "publicSale": "A second, higher-priced phase against whatever is left of the same bucket when the presale closes.",
+      "mainnet": "No fixed rate after the sale phases, so no figure is shown."
+    },
+    "phaseAllocation": {
+      "communityPresale": "200,000,000 OPEN",
+      "publicSale": "Unsold presale remainder",
+      "mainnet": "Market priced"
+    },
+    "phasesNote": "Terms as OFS-4100 §2–3 fixes them, not a schedule. Whether a phase is open is a fact about the chain — the panel above reads the sale account and says what it found.",
+    "whatOpenDoes": "What OPEN does",
+    "utility": {
+      "merchantBonds": {
+        "title": "Merchant bonds",
+        "description": "Publishing advertisements requires a bond. The minimum is an on-chain staking parameter, so it is read from the chain rather than printed here.",
+        "link": "See the live minimums"
+      },
+      "staking": {
+        "title": "Node & arbitrator staking",
+        "description": "Operators bond OPEN to serve the network, and arbitrators bond to be eligible for dispute seats. Each role has its own floor and its own unbonding period.",
+        "link": "Bond for a role"
+      },
+      "governanceVoting": {
+        "title": "Governance voting",
+        "description": "OPEN-weighted votes decide OFIPs — fees, assets, treasury spend.",
+        "link": "See proposals"
+      },
+      "protocolFees": {
+        "title": "Protocol fees",
+        "description": "Settlement, dispute and service fees accrue to the four protocol treasuries.",
+        "link": "See governance"
+      }
+    },
+    "scamWarning": "OPEN is only sold through this official sale page. Any OTC offer, DM, or \"early unlock\" elsewhere is a scam."
+  },
+  "buyOpen": {
+    "titleLoading": "OPEN presale",
+    "reading": "Reading the sale account from the chain…",
+    "titleNotOpen": "OPEN presale — not open",
+    "titleState": "OPEN presale — {state}",
+    "noSaleInit": "No sale has been initialized on {cluster}. The presale program is deployed, but its SaleConfig account does not exist, so there is nothing to contribute to yet.",
+    "thisCluster": "this cluster",
+    "readErrorMsg": "The sale account could not be read: {message}",
+    "readError": "The sale account could not be read.",
+    "unavailableBody": "Nothing is shown in place of the figures a running sale would have. How much has been raised, what a wallet may contribute and when the sale closes are all fields on that account, so with no account there are no answers — and a zero raised would itself be a claim about a sale that is running.",
+    "saleConfigPda": "SaleConfig PDA {pda} — no account",
+    "termsFixed": "The terms below are what OFS-4100 §2–3 fixes, which is a different thing from a sale being live. <link>OPEN is already usable for staking</link> on devnet.",
+    "raisedLabel": "Raised, from the sale account",
+    "minMaxNote": "Min {min} · max {max} USDC per wallet, as the sale account records them. Unsold OPEN moves to a Public Sale at {publicPrice} USDC/OPEN — a stated term, not a deployed one.",
+    "noSoftCap": "No soft cap: there is no minimum to raise, so contributions are not refundable on that ground (OFS-4100 §3).",
+    "calcLabel": "Entitlement calculator — USDC",
+    "wouldEntitle": "Would entitle you to",
+    "belowMin": "Below the sale's {min} USDC minimum.",
+    "aboveMax": "Above the sale's {max} USDC maximum.",
+    "calcNote": "A calculator, not a purchase — this app cannot build a <code>contribute</code> instruction yet, and nothing here signs anything. The arithmetic is the program's own: 1 OPEN = {price} USDC, scaled by the two mints' decimals and nothing else."
   }
 }

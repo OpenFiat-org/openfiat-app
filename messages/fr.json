@@ -1761,5 +1761,76 @@
     "youGetRoughly": "Vous recevez, environ",
     "amountIn": "Montant en {symbol}",
     "oracleMidNote": "Au milieu de l'oracle de {rate} {currency}. Les annonceurs cotent au-dessus ou en dessous, donc le chiffre de l'offre que vous acceptez est celui qui compte."
+  },
+  "open": {
+    "metaTitle": "Jeton OPEN — Prévente",
+    "metaDescription": "Achetez OPEN dans la prévente officielle : le jeton d'utilité et de gouvernance du protocole OpenFiat — cautions de commerçant, staking de nœuds et d'arbitres, vote de gouvernance et frais du protocole.",
+    "heroTitle": "Jeton OPEN",
+    "heroDescription": "Le jeton d'utilité et de gouvernance du protocole OpenFiat. Le trading P2P et l'échange d'OPEN se débloquent quand le réseau entre en service — jusque-là, OPEN n'est disponible que par la vente officielle.",
+    "salePhases": "Phases de la vente",
+    "colPhase": "Phase",
+    "colPrice": "Prix",
+    "colAllocation": "Allocation",
+    "phaseName": {
+      "communityPresale": "Prévente communautaire",
+      "publicSale": "Vente publique",
+      "mainnet": "Mainnet — P2P et échanges"
+    },
+    "phaseNote": {
+      "communityPresale": "L'enveloppe complète de la Prévente communautaire. L'OPEN de prévente se débloque à la réclamation — il n'y a pas de vesting (§2).",
+      "publicSale": "Une deuxième phase, à prix plus élevé, contre ce qu'il reste de la même enveloppe à la clôture de la prévente.",
+      "mainnet": "Pas de taux fixe après les phases de vente, donc aucun chiffre n'est affiché."
+    },
+    "phaseAllocation": {
+      "communityPresale": "200 000 000 OPEN",
+      "publicSale": "Reliquat invendu de la prévente",
+      "mainnet": "Prix du marché"
+    },
+    "phasesNote": "Des conditions telles que les fixe l'OFS-4100 §2–3, pas un calendrier. Qu'une phase soit ouverte est un fait sur la chaîne — le panneau ci-dessus lit le compte de vente et dit ce qu'il a trouvé.",
+    "whatOpenDoes": "À quoi sert OPEN",
+    "utility": {
+      "merchantBonds": {
+        "title": "Cautions de commerçant",
+        "description": "Publier des annonces exige une caution. Le minimum est un paramètre de staking on-chain, il est donc lu depuis la chaîne plutôt qu'imprimé ici.",
+        "link": "Voir les minimums en direct"
+      },
+      "staking": {
+        "title": "Staking de nœuds et d'arbitres",
+        "description": "Les opérateurs stakent de l'OPEN pour servir le réseau, et les arbitres stakent pour être éligibles aux sièges de litige. Chaque rôle a son propre plancher et sa propre période de déblocage.",
+        "link": "Staker pour un rôle"
+      },
+      "governanceVoting": {
+        "title": "Vote de gouvernance",
+        "description": "Des votes pondérés par OPEN décident des OFIP — frais, actifs, dépenses du trésor.",
+        "link": "Voir les propositions"
+      },
+      "protocolFees": {
+        "title": "Frais du protocole",
+        "description": "Les frais de règlement, de litige et de service s'accumulent dans les quatre trésors du protocole.",
+        "link": "Voir la gouvernance"
+      }
+    },
+    "scamWarning": "OPEN n'est vendu que via cette page de vente officielle. Toute offre OTC, tout MP ou tout \"déblocage anticipé\" ailleurs est une arnaque."
+  },
+  "buyOpen": {
+    "titleLoading": "Prévente OPEN",
+    "reading": "Lecture du compte de vente depuis la chaîne…",
+    "titleNotOpen": "Prévente OPEN — non ouverte",
+    "titleState": "Prévente OPEN — {state}",
+    "noSaleInit": "Aucune vente n'a été initialisée sur {cluster}. Le programme de prévente est déployé, mais son compte SaleConfig n'existe pas, il n'y a donc encore rien à quoi contribuer.",
+    "thisCluster": "ce cluster",
+    "readErrorMsg": "Le compte de vente n'a pas pu être lu : {message}",
+    "readError": "Le compte de vente n'a pas pu être lu.",
+    "unavailableBody": "Rien n'est affiché à la place des chiffres qu'aurait une vente en cours. Combien a été levé, ce qu'un portefeuille peut apporter et quand la vente se ferme sont tous des champs de ce compte, donc sans compte il n'y a pas de réponses — et un montant levé à zéro serait lui-même une affirmation sur une vente en cours.",
+    "saleConfigPda": "PDA SaleConfig {pda} — aucun compte",
+    "termsFixed": "Les conditions ci-dessous sont celles que fixe l'OFS-4100 §2–3, ce qui est différent d'une vente en cours. Sur devnet, <link>OPEN est déjà utilisable pour le staking</link>.",
+    "raisedLabel": "Levé, depuis le compte de vente",
+    "minMaxNote": "Min {min} · max {max} USDC par portefeuille, tels que le compte de vente les enregistre. L'OPEN invendu passe à une Vente publique à {publicPrice} USDC/OPEN — une condition déclarée, pas une déployée.",
+    "noSoftCap": "Pas de soft cap : il n'y a pas de minimum à lever, donc les contributions ne sont pas remboursables à ce titre (OFS-4100 §3).",
+    "calcLabel": "Calculateur de droits — USDC",
+    "wouldEntitle": "Vous donnerait droit à",
+    "belowMin": "En dessous du minimum de {min} USDC de la vente.",
+    "aboveMax": "Au-dessus du maximum de {max} USDC de la vente.",
+    "calcNote": "Un calculateur, pas un achat — cette app ne peut pas encore construire d'instruction <code>contribute</code>, et rien ici ne signe quoi que ce soit. L'arithmétique est celle du programme lui-même : 1 OPEN = {price} USDC, mis à l'échelle par les décimales des deux mints et rien d'autre."
   }
 }

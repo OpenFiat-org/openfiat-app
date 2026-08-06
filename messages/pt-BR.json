@@ -1761,5 +1761,76 @@
     "youGetRoughly": "Você recebe, aproximadamente",
     "amountIn": "Valor em {symbol}",
     "oracleMidNote": "No meio do oráculo de {rate} {currency}. Anunciantes cotam acima ou abaixo, então o valor na oferta que você aceita é o que conta."
+  },
+  "open": {
+    "metaTitle": "Token OPEN — Pré-venda",
+    "metaDescription": "Compre OPEN na pré-venda oficial: o token de utilidade e governança do protocolo OpenFiat — cauções de comerciante, staking de nós e árbitros, votação de governança e taxas do protocolo.",
+    "heroTitle": "Token OPEN",
+    "heroDescription": "O token de utilidade e governança do protocolo OpenFiat. A negociação P2P e a troca de OPEN são desbloqueadas quando a rede entra no ar — até lá, o OPEN só está disponível pela venda oficial.",
+    "salePhases": "Fases da venda",
+    "colPhase": "Fase",
+    "colPrice": "Preço",
+    "colAllocation": "Alocação",
+    "phaseName": {
+      "communityPresale": "Pré-venda comunitária",
+      "publicSale": "Venda pública",
+      "mainnet": "Mainnet — P2P e trocas"
+    },
+    "phaseNote": {
+      "communityPresale": "O balde completo da Pré-venda comunitária. O OPEN da pré-venda é desbloqueado no resgate — não há vesting (§2).",
+      "publicSale": "Uma segunda fase, de preço mais alto, contra o que sobrar do mesmo balde quando a pré-venda fechar.",
+      "mainnet": "Sem taxa fixa após as fases de venda, então nenhum número é mostrado."
+    },
+    "phaseAllocation": {
+      "communityPresale": "200.000.000 OPEN",
+      "publicSale": "Remanescente não vendido da pré-venda",
+      "mainnet": "Preço de mercado"
+    },
+    "phasesNote": "Termos como a OFS-4100 §2–3 os fixa, não um cronograma. Se uma fase está aberta é um fato sobre a cadeia — o painel acima lê a conta da venda e diz o que encontrou.",
+    "whatOpenDoes": "O que o OPEN faz",
+    "utility": {
+      "merchantBonds": {
+        "title": "Cauções de comerciante",
+        "description": "Publicar anúncios exige uma caução. O mínimo é um parâmetro de staking on-chain, então é lido da cadeia em vez de impresso aqui.",
+        "link": "Ver os mínimos ao vivo"
+      },
+      "staking": {
+        "title": "Staking de nós e árbitros",
+        "description": "Operadores fazem stake de OPEN para servir à rede, e árbitros fazem stake para se qualificar a assentos de disputa. Cada papel tem seu próprio piso e seu próprio período de unbonding.",
+        "link": "Fazer stake para um papel"
+      },
+      "governanceVoting": {
+        "title": "Votação de governança",
+        "description": "Votos ponderados por OPEN decidem os OFIPs — taxas, ativos, gastos do tesouro.",
+        "link": "Ver propostas"
+      },
+      "protocolFees": {
+        "title": "Taxas do protocolo",
+        "description": "Taxas de liquidação, disputa e serviço acumulam nos quatro tesouros do protocolo.",
+        "link": "Ver governança"
+      }
+    },
+    "scamWarning": "OPEN só é vendido por esta página de venda oficial. Qualquer oferta OTC, DM ou \"desbloqueio antecipado\" em outro lugar é golpe."
+  },
+  "buyOpen": {
+    "titleLoading": "Pré-venda de OPEN",
+    "reading": "Lendo a conta da venda na cadeia…",
+    "titleNotOpen": "Pré-venda de OPEN — não aberta",
+    "titleState": "Pré-venda de OPEN — {state}",
+    "noSaleInit": "Nenhuma venda foi inicializada em {cluster}. O programa de pré-venda está implantado, mas sua conta SaleConfig não existe, então ainda não há nada para contribuir.",
+    "thisCluster": "este cluster",
+    "readErrorMsg": "Não foi possível ler a conta da venda: {message}",
+    "readError": "Não foi possível ler a conta da venda.",
+    "unavailableBody": "Nada é mostrado no lugar dos números que uma venda em andamento teria. Quanto foi arrecadado, quanto uma carteira pode contribuir e quando a venda fecha são todos campos daquela conta, então sem conta não há respostas — e um arrecadado zero seria, em si, uma afirmação sobre uma venda em andamento.",
+    "saleConfigPda": "PDA de SaleConfig {pda} — sem conta",
+    "termsFixed": "Os termos abaixo são o que a OFS-4100 §2–3 fixa, o que é diferente de uma venda estar ativa. Na devnet, <link>o OPEN já é utilizável para staking</link>.",
+    "raisedLabel": "Arrecadado, da conta da venda",
+    "minMaxNote": "Mín {min} · máx {max} USDC por carteira, como a conta da venda os registra. O OPEN não vendido passa a uma Venda pública a {publicPrice} USDC/OPEN — um termo declarado, não um implantado.",
+    "noSoftCap": "Sem soft cap: não há mínimo a arrecadar, então as contribuições não são reembolsáveis por esse motivo (OFS-4100 §3).",
+    "calcLabel": "Calculadora de direito — USDC",
+    "wouldEntitle": "Daria a você direito a",
+    "belowMin": "Abaixo do mínimo de {min} USDC da venda.",
+    "aboveMax": "Acima do máximo de {max} USDC da venda.",
+    "calcNote": "Uma calculadora, não uma compra — este app ainda não pode construir uma instrução <code>contribute</code>, e nada aqui assina nada. A aritmética é a do próprio programa: 1 OPEN = {price} USDC, escalada pelos decimais dos dois mints e nada mais."
   }
 }

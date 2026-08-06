@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { alternatesFor } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { OPEN_PRICE_USDC, SALE_PHASES } from "@/lib/sale-terms";
@@ -12,13 +14,20 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "open" });
   return {
-  title: "OPEN Token — Presale",
-  description:
-    "Buy OPEN in the official presale: the utility and governance token of the OpenFiat protocol — merchant bonds, node and arbitrator staking, governance voting, and protocol fees.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
     alternates: alternatesFor("/open", locale),
   };
 }
+
+/** Stable keys for the three specification-fixed sale phases (order fixed in lib). */
+const PHASE_KEYS = ["communityPresale", "publicSale", "mainnet"] as const;
+
+/** Stable keys for the four utility rows (order fixed below). */
+const UTILITY_KEYS = ["merchantBonds", "staking", "governanceVoting", "protocolFees"] as const;
+const UTILITY_HREFS = ["/staking", "/staking", "/governance", "/governance"] as const;
 
 /**
  * What OPEN is for.
@@ -34,43 +43,14 @@ export async function generateMetadata({
  * them here is a copy that goes stale silently. `/staking` reads them off the
  * chain and each line links to it.
  */
-const UTILITY: Array<{ title: string; description: string; href: string; link: string }> = [
-  {
-    title: "Merchant bonds",
-    description:
-      "Publishing advertisements requires a bond. The minimum is an on-chain staking parameter, so it is read from the chain rather than printed here.",
-    href: "/staking",
-    link: "See the live minimums",
-  },
-  {
-    title: "Node & arbitrator staking",
-    description:
-      "Operators bond OPEN to serve the network, and arbitrators bond to be eligible for dispute seats. Each role has its own floor and its own unbonding period.",
-    href: "/staking",
-    link: "Bond for a role",
-  },
-  {
-    title: "Governance voting",
-    description: "OPEN-weighted votes decide OFIPs — fees, assets, treasury spend.",
-    href: "/governance",
-    link: "See proposals",
-  },
-  {
-    title: "Protocol fees",
-    description:
-      "Settlement, dispute and service fees accrue to the four protocol treasuries.",
-    href: "/governance",
-    link: "See governance",
-  },
-];
-
 export default function OpenTokenPage() {
+  const t = useTranslations("open");
   return (
     <section>
       <PageHero
         variant="flow"
-        title="OPEN Token"
-        description="The utility and governance token of the OpenFiat protocol. OPEN P2P trading and swapping unlock when the network goes live — until then, OPEN is only available through the official sale."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       >
         {/* No "Live" pill. It was a constant, so the page said the sale was
             live whether or not a SaleConfig existed — and none does on this
@@ -87,24 +67,24 @@ export default function OpenTokenPage() {
         <div>
           <BuyOpen />
 
-          <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">Sale phases</h2>
+          <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">{t("salePhases")}</h2>
           <div className="mt-3">
             <DataTable
               minWidth={560}
               head={
                 <tr>
-                  <Th>Phase</Th>
-                  <Th right>Price</Th>
-                  <Th right>Allocation</Th>
+                  <Th>{t("colPhase")}</Th>
+                  <Th right>{t("colPrice")}</Th>
+                  <Th right>{t("colAllocation")}</Th>
                 </tr>
               }
             >
-              {SALE_PHASES.map((p) => (
+              {SALE_PHASES.map((p, i) => (
                 <Tr key={p.name}>
                   <Td py="py-5" className="font-medium text-white">
-                    {p.name}
+                    {t(`phaseName.${PHASE_KEYS[i]}`)}
                     <span className="mt-1 block max-w-md text-xs font-normal text-gray-500">
-                      {p.note}
+                      {t(`phaseNote.${PHASE_KEYS[i]}`)}
                     </span>
                   </Td>
                   {/* Null price means market priced — there is no fixed rate
@@ -112,7 +92,7 @@ export default function OpenTokenPage() {
                   <Td py="py-5" right num className="text-gray-200">
                     {p.priceUsdc === null ? "—" : `$${p.priceUsdc.toFixed(2)}`}
                   </Td>
-                  <Td py="py-5" right num className="text-gray-400">{p.allocation}</Td>
+                  <Td py="py-5" right num className="text-gray-400">{t(`phaseAllocation.${PHASE_KEYS[i]}`)}</Td>
                 </Tr>
               ))}
             </DataTable>
@@ -121,28 +101,26 @@ export default function OpenTokenPage() {
                 made without reading it. `BuyOpen` above states whether a
                 sale exists, once, from the account itself. */}
             <p className="mt-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-              Terms as OFS-4100 §2–3 fixes them, not a schedule. Whether a
-              phase is open is a fact about the chain — the panel above reads
-              the sale account and says what it found.
+              {t("phasesNote")}
             </p>
           </div>
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">What OPEN does</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">{t("whatOpenDoes")}</h2>
           <div className="mt-3 divide-y divide-white/5 border-y border-white/5">
-            {UTILITY.map((u) => (
-              <div key={u.title} className="py-4">
-                <p className="font-medium text-white">{u.title}</p>
-                <p className="mt-1 text-sm text-gray-400">{u.description}</p>
-                <Link href={u.href} className="mt-1.5 inline-block text-xs text-brand hover:text-brand-hover">
-                  {u.link} →
+            {UTILITY_KEYS.map((k, i) => (
+              <div key={k} className="py-4">
+                <p className="font-medium text-white">{t(`utility.${k}.title`)}</p>
+                <p className="mt-1 text-sm text-gray-400">{t(`utility.${k}.description`)}</p>
+                <Link href={UTILITY_HREFS[i]} className="mt-1.5 inline-block text-xs text-brand hover:text-brand-hover">
+                  {t(`utility.${k}.link`)} →
                 </Link>
               </div>
             ))}
           </div>
           <p className="mt-4 border-l-2 border-amber-400/50 bg-amber-400/5 px-4 py-2.5 text-xs text-amber-200">
-            OPEN is only sold through this official sale page. Any OTC offer, DM, or "early unlock" elsewhere is a scam.
+            {t("scamWarning")}
           </p>
         </div>
       </div>

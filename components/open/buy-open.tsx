@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
@@ -57,10 +58,11 @@ const inputCls =
 
 type SaleState =
   | { status: "loading" }
-  | { status: "unavailable"; reason: string }
+  | { status: "unavailable"; reasonKey: "noSale" | "readErrorMsg" | "readError"; message?: string }
   | { status: "open"; config: DecodedSaleConfig };
 
 export function BuyOpen() {
+  const t = useTranslations("buyOpen");
   const [sale, setSale] = useState<SaleState>({ status: "loading" });
   const [raw, setRaw] = useState("");
 
@@ -73,20 +75,15 @@ export function BuyOpen() {
         setSale(
           config
             ? { status: "open", config }
-            : {
-                status: "unavailable",
-                reason: `No sale has been initialized on ${SOLANA_CLUSTER ?? "this cluster"}. The presale program is deployed, but its SaleConfig account does not exist, so there is nothing to contribute to yet.`,
-              },
+            : { status: "unavailable", reasonKey: "noSale" },
         );
       } catch (error: unknown) {
         if (!cancelled) {
-          setSale({
-            status: "unavailable",
-            reason:
-              error instanceof Error
-                ? `The sale account could not be read: ${error.message}`
-                : "The sale account could not be read.",
-          });
+          setSale(
+            error instanceof Error
+              ? { status: "unavailable", reasonKey: "readErrorMsg", message: error.message }
+              : { status: "unavailable", reasonKey: "readError" },
+          );
         }
       }
     })();
@@ -97,36 +94,39 @@ export function BuyOpen() {
 
   if (sale.status === "loading") {
     return (
-      <Panel title="OPEN presale">
+      <Panel title={t("titleLoading")}>
         <p className="px-4 py-10 text-center text-sm text-gray-500">
-          Reading the sale account from the chain…
+          {t("reading")}
         </p>
       </Panel>
     );
   }
 
   if (sale.status === "unavailable") {
+    const reason =
+      sale.reasonKey === "noSale"
+        ? t("noSaleInit", { cluster: SOLANA_CLUSTER ?? t("thisCluster") })
+        : sale.reasonKey === "readErrorMsg"
+          ? t("readErrorMsg", { message: sale.message ?? "" })
+          : t("readError");
     return (
-      <Panel title="OPEN presale — not open">
+      <Panel title={t("titleNotOpen")}>
         <div className="space-y-3 px-4 py-6">
-          <p className="text-sm leading-relaxed text-gray-300">{sale.reason}</p>
+          <p className="text-sm leading-relaxed text-gray-300">{reason}</p>
           <p className="text-sm leading-relaxed text-gray-400">
-            Nothing is shown in place of the figures a running sale would have.
-            How much has been raised, what a wallet may contribute and when the
-            sale closes are all fields on that account, so with no account
-            there are no answers — and a zero raised would itself be a claim
-            about a sale that is running.
+            {t("unavailableBody")}
           </p>
           <p className="break-all font-mono text-[11px] text-gray-600">
-            SaleConfig PDA {saleConfigPda().toBase58()} — no account
+            {t("saleConfigPda", { pda: saleConfigPda().toBase58() })}
           </p>
           <p className="text-xs text-gray-500">
-            The terms below are what OFS-4100 §2–3 fixes, which is a different
-            thing from a sale being live.{" "}
-            <Link href="/staking" className="text-brand hover:text-brand-hover">
-              OPEN is already usable for staking
-            </Link>{" "}
-            on devnet.
+            {t.rich("termsFixed", {
+              link: (chunks) => (
+                <Link href="/staking" className="text-brand hover:text-brand-hover">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </Panel>
@@ -149,11 +149,11 @@ export function BuyOpen() {
   const aboveMax = amount > maxContribution;
 
   return (
-    <Panel title={`OPEN presale — ${config.state}`}>
+    <Panel title={t("titleState", { state: config.state })}>
       <div className="divide-y divide-white/5">
         <div className="px-4 py-6">
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>Raised, from the sale account</span>
+            <span>{t("raisedLabel")}</span>
             <span className="tabular-nums">
               ${formatNumber(raised, 0)} / ${formatNumber(hardCap, 0)} ({pct}%)
             </span>
@@ -165,23 +165,22 @@ export function BuyOpen() {
             />
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Min {formatNumber(minContribution, 0)} · max{" "}
-            {formatNumber(maxContribution, 0)} USDC per wallet, as the sale
-            account records them. Unsold OPEN moves to a Public Sale at{" "}
-            {PUBLIC_SALE_PRICE_USDC} USDC/OPEN — a stated term, not a deployed
-            one.
+            {t("minMaxNote", {
+              min: formatNumber(minContribution, 0),
+              max: formatNumber(maxContribution, 0),
+              publicPrice: PUBLIC_SALE_PRICE_USDC,
+            })}
           </p>
           {config.softCap === 0n && (
             <p className="mt-2 text-xs text-gray-500">
-              No soft cap: there is no minimum to raise, so contributions are
-              not refundable on that ground (OFS-4100 §3).
+              {t("noSoftCap")}
             </p>
           )}
         </div>
 
         <div className="px-4 py-6">
           <label htmlFor="open-amount" className="mb-1 block text-xs text-gray-500">
-            Entitlement calculator — USDC
+            {t("calcLabel")}
           </label>
           <input
             id="open-amount"
@@ -193,27 +192,26 @@ export function BuyOpen() {
             className={`tabular-nums ${inputCls}`}
           />
           <p className="mt-4 flex items-center justify-between rounded-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
-            <span className="text-gray-500">Would entitle you to</span>
+            <span className="text-gray-500">{t("wouldEntitle")}</span>
             <span className="font-mono text-base font-semibold tabular-nums text-white">
               {formatNumber(receive, 0)} OPEN
             </span>
           </p>
           {belowMin && (
             <p className="mt-1.5 text-xs text-amber-300">
-              Below the sale&apos;s {formatNumber(minContribution, 0)} USDC minimum.
+              {t("belowMin", { min: formatNumber(minContribution, 0) })}
             </p>
           )}
           {aboveMax && (
             <p className="mt-1.5 text-xs text-amber-300">
-              Above the sale&apos;s {formatNumber(maxContribution, 0)} USDC maximum.
+              {t("aboveMax", { max: formatNumber(maxContribution, 0) })}
             </p>
           )}
           <p className="mt-3 text-xs leading-relaxed text-gray-500">
-            A calculator, not a purchase — this app cannot build a{" "}
-            <code className="text-gray-400">contribute</code> instruction yet,
-            and nothing here signs anything. The arithmetic is the program&apos;s
-            own: 1 OPEN = {OPEN_PRICE_USDC} USDC, scaled by the two mints&apos;
-            decimals and nothing else.
+            {t.rich("calcNote", {
+              price: OPEN_PRICE_USDC,
+              code: (chunks) => <code className="text-gray-400">{chunks}</code>,
+            })}
           </p>
         </div>
       </div>
