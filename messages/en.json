@@ -14,12 +14,10 @@
     "myAccount": "My Account",
     "sectionAccount": "Account",
     "sectionTrust": "Trust",
-
     "exchange": "P2P Exchange",
     "countries": "Countries",
     "disputes": "Disputes",
     "governance": "Governance",
-
     "explorer": "Explorer",
     "explorerDesc": "Search addresses, trades & protocol events",
     "network": "Network",
@@ -28,7 +26,6 @@
     "providersDesc": "Notifications, oracles & risk intelligence",
     "faucet": "Faucet",
     "faucetDesc": "Get SOL, mock USDC/USDT and OPEN for testing on devnet",
-
     "orders": "Orders",
     "ordersDesc": "Trade history & active escrow",
     "ads": "My Ads",
@@ -45,7 +42,6 @@
     "earningsDesc": "What your node, oracle or gateway has earned",
     "settings": "Settings",
     "settingsDesc": "Preferences & notifications",
-
     "identity": "Identity",
     "identityDesc": "Verification levels L0–L3",
     "reputation": "Reputation",
@@ -237,11 +233,26 @@
       "whatIsBody": "P2P trading lets you buy and sell crypto directly with other people using your local currency and payment methods. Instead of trusting a stranger, every order is protected by escrow: the seller's crypto locks in the Solana escrow program the moment the order is placed, and it is released only after the seller confirms your payment arrived. OpenFiat never takes custody of your fiat.",
       "keyTermsHeading": "Key terms",
       "glossary": [
-        ["Advertiser (Merchant)", "A verified user who posts buy/sell offers with their own price, limits, and payment methods."],
-        ["Taker", "You — the user who picks an existing offer and places an order against it."],
-        ["Escrow", "The seller's crypto locks in the Solana escrow program when the order is placed and releases only after payment is confirmed."],
-        ["Appeal (Dispute)", "The button to press when something goes wrong — escrow freezes and an arbitrator steps in."],
-        ["Payment window", "The countdown you must pay within. If it expires, the order is cancelled and escrow unlocks."]
+        [
+          "Advertiser (Merchant)",
+          "A verified user who posts buy/sell offers with their own price, limits, and payment methods."
+        ],
+        [
+          "Taker",
+          "You — the user who picks an existing offer and places an order against it."
+        ],
+        [
+          "Escrow",
+          "The seller's crypto locks in the Solana escrow program when the order is placed and releases only after payment is confirmed."
+        ],
+        [
+          "Appeal (Dispute)",
+          "The button to press when something goes wrong — escrow freezes and an arbitrator steps in."
+        ],
+        [
+          "Payment window",
+          "The countdown you must pay within. If it expires, the order is cancelled and escrow unlocks."
+        ]
       ],
       "safetyHeading": "Safety tips",
       "safetyTips": [
@@ -262,13 +273,34 @@
       "heroDescription": "Turn your local currency into stablecoins in minutes. Which tokens, currencies and payment methods are on offer comes from your access node and the live order book — every order protected by escrow on Solana.",
       "stepByStep": "Step by step",
       "steps": [
-        ["Choose Buy + asset + your currency + payment method", "The asset pills, the currency list and the payment-method filter are all read from your access node and from the live book — so they show what is genuinely on offer where you are, rather than a list written into this page."],
-        ["Compare offers", "Compare price, available liquidity and per-order limits — the three things every row on the book actually carries."],
-        ["Click Buy and enter an amount", "Enter how much fiat you want to spend (or how much crypto you want) — within the advertiser's limits."],
-        ["Place the order", "The seller's crypto locks in the Solana escrow program immediately, so it is guaranteed for you before you pay anything."],
-        ["Pay the seller within the time window", "Transfer fiat using exactly the account details shown in the order — every field is copyable. If the window expires, the order cancels and escrow unlocks."],
-        ["Click “Transferred, notify seller”", "Only after you have actually sent the money. This tells the seller to check their account."],
-        ["Seller confirms — crypto arrives in your wallet", "The seller verifies your payment and escrow releases the crypto to your wallet. Order completed."]
+        [
+          "Choose Buy + asset + your currency + payment method",
+          "The asset pills, the currency list and the payment-method filter are all read from your access node and from the live book — so they show what is genuinely on offer where you are, rather than a list written into this page."
+        ],
+        [
+          "Compare offers",
+          "Compare price, available liquidity and per-order limits — the three things every row on the book actually carries."
+        ],
+        [
+          "Click Buy and enter an amount",
+          "Enter how much fiat you want to spend (or how much crypto you want) — within the advertiser's limits."
+        ],
+        [
+          "Place the order",
+          "The seller's crypto locks in the Solana escrow program immediately, so it is guaranteed for you before you pay anything."
+        ],
+        [
+          "Pay the seller within the time window",
+          "Transfer fiat using exactly the account details shown in the order — every field is copyable. If the window expires, the order cancels and escrow unlocks."
+        ],
+        [
+          "Click “Transferred, notify seller”",
+          "Only after you have actually sent the money. This tells the seller to check their account."
+        ],
+        [
+          "Seller confirms — crypto arrives in your wallet",
+          "The seller verifies your payment and escrow releases the crypto to your wallet. Order completed."
+        ]
       ],
       "goodToKnowHeading": "Good to know",
       "goodToKnow": [
@@ -287,13 +319,34 @@
       "heroDescription": "Cash out your stablecoins to local currency safely. Which tokens and payment methods are on offer comes from your access node and the live order book — escrow-protected on Solana.",
       "stepByStep": "Step by step",
       "steps": [
-        ["Choose Sell", "Pick the token you want to sell and the fiat currency you want to receive. Both lists come from your access node, not from this page."],
-        ["Pick an offer matching your amount", "Compare buyer prices, available liquidity and per-order limits the same way buyers compare sellers."],
-        ["Enter the amount and place the order", "Your crypto locks in the Solana escrow program — the buyer can see it is guaranteed for them."],
-        ["Wait for the buyer's payment", "The buyer transfers fiat to your bank or mobile-money account within the time window."],
-        ["Verify the funds in YOUR account", "Log in to your own bank or mobile-money account and confirm the money actually arrived — never trust screenshots alone."],
-        ["Click “Payment received” and release", "Only after verifying. Escrow releases your crypto to the buyer instantly."],
-        ["Order completed", "Fiat is in your account, the buyer has their crypto, and both reputations update."]
+        [
+          "Choose Sell",
+          "Pick the token you want to sell and the fiat currency you want to receive. Both lists come from your access node, not from this page."
+        ],
+        [
+          "Pick an offer matching your amount",
+          "Compare buyer prices, available liquidity and per-order limits the same way buyers compare sellers."
+        ],
+        [
+          "Enter the amount and place the order",
+          "Your crypto locks in the Solana escrow program — the buyer can see it is guaranteed for them."
+        ],
+        [
+          "Wait for the buyer's payment",
+          "The buyer transfers fiat to your bank or mobile-money account within the time window."
+        ],
+        [
+          "Verify the funds in YOUR account",
+          "Log in to your own bank or mobile-money account and confirm the money actually arrived — never trust screenshots alone."
+        ],
+        [
+          "Click “Payment received” and release",
+          "Only after verifying. Escrow releases your crypto to the buyer instantly."
+        ],
+        [
+          "Order completed",
+          "Fiat is in your account, the buyer has their crypto, and both reputations update."
+        ]
       ],
       "staySafeHeading": "Stay safe when selling",
       "goodToKnow": [
@@ -314,13 +367,34 @@
       "bondNote": "Bonding is a real staking transaction, and this page does not read your wallet — so it cannot tell you whether you already qualify. <link>The staking page</link> shows the minimum bond the deployed program actually enforces and what you have bonded against it.",
       "stepByStep": "Step by step",
       "steps": [
-        ["Bond OPEN", "A merchant stakes OPEN as accountability, not as a fee — it stays yours unless a protocol penalty applies. The staking page shows the minimum the deployed program enforces; this page deliberately does not restate a figure it has not read. This is what replaces an application form: nobody approves you, but you have something at risk."],
-        ["Fund a liquidity vault", "A sell advertisement is backed by inventory you have already deposited, per stablecoin. Reservations move balances from Available to Reserved, and settlement moves them to Settled — a buyer can see the funds exist before committing, which is why your ads get taken."],
-        ["Decide your market", "Direction, asset and fiat currency. Pick a corridor you can actually service: you need a payment account in that currency, and you need to be awake when its buyers are."],
-        ["Set a price", "Fixed, or floating as a premium over the oracle mid. Floating tracks the market without you watching it; fixed is predictable but goes stale. Tighter pricing wins more orders and earns less per order."],
-        ["Set limits you will honour", "Minimum and maximum per trade. A maximum above what you can settle promptly costs you settlement speed, which is a reputation dimension buyers filter on."],
-        ["Declare payment methods and terms", "Only rails you can genuinely receive on. Your terms are where you state whose name must be on the transfer, what reference to use, and which hours you settle — those conditions are what disputes turn on, so put them here rather than explaining them in chat afterwards."],
-        ["Publish and stay responsive", "Availability and response time are scored and decay with inactivity, so a stale ad quietly stops appearing. Pause your ads rather than leaving them up when you cannot settle."]
+        [
+          "Bond OPEN",
+          "A merchant stakes OPEN as accountability, not as a fee — it stays yours unless a protocol penalty applies. The staking page shows the minimum the deployed program enforces; this page deliberately does not restate a figure it has not read. This is what replaces an application form: nobody approves you, but you have something at risk."
+        ],
+        [
+          "Fund a liquidity vault",
+          "A sell advertisement is backed by inventory you have already deposited, per stablecoin. Reservations move balances from Available to Reserved, and settlement moves them to Settled — a buyer can see the funds exist before committing, which is why your ads get taken."
+        ],
+        [
+          "Decide your market",
+          "Direction, asset and fiat currency. Pick a corridor you can actually service: you need a payment account in that currency, and you need to be awake when its buyers are."
+        ],
+        [
+          "Set a price",
+          "Fixed, or floating as a premium over the oracle mid. Floating tracks the market without you watching it; fixed is predictable but goes stale. Tighter pricing wins more orders and earns less per order."
+        ],
+        [
+          "Set limits you will honour",
+          "Minimum and maximum per trade. A maximum above what you can settle promptly costs you settlement speed, which is a reputation dimension buyers filter on."
+        ],
+        [
+          "Declare payment methods and terms",
+          "Only rails you can genuinely receive on. Your terms are where you state whose name must be on the transfer, what reference to use, and which hours you settle — those conditions are what disputes turn on, so put them here rather than explaining them in chat afterwards."
+        ],
+        [
+          "Publish and stay responsive",
+          "Availability and response time are scored and decay with inactivity, so a stale ad quietly stops appearing. Pause your ads rather than leaving them up when you cannot settle."
+        ]
       ],
       "obligationsHeading": "What you are taking on",
       "obligations": [
@@ -393,5 +467,43 @@
     "defPendingDesc": "Funded into open trade escrows. These tokens have left the vault and may still come back if a trade is cancelled or expires.",
     "defSettledDesc": "Cumulative amount that completed settlement and left for good. It only ever goes up.",
     "defTotalDesc": "The program calls this field <code>total</code>, but it is not a balance and it is not the sum of the other columns. Settlement never reduces it, so a vault that has traded away everything it held still shows its full historical deposit here while holding nothing. Do not size an advertisement against this number — size it against Available."
+  },
+  "orders": {
+    "title": "Orders",
+    "metaDescription": "Your OpenFiat P2P trades — reservations, escrow settlement, and history.",
+    "heroTitle": "My Trades",
+    "heroDescription": "Every trade runs the escrow lifecycle on Solana: locked → paid → verified → released.",
+    "filterAll": "All",
+    "filterActive": "Active",
+    "filterCompleted": "Completed",
+    "filterCancelled": "Cancelled",
+    "filterDisputed": "Disputed",
+    "filterRejected": "Rejected",
+    "statusEscrowLocked": "Escrow Locked",
+    "statusAwaitingPayment": "Awaiting Payment",
+    "statusPaymentSubmitted": "Payment Submitted",
+    "statusCompleted": "Completed",
+    "statusRejected": "Rejected",
+    "statusCancelled": "Cancelled",
+    "statusDisputed": "Disputed",
+    "connectPrompt": "Connect a wallet to see the reservations and settlements it is a party to. Your wallet key <em>is</em> your protocol identity — there is no separate account to create.",
+    "readError": "Could not read your trades from the node",
+    "tryAgain": "Try again",
+    "signPromptBody": "Your trades are readable only by the wallet that is party to them, so the node asks for a signature before it answers.",
+    "signPromptSub": "Nothing is signed until you ask for it — this is one prompt, and it proves the wallet rather than authorizing anything.",
+    "waitingWallet": "Waiting for your wallet…",
+    "showMyTrades": "Show my trades",
+    "noTrades": "This wallet is not a party to any reservation or trade this node knows about yet.",
+    "colTrade": "Trade",
+    "colPair": "Pair",
+    "colAmount": "Amount",
+    "colRole": "Your role",
+    "colStatus": "Status",
+    "colUpdated": "Updated",
+    "roleBuyer": "Buyer",
+    "roleMerchant": "Merchant",
+    "roleRequester": "Requester",
+    "roleCounterparty": "Counterparty",
+    "noTradesInState": "No trades in this state."
   }
 }

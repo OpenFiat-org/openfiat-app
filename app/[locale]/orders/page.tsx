@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Orders",
-  description: "Your OpenFiat P2P trades — reservations, escrow settlement, and history.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "orders" });
+  return {
+    title: t("title"),
+    description: t("metaDescription"),
+  };
+}
 
 export default function OrdersPage() {
+  const t = useTranslations("orders");
   return (
     <section>
-      <PageHero
-        title="My Trades"
-        description="Every trade runs the escrow lifecycle on Solana: locked → paid → verified → released."
-      />
+      <PageHero title={t("heroTitle")} description={t("heroDescription")} />
       <div className="mt-8">
         <OrdersTable />
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
 import { peerIdForAddress } from "@/lib/peer-id";
@@ -57,6 +58,7 @@ function matches(trade: Trade, filter: Filter): boolean {
  * at length and this screen follows.
  */
 export function OrdersTable() {
+  const t = useTranslations("orders");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [ads, setAds] = useState<LiveAd[]>([]);
   const [filter, setFilter] = useState<Filter>("All");
@@ -84,8 +86,7 @@ export function OrdersTable() {
   if (!wallet) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-sm text-gray-400">
-        Connect a wallet to see the reservations and settlements it is a party to. Your wallet key
-        <em> is </em> your protocol identity — there is no separate account to create.
+        {t.rich("connectPrompt", { em: (chunks) => <em>{chunks}</em> })}
       </p>
     );
   }
@@ -93,13 +94,13 @@ export function OrdersTable() {
   if (status === "failed") {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read your trades from the node</p>
+        <p className="text-sm font-medium text-red-300">{t("readError")}</p>
         <p className="mt-1 text-xs text-red-400/80">{error}</p>
         <button
           onClick={read}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Try again
+          {t("tryAgain")}
         </button>
       </div>
     );
@@ -109,19 +110,17 @@ export function OrdersTable() {
     return (
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
         <p className="text-sm text-gray-300">
-          Your trades are readable only by the wallet that is party to them, so the node asks for a
-          signature before it answers.
+          {t("signPromptBody")}
         </p>
         <p className="mt-1.5 text-xs text-gray-500">
-          Nothing is signed until you ask for it — this is one prompt, and it proves the wallet
-          rather than authorizing anything.
+          {t("signPromptSub")}
         </p>
         <button
           onClick={read}
           disabled={status === "loading"}
           className="mt-4 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
         >
-          {status === "loading" ? "Waiting for your wallet…" : "Show my trades"}
+          {status === "loading" ? t("waitingWallet") : t("showMyTrades")}
         </button>
       </div>
     );
@@ -129,7 +128,7 @@ export function OrdersTable() {
 
   const myPeerId = peerIdForAddress(wallet.address) ?? "";
   const mine = trades;
-  const visible = mine.filter((t) => matches(t, filter));
+  const visible = mine.filter((tr) => matches(tr, filter));
 
   return (
     <div>
@@ -144,14 +143,14 @@ export function OrdersTable() {
                 : "border-white/10 text-gray-400 hover:text-white"
             }`}
           >
-            {f}
+            {t(`filter${f}`)}
           </button>
         ))}
       </div>
 
       {mine.length === 0 ? (
         <p className="mt-6 py-8 text-sm text-gray-500">
-          This wallet is not a party to any reservation or trade this node knows about yet.
+          {t("noTrades")}
         </p>
       ) : (
         <div className="mt-4">
@@ -159,34 +158,34 @@ export function OrdersTable() {
             minWidth={860}
             head={
               <tr>
-                <Th>Trade</Th>
-                <Th>Pair</Th>
-                <Th right>Amount</Th>
-                <Th>Your role</Th>
-                <Th>Status</Th>
-                <Th right>Updated</Th>
+                <Th>{t("colTrade")}</Th>
+                <Th>{t("colPair")}</Th>
+                <Th right>{t("colAmount")}</Th>
+                <Th>{t("colRole")}</Th>
+                <Th>{t("colStatus")}</Th>
+                <Th right>{t("colUpdated")}</Th>
               </tr>
             }
           >
-            {visible.map((t) => {
-              const ad = adById.get(t.reservation.advertisement_id);
-              const amount = t.reservation.amount.base_units / 10 ** t.reservation.amount.decimals;
-              const status = deriveStatus(t);
+            {visible.map((trade) => {
+              const ad = adById.get(trade.reservation.advertisement_id);
+              const amount = trade.reservation.amount.base_units / 10 ** trade.reservation.amount.decimals;
+              const status = deriveStatus(trade);
               // From the settlement once one exists, because that is where
               // the two sides are actually recorded; before then the
               // requester is the trade's only named party.
-              const role = t.settlement
-                ? t.settlement.buyer === myPeerId
-                  ? "Buyer"
-                  : "Merchant"
-                : t.reservation.requester === myPeerId
-                  ? "Requester"
-                  : "Counterparty";
+              const roleKey = trade.settlement
+                ? trade.settlement.buyer === myPeerId
+                  ? "roleBuyer"
+                  : "roleMerchant"
+                : trade.reservation.requester === myPeerId
+                  ? "roleRequester"
+                  : "roleCounterparty";
               return (
-                <Tr key={t.reservation.id}>
+                <Tr key={trade.reservation.id}>
                   <Td py="py-5">
-                    <Link href={`/orders/${t.reservation.id}`} className="font-mono font-medium text-brand hover:text-brand-hover">
-                      {t.reservation.id}
+                    <Link href={`/orders/${trade.reservation.id}`} className="font-mono font-medium text-brand hover:text-brand-hover">
+                      {trade.reservation.id}
                     </Link>
                   </Td>
                   <Td py="py-5" className="text-gray-300">
@@ -195,16 +194,16 @@ export function OrdersTable() {
                   <Td py="py-5" right num className="text-gray-300">
                     {ad ? formatCrypto(amount, assetLabel(ad)) : amount}
                   </Td>
-                  <Td py="py-5" className="text-gray-400">{role}</Td>
-                  <Td py="py-5"><StatusPill status={TRADE_STATUS_LABEL[status]} /></Td>
-                  <Td py="py-5" right className="text-xs text-gray-500">{formatDateMs(t.reservation.updated_at)}</Td>
+                  <Td py="py-5" className="text-gray-400">{t(roleKey)}</Td>
+                  <Td py="py-5"><StatusPill status={TRADE_STATUS_LABEL[status]} label={t(`status${status}`)} /></Td>
+                  <Td py="py-5" right className="text-xs text-gray-500">{formatDateMs(trade.reservation.updated_at)}</Td>
                 </Tr>
               );
             })}
             {visible.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
-                  No trades in this state.
+                  {t("noTradesInState")}
                 </td>
               </tr>
             )}

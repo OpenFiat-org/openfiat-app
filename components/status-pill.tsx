@@ -47,12 +47,17 @@ function toneFor(status: string): string {
   }
 }
 
-export function StatusPill({ status }: { status: string }) {
+/**
+ * `status` is the canonical English state and always drives the colour, so a
+ * localized screen keeps its tones. Pass `label` to show translated text over
+ * that same tone; without it the English status shows, as before.
+ */
+export function StatusPill({ status, label }: { status: string; label?: string }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${toneFor(status)}`}
     >
-      {status}
+      {label ?? status}
     </span>
   );
 }
