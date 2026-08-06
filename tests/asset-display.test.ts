@@ -1,11 +1,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import en from "@/messages/en.json";
 import {
   NATIVE_SOL_TRADING_LABEL,
   isNativeSolMintAddress,
   tradingSymbol,
 } from "@/lib/asset-display";
+
+// The boundary copy moved into the message catalogue when the wallet was
+// localized; these guards now assert it is still wired (the component reads
+// the key) and still says the load-bearing thing (the English source string).
+const wallet = (en as { wallet: Record<string, string> }).wallet;
 import { assetLabel } from "@/lib/live-advertisements";
 import { nameForMint, type ReferenceMint } from "@/lib/live-vaults";
 import { WRAPPED_SOL_MINT } from "@/lib/vault-instructions";
@@ -104,7 +110,8 @@ describe("the boundary the rename must not cross", () => {
     expect(source).toContain("nameForMint(b.mint, mints)");
     // And native SOL has a row of its own, labelled for what it is for.
     expect(source).toContain("NATIVE_SOL_TRADING_LABEL");
-    expect(source).toMatch(/pays transaction fees/);
+    expect(source).toContain("nativeSolNote");
+    expect(wallet.nativeSolNote).toMatch(/pays transaction fees/);
     // A wrapped position says it is not the fee balance.
     expect(source).toMatch(/isWrappedSol\(b\.mint\)/);
   });
@@ -120,7 +127,8 @@ describe("the boundary the rename must not cross", () => {
   it("calls a vault denominated in the native mint SOL, and says what it holds", () => {
     const vaults = readFileSync("components/wallet/vaults-panel.tsx", "utf8");
     expect(vaults).toContain("tradingSymbol(v.mint.toBase58(), naming.symbol)");
-    expect(vaults).toMatch(/Held as wrapped SOL/);
+    expect(vaults).toContain("heldAsWrapped");
+    expect(wallet.heldAsWrapped).toMatch(/Held as wrapped SOL/);
 
     // The withdraw form's vault picker, for the same reason: what it pays
     // out is SOL.

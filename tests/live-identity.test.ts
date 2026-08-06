@@ -99,9 +99,10 @@ describe("why a claim is not in force", () => {
     ];
     const replaced = replacedClaimIds(claims);
     expect(replaced.has("old")).toBe(true);
+    // inactiveReason returns a stable key (localized in the component), not prose.
     expect(inactiveReason(claims[0]!, replaced, NOW)).toBeNull();
-    expect(inactiveReason(claims[1]!, replaced, NOW)).toBe("Superseded");
-    expect(inactiveReason(claims[2]!, replaced, NOW)).toBe("Revoked");
-    expect(inactiveReason(claims[3]!, replaced, NOW)).toBe("Expired");
+    expect(inactiveReason(claims[1]!, replaced, NOW)).toBe("superseded");
+    expect(inactiveReason(claims[2]!, replaced, NOW)).toBe("revoked");
+    expect(inactiveReason(claims[3]!, replaced, NOW)).toBe("expired");
   });
 });

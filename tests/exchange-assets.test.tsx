@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import en from "@/messages/en.json";
 
 /**
  * The currency picker is not what these tests are about, and it reads a
@@ -113,7 +115,11 @@ async function mount() {
   document.body.appendChild(container);
   await act(async () => {
     root = createRoot(container);
-    root.render(<P2PExchange showHeading={false} />);
+    root.render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <P2PExchange showHeading={false} />
+      </NextIntlClientProvider>,
+    );
   });
   // A second flush: the pill list and the book are separate requests, and
   // the pills are what the first one produces.
