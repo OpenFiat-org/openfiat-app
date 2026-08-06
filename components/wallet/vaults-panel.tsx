@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { WALLET_CHANGED_EVENT, readWalletConnection, type WalletConnection } from "@/lib/wallet-connection";
@@ -35,6 +36,7 @@ import { MetricStrip } from "@/components/metrics";
  * Total is labelled as the lifetime figure it is.
  */
 export function VaultsPanel() {
+  const t = useTranslations("wallet");
   // Names come from the node, never from a table here — see `nameForMint`.
   const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
@@ -70,9 +72,7 @@ export function VaultsPanel() {
   if (!wallet) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-sm text-gray-400">
-        Connect a wallet to see the liquidity vaults it owns on Solana devnet. A vault is a program account
-        derived from your wallet address and a token mint — there is no account to register, and nothing is
-        shown here until a wallet is connected.
+        {t("vaultsConnectPrompt")}
       </p>
     );
   }
@@ -80,39 +80,37 @@ export function VaultsPanel() {
   if (error) {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read your vaults from Solana devnet</p>
+        <p className="text-sm font-medium text-red-300">{t("vaultsReadError")}</p>
         <p className="mt-1 text-sm text-gray-400">
-          This is a connection failure, not an answer. You may well have vaults — this screen simply could not
-          ask. Do not treat it as an empty balance.
+          {t("vaultsReadErrorSub")}
         </p>
         <p className="mt-2 font-mono text-xs text-red-400/80">{error}</p>
         <button
           onClick={() => void load(wallet.address)}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
   }
 
   if (vaults === null) {
-    return <p className="p-6 text-sm text-gray-500">Reading your vaults from devnet…</p>;
+    return <p className="p-6 text-sm text-gray-500">{t("vaultsReading")}</p>;
   }
 
   if (vaults.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
-        <p className="text-sm text-gray-300">This wallet owns no liquidity vaults yet.</p>
+        <p className="text-sm text-gray-300">{t("noVaults")}</p>
         <p className="mt-1.5 text-sm text-gray-500">
-          That is an answer from the chain, not a failed lookup. A vault is created the first time you deposit
-          into one, and holds a single token mint.
+          {t("noVaultsSub")}
         </p>
         <Link
           href="/wallet/deposit"
           className="mt-4 inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
         >
-          Open a vault with a deposit
+          {t("openVault")}
         </Link>
       </div>
     );
@@ -122,11 +120,11 @@ export function VaultsPanel() {
     <div>
       <MetricStrip
         items={[
-          { label: "Vaults", value: String(vaults.length), sub: "one per token mint" },
+          { label: t("metricVaults"), value: String(vaults.length), sub: t("metricVaultsSub") },
           {
-            label: "Mints held",
+            label: t("metricMints"),
             value: String(new Set(vaults.map((v) => v.mint.toBase58())).size),
-            sub: "balances are per mint, not summed",
+            sub: t("metricMintsSub"),
           },
         ]}
       />
@@ -143,13 +141,13 @@ export function VaultsPanel() {
           minWidth={960}
           head={
             <tr>
-              <Th>Mint</Th>
-              <Th right>Available</Th>
-              <Th right>Reserved</Th>
-              <Th right>Pending settlement</Th>
-              <Th right>Settled (lifetime)</Th>
-              <Th right>Deposited − withdrawn</Th>
-              <Th right>Actions</Th>
+              <Th>{t("colMint")}</Th>
+              <Th right>{t("colAvailable")}</Th>
+              <Th right>{t("colReserved")}</Th>
+              <Th right>{t("colPendingSettlement")}</Th>
+              <Th right>{t("colSettled")}</Th>
+              <Th right>{t("colDepositedWithdrawn")}</Th>
+              <Th right>{t("colActions")}</Th>
             </tr>
           }
         >
@@ -186,7 +184,7 @@ export function VaultsPanel() {
                     */}
                   {isWrappedSol(v.mint) && (
                     <span className="mt-0.5 block text-[11px] text-gray-600">
-                      Held as wrapped SOL; deposits and withdrawals convert in the same transaction.
+                      {t("heldAsWrapped")}
                     </span>
                   )}
                   {/*
@@ -201,12 +199,12 @@ export function VaultsPanel() {
                     */}
                   {naming.kind === "unnamed" && (
                     <span className="mt-0.5 block text-[11px] text-amber-300/80">
-                      No node has a name for this mint — check the address.
+                      {t("noNameForMint")}
                     </span>
                   )}
                   {naming.kind === "unasked" && (
                     <span className="mt-0.5 block text-[11px] text-gray-600">
-                      Token names could not be read from an OpenFiat node.
+                      {t("namesUnavailable")}
                     </span>
                   )}
                 </Td>
@@ -230,7 +228,7 @@ export function VaultsPanel() {
                     href={`/wallet/deposit?mint=${v.mint.toBase58()}`}
                     className="text-emerald-400 hover:text-emerald-300"
                   >
-                    Deposit
+                    {t("deposit")}
                   </Link>
                   <span className="mx-1.5 text-gray-700">·</span>
                   <Link
@@ -239,9 +237,9 @@ export function VaultsPanel() {
                       v.available > 0n ? "text-gray-400 hover:text-white" : "cursor-not-allowed text-gray-700"
                     }
                     aria-disabled={v.available === 0n}
-                    title={v.available === 0n ? "Nothing available to withdraw" : undefined}
+                    title={v.available === 0n ? t("nothingToWithdraw") : undefined}
                   >
-                    Withdraw
+                    {t("withdraw")}
                   </Link>
                 </Td>
               </Tr>
@@ -257,39 +255,35 @@ export function VaultsPanel() {
         */}
       <dl className="mt-5 grid gap-x-8 gap-y-3 border-t border-white/10 pt-5 text-xs sm:grid-cols-2">
         <div>
-          <dt className="font-medium text-emerald-300">Available</dt>
+          <dt className="font-medium text-emerald-300">{t("colAvailable")}</dt>
           <dd className="mt-0.5 text-gray-500">
-            The only figure a new reservation or a withdrawal can draw against. The program checks this and
-            nothing else.
+            {t("defAvailableDesc")}
           </dd>
         </div>
         <div>
-          <dt className="font-medium text-amber-300">Reserved</dt>
+          <dt className="font-medium text-amber-300">{t("colReserved")}</dt>
           <dd className="mt-0.5 text-gray-500">
-            Committed to reservations that have not yet been funded into an escrow. Still in the vault, but
-            already spoken for.
+            {t("defReservedDesc")}
           </dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-300">Pending settlement</dt>
+          <dt className="font-medium text-gray-300">{t("colPendingSettlement")}</dt>
           <dd className="mt-0.5 text-gray-500">
-            Funded into open trade escrows. These tokens have left the vault and may still come back if a
-            trade is cancelled or expires.
+            {t("defPendingDesc")}
           </dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-400">Settled (lifetime)</dt>
+          <dt className="font-medium text-gray-400">{t("colSettled")}</dt>
           <dd className="mt-0.5 text-gray-500">
-            Cumulative amount that completed settlement and left for good. It only ever goes up.
+            {t("defSettledDesc")}
           </dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="font-medium text-gray-400">Deposited − withdrawn</dt>
+          <dt className="font-medium text-gray-400">{t("colDepositedWithdrawn")}</dt>
           <dd className="mt-0.5 text-gray-500">
-            The program calls this field <code className="text-gray-400">total</code>, but it is not a
-            balance and it is not the sum of the other columns. Settlement never reduces it, so a vault that
-            has traded away everything it held still shows its full historical deposit here while holding
-            nothing. Do not size an advertisement against this number — size it against Available.
+            {t.rich("defTotalDesc", {
+              code: (chunks) => <code className="text-gray-400">{chunks}</code>,
+            })}
           </dd>
         </div>
       </dl>

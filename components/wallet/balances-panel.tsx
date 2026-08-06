@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import {
@@ -53,6 +54,7 @@ type UnwrapState =
   | { phase: "error"; message: string };
 
 export function BalancesPanel() {
+  const t = useTranslations("wallet");
   // Names come from the node, never from a table here — see `nameForMint`.
   const mints = useMintNames();
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
@@ -115,7 +117,7 @@ export function BalancesPanel() {
       if (!provider) {
         setUnwrapping({
           phase: "error",
-          message: "This wallet connection can't sign — reconnect with a real wallet.",
+          message: t("signerError"),
         });
         return;
       }
@@ -137,36 +139,36 @@ export function BalancesPanel() {
       } catch (err) {
         setUnwrapping({
           phase: "error",
-          message: err instanceof Error ? err.message : "Transaction failed or was rejected.",
+          message: err instanceof Error ? err.message : t("txFailed"),
         });
       }
     },
-    [wallet, load],
+    [wallet, load, t],
   );
 
   if (!wallet) {
-    return <p className="text-sm text-gray-500">Connect a wallet to see what it holds.</p>;
+    return <p className="text-sm text-gray-500">{t("connectPrompt")}</p>;
   }
 
   if (error) {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read your token accounts</p>
+        <p className="text-sm font-medium text-red-300">{t("readError")}</p>
         <p className="mt-1 text-sm text-gray-400">
-          Nothing below is a balance of zero — the lookup itself failed.
+          {t("readErrorSub")}
         </p>
         <p className="mt-2 font-mono text-xs text-red-400/80">{error}</p>
         <button
           onClick={() => void load(wallet.address)}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
   }
 
-  if (balances === null) return <p className="text-sm text-gray-500">Reading token accounts…</p>;
+  if (balances === null) return <p className="text-sm text-gray-500">{t("readingBalances")}</p>;
 
   return (
     <>
@@ -174,9 +176,9 @@ export function BalancesPanel() {
       minWidth={680}
       head={
         <tr>
-          <Th>Mint</Th>
-          <Th right>Balance</Th>
-          <Th right>Token program</Th>
+          <Th>{t("colMint")}</Th>
+          <Th right>{t("colBalance")}</Th>
+          <Th right>{t("colTokenProgram")}</Th>
         </tr>
       }
     >
@@ -191,14 +193,14 @@ export function BalancesPanel() {
         <Td>
           <span className="block font-medium text-gray-200">{NATIVE_SOL_TRADING_LABEL}</span>
           <span className="mt-0.5 block text-[11px] text-gray-500">
-            Native SOL — pays transaction fees and account rent. Not a token balance.
+            {t("nativeSolNote")}
           </span>
         </Td>
         <Td right num className="text-gray-200">
           {lamports === null ? "—" : formatBaseUnits(lamports, WRAPPED_SOL_DECIMALS)}
         </Td>
         <Td right className="text-[11px] text-gray-500">
-          None
+          {t("none")}
         </Td>
       </Tr>
       {balances.map((b) => {
@@ -225,10 +227,10 @@ export function BalancesPanel() {
                 {naming.kind === "named"
                   ? naming.symbol
                   : naming.kind === "unnamed"
-                    ? "Unrecognised mint"
+                    ? t("unrecognisedMint")
                     : naming.kind === "asking"
-                      ? "Reading token names…"
-                      : "Name unavailable"}
+                      ? t("readingNames")
+                      : t("nameUnavailable")}
               </span>
               {/* The address, in full when there is no name above it to
                   identify the token by: `shortMint` would otherwise leave a
@@ -253,7 +255,7 @@ export function BalancesPanel() {
               {isWrappedSol(b.mint) && (
                 <>
                   <span className="mt-0.5 block text-[11px] text-amber-300/80">
-                    Wrapped SOL, held as a token. It does not pay fees — the SOL row above does.
+                    {t("wrappedSolNote")}
                   </span>
                   {/*
                     * The way out, offered rather than explained. Nothing in
@@ -270,7 +272,7 @@ export function BalancesPanel() {
                     disabled={unwrapping.phase === "signing"}
                     className="mt-1.5 rounded-md border border-white/15 px-2.5 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/5 disabled:opacity-50"
                   >
-                    {unwrapping.phase === "signing" ? "Unwrapping…" : "Unwrap to SOL"}
+                    {unwrapping.phase === "signing" ? t("unwrapping") : t("unwrapToSol")}
                   </button>
                   {unwrapping.phase === "error" && (
                     <span className="mt-1 block text-[11px] text-red-300">
@@ -292,14 +294,12 @@ export function BalancesPanel() {
     </DataTable>
       {balances.length === 0 && (
         <p className="mt-2 text-sm text-gray-500">
-          This wallet holds no SPL token accounts on devnet — only the native SOL above. Note that
-          devnet OPEN cannot be obtained at all: its mint authority is permanently unset.
+          {t("emptyBalances")}
         </p>
       )}
       {mints === null && (
         <p className="mt-2 text-[11px] text-gray-600">
-          Token names could not be read from an OpenFiat node, so mints are shown by address. The
-          balances themselves come from Solana and are unaffected.
+          {t("mintsNull")}
         </p>
       )}
     </>
