@@ -1,11 +1,12 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 
 import { fetchStakeAccount, fetchStakingConfig } from "@/lib/live-staking";
-import { roleByKey, toOpen, unbondingLabel } from "@/lib/staking-roles";
+import { roleByKey, toOpen } from "@/lib/staking-roles";
 import { formatNumber } from "@/lib/format";
 import { isComplete, readAccounts, type SavedPaymentAccount } from "@/lib/payment-accounts";
 import { fetchAdvertisements } from "@/lib/live-advertisements";
@@ -51,23 +52,37 @@ import {
  * no gate, because a merchant cannot tell it from a real one.
  */
 
-/** One prerequisite, and what is known about it. */
-type Standing =
-  | { state: "unknown"; detail: string }
-  | { state: "todo"; detail: string }
-  | { state: "done"; detail: string };
+/** One prerequisite, and what is known about it. The detail is a message
+ *  key plus any values — the component resolves it to the merchant's
+ *  language. */
+type StandingState = "unknown" | "todo" | "done";
+interface Standing {
+  state: StandingState;
+  key: string;
+  values?: Record<string, string | number>;
+}
 
 interface BondStanding {
   standing: Standing;
   /** Minimum in whole OPEN, or `null` when the chain could not be read. */
   minimum: number | null;
   staked: number | null;
-  unbonding: string | null;
+  /** Unbonding period in seconds, or `null` when the chain could not be read. */
+  unbondingSecs: bigint | null;
 }
 
 const MERCHANT_ROLE = roleByKey("merchant")!;
 
 export function BecomeMerchant() {
+  const t = useTranslations("becomeMerchant");
+  const St = useTranslations("staking");
+  /** A lock period in words, localized (reuses the staking plural keys). */
+  const unbondLabel = (seconds: bigint): string => {
+    const hours = Number(seconds) / 3600;
+    if (hours < 48) return St("unbondHours", { count: Math.round(hours) });
+    const days = hours / 24;
+    return St("unbondDays", { count: Number.isInteger(days) ? days : Number(days.toFixed(1)) });
+  };
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [bond, setBond] = useState<BondStanding | null>(null);
   const [accounts, setAccounts] = useState<SavedPaymentAccount[] | null>(null);
@@ -93,27 +108,21 @@ export function BecomeMerchant() {
       const config = await fetchStakingConfig();
       if (!config) {
         setBond({
-          standing: {
-            state: "unknown",
-            detail:
-              "No staking config exists on this cluster, so nothing has set a merchant minimum yet.",
-          },
+          standing: { state: "unknown", key: "bondNoConfig" },
           minimum: null,
           staked: null,
-          unbonding: null,
+          unbondingSecs: null,
         });
         return;
       }
       const minimum = toOpen(config.minStakeByRole[MERCHANT_ROLE.onchain]!);
-      const unbonding = unbondingLabel(
-        config.unbondingPeriodSecsByRole[MERCHANT_ROLE.onchain]!,
-      );
+      const unbondingSecs = config.unbondingPeriodSecsByRole[MERCHANT_ROLE.onchain]!;
       if (!address) {
         setBond({
-          standing: { state: "todo", detail: "Connect a wallet to see what it has bonded." },
+          standing: { state: "todo", key: "bondConnect" },
           minimum,
           staked: null,
-          unbonding,
+          unbondingSecs,
         });
         return;
       }
@@ -124,31 +133,29 @@ export function BecomeMerchant() {
           staked >= minimum
             ? {
                 state: "done",
-                detail: `${formatNumber(staked, 0)} OPEN bonded — at or above the ${formatNumber(minimum, 0)} OPEN minimum.`,
+                key: "bondDone",
+                values: { staked: formatNumber(staked, 0), minimum: formatNumber(minimum, 0) },
               }
-            : {
-                state: "todo",
-                detail:
-                  staked > 0
-                    ? `${formatNumber(staked, 0)} OPEN bonded, ${formatNumber(minimum - staked, 0)} short of the minimum.`
-                    : "Nothing bonded for the merchant role on this wallet.",
-              },
+            : staked > 0
+              ? {
+                  state: "todo",
+                  key: "bondShort",
+                  values: { staked: formatNumber(staked, 0), short: formatNumber(minimum - staked, 0) },
+                }
+              : { state: "todo", key: "bondNothing" },
         minimum,
         staked,
-        unbonding,
+        unbondingSecs,
       });
     } catch (err) {
       setBond({
-        standing: {
-          state: "unknown",
-          detail:
-            err instanceof Error
-              ? `Couldn't read the staking program: ${err.message}`
-              : "Couldn't read the staking program.",
-        },
+        standing:
+          err instanceof Error
+            ? { state: "unknown", key: "bondReadError", values: { message: err.message } }
+            : { state: "unknown", key: "bondReadErrorGeneric" },
         minimum: null,
         staked: null,
-        unbonding: null,
+        unbondingSecs: null,
       });
     }
   }, []);
@@ -184,47 +191,40 @@ export function BecomeMerchant() {
   const usableAccounts = (accounts ?? []).filter(isComplete);
 
   const walletStanding: Standing = wallet
-    ? { state: "done", detail: `Connected as ${wallet.address}` }
-    : { state: "todo", detail: "Nothing is connected, so nothing can sign an advertisement." };
+    ? { state: "done", key: "walletDone", values: { address: wallet.address } }
+    : { state: "todo", key: "walletTodo" };
 
   const accountStanding: Standing =
     accounts === null
-      ? { state: "unknown", detail: "Reading this browser's saved accounts…" }
+      ? { state: "unknown", key: "accountReading" }
       : usableAccounts.length > 0
-        ? {
-            state: "done",
-            detail: `${usableAccounts.length} complete account${usableAccounts.length === 1 ? "" : "s"} saved in this browser.`,
-          }
-        : {
-            state: "todo",
-            detail:
-              (accounts ?? []).length > 0
-                ? "Every saved account is missing at least one field, so a buyer could not pay into it."
-                : "No payment account saved yet.",
-          };
+        ? { state: "done", key: "accountDone", values: { count: usableAccounts.length } }
+        : (accounts ?? []).length > 0
+          ? { state: "todo", key: "accountIncomplete" }
+          : { state: "todo", key: "accountNone" };
 
   return (
     <div className="space-y-10">
       <ol className="divide-y divide-white/5 border-y border-white/5">
         <Requirement
           n={1}
-          title="A wallet"
+          title={t("req1Title")}
           standing={walletStanding}
-          body="It signs every advertisement and every settlement, and it is the merchant identity the network sees. There is no account to create and no identity check."
+          body={t("req1Body")}
           action={
             wallet ? null : (
-              <span className="text-xs text-gray-500">Use Connect wallet in the header.</span>
+              <span className="text-xs text-gray-500">{t("useConnect")}</span>
             )
           }
         />
         <Requirement
           n={2}
-          title="The merchant bond"
-          standing={bond?.standing ?? { state: "unknown", detail: "Reading the staking program…" }}
+          title={t("req2Title")}
+          standing={bond?.standing ?? { state: "unknown", key: "bondReading" }}
           body={
-            bond?.minimum === null || bond === null
-              ? "Bonded OPEN is what a merchant has at risk if they do not settle. The requirement lives on chain, in the staking program's own config."
-              : `${formatNumber(bond.minimum, 0)} OPEN, bonded for the merchant role. It stays locked while you hold the role and takes ${bond.unbonding ?? "a lock period"} to release after you unbond. Read from StakingConfig on chain — this app keeps no copy of the figure.`
+            bond?.minimum === null || bond === null || bond.unbondingSecs === null
+              ? t("req2BodyNoConfig")
+              : t("req2Body", { minimum: formatNumber(bond.minimum, 0), unbonding: unbondLabel(bond.unbondingSecs) })
           }
           action={
             <div className="space-y-2">
@@ -232,43 +232,29 @@ export function BecomeMerchant() {
                 href="/staking/stake?role=merchant"
                 className="inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
               >
-                Bond OPEN
+                {t("bondOpen")}
               </Link>
-              {/*
-                * The one thing on this page that cannot be completed on
-                * devnet, said here rather than discovered at the signature.
-                * The OPEN mint's authority was permanently unset when it was
-                * created, so no wallet can be issued any — verified with
-                * `spl-token display <mint> --url devnet`, and the reason
-                * `tests/e2e/stake.spec.ts` proves only the account-creation
-                * half of staking.
-                */}
               <p className="max-w-md text-[11px] leading-relaxed text-amber-300/90">
-                On devnet this step cannot actually be finished: the OPEN mint&rsquo;s authority is
-                permanently unset, so no wallet can obtain any and the token transfer has nothing to
-                move. Creating the stake account works; funding it does not. That is a fact about
-                this cluster, not a limitation of the form.
+                {t("devnetBondNote")}
               </p>
             </div>
           }
         />
         <Requirement
           n={3}
-          title="Somewhere to be paid"
+          title={t("req3Title")}
           standing={accountStanding}
-          body="At least one account you receive fiat into. When a buyer takes your sell order you nominate one of these, and they see each field separately so they can copy it without retyping."
+          body={t("req3Body")}
           action={
             <div className="space-y-2">
               <Link
                 href="/settings"
                 className="inline-block rounded-md border border-white/15 px-4 py-2 text-sm text-gray-200 hover:border-white/30"
               >
-                Add a payment account
+                {t("addPaymentAccount")}
               </Link>
               <p className="max-w-md text-[11px] leading-relaxed text-gray-600">
-                Saved in this browser and nowhere else. Nothing publishes them, and clearing your
-                site data removes them — so this step is a fact about this device, not about the
-                network.
+                {t("savedHereNote")}
               </p>
             </div>
           }
@@ -276,49 +262,40 @@ export function BecomeMerchant() {
       </ol>
 
       <div className="border-t border-white/5 pt-6">
-        <h2 className="text-sm font-medium text-white">Where you stand</h2>
+        <h2 className="text-sm font-medium text-white">{t("whereTitle")}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
           {ads === undefined
             ? wallet
-              ? "Reading your advertisements from the node…"
-              : "Connect a wallet to see your advertisements."
+              ? t("adsReading")
+              : t("adsConnectPrompt")
             : ads === null
-              ? "Could not reach a node to read your advertisements. That says nothing about whether you have any."
+              ? t("adsNodeError")
               : ads === 0
-                ? "You have no advertisements on this node yet."
-                : `You have ${ads} advertisement${ads === 1 ? "" : "s"} on this node.`}
+                ? t("adsNone")
+                : t("adsCount", { count: ads })}
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
             href="/ads/new"
             className="rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover"
           >
-            Post an advertisement
+            {t("postAd")}
           </Link>
           <Link
             href="/ads"
             className="rounded-md border border-white/15 px-5 py-2.5 text-sm text-gray-200 hover:border-white/30"
           >
-            My Ads
+            {t("myAds")}
           </Link>
           <Link
             href="/guide/merchant"
             className="rounded-md border border-white/15 px-5 py-2.5 text-sm text-gray-200 hover:border-white/30"
           >
-            How merchanting works
+            {t("howMerchanting")}
           </Link>
         </div>
-        {/*
-          * The node does not check the bond before accepting an
-          * advertisement, and saying otherwise would be the comfortable lie.
-          * A merchant who posts unbonded is not blocked here; they are told
-          * what they are and are not covered by.
-          */}
         <p className="mt-5 max-w-2xl border-l-2 border-white/10 pl-3 text-xs leading-relaxed text-gray-500">
-          Nothing above is enforced by this screen, and the node does not refuse an advertisement
-          from an unbonded wallet. What the bond buys is a counterparty&rsquo;s reason to trust you:
-          it is the stake that is at risk if you take payment and do not release. Posting without it
-          is allowed and visibly unbacked.
+          {t("notEnforcedNote")}
         </p>
       </div>
     </div>
@@ -339,6 +316,7 @@ function Requirement({
   standing: Standing;
   action: React.ReactNode;
 }) {
+  const t = useTranslations("becomeMerchant");
   const mark =
     standing.state === "done" ? "✓" : standing.state === "unknown" ? "?" : String(n);
   const tone =
@@ -368,7 +346,7 @@ function Requirement({
                 : "text-amber-300"
           }`}
         >
-          {standing.detail}
+          {t(`standing.${standing.key}`, standing.values)}
         </p>
       </div>
       <div className="shrink-0">{action}</div>
