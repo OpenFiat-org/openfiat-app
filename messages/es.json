@@ -1832,5 +1832,90 @@
     "belowMin": "Por debajo del mínimo de {min} USDC de la venta.",
     "aboveMax": "Por encima del máximo de {max} USDC de la venta.",
     "calcNote": "Una calculadora, no una compra — esta app aún no puede construir una instrucción <code>contribute</code>, y nada aquí firma nada. La aritmética es la del propio programa: 1 OPEN = {price} USDC, escalado por los decimales de los dos mints y nada más."
+  },
+  "earnings": {
+    "metaTitle": "Ganancias de proveedor",
+    "metaDescription": "Lee el estado de ganancias de tu servicio firmando un desafío con la clave con la que fue registrado.",
+    "heroTitle": "Ganancias de proveedor",
+    "heroDescription": "Si operas un nodo, un oráculo, una pasarela de notificaciones o un servicio de inteligencia de riesgo, aquí es donde lees lo que ha ganado. No hay cuenta de proveedor: demuestras que el servicio es tuyo firmando un desafío de un solo uso con la clave con la que lo registraste.",
+    "providerEarnings": "Ganancias de proveedor",
+    "connectWallet": "Conecta la billetera con la que se registró tu servicio. No hay cuenta de proveedor para iniciar sesión — la clave que registró el servicio es lo único que puede leer su estado.",
+    "proveControl": "Demuestra que controlas el servicio",
+    "proveIntro": "Elige uno de tus servicios registrados, o introduce un ID de servicio directamente. Se le pedirá a tu billetera que firme un desafío de un solo uso — esa firma es lo que demuestra que el servicio es tuyo. No se envía nada a la red y no se manda ninguna transacción.",
+    "registeredUnderKey": "Registrado bajo tu clave",
+    "connectToList": "Conecta una billetera para listar los servicios registrados bajo ella.",
+    "searchingRegistry": "Buscando en el registro de servicios…",
+    "noServicesRegistered": "No hay servicios registrados bajo esta clave. Registrar uno es cómo llega aquí — no hay cuenta de proveedor que crear.",
+    "serviceIdPlaceholder": "ID de servicio, p. ej. my-oracle-1",
+    "waitingSignature": "Esperando la firma…",
+    "readStatement": "Leer estado",
+    "couldNotRead": "No se pudo leer el estado.",
+    "statement": "Estado",
+    "fieldService": "Servicio",
+    "fieldType": "Tipo",
+    "fieldDeclaredPrice": "Precio declarado",
+    "freeNoPrice": "Gratis — sin precio declarado",
+    "fieldPayoutWallet": "Billetera de pago",
+    "noneDeclared": "Ninguna declarada",
+    "nothingCredited": "No se ha acreditado nada a este servicio.",
+    "zeroExplained": "Tu firma fue aceptada y este es tu estado real — el cero es la respuesta correcta, no una lectura fallida. Nada acredita todavía el libro de ganancias para ningún rol, así que hoy el estado de cada proveedor está vacío.",
+    "howRolePaid": "Cómo se paga este rol",
+    "consumersPay": "Los consumidores pagan",
+    "youReceive": "Tú recibes",
+    "notEnforceable": "Aún no exigible",
+    "model": {
+      "oracle": {
+        "label": "Fórmula no final",
+        "consumerPays": "Nada. Las lecturas son gratis, deliberadamente — un feed de tasas con precio se consulta menos, lo que hace más delgada y más fácil de mover la mediana a la que contribuye.",
+        "providerReceives": "El protocolo paga a los proveedores de oráculo, ponderado por cuántas monedas cubren. La fórmula se está diseñando y no es final, así que aún no se puede cotizar aquí ningún importe."
+      },
+      "risk": {
+        "label": "Importe fijado, aún no implementado",
+        "consumerPays": "Una suscripción, actualmente 1,000 USDC al mes por defecto.",
+        "providerReceives": "Esa suscripción. La tarifa es configurable por gobernanza y se espera que cambie a medida que la red crezca, así que trata los 1,000 USDC como el valor por defecto de hoy y no como un precio fijo.",
+        "blockedBy": "Un proveedor de inteligencia de riesgo debe ser aprobado por la gobernanza antes de operar. Esa barrera de aprobación aún no está construida — nada en el registro la verifica, así que registrarse hoy no significa que seas elegible."
+      },
+      "snapshot": {
+        "label": "No especificado",
+        "consumerPays": "Nada. Las descargas son gratis, deliberadamente — un snapshot con precio ralentiza justo aquello que permite que un nodo nuevo se una siquiera.",
+        "providerReceives": "No especificado. No se ha definido ningún pago al proveedor por servir snapshots, en ninguna dirección — es una pregunta abierta más que un cero decidido."
+      },
+      "notification": {
+        "label": "A la espera de medición",
+        "consumerPays": "El participante que activó las notificaciones en una operación paga, por entrega.",
+        "providerReceives": "Esa tarifa por entrega, al precio declarado en el registro. Quién paga está resuelto en principio; la medición que contaría las entregas y las acreditaría no está construida."
+      },
+      "infrastructure": {
+        "label": "Pagado como nodo",
+        "consumerPays": "Nada.",
+        "providerReceives": "Nada a través de este estado. Este tipo de servicio no se factura directamente — un operador que lo ejecuta es compensado como operador de nodo, del fondo de recompensas de nodos."
+      }
+    },
+    "failure": {
+      "no-such-service": "Este nodo no tiene ningún servicio registrado con ese id. Verifica el ID de servicio, o apunta a un nodo que haya visto tu registro.",
+      "challenge-expired": "El desafío caducó antes de ser firmado — solo es válido durante cinco minutos. No hay nada mal con tu clave; inténtalo de nuevo y aprueba el aviso de la billetera con prontitud.",
+      "challenge-spent": "Ese desafío ya fue usado o reemplazado. Cada uno es de un solo uso, y abrir esta página dos veces invalida el desafío anterior. Inténtalo de nuevo.",
+      "wrong-key": "La billetera conectada no es la clave con la que se registró este servicio. Los estados solo son legibles por quien lo registró.",
+      "unreachable": "No se pudo contactar el nodo seleccionado.",
+      "wallet-cannot-sign": "Esta billetera no admite la firma de mensajes, que es cómo demuestras que controlas el servicio."
+    },
+    "obsHeading": "Observaciones de recompensa de nodo",
+    "obsIntro": "Si operas un nodo en lugar de un servicio registrado, aquí es donde se mide tu trabajo. Nada de lo anterior te aplica — un nodo no se factura y no tiene estado que firmar con un desafío. Se paga del fondo de recompensas, y estas son las observaciones a partir de las cuales se computa la programación.",
+    "yourAccessNode": "tu nodo de acceso",
+    "thisNode": "Este nodo",
+    "obsNodeSaw": "Esto es lo que {node} vio de todos los demás, y nada más que eso. Averiguar lo que la red vio de <em>tu</em> nodo significa preguntar al nodo de otra persona — que es el propósito de publicarlo: dos nodos que discrepan aquí son visibles, donde dos nodos computando cada uno en privado no lo serían.",
+    "obsAsking": "Preguntando al nodo…",
+    "obsFailed": "{node} no respondió a <code>getRewardObservations</code>. Nada aquí dice si observó a alguien.",
+    "obsEpoch": "Época <e>{epoch}</e> · {start} a {end}",
+    "obsObservedNobody": "Este nodo no observó a nadie en esa época. Respondió, así que es un estado real con dos lecturas ordinarias: no oyó de ningún par en absoluto, o la época ya fue pagada y su libro purgado. Ninguna es un fallo al preguntar — mira la tabla de pares en <a>Red</a> para saber cuál de las dos es.",
+    "colPeer": "Par",
+    "colAvailability": "Disponibilidad",
+    "colConnectivity": "Conectividad",
+    "colChainAnnouncement": "Anuncio en cadena",
+    "seenAnnouncing": "Visto anunciando un blockhash",
+    "notSeenAnnouncing": "No visto anunciando uno",
+    "obsAvailability": "La <b>disponibilidad</b> es la presencia por cada porción de la época: en cada porción, ¿se oyó algo firmado por ese par? Se satura en uno por porción a propósito, así que inundar la red no gana nada extra y perder una carrera de propagación no cuesta nada — contar anuncios en su lugar habría medido quién anunció primero y pagado más a un nodo bien conectado que a uno igualmente disponible detrás de un enlace más lento.",
+    "obsConnectivity": "La <b>conectividad</b> es el multiplicador mayor para un nodo visto originando un anuncio de puente de cadena, y es <b>declarada más que probada</b>. Un nodo solo-gossip puede tomar un blockhash y slot que oyó de otro y re-anunciarlo bajo su propia firma; nada en el envoltorio distingue los dos. OFS-4100 §9.2 dice que el problema no lo resuelve esa especificación, y el piso para nodos solo-gossip limita cuánto vale la mentira en lugar de impedirla. Así que se reporta y no se marca.",
+    "obsNoAmount": "<b>No hay ningún importe aquí</b>, y no es una omisión. Convertir esto en tokens necesita el stake on-chain de cada candidato, que el camino de lectura del nodo no puede obtener — así que no publica ninguna programación en vez de publicar una vacía que parezca una respuesta que funciona. Esta app tampoco computará una: una cifra inventada en un navegador no es lo que nadie cobraría."
   }
 }

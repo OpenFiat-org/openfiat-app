@@ -10,8 +10,13 @@ import {
   shortMint,
   FAILURE_MESSAGE,
 } from "@/lib/earnings";
+import en from "@/messages/en.json";
 
 const MINT = "29w8TroBTYoaqrXBDcpv5L54VZRA8Kf7kU5U1cakvFdj";
+
+// The per-role payment copy moved to the message catalogue so it translates;
+// these regression guards now assert against the English source of truth.
+const MODEL = (en as { earnings: { model: Record<string, { consumerPays: string; providerReceives: string; blockedBy?: string }> } }).earnings.model;
 
 describe("payment model per role", () => {
   const oracle: ServiceType = { MarketData: "FxOracle" };
@@ -22,12 +27,12 @@ describe("payment model per role", () => {
 
   // The whole point of this page: zero means something different per role,
   // and telling every provider the same story would be wrong for most.
-  it("gives each role a distinct status", () => {
-    expect(paymentModelFor(oracle).status).toBe("intended");
-    expect(paymentModelFor(risk).status).toBe("defined");
-    expect(paymentModelFor(snapshot).status).toBe("unspecified");
-    expect(paymentModelFor(notification).status).toBe("awaiting-meter");
-    expect(paymentModelFor(bootstrap).status).toBe("not-applicable");
+  it("gives each role a distinct status and role key", () => {
+    expect(paymentModelFor(oracle)).toMatchObject({ status: "intended", role: "oracle" });
+    expect(paymentModelFor(risk)).toMatchObject({ status: "defined", role: "risk", blocked: true });
+    expect(paymentModelFor(snapshot)).toMatchObject({ status: "unspecified", role: "snapshot" });
+    expect(paymentModelFor(notification)).toMatchObject({ status: "awaiting-meter", role: "notification" });
+    expect(paymentModelFor(bootstrap)).toMatchObject({ status: "not-applicable", role: "infrastructure" });
   });
 
   // Regression guard on a claim that was corrected mid-build: an earlier
@@ -35,44 +40,39 @@ describe("payment model per role", () => {
   // permanently. Reads being free to consumers does not mean the provider is
   // unpaid — the protocol pays them, on a formula still being designed.
   it("does not tell an oracle provider they earn nothing", () => {
-    const model = paymentModelFor(oracle);
-    expect(model.consumerPays).toMatch(/free/i);
-    expect(model.providerReceives).toMatch(/protocol pays/i);
-    expect(model.providerReceives).toMatch(/currencies/i);
-    expect(model.providerReceives).not.toMatch(/earns? nothing/i);
+    expect(MODEL.oracle.consumerPays).toMatch(/free/i);
+    expect(MODEL.oracle.providerReceives).toMatch(/protocol pays/i);
+    expect(MODEL.oracle.providerReceives).toMatch(/currencies/i);
+    expect(MODEL.oracle.providerReceives).not.toMatch(/earns? nothing/i);
   });
 
   // "Coming soon" is the other failure mode — a vague promise reads as
   // imminent and ages badly.
   it("never promises delivery dates or uses coming-soon language", () => {
-    for (const type of [oracle, risk, snapshot, notification, bootstrap]) {
-      const model = paymentModelFor(type);
-      for (const text of [model.consumerPays, model.providerReceives, model.blockedBy ?? ""]) {
+    for (const m of Object.values(MODEL)) {
+      for (const text of [m.consumerPays, m.providerReceives, m.blockedBy ?? ""]) {
         expect(text).not.toMatch(/coming soon/i);
       }
     }
   });
 
   it("states the risk subscription amount and that governance can change it", () => {
-    const model = paymentModelFor(risk);
-    expect(model.consumerPays).toMatch(/1,000 USDC/);
-    expect(model.providerReceives).toMatch(/governance-configurable/i);
+    expect(MODEL.risk.consumerPays).toMatch(/1,000 USDC/);
+    expect(MODEL.risk.providerReceives).toMatch(/governance-configurable/i);
   });
 
   // A provider could otherwise register, see no error, and believe they are
   // eligible to operate.
   it("warns that the risk approval gate is not built", () => {
-    const model = paymentModelFor(risk);
-    expect(model.blockedBy).toBeDefined();
-    expect(model.blockedBy).toMatch(/approved by governance/i);
-    expect(model.blockedBy).toMatch(/not built yet/i);
+    expect(paymentModelFor(risk).blocked).toBe(true);
+    expect(MODEL.risk.blockedBy).toMatch(/approved by governance/i);
+    expect(MODEL.risk.blockedBy).toMatch(/not built yet/i);
   });
 
   // Snapshot is genuinely unsettled, which is different from a decided zero.
   it("treats snapshot provider payment as unspecified rather than absent", () => {
-    const model = paymentModelFor(snapshot);
-    expect(model.providerReceives).toMatch(/not specified/i);
-    expect(model.providerReceives).toMatch(/open question/i);
+    expect(MODEL.snapshot.providerReceives).toMatch(/not specified/i);
+    expect(MODEL.snapshot.providerReceives).toMatch(/open question/i);
   });
 
   it("falls back rather than throwing on an unrecognised service type", () => {

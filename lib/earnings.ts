@@ -42,69 +42,36 @@ export type PaymentStatus =
   /** Not a paid provider role — compensated as infrastructure, if at all. */
   | "not-applicable";
 
+/** Which provider role a registration falls under. Keys the payment-model copy. */
+export type ProviderRole = "oracle" | "risk" | "snapshot" | "notification" | "infrastructure";
+
 export interface PaymentModel {
   status: PaymentStatus;
-  /** Short label for the badge. */
-  label: string;
-  /** What someone consuming this service pays. */
-  consumerPays: string;
-  /** What the provider receives, stated as precisely as it is actually settled. */
-  providerReceives: string;
+  /** The role, keyed to the per-role payment copy resolved at the UI layer. */
+  role: ProviderRole;
   /**
-   * A prerequisite that does not exist in code yet. Rendered as a warning,
-   * because a provider could otherwise register and operate believing they
-   * are eligible.
+   * Whether this role has a prerequisite that does not exist in code yet.
+   * Rendered as a warning, because a provider could otherwise register and
+   * operate believing they are eligible. Only the risk role has one.
    */
-  blockedBy?: string;
+  blocked: boolean;
 }
 
 /**
- * Per-role payment models.
+ * Per-role payment status.
  *
- * Deliberately distinguishes what a *consumer* pays from what a *provider*
- * receives — they are not the same question, and conflating them is how you
- * end up telling an oracle provider they earn nothing because reads are free.
+ * The prose that explains each role — what a *consumer* pays versus what a
+ * *provider* receives, which are deliberately not the same question — lives in
+ * the message catalogue under `earnings.model.<role>`, so it translates. This
+ * only classifies; conflating consumer and provider is how you end up telling
+ * an oracle provider they earn nothing because reads are free.
  */
-const ORACLE: PaymentModel = {
-  status: "intended",
-  label: "Formula not final",
-  consumerPays: "Nothing. Reads are free, deliberately — a priced rate feed is consulted less, which makes the median it contributes to thinner and easier to move.",
-  providerReceives:
-    "The protocol pays oracle providers, weighted by how many currencies they cover. The formula is being designed and is not final, so no amount can be quoted here yet.",
-};
-
-const RISK: PaymentModel = {
-  status: "defined",
-  label: "Amount set, not yet implemented",
-  consumerPays: "A subscription, currently 1,000 USDC per month by default.",
-  providerReceives:
-    "That subscription. The rate is governance-configurable and is expected to change as the network grows, so treat 1,000 USDC as today's default rather than a fixed price.",
-  blockedBy:
-    "A risk intelligence provider must be approved by governance before operating. That approval gate is not built yet — nothing in the registry checks it, so registering today does not mean you are eligible.",
-};
-
-const SNAPSHOT: PaymentModel = {
-  status: "unspecified",
-  label: "Not specified",
-  consumerPays: "Nothing. Downloads are free, deliberately — a priced snapshot slows the thing that lets a new node join at all.",
-  providerReceives:
-    "Not specified. No provider payment has been defined for serving snapshots, in either direction — it is an open question rather than a settled zero.",
-};
-
-const NOTIFICATION: PaymentModel = {
-  status: "awaiting-meter",
-  label: "Awaiting metering",
-  consumerPays: "The participant who enabled notifications on a trade pays, per delivery.",
-  providerReceives:
-    "That per-delivery fee, at the price declared in the registration. Who pays is settled in principle; the metering that would count deliveries and credit them is not built.",
-};
-
-const INFRASTRUCTURE: PaymentModel = {
-  status: "not-applicable",
-  label: "Paid as a node",
-  consumerPays: "Nothing.",
-  providerReceives:
-    "Nothing through this statement. This service type is not billed for directly — an operator running it is compensated as a node operator, out of the node reward pool.",
+const MODELS: Record<ProviderRole, PaymentModel> = {
+  oracle: { status: "intended", role: "oracle", blocked: false },
+  risk: { status: "defined", role: "risk", blocked: true },
+  snapshot: { status: "unspecified", role: "snapshot", blocked: false },
+  notification: { status: "awaiting-meter", role: "notification", blocked: false },
+  infrastructure: { status: "not-applicable", role: "infrastructure", blocked: false },
 };
 
 /**
@@ -114,11 +81,11 @@ const INFRASTRUCTURE: PaymentModel = {
  * through this statement".
  */
 export function paymentModelFor(type: ServiceType): PaymentModel {
-  if ("MarketData" in type) return ORACLE;
-  if ("Security" in type) return RISK;
-  if ("Notifications" in type) return NOTIFICATION;
-  if ("Infrastructure" in type && type.Infrastructure === "SnapshotProvider") return SNAPSHOT;
-  return INFRASTRUCTURE;
+  if ("MarketData" in type) return MODELS.oracle;
+  if ("Security" in type) return MODELS.risk;
+  if ("Notifications" in type) return MODELS.notification;
+  if ("Infrastructure" in type && type.Infrastructure === "SnapshotProvider") return MODELS.snapshot;
+  return MODELS.infrastructure;
 }
 
 /** Human label for a service type, e.g. `MarketData:FxOracle`. */

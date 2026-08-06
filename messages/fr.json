@@ -1832,5 +1832,90 @@
     "belowMin": "En dessous du minimum de {min} USDC de la vente.",
     "aboveMax": "Au-dessus du maximum de {max} USDC de la vente.",
     "calcNote": "Un calculateur, pas un achat — cette app ne peut pas encore construire d'instruction <code>contribute</code>, et rien ici ne signe quoi que ce soit. L'arithmétique est celle du programme lui-même : 1 OPEN = {price} USDC, mis à l'échelle par les décimales des deux mints et rien d'autre."
+  },
+  "earnings": {
+    "metaTitle": "Revenus du fournisseur",
+    "metaDescription": "Lisez le relevé de revenus de votre service en signant un défi avec la clé sous laquelle il a été enregistré.",
+    "heroTitle": "Revenus du fournisseur",
+    "heroDescription": "Si vous exploitez un nœud, un oracle, une passerelle de notifications ou un service de renseignement sur les risques, c'est ici que vous lisez ce qu'il a gagné. Il n'y a pas de compte de fournisseur : vous prouvez que le service est le vôtre en signant un défi à usage unique avec la clé sous laquelle vous l'avez enregistré.",
+    "providerEarnings": "Revenus du fournisseur",
+    "connectWallet": "Connectez le portefeuille avec lequel votre service a été enregistré. Il n'y a pas de compte de fournisseur où se connecter — la clé qui a enregistré le service est la seule chose qui puisse lire son relevé.",
+    "proveControl": "Prouvez que vous contrôlez le service",
+    "proveIntro": "Choisissez l'un de vos services enregistrés, ou saisissez directement un ID de service. Votre portefeuille sera invité à signer un défi à usage unique — cette signature est ce qui prouve que le service est le vôtre. Rien n'est soumis au réseau et aucune transaction n'est envoyée.",
+    "registeredUnderKey": "Enregistré sous votre clé",
+    "connectToList": "Connectez un portefeuille pour lister les services enregistrés sous lui.",
+    "searchingRegistry": "Recherche dans le registre des services…",
+    "noServicesRegistered": "Aucun service n'est enregistré sous cette clé. En enregistrer un est ce qui l'amène ici — il n'y a pas de compte de fournisseur à créer.",
+    "serviceIdPlaceholder": "ID de service, p. ex. my-oracle-1",
+    "waitingSignature": "En attente de la signature…",
+    "readStatement": "Lire le relevé",
+    "couldNotRead": "Le relevé n'a pas pu être lu.",
+    "statement": "Relevé",
+    "fieldService": "Service",
+    "fieldType": "Type",
+    "fieldDeclaredPrice": "Prix déclaré",
+    "freeNoPrice": "Gratuit — aucun prix déclaré",
+    "fieldPayoutWallet": "Portefeuille de versement",
+    "noneDeclared": "Aucun déclaré",
+    "nothingCredited": "Rien n'a été crédité à ce service.",
+    "zeroExplained": "Votre signature a été acceptée et voici votre vrai relevé — le zéro est la bonne réponse, pas une lecture ratée. Rien ne crédite encore le registre des revenus pour aucun rôle, donc le relevé de chaque fournisseur est vide aujourd'hui.",
+    "howRolePaid": "Comment ce rôle est payé",
+    "consumersPay": "Les consommateurs paient",
+    "youReceive": "Vous recevez",
+    "notEnforceable": "Pas encore applicable",
+    "model": {
+      "oracle": {
+        "label": "Formule non finale",
+        "consumerPays": "Rien. Les lectures sont gratuites, délibérément — un flux de taux payant est moins consulté, ce qui rend la médiane à laquelle il contribue plus mince et plus facile à déplacer.",
+        "providerReceives": "Le protocole paie les fournisseurs d'oracle, pondéré selon le nombre de devises qu'ils couvrent. La formule est en cours de conception et n'est pas finale, donc aucun montant ne peut être indiqué ici pour l'instant."
+      },
+      "risk": {
+        "label": "Montant fixé, pas encore implémenté",
+        "consumerPays": "Un abonnement, actuellement 1 000 USDC par mois par défaut.",
+        "providerReceives": "Cet abonnement. Le tarif est configurable par la gouvernance et devrait changer à mesure que le réseau grandit, alors considérez 1 000 USDC comme la valeur par défaut d'aujourd'hui plutôt qu'un prix fixe.",
+        "blockedBy": "Un fournisseur de renseignement sur les risques doit être approuvé par la gouvernance avant d'opérer. Cette barrière d'approbation n'est pas encore construite — rien dans le registre ne la vérifie, donc s'enregistrer aujourd'hui ne signifie pas que vous êtes éligible."
+      },
+      "snapshot": {
+        "label": "Non spécifié",
+        "consumerPays": "Rien. Les téléchargements sont gratuits, délibérément — un instantané payant ralentit la chose même qui permet à un nouveau nœud de rejoindre le réseau.",
+        "providerReceives": "Non spécifié. Aucun paiement au fournisseur n'a été défini pour servir des instantanés, dans aucun sens — c'est une question ouverte plutôt qu'un zéro tranché."
+      },
+      "notification": {
+        "label": "En attente de mesure",
+        "consumerPays": "Le participant qui a activé les notifications sur une transaction paie, par livraison.",
+        "providerReceives": "Ce frais par livraison, au prix déclaré à l'enregistrement. Qui paie est réglé en principe ; la mesure qui compterait les livraisons et les créditerait n'est pas construite."
+      },
+      "infrastructure": {
+        "label": "Payé en tant que nœud",
+        "consumerPays": "Rien.",
+        "providerReceives": "Rien via ce relevé. Ce type de service n'est pas facturé directement — un opérateur qui l'exécute est rémunéré comme opérateur de nœud, sur le pool de récompenses des nœuds."
+      }
+    },
+    "failure": {
+      "no-such-service": "Ce nœud n'a aucun service enregistré sous cet id. Vérifiez l'ID de service, ou pointez vers un nœud qui a vu votre enregistrement.",
+      "challenge-expired": "Le défi a expiré avant d'être signé — il n'est valable que cinq minutes. Rien ne cloche avec votre clé ; réessayez et approuvez rapidement l'invite du portefeuille.",
+      "challenge-spent": "Ce défi a déjà été utilisé ou remplacé. Chacun est à usage unique, et ouvrir cette page deux fois invalide le défi le plus ancien. Réessayez.",
+      "wrong-key": "Le portefeuille connecté n'est pas la clé avec laquelle ce service a été enregistré. Les relevés ne sont lisibles que par l'enregistrant.",
+      "unreachable": "Impossible de joindre le nœud sélectionné.",
+      "wallet-cannot-sign": "Ce portefeuille ne prend pas en charge la signature de messages, qui est la façon dont vous prouvez que vous contrôlez le service."
+    },
+    "obsHeading": "Observations de récompense du nœud",
+    "obsIntro": "Si vous exploitez un nœud plutôt qu'un service enregistré, c'est ici que votre travail est mesuré. Rien de ce qui précède ne s'applique à vous — un nœud n'est pas facturé et n'a pas de relevé pour lequel signer un défi. Il est payé sur le pool de récompenses, et voici les observations à partir desquelles le calendrier est calculé.",
+    "yourAccessNode": "votre nœud d'accès",
+    "thisNode": "Ce nœud",
+    "obsNodeSaw": "Voici ce que {node} a vu de tous les autres, et rien de plus. Savoir ce que le réseau a vu de <em>votre</em> nœud signifie interroger le nœud de quelqu'un d'autre — ce qui est le but de la publication : deux nœuds qui divergent ici sont visibles, là où deux nœuds calculant chacun en privé ne le seraient pas.",
+    "obsAsking": "Interrogation du nœud…",
+    "obsFailed": "{node} n'a pas répondu à <code>getRewardObservations</code>. Rien ici ne dit s'il a observé qui que ce soit.",
+    "obsEpoch": "Époque <e>{epoch}</e> · {start} à {end}",
+    "obsObservedNobody": "Ce nœud n'a observé personne durant cette époque. Il a répondu, c'est donc un état réel avec deux lectures ordinaires : il n'a entendu aucun pair du tout, ou l'époque a déjà été payée et son registre élagué. Aucune n'est un échec à demander — voyez la table des pairs sur <a>Réseau</a> pour savoir laquelle des deux c'est.",
+    "colPeer": "Pair",
+    "colAvailability": "Disponibilité",
+    "colConnectivity": "Connectivité",
+    "colChainAnnouncement": "Annonce sur chaîne",
+    "seenAnnouncing": "Vu annonçant un blockhash",
+    "notSeenAnnouncing": "Pas vu en annoncer un",
+    "obsAvailability": "La <b>disponibilité</b> est la présence par tranche de l'époque : dans chaque tranche, a-t-on entendu quoi que ce soit de signé par ce pair ? Elle sature à un par tranche à dessein, donc inonder le réseau ne rapporte rien de plus et perdre une course de propagation ne coûte rien — compter les annonces à la place aurait mesuré qui a annoncé en premier et payé un nœud bien connecté plus qu'un nœud tout aussi disponible derrière un lien plus lent.",
+    "obsConnectivity": "La <b>connectivité</b> est le multiplicateur plus élevé pour un nœud vu à l'origine d'une annonce de pont de chaîne, et elle est <b>déclarée plutôt que prouvée</b>. Un nœud gossip-seul peut prendre un blockhash et un slot entendus d'un autre et les réannoncer sous sa propre signature ; rien dans l'enveloppe ne distingue les deux. L'OFS-4100 §9.2 dit que le problème n'est pas résolu par cette spécification, et le plancher pour les nœuds gossip-seul limite ce que vaut le mensonge plutôt que de l'empêcher. Donc c'est rapporté et non coché.",
+    "obsNoAmount": "<b>Il n'y a pas de montant ici</b>, et ce n'est pas une omission. Convertir cela en jetons nécessite la mise on-chain de chaque candidat, que le chemin de lecture du nœud ne peut pas récupérer — donc il ne publie aucun calendrier plutôt que d'en publier un vide qui ressemble à une réponse fonctionnelle. Cette app n'en calculera pas non plus : un chiffre inventé dans un navigateur n'est pas ce que quiconque serait payé."
   }
 }

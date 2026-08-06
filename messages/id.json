@@ -1832,5 +1832,90 @@
     "belowMin": "Di bawah minimum penjualan {min} USDC.",
     "aboveMax": "Di atas maksimum penjualan {max} USDC.",
     "calcNote": "Sebuah kalkulator, bukan pembelian — aplikasi ini belum bisa membangun instruksi <code>contribute</code>, dan tidak ada di sini yang menandatangani apa pun. Aritmetikanya milik program itu sendiri: 1 OPEN = {price} USDC, diskalakan oleh selisih desimal kedua mint dan tidak lebih."
+  },
+  "earnings": {
+    "metaTitle": "Penghasilan penyedia",
+    "metaDescription": "Baca laporan penghasilan layanan Anda dengan menandatangani tantangan menggunakan kunci tempat ia didaftarkan.",
+    "heroTitle": "Penghasilan penyedia",
+    "heroDescription": "Jika Anda menjalankan node, orakel, gateway notifikasi, atau layanan intelijen risiko, di sinilah Anda membaca apa yang telah dihasilkannya. Tidak ada akun penyedia: Anda membuktikan layanan itu milik Anda dengan menandatangani tantangan sekali pakai menggunakan kunci tempat Anda mendaftarkannya.",
+    "providerEarnings": "Penghasilan penyedia",
+    "connectWallet": "Hubungkan dompet tempat layanan Anda didaftarkan. Tidak ada akun penyedia untuk masuk — kunci yang mendaftarkan layanan adalah satu-satunya yang dapat membaca laporannya.",
+    "proveControl": "Buktikan Anda mengendalikan layanan",
+    "proveIntro": "Pilih salah satu layanan terdaftar Anda, atau masukkan ID Layanan secara langsung. Dompet Anda akan diminta menandatangani tantangan sekali pakai — tanda tangan itulah yang membuktikan layanan itu milik Anda. Tidak ada yang dikirim ke jaringan dan tidak ada transaksi yang dikirim.",
+    "registeredUnderKey": "Terdaftar di bawah kunci Anda",
+    "connectToList": "Hubungkan dompet untuk mencantumkan layanan yang terdaftar di bawahnya.",
+    "searchingRegistry": "Mencari registri layanan…",
+    "noServicesRegistered": "Tidak ada layanan yang terdaftar di bawah kunci ini. Mendaftarkan satu adalah cara ia sampai ke sini — tidak ada akun penyedia untuk dibuat.",
+    "serviceIdPlaceholder": "ID Layanan, mis. my-oracle-1",
+    "waitingSignature": "Menunggu tanda tangan…",
+    "readStatement": "Baca laporan",
+    "couldNotRead": "Laporan tidak dapat dibaca.",
+    "statement": "Laporan",
+    "fieldService": "Layanan",
+    "fieldType": "Tipe",
+    "fieldDeclaredPrice": "Harga yang dinyatakan",
+    "freeNoPrice": "Gratis — tidak ada harga yang dinyatakan",
+    "fieldPayoutWallet": "Dompet pembayaran",
+    "noneDeclared": "Tidak ada yang dinyatakan",
+    "nothingCredited": "Belum ada yang dikreditkan ke layanan ini.",
+    "zeroExplained": "Tanda tangan Anda diterima dan ini laporan asli Anda — nol adalah jawaban yang benar, bukan pembacaan yang gagal. Belum ada yang mengkredit buku besar penghasilan untuk peran apa pun, jadi laporan setiap penyedia kosong hari ini.",
+    "howRolePaid": "Bagaimana peran ini dibayar",
+    "consumersPay": "Konsumen membayar",
+    "youReceive": "Anda menerima",
+    "notEnforceable": "Belum dapat ditegakkan",
+    "model": {
+      "oracle": {
+        "label": "Formula belum final",
+        "consumerPays": "Tidak ada. Pembacaan gratis, dengan sengaja — feed kurs berbayar lebih jarang dikonsultasikan, yang membuat median yang ia sumbangkan lebih tipis dan lebih mudah digeser.",
+        "providerReceives": "Protokol membayar penyedia orakel, dibobot menurut berapa banyak mata uang yang mereka cakup. Formulanya sedang dirancang dan belum final, jadi belum ada jumlah yang bisa dikutip di sini."
+      },
+      "risk": {
+        "label": "Jumlah ditetapkan, belum diterapkan",
+        "consumerPays": "Sebuah langganan, saat ini 1.000 USDC per bulan secara default.",
+        "providerReceives": "Langganan itu. Tarifnya dapat dikonfigurasi tata kelola dan diperkirakan berubah seiring jaringan tumbuh, jadi perlakukan 1.000 USDC sebagai default hari ini, bukan harga tetap.",
+        "blockedBy": "Penyedia intelijen risiko harus disetujui oleh tata kelola sebelum beroperasi. Gerbang persetujuan itu belum dibangun — tidak ada di registri yang memeriksanya, jadi mendaftar hari ini tidak berarti Anda memenuhi syarat."
+      },
+      "snapshot": {
+        "label": "Tidak ditentukan",
+        "consumerPays": "Tidak ada. Unduhan gratis, dengan sengaja — snapshot berbayar memperlambat hal yang justru memungkinkan node baru bergabung.",
+        "providerReceives": "Tidak ditentukan. Tidak ada pembayaran penyedia yang didefinisikan untuk menyajikan snapshot, ke arah mana pun — ini pertanyaan terbuka, bukan nol yang sudah diputuskan."
+      },
+      "notification": {
+        "label": "Menunggu pengukuran",
+        "consumerPays": "Peserta yang mengaktifkan notifikasi pada suatu transaksi membayar, per pengiriman.",
+        "providerReceives": "Biaya per pengiriman itu, pada harga yang dinyatakan saat pendaftaran. Siapa yang membayar sudah diputuskan secara prinsip; pengukuran yang akan menghitung pengiriman dan mengkreditkannya belum dibangun."
+      },
+      "infrastructure": {
+        "label": "Dibayar sebagai node",
+        "consumerPays": "Tidak ada.",
+        "providerReceives": "Tidak ada melalui laporan ini. Tipe layanan ini tidak ditagih langsung — operator yang menjalankannya dikompensasi sebagai operator node, dari kumpulan imbalan node."
+      }
+    },
+    "failure": {
+      "no-such-service": "Node ini tidak punya layanan yang terdaftar di bawah id itu. Periksa ID Layanan, atau arahkan ke node yang telah melihat pendaftaran Anda.",
+      "challenge-expired": "Tantangan kedaluwarsa sebelum ditandatangani — hanya berlaku lima menit. Tidak ada yang salah dengan kunci Anda; coba lagi dan segera setujui permintaan dompet.",
+      "challenge-spent": "Tantangan itu sudah digunakan atau diganti. Masing-masing sekali pakai, dan membuka halaman ini dua kali membatalkan tantangan yang lebih lama. Coba lagi.",
+      "wrong-key": "Dompet yang terhubung bukan kunci yang digunakan untuk mendaftarkan layanan ini. Laporan hanya dapat dibaca oleh pendaftarnya.",
+      "unreachable": "Tidak dapat menjangkau node yang dipilih.",
+      "wallet-cannot-sign": "Dompet ini tidak mendukung penandatanganan pesan, yang merupakan cara Anda membuktikan kendali atas layanan."
+    },
+    "obsHeading": "Observasi imbalan node",
+    "obsIntro": "Jika Anda menjalankan node alih-alih layanan terdaftar, di sinilah kerja Anda diukur. Tidak ada di atas yang berlaku untuk Anda — node tidak ditagih dan tidak punya laporan untuk ditandatangani tantangannya. Ia dibayar dari kumpulan imbalan, dan ini adalah observasi tempat jadwal dihitung.",
+    "yourAccessNode": "node akses Anda",
+    "thisNode": "Node ini",
+    "obsNodeSaw": "Ini yang dilihat {node} tentang semua orang lain, dan tidak lebih dari itu. Mengetahui apa yang dilihat jaringan tentang node <em>Anda</em> berarti bertanya ke node orang lain — yang merupakan tujuan memublikasikannya: dua node yang berbeda pendapat di sini terlihat, sedangkan dua node yang masing-masing menghitung secara privat tidak akan terlihat.",
+    "obsAsking": "Menanyakan node…",
+    "obsFailed": "{node} tidak menjawab <code>getRewardObservations</code>. Tidak ada di sini yang menyatakan apakah ia mengamati seseorang.",
+    "obsEpoch": "Epoch <e>{epoch}</e> · {start} hingga {end}",
+    "obsObservedNobody": "Node ini tidak mengamati siapa pun di epoch itu. Ia menjawab, jadi ini keadaan nyata dengan dua pembacaan biasa: ia tidak mendengar dari peer mana pun sama sekali, atau epoch sudah dibayar dan buku besarnya dipangkas. Keduanya bukan kegagalan bertanya — lihat tabel peer di <a>Jaringan</a> untuk tahu yang mana dari keduanya.",
+    "colPeer": "Peer",
+    "colAvailability": "Ketersediaan",
+    "colConnectivity": "Konektivitas",
+    "colChainAnnouncement": "Pengumuman on-chain",
+    "seenAnnouncing": "Terlihat mengumumkan blockhash",
+    "notSeenAnnouncing": "Tidak terlihat mengumumkan satu pun",
+    "obsAvailability": "<b>Ketersediaan</b> adalah kehadiran per irisan epoch: pada tiap irisan, apakah ada apa pun yang terdengar ditandatangani oleh peer itu? Ia jenuh pada satu per irisan dengan sengaja, jadi membanjiri jaringan tidak menghasilkan tambahan dan kalah dalam lomba propagasi tidak berbiaya — menghitung pengumuman sebagai gantinya akan mengukur siapa yang mengumumkan lebih dulu dan membayar node yang terhubung baik lebih dari node yang sama-sama tersedia di balik tautan yang lebih lambat.",
+    "obsConnectivity": "<b>Konektivitas</b> adalah pengali yang lebih tinggi untuk node yang terlihat mengawali pengumuman jembatan rantai, dan itu <b>diklaim bukan dibuktikan</b>. Node gossip-saja dapat mengambil blockhash dan slot yang ia dengar dari orang lain dan mengumumkannya ulang di bawah tanda tangannya sendiri; tidak ada dalam amplop yang membedakan keduanya. OFS-4100 §9.2 menyatakan masalah itu tidak diselesaikan oleh spesifikasi tersebut, dan batas bawah untuk node gossip-saja membatasi berapa nilai kebohongan itu alih-alih mencegahnya. Jadi ia dilaporkan dan tidak dicentang.",
+    "obsNoAmount": "<b>Tidak ada jumlah di sini</b>, dan itu bukan kelalaian. Mengonversi ini menjadi token memerlukan stake on-chain setiap kandidat, yang tidak bisa diambil oleh jalur baca node — jadi ia tidak memublikasikan jadwal apa pun alih-alih memublikasikan jadwal kosong yang tampak seperti jawaban yang berfungsi. Aplikasi ini pun tidak akan menghitungnya: angka yang direka di peramban bukanlah yang akan dibayarkan kepada siapa pun."
   }
 }

@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { EarningsConsole } from "@/components/earnings/earnings-console";
 import { RewardObservations } from "@/components/earnings/reward-observations";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "Provider earnings",
-  description:
-    "Read your service's earnings statement by signing a challenge with the key it was registered under.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "earnings" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 export default function EarningsPage() {
+  const t = useTranslations("earnings");
   return (
     <section>
       <PageHero
         variant="bloom"
-        title="Provider earnings"
-        description="If you run a node, an oracle, a notification gateway or a risk intelligence service, this is where you read what it has earned. There is no provider account: you prove the service is yours by signing a one-time challenge with the key you registered it under."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
 
       <div className="mt-8">

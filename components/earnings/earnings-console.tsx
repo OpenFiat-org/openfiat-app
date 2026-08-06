@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { fetchMyServices, type MyService } from "@/lib/my-services";
 import { Panel } from "@/components/panel";
 import {
@@ -53,6 +54,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
  * be wrong for most of them.
  */
 export function EarningsConsole() {
+  const t = useTranslations("earnings");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [endpoint, setEndpoint] = useState<string>(() => readNodeSelection().url);
   const [serviceId, setServiceId] = useState("");
@@ -93,15 +95,15 @@ export function EarningsConsole() {
     } catch (err) {
       setError(
         err instanceof EarningsError
-          ? err.message
+          ? t(`failure.${err.kind}`)
           : err instanceof Error
             ? err.message
-            : "Could not read the statement.",
+            : t("couldNotRead"),
       );
     } finally {
       setBusy(false);
     }
-  }, [wallet, endpoint, serviceId]);
+  }, [wallet, endpoint, serviceId, t]);
 
   // Listing services needs no signature: the registry is public and every
   // entry already carries the key that signed it. Only reading what a
@@ -125,10 +127,9 @@ export function EarningsConsole() {
 
   if (!wallet) {
     return (
-      <Panel title="Provider earnings">
+      <Panel title={t("providerEarnings")}>
         <p className="px-4 py-6 text-sm text-gray-400">
-          Connect the wallet your service was registered with. There is no provider account to log
-          into — the key that registered the service is the only thing that can read its statement.
+          {t("connectWallet")}
         </p>
       </Panel>
     );
@@ -139,28 +140,25 @@ export function EarningsConsole() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Prove you control the service">
+      <Panel title={t("proveControl")}>
         <div className="space-y-4 px-4 py-4">
           <p className="text-sm text-gray-400">
-            Pick one of your registered services, or enter a Service ID directly. Your wallet will
-            be asked to sign a one-time challenge — that signature is what proves the service is
-            yours. Nothing is submitted to the network and no transaction is sent.
+            {t("proveIntro")}
           </p>
 
           <div>
-            <p className="text-xs text-gray-500">Registered under your key</p>
+            <p className="text-xs text-gray-500">{t("registeredUnderKey")}</p>
             {!wallet && (
               <p className="mt-1.5 text-sm text-gray-500">
-                Connect a wallet to list the services registered under it.
+                {t("connectToList")}
               </p>
             )}
             {wallet && discovering && (
-              <p className="mt-1.5 text-sm text-gray-500">Searching the service registry…</p>
+              <p className="mt-1.5 text-sm text-gray-500">{t("searchingRegistry")}</p>
             )}
             {wallet && !discovering && myServices?.length === 0 && (
               <p className="mt-1.5 text-sm text-gray-500">
-                No services are registered under this key. Registering one is how it gets here — there
-                is no provider account to create.
+                {t("noServicesRegistered")}
               </p>
             )}
             {wallet && !discovering && myServices && myServices.length > 0 && (
@@ -190,7 +188,7 @@ export function EarningsConsole() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
               className={inputCls}
-              placeholder="Service ID, e.g. my-oracle-1"
+              placeholder={t("serviceIdPlaceholder")}
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
               onKeyDown={(e) => {
@@ -203,7 +201,7 @@ export function EarningsConsole() {
               disabled={busy || !serviceId.trim()}
               className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              {busy ? "Waiting for signature…" : "Read statement"}
+              {busy ? t("waitingSignature") : t("readStatement")}
             </button>
           </div>
           {error && <p className="text-sm text-amber-400">{error}</p>}
@@ -212,16 +210,16 @@ export function EarningsConsole() {
 
       {result && model && (
         <>
-          <Panel title="Statement">
+          <Panel title={t("statement")}>
             <div className="divide-y divide-white/5">
-              <Field label="Service">{result.earnings.service_id}</Field>
-              <Field label="Type">{serviceTypeLabel(result.record.service_type)}</Field>
-              <Field label="Declared price">{price ?? "Free — no price declared"}</Field>
-              <Field label="Payout wallet">
+              <Field label={t("fieldService")}>{result.earnings.service_id}</Field>
+              <Field label={t("fieldType")}>{serviceTypeLabel(result.record.service_type)}</Field>
+              <Field label={t("fieldDeclaredPrice")}>{price ?? t("freeNoPrice")}</Field>
+              <Field label={t("fieldPayoutWallet")}>
                 {result.earnings.payout_wallet ? (
                   <span className="font-mono text-xs">{result.earnings.payout_wallet}</span>
                 ) : (
-                  <span className="text-gray-400">None declared</span>
+                  <span className="text-gray-400">{t("noneDeclared")}</span>
                 )}
               </Field>
             </div>
@@ -229,12 +227,10 @@ export function EarningsConsole() {
             {result.earnings.entries.length === 0 ? (
               <div className="border-t border-white/10 px-4 py-5">
                 <p className="text-sm text-white">
-                  Nothing has been credited to this service.
+                  {t("nothingCredited")}
                 </p>
                 <p className="mt-2 text-sm text-gray-400">
-                  Your signature was accepted and this is your real statement — the zero is the
-                  correct answer, not a failed read. Nothing credits the earnings ledger yet for
-                  any role, so every provider&apos;s statement is empty today.
+                  {t("zeroExplained")}
                 </p>
               </div>
             ) : (
@@ -254,25 +250,25 @@ export function EarningsConsole() {
             )}
           </Panel>
 
-          <Panel title="How this role is paid">
+          <Panel title={t("howRolePaid")}>
             <div className="space-y-4 px-4 py-4">
               <p className={`text-xs font-semibold uppercase tracking-wider ${STATUS_TONE[model.status]}`}>
-                {model.label}
+                {t(`model.${model.role}.label`)}
               </p>
               <div>
-                <p className="text-xs uppercase tracking-wider text-gray-500">Consumers pay</p>
-                <p className="mt-1 text-sm text-gray-300">{model.consumerPays}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-500">{t("consumersPay")}</p>
+                <p className="mt-1 text-sm text-gray-300">{t(`model.${model.role}.consumerPays`)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wider text-gray-500">You receive</p>
-                <p className="mt-1 text-sm text-gray-300">{model.providerReceives}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-500">{t("youReceive")}</p>
+                <p className="mt-1 text-sm text-gray-300">{t(`model.${model.role}.providerReceives`)}</p>
               </div>
-              {model.blockedBy && (
+              {model.blocked && (
                 <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
                   <p className="text-xs uppercase tracking-wider text-amber-400">
-                    Not yet enforceable
+                    {t("notEnforceable")}
                   </p>
-                  <p className="mt-1 text-sm text-amber-200/80">{model.blockedBy}</p>
+                  <p className="mt-1 text-sm text-amber-200/80">{t(`model.${model.role}.blockedBy`)}</p>
                 </div>
               )}
             </div>

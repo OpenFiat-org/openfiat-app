@@ -1832,5 +1832,90 @@
     "belowMin": "Abaixo do mínimo de {min} USDC da venda.",
     "aboveMax": "Acima do máximo de {max} USDC da venda.",
     "calcNote": "Uma calculadora, não uma compra — este app ainda não pode construir uma instrução <code>contribute</code>, e nada aqui assina nada. A aritmética é a do próprio programa: 1 OPEN = {price} USDC, escalada pelos decimais dos dois mints e nada mais."
+  },
+  "earnings": {
+    "metaTitle": "Ganhos do provedor",
+    "metaDescription": "Leia o extrato de ganhos do seu serviço assinando um desafio com a chave sob a qual ele foi registrado.",
+    "heroTitle": "Ganhos do provedor",
+    "heroDescription": "Se você opera um nó, um oráculo, um gateway de notificações ou um serviço de inteligência de risco, é aqui que você lê o que ele ganhou. Não há conta de provedor: você prova que o serviço é seu assinando um desafio único com a chave sob a qual o registrou.",
+    "providerEarnings": "Ganhos do provedor",
+    "connectWallet": "Conecte a carteira com a qual seu serviço foi registrado. Não há conta de provedor para fazer login — a chave que registrou o serviço é a única coisa que pode ler o extrato dele.",
+    "proveControl": "Prove que você controla o serviço",
+    "proveIntro": "Escolha um dos seus serviços registrados, ou insira um ID de serviço diretamente. Sua carteira será solicitada a assinar um desafio único — essa assinatura é o que prova que o serviço é seu. Nada é enviado à rede e nenhuma transação é despachada.",
+    "registeredUnderKey": "Registrado sob sua chave",
+    "connectToList": "Conecte uma carteira para listar os serviços registrados sob ela.",
+    "searchingRegistry": "Pesquisando o registro de serviços…",
+    "noServicesRegistered": "Nenhum serviço está registrado sob esta chave. Registrar um é como ele chega aqui — não há conta de provedor a criar.",
+    "serviceIdPlaceholder": "ID de serviço, ex. my-oracle-1",
+    "waitingSignature": "Aguardando a assinatura…",
+    "readStatement": "Ler extrato",
+    "couldNotRead": "Não foi possível ler o extrato.",
+    "statement": "Extrato",
+    "fieldService": "Serviço",
+    "fieldType": "Tipo",
+    "fieldDeclaredPrice": "Preço declarado",
+    "freeNoPrice": "Grátis — nenhum preço declarado",
+    "fieldPayoutWallet": "Carteira de pagamento",
+    "noneDeclared": "Nenhuma declarada",
+    "nothingCredited": "Nada foi creditado a este serviço.",
+    "zeroExplained": "Sua assinatura foi aceita e este é seu extrato real — o zero é a resposta correta, não uma leitura falha. Nada credita o livro de ganhos ainda para nenhum papel, então o extrato de todo provedor está vazio hoje.",
+    "howRolePaid": "Como este papel é pago",
+    "consumersPay": "Os consumidores pagam",
+    "youReceive": "Você recebe",
+    "notEnforceable": "Ainda não exigível",
+    "model": {
+      "oracle": {
+        "label": "Fórmula não final",
+        "consumerPays": "Nada. As leituras são grátis, deliberadamente — um feed de taxas com preço é consultado menos, o que torna a mediana para a qual ele contribui mais rasa e mais fácil de mover.",
+        "providerReceives": "O protocolo paga aos provedores de oráculo, ponderado por quantas moedas cobrem. A fórmula está sendo desenhada e não é final, então nenhum valor pode ser cotado aqui ainda."
+      },
+      "risk": {
+        "label": "Valor definido, ainda não implementado",
+        "consumerPays": "Uma assinatura, atualmente 1.000 USDC por mês por padrão.",
+        "providerReceives": "Essa assinatura. A taxa é configurável por governança e espera-se que mude conforme a rede cresce, então trate 1.000 USDC como o padrão de hoje e não como um preço fixo.",
+        "blockedBy": "Um provedor de inteligência de risco precisa ser aprovado pela governança antes de operar. Esse portão de aprovação ainda não foi construído — nada no registro o verifica, então registrar-se hoje não significa que você é elegível."
+      },
+      "snapshot": {
+        "label": "Não especificado",
+        "consumerPays": "Nada. Os downloads são grátis, deliberadamente — um snapshot com preço desacelera justamente aquilo que permite a um novo nó entrar.",
+        "providerReceives": "Não especificado. Nenhum pagamento a provedor foi definido para servir snapshots, em qualquer direção — é uma questão aberta e não um zero decidido."
+      },
+      "notification": {
+        "label": "Aguardando medição",
+        "consumerPays": "O participante que ativou as notificações em uma negociação paga, por entrega.",
+        "providerReceives": "Essa taxa por entrega, ao preço declarado no registro. Quem paga está resolvido em princípio; a medição que contaria as entregas e as creditaria não foi construída."
+      },
+      "infrastructure": {
+        "label": "Pago como um nó",
+        "consumerPays": "Nada.",
+        "providerReceives": "Nada por este extrato. Este tipo de serviço não é cobrado diretamente — um operador que o executa é compensado como operador de nó, a partir do pool de recompensas de nós."
+      }
+    },
+    "failure": {
+      "no-such-service": "Este nó não tem serviço registrado sob esse id. Verifique o ID de serviço, ou aponte para um nó que tenha visto seu registro.",
+      "challenge-expired": "O desafio expirou antes de ser assinado — só é válido por cinco minutos. Nada está errado com sua chave; tente de novo e aprove o aviso da carteira prontamente.",
+      "challenge-spent": "Esse desafio já foi usado ou substituído. Cada um é de uso único, e abrir esta página duas vezes invalida o desafio mais antigo. Tente de novo.",
+      "wrong-key": "A carteira conectada não é a chave com que este serviço foi registrado. Extratos só são legíveis por quem os registrou.",
+      "unreachable": "Não foi possível alcançar o nó selecionado.",
+      "wallet-cannot-sign": "Esta carteira não suporta assinatura de mensagens, que é como você prova que controla o serviço."
+    },
+    "obsHeading": "Observações de recompensa de nó",
+    "obsIntro": "Se você opera um nó em vez de um serviço registrado, é aqui que seu trabalho é medido. Nada acima se aplica a você — um nó não é cobrado e não tem extrato para assinar um desafio. Ele é pago do pool de recompensas, e estas são as observações a partir das quais o cronograma é computado.",
+    "yourAccessNode": "seu nó de acesso",
+    "thisNode": "Este nó",
+    "obsNodeSaw": "Isto é o que {node} viu de todos os outros, e nada além disso. Descobrir o que a rede viu do <em>seu</em> nó significa perguntar ao nó de outra pessoa — o que é o propósito de publicá-lo: dois nós que discordam aqui são visíveis, onde dois nós computando cada um em privado não seriam.",
+    "obsAsking": "Perguntando ao nó…",
+    "obsFailed": "{node} não respondeu a <code>getRewardObservations</code>. Nada aqui diz se ele observou alguém.",
+    "obsEpoch": "Época <e>{epoch}</e> · {start} a {end}",
+    "obsObservedNobody": "Este nó não observou ninguém nessa época. Ele respondeu, então é um estado real com duas leituras comuns: não ouviu nenhum par, ou a época já foi paga e seu livro podado. Nenhuma é uma falha ao perguntar — veja a tabela de pares em <a>Rede</a> para saber qual das duas é.",
+    "colPeer": "Par",
+    "colAvailability": "Disponibilidade",
+    "colConnectivity": "Conectividade",
+    "colChainAnnouncement": "Anúncio em cadeia",
+    "seenAnnouncing": "Visto anunciando um blockhash",
+    "notSeenAnnouncing": "Não visto anunciando nenhum",
+    "obsAvailability": "A <b>disponibilidade</b> é presença por fatia da época: em cada fatia, algo assinado por aquele par foi ouvido? Ela satura em um por fatia de propósito, então inundar a rede não ganha nada extra e perder uma corrida de propagação não custa nada — contar anúncios em vez disso teria medido quem anunciou primeiro e pago mais a um nó bem conectado do que a um igualmente disponível atrás de um enlace mais lento.",
+    "obsConnectivity": "A <b>conectividade</b> é o multiplicador maior para um nó visto originando um anúncio de ponte de cadeia, e é <b>declarada e não provada</b>. Um nó só-gossip pode pegar um blockhash e slot que ouviu de outro e reanunciá-lo sob sua própria assinatura; nada no envelope distingue os dois. A OFS-4100 §9.2 diz que o problema não é resolvido por essa especificação, e o piso para nós só-gossip limita quanto a mentira vale em vez de impedi-la. Então é reportada e não marcada.",
+    "obsNoAmount": "<b>Não há valor aqui</b>, e não é uma omissão. Converter isto em tokens precisa do stake on-chain de cada candidato, que o caminho de leitura do nó não consegue buscar — então ele não publica cronograma algum em vez de publicar um vazio que parece uma resposta funcional. Este app também não computará um: um número inventado em um navegador não é o que alguém receberia."
   }
 }

@@ -1832,5 +1832,90 @@
     "belowMin": "Below the sale's {min} USDC minimum.",
     "aboveMax": "Above the sale's {max} USDC maximum.",
     "calcNote": "A calculator, not a purchase — this app cannot build a <code>contribute</code> instruction yet, and nothing here signs anything. The arithmetic is the program's own: 1 OPEN = {price} USDC, scaled by the two mints' decimals and nothing else."
+  },
+  "earnings": {
+    "metaTitle": "Provider earnings",
+    "metaDescription": "Read your service's earnings statement by signing a challenge with the key it was registered under.",
+    "heroTitle": "Provider earnings",
+    "heroDescription": "If you run a node, an oracle, a notification gateway or a risk intelligence service, this is where you read what it has earned. There is no provider account: you prove the service is yours by signing a one-time challenge with the key you registered it under.",
+    "providerEarnings": "Provider earnings",
+    "connectWallet": "Connect the wallet your service was registered with. There is no provider account to log into — the key that registered the service is the only thing that can read its statement.",
+    "proveControl": "Prove you control the service",
+    "proveIntro": "Pick one of your registered services, or enter a Service ID directly. Your wallet will be asked to sign a one-time challenge — that signature is what proves the service is yours. Nothing is submitted to the network and no transaction is sent.",
+    "registeredUnderKey": "Registered under your key",
+    "connectToList": "Connect a wallet to list the services registered under it.",
+    "searchingRegistry": "Searching the service registry…",
+    "noServicesRegistered": "No services are registered under this key. Registering one is how it gets here — there is no provider account to create.",
+    "serviceIdPlaceholder": "Service ID, e.g. my-oracle-1",
+    "waitingSignature": "Waiting for signature…",
+    "readStatement": "Read statement",
+    "couldNotRead": "Could not read the statement.",
+    "statement": "Statement",
+    "fieldService": "Service",
+    "fieldType": "Type",
+    "fieldDeclaredPrice": "Declared price",
+    "freeNoPrice": "Free — no price declared",
+    "fieldPayoutWallet": "Payout wallet",
+    "noneDeclared": "None declared",
+    "nothingCredited": "Nothing has been credited to this service.",
+    "zeroExplained": "Your signature was accepted and this is your real statement — the zero is the correct answer, not a failed read. Nothing credits the earnings ledger yet for any role, so every provider's statement is empty today.",
+    "howRolePaid": "How this role is paid",
+    "consumersPay": "Consumers pay",
+    "youReceive": "You receive",
+    "notEnforceable": "Not yet enforceable",
+    "model": {
+      "oracle": {
+        "label": "Formula not final",
+        "consumerPays": "Nothing. Reads are free, deliberately — a priced rate feed is consulted less, which makes the median it contributes to thinner and easier to move.",
+        "providerReceives": "The protocol pays oracle providers, weighted by how many currencies they cover. The formula is being designed and is not final, so no amount can be quoted here yet."
+      },
+      "risk": {
+        "label": "Amount set, not yet implemented",
+        "consumerPays": "A subscription, currently 1,000 USDC per month by default.",
+        "providerReceives": "That subscription. The rate is governance-configurable and is expected to change as the network grows, so treat 1,000 USDC as today's default rather than a fixed price.",
+        "blockedBy": "A risk intelligence provider must be approved by governance before operating. That approval gate is not built yet — nothing in the registry checks it, so registering today does not mean you are eligible."
+      },
+      "snapshot": {
+        "label": "Not specified",
+        "consumerPays": "Nothing. Downloads are free, deliberately — a priced snapshot slows the thing that lets a new node join at all.",
+        "providerReceives": "Not specified. No provider payment has been defined for serving snapshots, in either direction — it is an open question rather than a settled zero."
+      },
+      "notification": {
+        "label": "Awaiting metering",
+        "consumerPays": "The participant who enabled notifications on a trade pays, per delivery.",
+        "providerReceives": "That per-delivery fee, at the price declared in the registration. Who pays is settled in principle; the metering that would count deliveries and credit them is not built."
+      },
+      "infrastructure": {
+        "label": "Paid as a node",
+        "consumerPays": "Nothing.",
+        "providerReceives": "Nothing through this statement. This service type is not billed for directly — an operator running it is compensated as a node operator, out of the node reward pool."
+      }
+    },
+    "failure": {
+      "no-such-service": "This node has no service registered under that id. Check the Service ID, or point at a node that has seen your registration.",
+      "challenge-expired": "The challenge expired before it was signed — it is only valid for five minutes. Nothing is wrong with your key; try again and approve the wallet prompt promptly.",
+      "challenge-spent": "That challenge was already used or replaced. Each one is single-use, and opening this page twice invalidates the older challenge. Try again.",
+      "wrong-key": "The connected wallet is not the key this service was registered with. Statements are readable only by the registrant.",
+      "unreachable": "Could not reach the selected node.",
+      "wallet-cannot-sign": "This wallet does not support message signing, which is how you prove you control the service."
+    },
+    "obsHeading": "Node reward observations",
+    "obsIntro": "If you run a node rather than a registered service, this is where your work is measured. Nothing above applies to you — a node is not billed for and has no statement to sign a challenge for. It is paid out of the reward pool, and these are the observations the schedule is computed from.",
+    "yourAccessNode": "your access node",
+    "thisNode": "This node",
+    "obsNodeSaw": "This is what {node} saw of everyone else, and no more than that. Finding out what the network saw of <em>your</em> node means asking somebody else's node — which is the point of publishing it: two nodes that disagree here are visible, where two nodes each computing privately would not be.",
+    "obsAsking": "Asking the node…",
+    "obsFailed": "{node} did not answer <code>getRewardObservations</code>. Nothing here says whether it observed anybody.",
+    "obsEpoch": "Epoch <e>{epoch}</e> · {start} to {end}",
+    "obsObservedNobody": "This node observed nobody in that epoch. It answered, so this is a real state with two ordinary readings: it heard from no peer at all, or the epoch has already been paid and its ledger pruned. Neither is a failure to ask — see the peer table on <a>Network</a> for which of the two it is.",
+    "colPeer": "Peer",
+    "colAvailability": "Availability",
+    "colConnectivity": "Connectivity",
+    "colChainAnnouncement": "Chain announcement",
+    "seenAnnouncing": "Seen announcing a blockhash",
+    "notSeenAnnouncing": "Not seen announcing one",
+    "obsAvailability": "<b>Availability</b> is presence per slice of the epoch: in each slice, was anything at all heard signed by that peer? It saturates at one per slice on purpose, so flooding the network earns nothing extra and losing a propagation race costs nothing — counting announcements instead would have measured who announced first and paid a well-connected node more than an equally available one behind a slower link.",
+    "obsConnectivity": "<b>Connectivity</b> is the higher multiplier for a node seen originating a chain-bridge announcement, and it is <b>claimed rather than proven</b>. A gossip-only node can take a blockhash and slot it heard from somebody else and re-announce it under its own signature; nothing in the envelope tells the two apart. OFS-4100 §9.2 says the problem is not solved by that specification, and the floor for gossip-only nodes limits what the lie is worth rather than preventing it. So it is reported and not ticked.",
+    "obsNoAmount": "There is <b>no amount here</b>, and it is not an omission. Converting these into tokens needs every candidate's on-chain stake, which the node's read path cannot fetch — so it publishes no schedule rather than publishing an empty one that looks like a working answer. This app will not compute one either: a figure invented in a browser is not what anybody would be paid."
   }
 }
