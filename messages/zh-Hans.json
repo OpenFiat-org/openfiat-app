@@ -195,5 +195,26 @@
     "howToSell": "如何出售 →",
     "becomeMerchant": "成为商家 →",
     "howDisputes": "争议如何运作 →"
+  },
+  "currencyCombobox": {
+    "international": "国际",
+    "allCurrencies": "全部货币",
+    "allCurrenciesAnyMethod": "全部货币，任意支付方式",
+    "selectCurrency": "选择一种货币",
+    "searchPlaceholder": "搜索国家或货币…",
+    "listboxLabel": "法币",
+    "ariaLabel": "法币：{value}",
+    "noneSelected": "未选择",
+    "loading": "正在向节点询问货币…",
+    "loadError": "无法加载货币。",
+    "tryAgain": "重试",
+    "noMatches": "无匹配。"
+  },
+  "currencyPaymentMethods": {
+    "error": "你的接入节点未作答，因此这里的商家接受什么尚不清楚。",
+    "reading": "正在读取 {currency} 订单簿…",
+    "empty": "目前在你的接入节点上没有任何钱包发布 {currency} 广告。只需发布一条广告即可开启这个市场。",
+    "merchantsAccept": "{count, plural, other {# 位商家接受}}",
+    "noNamedMethod": "没有具名的支付方式"
   }
 }

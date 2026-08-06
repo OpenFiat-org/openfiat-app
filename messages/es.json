@@ -195,5 +195,26 @@
     "howToSell": "Cómo vender →",
     "becomeMerchant": "Conviértete en comerciante →",
     "howDisputes": "Cómo funcionan las disputas →"
+  },
+  "currencyCombobox": {
+    "international": "Internacional",
+    "allCurrencies": "todas las monedas",
+    "allCurrenciesAnyMethod": "todas las monedas, cualquier método de pago",
+    "selectCurrency": "Elige una moneda",
+    "searchPlaceholder": "Buscar país o moneda…",
+    "listboxLabel": "Monedas fiat",
+    "ariaLabel": "Moneda fiat: {value}",
+    "noneSelected": "ninguna seleccionada",
+    "loading": "Preguntando al nodo por las monedas…",
+    "loadError": "No se pudieron cargar las monedas.",
+    "tryAgain": "Reintentar",
+    "noMatches": "Sin coincidencias."
+  },
+  "currencyPaymentMethods": {
+    "error": "Tu nodo de acceso no respondió, así que se desconoce qué aceptan los comerciantes aquí.",
+    "reading": "Leyendo el libro de {currency}…",
+    "empty": "Ninguna cartera está anunciando actualmente en {currency} en tu nodo de acceso. Publicar un anuncio es todo lo que hace falta para abrir este mercado.",
+    "merchantsAccept": "{count, plural, one {# comerciante acepta} other {# comerciantes aceptan}}",
+    "noNamedMethod": "ningún método de pago con nombre"
   }
 }

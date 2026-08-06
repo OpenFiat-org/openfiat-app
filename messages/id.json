@@ -195,5 +195,26 @@
     "howToSell": "Cara menjual →",
     "becomeMerchant": "Jadi merchant →",
     "howDisputes": "Cara kerja sengketa →"
+  },
+  "currencyCombobox": {
+    "international": "Internasional",
+    "allCurrencies": "semua mata uang",
+    "allCurrenciesAnyMethod": "semua mata uang, metode pembayaran apa pun",
+    "selectCurrency": "Pilih mata uang",
+    "searchPlaceholder": "Cari negara atau mata uang…",
+    "listboxLabel": "Mata uang fiat",
+    "ariaLabel": "Mata uang fiat: {value}",
+    "noneSelected": "tak ada yang dipilih",
+    "loading": "Menanyakan mata uang ke node…",
+    "loadError": "Tak bisa memuat mata uang.",
+    "tryAgain": "Coba lagi",
+    "noMatches": "Tak ada yang cocok."
+  },
+  "currencyPaymentMethods": {
+    "error": "Node akses Anda tak menjawab, jadi apa yang diterima merchant di sini tak diketahui.",
+    "reading": "Membaca buku {currency}…",
+    "empty": "Tak ada dompet yang saat ini mengiklankan dalam {currency} di node akses Anda. Memasang sebuah iklan sudah cukup untuk membuka pasar ini.",
+    "merchantsAccept": "{count, plural, other {# merchant menerima}}",
+    "noNamedMethod": "tak ada metode pembayaran bernama"
   }
 }

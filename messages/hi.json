@@ -195,5 +195,26 @@
     "howToSell": "कैसे बेचें →",
     "becomeMerchant": "व्यापारी बनें →",
     "howDisputes": "विवाद कैसे काम करते हैं →"
+  },
+  "currencyCombobox": {
+    "international": "अंतरराष्ट्रीय",
+    "allCurrencies": "सभी मुद्राएँ",
+    "allCurrenciesAnyMethod": "सभी मुद्राएँ, कोई भी भुगतान विधि",
+    "selectCurrency": "एक मुद्रा चुनें",
+    "searchPlaceholder": "देश या मुद्रा खोजें…",
+    "listboxLabel": "फिएट मुद्राएँ",
+    "ariaLabel": "फिएट मुद्रा: {value}",
+    "noneSelected": "कोई चयनित नहीं",
+    "loading": "नोड से मुद्राएँ पूछी जा रही हैं…",
+    "loadError": "मुद्राएँ लोड नहीं हो सकीं।",
+    "tryAgain": "पुनः प्रयास करें",
+    "noMatches": "कोई मिलान नहीं।"
+  },
+  "currencyPaymentMethods": {
+    "error": "आपके एक्सेस नोड ने उत्तर नहीं दिया, इसलिए यहाँ व्यापारी क्या स्वीकार करते हैं यह अज्ञात है।",
+    "reading": "{currency} बुक पढ़ी जा रही है…",
+    "empty": "आपके एक्सेस नोड पर अभी कोई वॉलेट {currency} में विज्ञापन नहीं दे रहा। इस बाज़ार को खोलने के लिए बस एक विज्ञापन प्रकाशित करना काफ़ी है।",
+    "merchantsAccept": "{count, plural, one {# व्यापारी स्वीकार करता है} other {# व्यापारी स्वीकार करते हैं}}",
+    "noNamedMethod": "कोई नामित भुगतान विधि नहीं"
   }
 }

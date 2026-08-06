@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { fetchAdvertisements } from "@/lib/live-advertisements";
@@ -35,6 +36,7 @@ import { NODE_CHANGED_EVENT } from "@/lib/node-preference";
  * single most useful thing that page can tell a visitor.
  */
 export function CurrencyPaymentMethods({ currency }: { currency: string }) {
+  const t = useTranslations("currencyPaymentMethods");
   const [methods, setMethods] = useState<string[] | null>(null);
   const [merchants, setMerchants] = useState(0);
   const [error, setError] = useState(false);
@@ -72,20 +74,19 @@ export function CurrencyPaymentMethods({ currency }: { currency: string }) {
   if (error) {
     return (
       <p className="mt-3 text-sm text-amber-300">
-        Your access node did not answer, so what merchants here accept is unknown.
+        {t("error")}
       </p>
     );
   }
 
   if (methods === null) {
-    return <p className="mt-3 text-sm text-gray-500">Reading the {currency} book…</p>;
+    return <p className="mt-3 text-sm text-gray-500">{t("reading", { currency })}</p>;
   }
 
   if (merchants === 0) {
     return (
       <p className="mt-3 text-sm text-gray-400">
-        No wallet is currently advertising in {currency} on your access node.
-        Publishing an advertisement is all it takes to open this market.
+        {t("empty", { currency })}
       </p>
     );
   }
@@ -93,10 +94,10 @@ export function CurrencyPaymentMethods({ currency }: { currency: string }) {
   return (
     <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-gray-400">
       <span className="text-gray-500">
-        {merchants === 1 ? "1 merchant accepts" : `${merchants} merchants accept`}
+        {t("merchantsAccept", { count: merchants })}
       </span>
       {methods.length === 0 ? (
-        <span className="text-gray-500">no named payment method</span>
+        <span className="text-gray-500">{t("noNamedMethod")}</span>
       ) : (
         methods.map((method) => (
           <span

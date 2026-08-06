@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { INTERNATIONAL_MARKET } from "@/lib/types";
 import { currencyOptions, useReferenceData } from "@/lib/reference";
@@ -50,6 +50,7 @@ export function CurrencyCombobox({
   const inputRef = useRef<HTMLInputElement>(null);
   const state = useReferenceData();
   const locale = useLocale();
+  const t = useTranslations("currencyCombobox");
 
   // Rebuilt only when a new answer arrives, not on every keystroke: this
   // walks 253 countries to fold them into ~160 currency rows.
@@ -98,7 +99,7 @@ export function CurrencyCombobox({
            trigger's own text is a flag, a code and an arrow, so without this
            a screen reader announced "🏳️ ▾" — and with nothing selected it
            announced nothing at all. */
-        aria-label={`Fiat currency: ${isInternational ? "International" : value || "none selected"}`}
+        aria-label={t("ariaLabel", { value: isInternational ? t("international") : value || t("noneSelected") })}
         className={`relative flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-gray-200 transition-colors ${
           open ? "border-brand/60 bg-brand/[0.06] text-white" : "border-white/10 hover:border-white/25"
         }`}
@@ -106,8 +107,8 @@ export function CurrencyCombobox({
         {isInternational ? (
           <>
             <span>🌐</span>
-            <span className="font-medium">International</span>
-            <span className="text-xs text-gray-500">all currencies</span>
+            <span className="font-medium">{t("international")}</span>
+            <span className="text-xs text-gray-500">{t("allCurrencies")}</span>
           </>
         ) : (
           <>
@@ -124,7 +125,7 @@ export function CurrencyCombobox({
                 for a merchant — and without this the trigger was a flag and
                 an arrow with no words in it, which is unreachable by name for
                 a screen reader and unreadable for everybody else. */}
-            <span className="font-medium">{value || "Select a currency"}</span>
+            <span className="font-medium">{value || t("selectCurrency")}</span>
             <span className="text-xs text-gray-500">{selected?.displayName ?? ""}</span>
           </>
         )}
@@ -150,13 +151,13 @@ export function CurrencyCombobox({
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search country or currency…"
+                placeholder={t("searchPlaceholder")}
                 className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand/50"
               />
             </div>
             <ul
               role="listbox"
-              aria-label="Fiat currencies"
+              aria-label={t("listboxLabel")}
               className="scrollbar-dark max-h-80 divide-y divide-white/5 overflow-y-auto rounded-b-lg"
             >
               {showInternational && (
@@ -172,8 +173,8 @@ export function CurrencyCombobox({
                     }`}
                   >
                     <span className="text-base">🌐</span>
-                    <span className="font-medium text-white">International</span>
-                    <span className="min-w-0 flex-1 truncate text-gray-400">all currencies, any payment method</span>
+                    <span className="font-medium text-white">{t("international")}</span>
+                    <span className="min-w-0 flex-1 truncate text-gray-400">{t("allCurrenciesAnyMethod")}</span>
                   </button>
                 </li>
               )}
@@ -210,24 +211,24 @@ export function CurrencyCombobox({
                 */}
               {state.status === "loading" && (
                 <li className="px-3 py-4 text-center text-sm text-gray-500">
-                  Asking the node for currencies…
+                  {t("loading")}
                 </li>
               )}
               {state.status === "error" && (
                 <li className="px-3 py-4 text-center text-sm">
-                  <span className="block text-amber-400">Could not load currencies.</span>
+                  <span className="block text-amber-400">{t("loadError")}</span>
                   <span className="mt-0.5 block text-xs text-gray-500">{state.message}</span>
                   <button
                     type="button"
                     onClick={state.retry}
                     className="mt-2 text-sm text-brand underline underline-offset-2 hover:text-white"
                   >
-                    Try again
+                    {t("tryAgain")}
                   </button>
                 </li>
               )}
               {state.status === "ready" && options.length === 0 && !showInternational && (
-                <li className="px-3 py-4 text-center text-sm text-gray-500">No matches.</li>
+                <li className="px-3 py-4 text-center text-sm text-gray-500">{t("noMatches")}</li>
               )}
             </ul>
           </div>

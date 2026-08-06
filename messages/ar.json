@@ -195,5 +195,26 @@
     "howToSell": "كيفية البيع →",
     "becomeMerchant": "كن تاجرًا →",
     "howDisputes": "كيف تعمل النزاعات →"
+  },
+  "currencyCombobox": {
+    "international": "دولي",
+    "allCurrencies": "كل العملات",
+    "allCurrenciesAnyMethod": "كل العملات، أي طريقة دفع",
+    "selectCurrency": "اختر عملة",
+    "searchPlaceholder": "ابحث عن بلد أو عملة…",
+    "listboxLabel": "العملات الورقية",
+    "ariaLabel": "العملة الورقية: {value}",
+    "noneSelected": "لا شيء محدد",
+    "loading": "جارٍ سؤال العقدة عن العملات…",
+    "loadError": "تعذّر تحميل العملات.",
+    "tryAgain": "إعادة المحاولة",
+    "noMatches": "لا تطابقات."
+  },
+  "currencyPaymentMethods": {
+    "error": "لم تُجب عقدة وصولك، لذا فما يقبله التجّار هنا غير معروف.",
+    "reading": "جارٍ قراءة دفتر {currency}…",
+    "empty": "لا محفظة تُعلن حاليًا بـ {currency} على عقدة وصولك. نشر إعلان واحد كافٍ لفتح هذا السوق.",
+    "merchantsAccept": "{count, plural, zero {لا تجّار يقبلون} one {تاجر واحد يقبل} two {تاجران يقبلان} few {# تجّار يقبلون} many {# تاجرًا يقبلون} other {# تاجر يقبل}}",
+    "noNamedMethod": "لا طريقة دفع مسمّاة"
   }
 }

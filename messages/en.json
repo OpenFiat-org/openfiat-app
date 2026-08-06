@@ -199,5 +199,26 @@
     "howToSell": "How to sell →",
     "becomeMerchant": "Become a merchant →",
     "howDisputes": "How disputes work →"
+  },
+  "currencyCombobox": {
+    "international": "International",
+    "allCurrencies": "all currencies",
+    "allCurrenciesAnyMethod": "all currencies, any payment method",
+    "selectCurrency": "Select a currency",
+    "searchPlaceholder": "Search country or currency…",
+    "listboxLabel": "Fiat currencies",
+    "ariaLabel": "Fiat currency: {value}",
+    "noneSelected": "none selected",
+    "loading": "Asking the node for currencies…",
+    "loadError": "Could not load currencies.",
+    "tryAgain": "Try again",
+    "noMatches": "No matches."
+  },
+  "currencyPaymentMethods": {
+    "error": "Your access node did not answer, so what merchants here accept is unknown.",
+    "reading": "Reading the {currency} book…",
+    "empty": "No wallet is currently advertising in {currency} on your access node. Publishing an advertisement is all it takes to open this market.",
+    "merchantsAccept": "{count, plural, one {# merchant accepts} other {# merchants accept}}",
+    "noNamedMethod": "no named payment method"
   }
 }

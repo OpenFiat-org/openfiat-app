@@ -195,5 +195,26 @@
     "howToSell": "Как продать →",
     "becomeMerchant": "Стать мерчантом →",
     "howDisputes": "Как работают споры →"
+  },
+  "currencyCombobox": {
+    "international": "Международный",
+    "allCurrencies": "все валюты",
+    "allCurrenciesAnyMethod": "все валюты, любой способ оплаты",
+    "selectCurrency": "Выберите валюту",
+    "searchPlaceholder": "Поиск страны или валюты…",
+    "listboxLabel": "Фиатные валюты",
+    "ariaLabel": "Фиатная валюта: {value}",
+    "noneSelected": "не выбрана",
+    "loading": "Запрос валют у узла…",
+    "loadError": "Не удалось загрузить валюты.",
+    "tryAgain": "Повторить",
+    "noMatches": "Нет совпадений."
+  },
+  "currencyPaymentMethods": {
+    "error": "Ваш узел доступа не ответил, поэтому неизвестно, что здесь принимают мерчанты.",
+    "reading": "Чтение книги {currency}…",
+    "empty": "Ни один кошелёк сейчас не размещает объявления в {currency} на вашем узле доступа. Достаточно опубликовать объявление, чтобы открыть этот рынок.",
+    "merchantsAccept": "{count, plural, one {# мерчант принимает} few {# мерчанта принимают} many {# мерчантов принимают} other {# мерчанта принимают}}",
+    "noNamedMethod": "нет названного способа оплаты"
   }
 }
