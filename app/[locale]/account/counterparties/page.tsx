@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { CounterpartiesConsole } from "@/components/counterparties/counterparties-console";
 import { PageHero } from "@/components/page-hero";
 
-export const metadata: Metadata = {
-  title: "People you trade with",
-  description:
-    "How many times you have traded with each wallet, read from a live node by signing a challenge with your own key. Readable only by you.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "counterparties" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 export default function CounterpartiesPage() {
+  const t = useTranslations("counterparties");
   return (
     <section>
       <PageHero
         variant="bloom"
-        title="People you trade with"
-        description="Who you deal with most, and how many times you have traded with each of them. This is your own history and nobody else's: a node will not answer this question for a wallet you cannot prove you hold the key to, so there is no directory of who trades with whom to be looked up, scraped or subpoenaed."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
       />
 
       <div className="mt-8">

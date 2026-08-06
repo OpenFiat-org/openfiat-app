@@ -1,12 +1,13 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { CopyButton } from "@/components/copy-button";
 import { Panel } from "@/components/panel";
 import { useCounterparties } from "@/components/counterparties/use-counterparties";
 import {
   formatPeerId,
   suggested,
-  tradedLabel,
+  tradedCount,
   type CounterpartySummary,
 } from "@/lib/counterparties";
 import { formatDateShort } from "@/lib/format";
@@ -20,15 +21,14 @@ import bs58 from "bs58";
  * by design — see `lib/counterparties.ts`.
  */
 export function CounterpartiesConsole() {
+  const t = useTranslations("counterparties");
   const { status, summaries, error, read } = useCounterparties();
 
   if (status === "no-wallet") {
     return (
-      <Panel title="People you trade with">
+      <Panel title={t("title")}>
         <p className="px-4 py-6 text-sm text-gray-400">
-          Connect your wallet. There is no account to sign in to — the key that was party to your
-          trades is the only thing that can read them back, and a node will not answer this
-          question for any other wallet.
+          {t("connectPrompt")}
         </p>
       </Panel>
     );
@@ -39,7 +39,7 @@ export function CounterpartiesConsole() {
   return (
     <div className="space-y-6">
       <Panel
-        title="People you trade with"
+        title={t("title")}
         action={
           <button
             type="button"
@@ -48,10 +48,10 @@ export function CounterpartiesConsole() {
             className="text-xs text-gray-400 hover:text-white disabled:text-gray-600"
           >
             {status === "loading"
-              ? "Waiting for your signature…"
+              ? t("waitingSignature")
               : status === "loaded"
-                ? "Refresh"
-                : "Read my history"}
+                ? t("refresh")
+                : t("readHistory")}
           </button>
         }
       >
@@ -59,17 +59,13 @@ export function CounterpartiesConsole() {
 
         {status === "ready" && !error && (
           <p className="px-4 py-6 text-sm text-gray-400">
-            Reading this asks your wallet to sign a one-time challenge. That signature is how the
-            node knows the history is yours — it proves you hold the key that was party to the
-            trades, and it is the only way to read them.
+            {t("signPrompt")}
           </p>
         )}
 
         {status === "loaded" && regulars.length === 0 && (
           <p className="px-4 py-6 text-sm text-gray-400">
-            No completed trades on this node yet. A node only counts what it has replicated, so a
-            node that joined the network recently will know about fewer of your trades than
-            happened.
+            {t("noCompleted")}
           </p>
         )}
 
@@ -83,11 +79,9 @@ export function CounterpartiesConsole() {
       </Panel>
 
       {status === "loaded" && summaries.length > regulars.length && (
-        <Panel title="Started but never completed">
+        <Panel title={t("startedNeverTitle")}>
           <p className="px-4 pt-4 text-xs text-gray-500">
-            Wallets you have opened a settlement with that never reached a release. Not a judgement
-            on anyone — trades are called off for ordinary reasons — but not trading history
-            either, so they are kept out of the list above.
+            {t("startedNeverIntro")}
           </p>
           <ul className="mt-2 divide-y divide-white/5">
             {summaries
@@ -103,8 +97,9 @@ export function CounterpartiesConsole() {
 }
 
 function CounterpartyRow({ summary }: { summary: CounterpartySummary }) {
+  const t = useTranslations("counterparties");
   const full = bs58.encode(Uint8Array.from(summary.counterparty));
-  const label = tradedLabel(summary);
+  const count = tradedCount(summary);
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3">
       <div>
@@ -113,18 +108,18 @@ function CounterpartyRow({ summary }: { summary: CounterpartySummary }) {
           <CopyButton value={full} />
         </p>
         <p className="mt-1 text-xs text-gray-500">
-          {label ?? "No completed trades"}
+          {count === null ? t("noCompletedTrades") : t("tradedTimes", { count })}
           {summary.last_traded_at !== null && (
-            <> · last on {formatDateShort(new Date(summary.last_traded_at).toISOString())}</>
+            <> · {t("lastOn", { date: formatDateShort(new Date(summary.last_traded_at).toISOString()) })}</>
           )}
         </p>
       </div>
       <div className="flex items-center gap-4 text-xs tabular-nums text-gray-400">
-        <Count label="trades" value={summary.trades} tone="text-white" />
-        {summary.in_progress > 0 && <Count label="in progress" value={summary.in_progress} />}
-        {summary.abandoned > 0 && <Count label="called off" value={summary.abandoned} />}
+        <Count label={t("countTrades")} value={summary.trades} tone="text-white" />
+        {summary.in_progress > 0 && <Count label={t("countInProgress")} value={summary.in_progress} />}
+        {summary.abandoned > 0 && <Count label={t("countCalledOff")} value={summary.abandoned} />}
         {summary.disputed > 0 && (
-          <Count label="disputed" value={summary.disputed} tone="text-amber-400" />
+          <Count label={t("countDisputed")} value={summary.disputed} tone="text-amber-400" />
         )}
       </div>
     </li>

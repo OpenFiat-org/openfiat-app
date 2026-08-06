@@ -5,7 +5,7 @@ import {
   peerIdForAddress,
   suggested,
   summaryFor,
-  tradedLabel,
+  tradedCount,
   type CounterpartySummary,
 } from "@/lib/counterparties";
 
@@ -21,20 +21,20 @@ function summary(partial: Partial<CounterpartySummary> = {}): CounterpartySummar
   };
 }
 
-describe("the badge sentence", () => {
-  it("says how many times, in words a person would use", () => {
-    expect(tradedLabel(summary({ trades: 6 }))).toBe("You have traded 6 times with this wallet");
-    expect(tradedLabel(summary({ trades: 1 }))).toBe("You have traded once with this wallet");
+describe("the badge count", () => {
+  it("returns the completed-trade count for the component to phrase", () => {
+    expect(tradedCount(summary({ trades: 6 }))).toBe(6);
+    expect(tradedCount(summary({ trades: 1 }))).toBe(1);
   });
 
   /**
-   * "0 times" reads as a warning about the counterparty when it only means
-   * the two have never met — and on a node that joined recently it may not
-   * even be true. Silence is the honest output.
+   * A rendered "0 trades" reads as a warning about the counterparty when it
+   * only means the two have never met — and on a node that joined recently it
+   * may not even be true. Null (nothing shown) is the honest output.
    */
   it("says nothing rather than zero", () => {
-    expect(tradedLabel(summary({ trades: 0, abandoned: 4 }))).toBeNull();
-    expect(tradedLabel(null)).toBeNull();
+    expect(tradedCount(summary({ trades: 0, abandoned: 4 }))).toBeNull();
+    expect(tradedCount(null)).toBeNull();
   });
 });
 

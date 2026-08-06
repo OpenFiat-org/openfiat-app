@@ -1121,5 +1121,30 @@
     "disputesLost": "Sengketa kalah",
     "paymentDiscrepancies": "Ketidaksesuaian pembayaran",
     "reservationsMissed": "Reservasi terlewat"
+  },
+  "counterparties": {
+    "metaTitle": "Orang yang bertransaksi dengan Anda",
+    "metaDescription": "Berapa kali Anda bertransaksi dengan setiap dompet, dibaca dari node langsung dengan menandatangani tantangan menggunakan kunci Anda sendiri. Hanya dapat dibaca oleh Anda.",
+    "heroTitle": "Orang yang bertransaksi dengan Anda",
+    "heroDescription": "Dengan siapa Anda paling sering berurusan, dan berapa kali Anda bertransaksi dengan masing-masing. Ini riwayat Anda sendiri dan bukan orang lain: sebuah node tidak akan menjawab pertanyaan ini untuk dompet yang tidak dapat Anda buktikan memegang kuncinya, jadi tidak ada direktori siapa bertransaksi dengan siapa untuk dicari, dikeruk, atau dipanggil pengadilan.",
+    "title": "Orang yang bertransaksi dengan Anda",
+    "connectPrompt": "Hubungkan dompet Anda. Tidak ada akun untuk masuk — kunci yang menjadi pihak dalam transaksi Anda adalah satu-satunya yang dapat membacanya kembali, dan sebuah node tidak akan menjawab pertanyaan ini untuk dompet lain mana pun.",
+    "waitingSignature": "Menunggu tanda tangan Anda…",
+    "refresh": "Segarkan",
+    "readHistory": "Baca riwayat saya",
+    "signPrompt": "Membaca ini meminta dompet Anda menandatangani tantangan sekali pakai. Tanda tangan itulah cara node mengetahui riwayat itu milik Anda — ia membuktikan Anda memegang kunci yang menjadi pihak dalam transaksi, dan itu satu-satunya cara membacanya.",
+    "noCompleted": "Belum ada transaksi selesai di node ini. Sebuah node hanya menghitung apa yang telah direplikasinya, jadi node yang baru bergabung dengan jaringan akan tahu lebih sedikit transaksi Anda daripada yang terjadi.",
+    "startedNeverTitle": "Dimulai tetapi tidak pernah selesai",
+    "startedNeverIntro": "Dompet yang dengannya Anda membuka penyelesaian yang tidak pernah mencapai pelepasan. Bukan penilaian terhadap siapa pun — transaksi dibatalkan karena alasan biasa — tetapi juga bukan riwayat transaksi, jadi mereka dijaga di luar daftar di atas.",
+    "noCompletedTrades": "Tidak ada transaksi selesai",
+    "tradedTimes": "{count, plural, other {Anda telah bertransaksi # kali dengan dompet ini}}",
+    "lastOn": "terakhir pada {date}",
+    "countTrades": "transaksi",
+    "countInProgress": "berlangsung",
+    "countCalledOff": "dibatalkan",
+    "countDisputed": "disengketakan",
+    "badgeTitle": "Dihitung dari penyelesaian yang telah direplikasi node ini, hanya untuk dompet Anda.",
+    "badgeDisputedTitle": "{count, plural, other {# transaksi Anda dengan dompet ini masuk ke arbitrase.}}",
+    "nDisputed": "{count} disengketakan"
   }
 }

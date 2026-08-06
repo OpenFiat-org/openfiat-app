@@ -1121,5 +1121,30 @@
     "disputesLost": "Disputas perdidas",
     "paymentDiscrepancies": "Divergências de pagamento",
     "reservationsMissed": "Reservas perdidas"
+  },
+  "counterparties": {
+    "metaTitle": "Pessoas com quem você negocia",
+    "metaDescription": "Quantas vezes você negociou com cada carteira, lido de um nó ao vivo assinando um desafio com sua própria chave. Legível apenas por você.",
+    "heroTitle": "Pessoas com quem você negocia",
+    "heroDescription": "Com quem você mais lida, e quantas vezes você negociou com cada uma. Este é o seu próprio histórico e de mais ninguém: um nó não responderá a esta pergunta para uma carteira cuja chave você não possa provar que tem, então não há diretório de quem negocia com quem para ser consultado, raspado ou intimado.",
+    "title": "Pessoas com quem você negocia",
+    "connectPrompt": "Conecte sua carteira. Não há conta para fazer login — a chave que foi parte das suas negociações é a única coisa que pode lê-las de volta, e um nó não responderá a esta pergunta para nenhuma outra carteira.",
+    "waitingSignature": "Aguardando sua assinatura…",
+    "refresh": "Atualizar",
+    "readHistory": "Ler meu histórico",
+    "signPrompt": "Ler isto pede que sua carteira assine um desafio único. Essa assinatura é como o nó sabe que o histórico é seu — ela prova que você tem a chave que foi parte das negociações, e é a única forma de lê-las.",
+    "noCompleted": "Nenhuma negociação concluída neste nó ainda. Um nó só conta o que replicou, então um nó que entrou na rede recentemente saberá de menos negociações suas do que aconteceram.",
+    "startedNeverTitle": "Iniciadas mas nunca concluídas",
+    "startedNeverIntro": "Carteiras com quem você abriu uma liquidação que nunca chegou a uma liberação. Não é um julgamento sobre ninguém — negociações são canceladas por razões comuns — mas também não é histórico de negociação, então são mantidas fora da lista acima.",
+    "noCompletedTrades": "Nenhuma negociação concluída",
+    "tradedTimes": "{count, plural, one {Você negociou uma vez com esta carteira} other {Você negociou # vezes com esta carteira}}",
+    "lastOn": "última em {date}",
+    "countTrades": "negociações",
+    "countInProgress": "em andamento",
+    "countCalledOff": "canceladas",
+    "countDisputed": "em disputa",
+    "badgeTitle": "Contado a partir de liquidações que este nó replicou, apenas para sua carteira.",
+    "badgeDisputedTitle": "{count, plural, one {# das suas negociações com esta carteira foi para arbitragem.} other {# das suas negociações com esta carteira foram para arbitragem.}}",
+    "nDisputed": "{count} em disputa"
   }
 }

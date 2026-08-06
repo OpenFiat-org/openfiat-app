@@ -1121,5 +1121,30 @@
     "disputesLost": "败诉的争议",
     "paymentDiscrepancies": "付款差异",
     "reservationsMissed": "错过的预订"
+  },
+  "counterparties": {
+    "metaTitle": "与你交易的人",
+    "metaDescription": "你与每个钱包交易过多少次，通过用你自己的密钥签署挑战从实时节点读取。仅你可读。",
+    "heroTitle": "与你交易的人",
+    "heroDescription": "你最常打交道的对象，以及你与每个人交易过多少次。这是你自己的历史，而非他人的：对于你无法证明持有其密钥的钱包，节点不会回答此问题，因此不存在可供查询、抓取或传唤的谁与谁交易的目录。",
+    "title": "与你交易的人",
+    "connectPrompt": "请连接你的钱包。没有可登录的账户——参与你交易的密钥是唯一能将它们读回的东西，节点不会为任何其他钱包回答此问题。",
+    "waitingSignature": "正在等待你的签名…",
+    "refresh": "刷新",
+    "readHistory": "读取我的历史",
+    "signPrompt": "读取此内容会请求你的钱包签署一次性挑战。该签名是节点得知此历史属于你的方式——它证明你持有参与这些交易的密钥，也是读取它们的唯一途径。",
+    "noCompleted": "此节点上尚无已完成的交易。节点只统计它已复制的内容，因此近期才加入网络的节点所知的你的交易会少于实际发生的。",
+    "startedNeverTitle": "已开始但从未完成",
+    "startedNeverIntro": "你已与之开启结算但从未到达释放的钱包。这不是对任何人的评判——交易因寻常原因被取消——但也不是交易历史，因此将它们排除在上面的列表之外。",
+    "noCompletedTrades": "无已完成交易",
+    "tradedTimes": "{count, plural, other {你已与此钱包交易 # 次}}",
+    "lastOn": "最近一次 {date}",
+    "countTrades": "交易",
+    "countInProgress": "进行中",
+    "countCalledOff": "已取消",
+    "countDisputed": "争议",
+    "badgeTitle": "根据此节点已复制的结算统计，仅针对你的钱包。",
+    "badgeDisputedTitle": "{count, plural, other {你与此钱包的 # 笔交易进入了仲裁。}}",
+    "nDisputed": "{count} 笔争议"
   }
 }

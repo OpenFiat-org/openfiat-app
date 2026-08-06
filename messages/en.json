@@ -1121,5 +1121,30 @@
     "disputesLost": "Disputes lost",
     "paymentDiscrepancies": "Payment discrepancies",
     "reservationsMissed": "Reservations missed"
+  },
+  "counterparties": {
+    "metaTitle": "People you trade with",
+    "metaDescription": "How many times you have traded with each wallet, read from a live node by signing a challenge with your own key. Readable only by you.",
+    "heroTitle": "People you trade with",
+    "heroDescription": "Who you deal with most, and how many times you have traded with each of them. This is your own history and nobody else's: a node will not answer this question for a wallet you cannot prove you hold the key to, so there is no directory of who trades with whom to be looked up, scraped or subpoenaed.",
+    "title": "People you trade with",
+    "connectPrompt": "Connect your wallet. There is no account to sign in to — the key that was party to your trades is the only thing that can read them back, and a node will not answer this question for any other wallet.",
+    "waitingSignature": "Waiting for your signature…",
+    "refresh": "Refresh",
+    "readHistory": "Read my history",
+    "signPrompt": "Reading this asks your wallet to sign a one-time challenge. That signature is how the node knows the history is yours — it proves you hold the key that was party to the trades, and it is the only way to read them.",
+    "noCompleted": "No completed trades on this node yet. A node only counts what it has replicated, so a node that joined the network recently will know about fewer of your trades than happened.",
+    "startedNeverTitle": "Started but never completed",
+    "startedNeverIntro": "Wallets you have opened a settlement with that never reached a release. Not a judgement on anyone — trades are called off for ordinary reasons — but not trading history either, so they are kept out of the list above.",
+    "noCompletedTrades": "No completed trades",
+    "tradedTimes": "{count, plural, one {You have traded once with this wallet} other {You have traded # times with this wallet}}",
+    "lastOn": "last on {date}",
+    "countTrades": "trades",
+    "countInProgress": "in progress",
+    "countCalledOff": "called off",
+    "countDisputed": "disputed",
+    "badgeTitle": "Counted from settlements this node has replicated, for your wallet only.",
+    "badgeDisputedTitle": "{count, plural, one {# of your trades with this wallet went to arbitration.} other {# of your trades with this wallet went to arbitration.}}",
+    "nDisputed": "{count} disputed"
   }
 }

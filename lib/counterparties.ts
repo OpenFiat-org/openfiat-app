@@ -114,17 +114,15 @@ export function summaryFor(
 }
 
 /**
- * The sentence the badge shows.
- *
- * Returns null when there is nothing truthful to say. "You have traded 0
- * times with this wallet" reads as a warning about the wallet when it only
- * means the two have never met, and on a node that joined recently it may
- * not even be true.
+ * The completed-trade count worth showing, or null when there is nothing
+ * truthful to say. A rendered "0 trades" reads as a warning about the wallet
+ * when it only means the two have never met, and on a node that joined
+ * recently it may not even be true — so callers show nothing at all. The
+ * label itself is user copy, resolved by the component with an ICU plural.
  */
-export function tradedLabel(summary: CounterpartySummary | null): string | null {
+export function tradedCount(summary: CounterpartySummary | null): number | null {
   if (!summary || summary.trades === 0) return null;
-  const times = summary.trades === 1 ? "once" : `${summary.trades} times`;
-  return `You have traded ${times} with this wallet`;
+  return summary.trades;
 }
 
 /** Counterparties worth suggesting: ones an actual trade completed with. */

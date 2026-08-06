@@ -1,6 +1,7 @@
 "use client";
 
-import { peerIdForAddress, summaryFor, tradedLabel } from "@/lib/counterparties";
+import { useTranslations } from "next-intl";
+import { peerIdForAddress, summaryFor, tradedCount } from "@/lib/counterparties";
 import { useCounterparties } from "@/components/counterparties/use-counterparties";
 
 /**
@@ -25,6 +26,7 @@ import { useCounterparties } from "@/components/counterparties/use-counterpartie
  * learn to approve prompts without reading them.
  */
 export function TradedBadge({ wallet }: { wallet: string }) {
+  const t = useTranslations("counterparties");
   const { status, summaries } = useCounterparties();
   if (status !== "loaded") return null;
 
@@ -32,21 +34,21 @@ export function TradedBadge({ wallet }: { wallet: string }) {
   if (!peerId) return null;
 
   const summary = summaryFor(summaries, peerId);
-  const label = tradedLabel(summary);
-  if (!label || !summary) return null;
+  const count = tradedCount(summary);
+  if (count === null || !summary) return null;
 
   return (
     <span
       title={
         summary.disputed > 0
-          ? `${summary.disputed} of your trades with this wallet went to arbitration.`
-          : "Counted from settlements this node has replicated, for your wallet only."
+          ? t("badgeDisputedTitle", { count: summary.disputed })
+          : t("badgeTitle")
       }
       className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/10 px-2.5 py-0.5 text-xs text-brand"
     >
-      ⇄ {label}
+      ⇄ {t("tradedTimes", { count })}
       {summary.disputed > 0 && (
-        <span className="text-amber-400">· {summary.disputed} disputed</span>
+        <span className="text-amber-400">· {t("nDisputed", { count: summary.disputed })}</span>
       )}
     </span>
   );

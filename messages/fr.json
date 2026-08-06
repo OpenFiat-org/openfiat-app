@@ -1121,5 +1121,30 @@
     "disputesLost": "Litiges perdus",
     "paymentDiscrepancies": "Écarts de paiement",
     "reservationsMissed": "Réservations manquées"
+  },
+  "counterparties": {
+    "metaTitle": "Les personnes avec qui vous échangez",
+    "metaDescription": "Combien de fois vous avez échangé avec chaque portefeuille, lu depuis un nœud en direct en signant un défi avec votre propre clé. Lisible par vous seul.",
+    "heroTitle": "Les personnes avec qui vous échangez",
+    "heroDescription": "Avec qui vous traitez le plus, et combien de fois vous avez échangé avec chacun. C'est votre propre historique et celui de personne d'autre : un nœud ne répondra pas à cette question pour un portefeuille dont vous ne pouvez pas prouver que vous détenez la clé, il n'y a donc aucun annuaire de qui échange avec qui à consulter, extraire ou assigner en justice.",
+    "title": "Les personnes avec qui vous échangez",
+    "connectPrompt": "Connectez votre portefeuille. Il n'y a aucun compte auquel se connecter — la clé qui était partie à vos échanges est la seule chose qui puisse les relire, et un nœud ne répondra pas à cette question pour aucun autre portefeuille.",
+    "waitingSignature": "En attente de votre signature…",
+    "refresh": "Actualiser",
+    "readHistory": "Lire mon historique",
+    "signPrompt": "Lire ceci demande à votre portefeuille de signer un défi unique. Cette signature est la manière dont le nœud sait que l'historique est le vôtre — elle prouve que vous détenez la clé qui était partie aux échanges, et c'est la seule façon de les lire.",
+    "noCompleted": "Aucun échange terminé sur ce nœud pour l'instant. Un nœud ne compte que ce qu'il a répliqué, donc un nœud ayant rejoint le réseau récemment connaîtra moins de vos échanges qu'il n'y en a eu.",
+    "startedNeverTitle": "Commencés mais jamais terminés",
+    "startedNeverIntro": "Des portefeuilles avec qui vous avez ouvert un règlement qui n'a jamais atteint une libération. Pas un jugement sur qui que ce soit — les échanges sont annulés pour des raisons ordinaires — mais pas non plus de l'historique d'échange, ils sont donc tenus hors de la liste ci-dessus.",
+    "noCompletedTrades": "Aucun échange terminé",
+    "tradedTimes": "{count, plural, one {Vous avez échangé une fois avec ce portefeuille} other {Vous avez échangé # fois avec ce portefeuille}}",
+    "lastOn": "dernier le {date}",
+    "countTrades": "échanges",
+    "countInProgress": "en cours",
+    "countCalledOff": "annulés",
+    "countDisputed": "en litige",
+    "badgeTitle": "Compté à partir des règlements que ce nœud a répliqués, pour votre portefeuille uniquement.",
+    "badgeDisputedTitle": "{count, plural, one {# de vos échanges avec ce portefeuille est allé en arbitrage.} other {# de vos échanges avec ce portefeuille sont allés en arbitrage.}}",
+    "nDisputed": "{count} en litige"
   }
 }

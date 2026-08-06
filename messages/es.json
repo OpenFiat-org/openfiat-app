@@ -1121,5 +1121,30 @@
     "disputesLost": "Disputas perdidas",
     "paymentDiscrepancies": "Discrepancias de pago",
     "reservationsMissed": "Reservas incumplidas"
+  },
+  "counterparties": {
+    "metaTitle": "Personas con las que operas",
+    "metaDescription": "Cuántas veces has operado con cada billetera, leído de un nodo en vivo firmando un desafío con tu propia clave. Legible solo por ti.",
+    "heroTitle": "Personas con las que operas",
+    "heroDescription": "Con quién tratas más, y cuántas veces has operado con cada uno. Este es tu propio historial y de nadie más: un nodo no responderá esta pregunta para una billetera de la que no puedas probar que tienes la clave, así que no hay ningún directorio de quién opera con quién que consultar, raspar o requerir judicialmente.",
+    "title": "Personas con las que operas",
+    "connectPrompt": "Conecta tu billetera. No hay ninguna cuenta a la que iniciar sesión — la clave que participó en tus operaciones es lo único que puede volver a leerlas, y un nodo no responderá esta pregunta para ninguna otra billetera.",
+    "waitingSignature": "Esperando tu firma…",
+    "refresh": "Actualizar",
+    "readHistory": "Leer mi historial",
+    "signPrompt": "Leer esto pide a tu billetera que firme un desafío único. Esa firma es cómo el nodo sabe que el historial es tuyo — prueba que tienes la clave que participó en las operaciones, y es la única forma de leerlas.",
+    "noCompleted": "Aún no hay operaciones completadas en este nodo. Un nodo solo cuenta lo que ha replicado, así que un nodo que se unió a la red hace poco conocerá menos de tus operaciones de las que ocurrieron.",
+    "startedNeverTitle": "Iniciadas pero nunca completadas",
+    "startedNeverIntro": "Billeteras con las que has abierto una liquidación que nunca llegó a una liberación. No es un juicio sobre nadie — las operaciones se cancelan por razones ordinarias — pero tampoco es historial de operaciones, así que se mantienen fuera de la lista de arriba.",
+    "noCompletedTrades": "Sin operaciones completadas",
+    "tradedTimes": "{count, plural, one {Has operado una vez con esta billetera} other {Has operado # veces con esta billetera}}",
+    "lastOn": "última el {date}",
+    "countTrades": "operaciones",
+    "countInProgress": "en curso",
+    "countCalledOff": "canceladas",
+    "countDisputed": "en disputa",
+    "badgeTitle": "Contado a partir de liquidaciones que este nodo ha replicado, solo para tu billetera.",
+    "badgeDisputedTitle": "{count, plural, one {# de tus operaciones con esta billetera fue a arbitraje.} other {# de tus operaciones con esta billetera fueron a arbitraje.}}",
+    "nDisputed": "{count} en disputa"
   }
 }
