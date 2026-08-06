@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { WALLET_CHANGED_EVENT, readWalletConnection } from "@/lib/wallet-connection";
 import { peerIdForAddress } from "@/lib/peer-id";
@@ -13,18 +14,12 @@ import { Panel } from "@/components/panel";
 import { TradeAttachments } from "@/components/orders/trade-attachments";
 import { StatusPill } from "@/components/status-pill";
 
+/** Canonical (spaced) status — drives StatusPill's colour. */
 const STATUS_LABEL: Record<PublicDispute["status"], string> = {
   Open: "Open",
   CaseLocked: "Case Locked",
   RevealPhase: "Reveal Phase",
   Resolved: "Resolved",
-};
-
-const RESOLUTION_LABEL: Record<NonNullable<PublicDispute["resolution"]>, string> = {
-  BuyerWins: "Buyer wins",
-  MerchantWins: "Merchant wins",
-  MutualSettlement: "Mutual settlement",
-  Invalid: "Invalid dispute",
 };
 
 
@@ -69,6 +64,7 @@ const RESOLUTION_LABEL: Record<NonNullable<PublicDispute["resolution"]>, string>
  * write flow.
  */
 export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
+  const t = useTranslations("disputes");
   const [myPeerId, setMyPeerId] = useState<string | null>(null);
   const mine = useMyDisputes();
   const full = mine.data?.find((d) => d.id === dispute.id) ?? null;
@@ -89,18 +85,18 @@ export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
     <div className="space-y-6">
       {!resolved && (
         <p className="border-l-2 border-red-400 bg-red-400/5 px-4 py-2.5 text-sm text-red-200">
-          Escrow for settlement {dispute.settlement_id} is frozen while this case is open.
+          {t("frozenNote", { id: dispute.settlement_id })}
         </p>
       )}
 
-      <Panel title="Case record" action={<StatusPill status={STATUS_LABEL[dispute.status]} />}>
+      <Panel title={t("caseRecord")} action={<StatusPill status={STATUS_LABEL[dispute.status]} label={t(`status.${dispute.status}`)} />}>
         <div className="divide-y divide-white/5 px-4">
-          <Row label="Dispute ID" value={dispute.id} mono />
-          <Row label="Settlement" value={dispute.settlement_id} mono />
+          <Row label={t("disputeId")} value={dispute.id} mono />
+          <Row label={t("settlement")} value={dispute.settlement_id} mono />
           {full && <Parties dispute={full} myPeerId={myPeerId} />}
-          <Row label="Arbitrators required" value={String(dispute.required_arbitrators)} />
-          <Row label="Filed" value={formatDateMs(dispute.opened_at)} />
-          <Row label="Updated" value={formatDateMs(dispute.updated_at)} />
+          <Row label={t("arbitratorsRequired")} value={String(dispute.required_arbitrators)} />
+          <Row label={t("filed")} value={formatDateMs(dispute.opened_at)} />
+          <Row label={t("updated")} value={formatDateMs(dispute.updated_at)} />
         </div>
         {!full && <YourAccess state={mine} />}
       </Panel>
@@ -110,45 +106,46 @@ export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
           own parties on the node, so only the buyer's and seller's
           attachments appear — anyone can publish a record naming this
           settlement. */}
-      <Panel title="Evidence">
+      <Panel title={t("evidence")}>
         <div className="px-4 py-4">
           <TradeAttachments settlementId={dispute.settlement_id} />
         </div>
       </Panel>
 
-      <Panel title={`Arbitrators — ${dispute.arbitrators_seated} of ${dispute.required_arbitrators}`}>
+      <Panel title={t("arbitratorsTitle", { seated: dispute.arbitrators_seated, required: dispute.required_arbitrators })}>
         {full ? (
           <ArbitratorRoster dispute={full} />
         ) : dispute.arbitrators_seated === 0 ? (
-          <p className="px-4 py-4 text-sm text-gray-500">No arbitrator has joined this case yet.</p>
+          <p className="px-4 py-4 text-sm text-gray-500">{t("noArbitrator")}</p>
         ) : (
           /* Counts, not names. Which arbitrator drew which case and how they
              voted is exactly the pairing worth misusing, so a node gives the
              totals to onlookers and the roster to the people in the case. */
           <p className="px-4 py-4 text-sm text-gray-400">
-            {dispute.commitments} of {dispute.arbitrators_seated} seated{" "}
-            {dispute.arbitrators_seated === 1 ? "arbitrator has" : "arbitrators have"} published a
-            commitment, and {dispute.reveals} {dispute.reveals === 1 ? "has" : "have"} revealed a
-            vote. Who they are is readable by the parties and the panel.
+            {t("arbitratorProgress", {
+              commitments: dispute.commitments,
+              seated: dispute.arbitrators_seated,
+              reveals: dispute.reveals,
+            })}
           </p>
         )}
       </Panel>
 
       {dispute.status === "Resolved" && dispute.resolution && (
-        <Panel title={`Outcome — ${RESOLUTION_LABEL[dispute.resolution]}`} className="border-emerald-400/25">
+        <Panel title={t("outcomeTitle", { resolution: t(`resolution.${dispute.resolution}`) })} className="border-emerald-400/25">
           <div className="px-4 py-4">
             <p className="text-sm leading-relaxed text-gray-200">
-              {dispute.reveals} of {dispute.arbitrators_seated} seated arbitrators revealed a vote.
+              {t("revealedCount", { reveals: dispute.reveals, seated: dispute.arbitrators_seated })}
             </p>
             <div className="mt-4 flex items-start justify-between gap-4 text-sm">
-              <span className="shrink-0 text-gray-500">On-chain execution tx</span>
+              <span className="shrink-0 text-gray-500">{t("onchainExecTx")}</span>
               {dispute.onchain_execution_signature ? (
                 <span className="flex min-w-0 items-center gap-2 text-right text-gray-200">
                   <span className="truncate font-mono text-xs">{shortSig(dispute.onchain_execution_signature)}</span>
                   <CopyButton value={dispute.onchain_execution_signature} />
                 </span>
               ) : (
-                <span className="text-xs text-gray-500">Not yet confirmed on-chain</span>
+                <span className="text-xs text-gray-500">{t("notYetConfirmed")}</span>
               )}
             </div>
           </div>
@@ -159,24 +156,23 @@ export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
           position between two people. It reaches those two people and the
           panel deciding the case, and nobody else. */}
       {full && (full.buyer_agreed_mutual_settlement || full.seller_agreed_mutual_settlement) && (
-        <Panel title="Mutual settlement">
+        <Panel title={t("mutualTitle")}>
           <div className="divide-y divide-white/5 px-4">
-            <Row label="Buyer agreed" value={full.buyer_agreed_mutual_settlement ? "Yes" : "No"} />
-            <Row label="Seller agreed" value={full.seller_agreed_mutual_settlement ? "Yes" : "No"} />
+            <Row label={t("buyerAgreed")} value={full.buyer_agreed_mutual_settlement ? t("yes") : t("no")} />
+            <Row label={t("sellerAgreed")} value={full.seller_agreed_mutual_settlement ? t("yes") : t("no")} />
           </div>
         </Panel>
       )}
 
-      <Panel title="How this is decided">
+      <Panel title={t("howDecidedTitle")}>
         <p className="px-4 py-3 text-xs leading-relaxed text-gray-500">
-          There is no assigned judge. Independent arbitrators stake OPEN to join a case they choose and vote by
-          commit-and-reveal, so no one can see how others voted first. Consensus is computed by deterministic rules
-          every implementation reaches identically, and the escrow program executes the result without human
-          approval. Joining a case, committing, and revealing a vote is the arbitrator console&apos;s job — see{" "}
-          <Link href="/arbitrate" className="text-brand hover:text-brand-hover">
-            Arbitrate
-          </Link>
-          .
+          {t.rich("howDecided", {
+            link: (chunks) => (
+              <Link href="/arbitrate" className="text-brand hover:text-brand-hover">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       </Panel>
     </div>
@@ -184,22 +180,24 @@ export function DisputeCaseView({ dispute }: { dispute: PublicDispute }) {
 }
 
 function Parties({ dispute, myPeerId }: { dispute: Dispute; myPeerId: string | null }) {
+  const t = useTranslations("disputes");
   const label = (peer: string) => (
     <PeerIdentity peer={peer} isYou={myPeerId ? peer === myPeerId : false} />
   );
   return (
     <>
-      <Row label="Buyer" value={label(dispute.buyer)} />
-      <Row label="Seller" value={label(dispute.seller)} />
-      <Row label="Opened by" value={label(dispute.opener)} />
-      <Row label="Reason" value={dispute.reason} />
+      <Row label={t("buyer")} value={label(dispute.buyer)} />
+      <Row label={t("seller")} value={label(dispute.seller)} />
+      <Row label={t("openedBy")} value={label(dispute.opener)} />
+      <Row label={t("reason")} value={dispute.reason} />
     </>
   );
 }
 
 function ArbitratorRoster({ dispute }: { dispute: Dispute }) {
+  const t = useTranslations("disputes");
   if (dispute.arbitrators.length === 0) {
-    return <p className="px-4 py-4 text-sm text-gray-500">No arbitrator has joined this case yet.</p>;
+    return <p className="px-4 py-4 text-sm text-gray-500">{t("noArbitrator")}</p>;
   }
   return (
     <ul className="divide-y divide-white/5">
@@ -216,11 +214,11 @@ function ArbitratorRoster({ dispute }: { dispute: Dispute }) {
             </span>
             <span className="ml-auto text-xs text-gray-500">
               {reveal ? (
-                <span className="text-brand-teal">{reveal.vote}</span>
+                <span className="text-brand-teal">{t(`resolution.${reveal.vote}`)}</span>
               ) : committed ? (
-                <span title="Commitment published; vote not yet revealed">committed</span>
+                <span title={t("voteCommittedTitle")}>{t("voteCommitted")}</span>
               ) : (
-                <span className="text-gray-600">joined</span>
+                <span className="text-gray-600">{t("voteJoined")}</span>
               )}
             </span>
           </li>
@@ -238,21 +236,20 @@ function ArbitratorRoster({ dispute }: { dispute: Dispute }) {
  * failed.
  */
 function YourAccess({ state }: { state: ReturnType<typeof useMyDisputes> }) {
+  const t = useTranslations("disputes");
   const border = "border-t border-white/5 px-4 py-3 text-xs leading-relaxed text-gray-500";
 
   if (state.status === "no-wallet") {
     return (
       <p className={border}>
-        The parties and the complaint are readable by the buyer, the seller and the arbitrators
-        seated on this case. Connect the wallet that is in it to see them.
+        {t("accessConnect")}
       </p>
     );
   }
   if (state.status === "loaded") {
     return (
       <p className={border}>
-        The connected wallet is not a party to this case and is not seated on it, so the parties
-        and the complaint stay closed.
+        {t("accessNotParty")}
       </p>
     );
   }
@@ -265,9 +262,9 @@ function YourAccess({ state }: { state: ReturnType<typeof useMyDisputes> }) {
         disabled={state.status === "loading"}
         className="text-gray-400 underline decoration-dotted underline-offset-4 hover:text-white disabled:opacity-50"
       >
-        {state.status === "loading" ? "Signing…" : "I am in this case"}
+        {state.status === "loading" ? t("signing") : t("iAmInCase")}
       </button>{" "}
-      — signs a challenge with your wallet to unlock the parties and the complaint.
+      {t("accessSignsChallenge")}
     </p>
   );
 }

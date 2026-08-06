@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { useMyDisputes } from "@/components/disputes/use-my-disputes";
 import { fetchDisputes, type Dispute, type PublicDispute } from "@/lib/live-disputes";
@@ -10,6 +11,8 @@ import { formatDateShortMs } from "@/lib/format";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { StatusPill } from "@/components/status-pill";
 
+/** Canonical (spaced) status label — drives StatusPill's colour; the visible
+ *  text is localized separately. */
 const STATUS_LABEL: Record<PublicDispute["status"], string> = {
   Open: "Open",
   CaseLocked: "Case Locked",
@@ -18,16 +21,16 @@ const STATUS_LABEL: Record<PublicDispute["status"], string> = {
 };
 
 
-/** How this wallet is involved, from a case it is entitled to read. */
+/** How this wallet is involved, as a message key, from a case it may read. */
 function roleIn(dispute: Dispute, peerId: string): string {
-  if (dispute.buyer === peerId) return "Buyer";
-  if (dispute.seller === peerId) return "Seller";
-  if (dispute.arbitrators.some((a) => a === peerId)) return "Arbitrator";
+  if (dispute.buyer === peerId) return "buyer";
+  if (dispute.seller === peerId) return "seller";
+  if (dispute.arbitrators.some((a) => a === peerId)) return "arbitrator";
   // `getMyDisputes` answers for buyer, seller and seated arbitrators, so
   // there is no fourth case — but a record that reaches here anyway is the
   // node telling us something this app has not understood, and inventing a
   // role for it would be the wrong response.
-  return "Party";
+  return "party";
 }
 
 /**
@@ -54,6 +57,7 @@ function roleIn(dispute: Dispute, peerId: string): string {
  * an empty column or a dash that reads like "not you".
  */
 export function DisputesTable() {
+  const t = useTranslations("disputes");
   const [disputes, setDisputes] = useState<PublicDispute[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [myPeerId, setMyPeerId] = useState<string | null>(null);
@@ -86,27 +90,26 @@ export function DisputesTable() {
   if (error) {
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-6">
-        <p className="text-sm font-medium text-red-300">Could not read disputes from the node</p>
+        <p className="text-sm font-medium text-red-300">{t("readError")}</p>
         <p className="mt-1 font-mono text-xs text-red-400/80">{error}</p>
         <button
           onClick={() => void load()}
           className="mt-4 rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
         >
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
   }
 
   if (disputes === null) {
-    return <p className="p-6 text-sm text-gray-500">Reading disputes…</p>;
+    return <p className="p-6 text-sm text-gray-500">{t("reading")}</p>;
   }
 
   if (disputes.length === 0) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-sm text-gray-400">
-        No disputes yet on the node you are connected to. Filing one happens from a trade room once a settlement is
-        under way.
+        {t("noDisputes")}
       </p>
     );
   }
@@ -126,11 +129,11 @@ export function DisputesTable() {
         minWidth={720}
         head={
           <tr>
-            <Th>Case</Th>
-            {showRole && <Th>You are</Th>}
-            <Th>Filed</Th>
-            <Th right>Arbitrators</Th>
-            <Th right>Stage</Th>
+            <Th>{t("colCase")}</Th>
+            {showRole && <Th>{t("colYouAre")}</Th>}
+            <Th>{t("colFiled")}</Th>
+            <Th right>{t("colArbitrators")}</Th>
+            <Th right>{t("colStage")}</Th>
           </tr>
         }
       >
@@ -140,14 +143,14 @@ export function DisputesTable() {
               <Link href={`/disputes/${d.id}`} className="font-mono font-medium text-brand hover:text-brand-hover">
                 {d.id}
               </Link>
-              <span className="mt-0.5 block text-xs text-gray-500">settlement {d.settlement_id}</span>
+              <span className="mt-0.5 block text-xs text-gray-500">{t("settlementRef", { id: d.settlement_id })}</span>
             </Td>
-            {showRole && <Td py="py-5" className="text-gray-400">{roles.get(d.id) ?? "—"}</Td>}
+            {showRole && <Td py="py-5" className="text-gray-400">{roles.get(d.id) ? t(`role.${roles.get(d.id)}`) : "—"}</Td>}
             <Td py="py-5" className="tabular-nums text-gray-400">{formatDateShortMs(d.opened_at)}</Td>
             <Td py="py-5" right num className="text-gray-300">
               {d.arbitrators_seated} / {d.required_arbitrators}
             </Td>
-            <Td py="py-5" right><StatusPill status={STATUS_LABEL[d.status]} /></Td>
+            <Td py="py-5" right><StatusPill status={STATUS_LABEL[d.status]} label={t(`status.${d.status}`)} /></Td>
           </Tr>
         ))}
       </DataTable>
@@ -157,11 +160,11 @@ export function DisputesTable() {
 
 /** The one line above the table explaining what it does not know, and why. */
 function YourCases({ state }: { state: ReturnType<typeof useMyDisputes> }) {
+  const t = useTranslations("disputes");
   if (state.status === "no-wallet") {
     return (
       <p className="text-xs text-gray-500">
-        Connect your wallet to see which of these cases are yours. A node will not say who is in a
-        case without a signature from someone who is.
+        {t("yourCasesConnect")}
       </p>
     );
   }
@@ -169,9 +172,7 @@ function YourCases({ state }: { state: ReturnType<typeof useMyDisputes> }) {
     const count = state.data?.length ?? 0;
     return (
       <p className="text-xs text-gray-500">
-        {count === 0
-          ? "None of these cases involve the connected wallet."
-          : `${count === 1 ? "One case" : `${count} cases`} involve the connected wallet.`}
+        {count === 0 ? t("noneInvolve") : t("casesInvolve", { count })}
       </p>
     );
   }
@@ -184,9 +185,9 @@ function YourCases({ state }: { state: ReturnType<typeof useMyDisputes> }) {
         disabled={state.status === "loading"}
         className="text-gray-400 underline decoration-dotted underline-offset-4 hover:text-white disabled:opacity-50"
       >
-        {state.status === "loading" ? "Signing…" : "Show which of these are yours"}
+        {state.status === "loading" ? t("signing") : t("showYours")}
       </button>{" "}
-      — signs a challenge with your wallet.
+      {t("signsChallenge")}
     </p>
   );
 }
