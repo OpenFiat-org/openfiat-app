@@ -1,4 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
+import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import {
   fetchMintNames,
   fetchVaultsByMerchant,
@@ -95,20 +97,21 @@ function MintCell({ mint, names }: { mint: PublicKey; names: MintNames }) {
  * no nickname for an address, which is an ordinary answer needing no notice.
  */
 function NamesUnavailable() {
+  const t = useTranslations("explorer");
   return (
     <p className="mt-2 text-[11px] text-gray-600">
-      Token names could not be read from an OpenFiat node, so mints are shown by address. The figures
-      themselves come from Solana and are unaffected.
+      {t("namesUnavailable")}
     </p>
   );
 }
 
 function ErrorBlock({ what, message }: { what: string; message: string }) {
+  const t = useTranslations("explorer");
   return (
     <div className="rounded-lg border border-red-500/30 bg-red-500/[0.04] p-5">
-      <p className="text-sm font-medium text-red-300">Could not read {what} from Solana devnet</p>
+      <p className="text-sm font-medium text-red-300">{t("errorTitle", { what })}</p>
       <p className="mt-1 text-sm text-gray-400">
-        The lookup failed. This address may hold plenty — the question simply could not be asked.
+        {t("errorBody")}
       </p>
       <p className="mt-2 font-mono text-xs text-red-400/80">{message}</p>
     </div>
@@ -116,6 +119,7 @@ function ErrorBlock({ what, message }: { what: string; message: string }) {
 }
 
 export async function AddressOnchain({ address }: { address: string }) {
+  const t = await getTranslations("explorer");
   let owner: PublicKey;
   try {
     owner = new PublicKey(address);
@@ -124,7 +128,7 @@ export async function AddressOnchain({ address }: { address: string }) {
     // so this is an ordinary case rather than an error.
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-5 text-sm text-gray-500">
-        This is not a Solana address, so it has no on-chain balances or vaults to show.
+        {t("notSolanaAddress")}
       </p>
     );
   }
@@ -148,12 +152,12 @@ export async function AddressOnchain({ address }: { address: string }) {
   return (
     <>
       <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Token balances</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">{t("tokenBalancesHeading")}</h2>
         <div className="mt-3">
           {!balances.ok ? (
-            <ErrorBlock what="token accounts" message={balances.message} />
+            <ErrorBlock what={t("errorWhat.tokenAccounts")} message={balances.message} />
           ) : balances.b.length === 0 ? (
-            <p className="text-sm text-gray-500">This address holds no SPL token accounts on devnet.</p>
+            <p className="text-sm text-gray-500">{t("noTokenAccounts")}</p>
           ) : (
             <BalancesTable balances={balances.b} names={names} />
           )}
@@ -161,13 +165,13 @@ export async function AddressOnchain({ address }: { address: string }) {
       </div>
 
       <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Liquidity vaults</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">{t("liquidityVaultsHeading")}</h2>
         <div className="mt-3">
           {!vaults.ok ? (
-            <ErrorBlock what="liquidity vaults" message={vaults.message} />
+            <ErrorBlock what={t("errorWhat.liquidityVaults")} message={vaults.message} />
           ) : vaults.v.length === 0 ? (
             <p className="text-sm text-gray-500">
-              This address owns no liquidity vaults in the escrow program.
+              {t("noVaults")}
             </p>
           ) : (
             <VaultsTable vaults={vaults.v} names={names} />
@@ -179,13 +183,14 @@ export async function AddressOnchain({ address }: { address: string }) {
 }
 
 function BalancesTable({ balances, names }: { balances: TokenBalance[]; names: MintNames }) {
+  const t = useTranslations("explorer");
   return (
     <>
     <DataTable
       head={
         <tr>
-          <Th>Mint</Th>
-          <Th right>Balance</Th>
+          <Th>{t("colMint")}</Th>
+          <Th right>{t("colBalance")}</Th>
         </tr>
       }
     >
@@ -206,18 +211,19 @@ function BalancesTable({ balances, names }: { balances: TokenBalance[]; names: M
 }
 
 function VaultsTable({ vaults, names }: { vaults: LiveVault[]; names: MintNames }) {
+  const t = useTranslations("explorer");
   return (
     <>
       <DataTable
         minWidth={760}
         head={
           <tr>
-            <Th>Mint</Th>
-            <Th right>Available</Th>
-            <Th right>Reserved</Th>
-            <Th right>Pending</Th>
-            <Th right>Settled</Th>
-            <Th right>Deposited − withdrawn</Th>
+            <Th>{t("colMint")}</Th>
+            <Th right>{t("colAvailable")}</Th>
+            <Th right>{t("colReserved")}</Th>
+            <Th right>{t("colPending")}</Th>
+            <Th right>{t("colSettled")}</Th>
+            <Th right>{t("colDepositedWithdrawn")}</Th>
           </tr>
         }
       >
@@ -245,9 +251,10 @@ function VaultsTable({ vaults, names }: { vaults: LiveVault[]; names: MintNames 
         ))}
       </DataTable>
       <p className="mt-2 text-[11px] text-gray-600">
-        Only <span className="text-emerald-300">Available</span> can back a new reservation. The last column
-        is the program&apos;s <code>total</code> field — deposits minus withdrawals, never reduced by
-        settlement — so it is not a balance.
+        {t.rich("vaultsNote", {
+          avail: (c) => <span className="text-emerald-300">{c}</span>,
+          code: (c) => <code>{c}</code>,
+        })}
       </p>
       {names === null && <NamesUnavailable />}
     </>

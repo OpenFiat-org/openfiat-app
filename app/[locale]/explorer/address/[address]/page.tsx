@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 import { CopyButton } from "@/components/copy-button";
@@ -6,11 +7,18 @@ import { AddressOnchain } from "@/components/explorer/address-onchain";
 import { AddressProtocol } from "@/components/explorer/address-protocol";
 import { shortAddress } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Address",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "explorer" });
+  return { title: t("addressMetaTitle") };
+}
 
 interface Params {
+  locale: string;
   address: string;
 }
 
@@ -38,16 +46,17 @@ interface Params {
  * thing an explorer exists to give.
  */
 export default async function AddressPage({ params }: { params: Promise<Params> }) {
-  const { address: raw } = await params;
+  const { locale, address: raw } = await params;
   const address = decodeURIComponent(raw);
+  const t = await getTranslations({ locale, namespace: "explorer" });
 
   return (
     <section>
       <Link href="/explorer" className="text-sm text-gray-500 hover:text-white">
-        ← Back to Explorer
+        {t("backToExplorer")}
       </Link>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold text-white">Address</h1>
+        <h1 className="text-xl font-semibold text-white">{t("addressHeading")}</h1>
         <span className="flex items-center gap-2 font-mono text-sm text-gray-400">
           {address.length > 20 ? shortAddress(address) : address}
           <CopyButton value={address} />
@@ -55,29 +64,27 @@ export default async function AddressPage({ params }: { params: Promise<Params> 
       </div>
 
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-        On chain
+        {t("onChainHeading")}
       </h2>
       <div className="mt-3">
         <AddressOnchain address={address} />
       </div>
 
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">
-        On the protocol
+        {t("onProtocolHeading")}
       </h2>
       <div className="mt-3">
         <AddressProtocol address={address} />
       </div>
 
       <p className="mt-10 max-w-3xl text-xs leading-relaxed text-gray-500">
-        Two different systems, deliberately kept apart. The chain holds token
-        accounts and escrow vaults and answers the same for everyone reading
-        it; the protocol half is whatever your access node has replicated, so
-        a node that has seen less of the network reports less. Your own trades
-        are at{" "}
-        <Link href="/orders" className="text-brand hover:text-brand-hover">
-          /orders
-        </Link>
-        , which needs a connected wallet — nothing here does.
+        {t.rich("addressPageFooter", {
+          orders: (c) => (
+            <Link href="/orders" className="text-brand hover:text-brand-hover">
+              {c}
+            </Link>
+          ),
+        })}
       </p>
     </section>
   );

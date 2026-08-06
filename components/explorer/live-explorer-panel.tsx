@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { deriveStatus, TRADE_STATUS_LABEL, type PublicTrade } from "@/lib/live-trades";
 
@@ -72,6 +73,8 @@ function useLiveExplorer() {
 }
 
 export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | null }) {
+  const t = useTranslations("explorer");
+  const L = useTranslations("lifecycle");
   const { live, blockHeight, events } = useLiveExplorer();
 
   // One set of metrics, not a live branch and a fixture branch. Anything the
@@ -81,11 +84,11 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
   // reconciled with anything a tester saw on screen.
   const metrics = [
     {
-      label: "Block height",
+      label: t("metricBlockHeight"),
       value: blockHeight !== null ? formatNumber(blockHeight, 0) : "—",
-      sub: "Solana settlement layer",
+      sub: t("blockHeightSub"),
     },
-    { label: "Protocol events seen", value: formatNumber(events.length, 0), sub: "this session" },
+    { label: t("metricEventsSeen"), value: formatNumber(events.length, 0), sub: t("eventsSeenSub") },
     /*
      * A "Settled trades" tile used to sit here counting `settlements.length`
      * — the array this page slices to eight for the table below it. It read
@@ -101,8 +104,8 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
     <>
       <PageHero
         variant="ledger"
-        title="Explorer"
-        description="Every state transition on OpenFiat emits a signed protocol event. This reads them from your access node as they arrive."
+        title={t("heroTitle")}
+        description={t("heroDescription")}
         below={<ExplorerSearch />}
       >
         <MetricStrip items={metrics} />
@@ -123,11 +126,11 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
       <div className="mt-12 grid gap-10 lg:grid-cols-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest protocol events</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">{t("latestEventsHeading")}</h2>
             {live && (
               <span className="flex items-center gap-1.5 text-xs text-gray-500">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Live from your access node
+                {t("liveFromNode")}
               </span>
             )}
           </div>
@@ -136,9 +139,9 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
               minWidth={520}
               head={
                 <tr>
-                  <Th className="w-44">Event</Th>
-                  <Th>Result</Th>
-                  <Th right className="w-36">Time</Th>
+                  <Th className="w-44">{t("colEvent")}</Th>
+                  <Th>{t("colResult")}</Th>
+                  <Th right className="w-36">{t("colTime")}</Th>
                 </tr>
               }
             >
@@ -154,7 +157,7 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
               {live && events.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
-                    Waiting for the next signed protocol event…
+                    {t("waitingEvent")}
                   </td>
                 </tr>
               )}
@@ -163,45 +166,45 @@ export function ExplorerLive({ settlements }: { settlements: PublicTrade[] | nul
         </div>
 
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Latest trades</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">{t("latestTradesHeading")}</h2>
           <div className="mt-3">
             <DataTable
               minWidth={460}
               head={
                 <tr>
-                  <Th>Reservation</Th>
-                  <Th right className="w-36">Amount</Th>
-                  <Th right className="w-28">Status</Th>
+                  <Th>{t("colReservation")}</Th>
+                  <Th right className="w-36">{t("colAmount")}</Th>
+                  <Th right className="w-28">{t("colStatus")}</Th>
                 </tr>
               }
             >
-              {(settlements ?? []).map((t) => {
-                const amount = t.reservation.amount.base_units / 10 ** t.reservation.amount.decimals;
+              {(settlements ?? []).map((trade) => {
+                const amount = trade.reservation.amount.base_units / 10 ** trade.reservation.amount.decimals;
                 return (
-                  <Tr key={t.reservation.id}>
+                  <Tr key={trade.reservation.id}>
                     <Td className="whitespace-nowrap">
-                      <Link href={`/orders/${t.reservation.id}`} className="font-mono text-xs text-brand hover:text-brand-hover">
-                        {t.reservation.id}
+                      <Link href={`/orders/${trade.reservation.id}`} className="font-mono text-xs text-brand hover:text-brand-hover">
+                        {trade.reservation.id}
                       </Link>
                     </Td>
                     <Td right num className="w-36 text-gray-300">
                       {formatNumber(amount)}
                     </Td>
-                    <Td right className="w-28 whitespace-nowrap"><StatusPill status={TRADE_STATUS_LABEL[deriveStatus(t)]} /></Td>
+                    <Td right className="w-28 whitespace-nowrap"><StatusPill status={TRADE_STATUS_LABEL[deriveStatus(trade)]} label={L(deriveStatus(trade))} /></Td>
                   </Tr>
                 );
               })}
               {settlements === null && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
-                    Could not read trades from the node.
+                    {t("couldNotReadTrades")}
                   </td>
                 </tr>
               )}
               {settlements !== null && settlements.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
-                    No trades on this node yet.
+                    {t("noTrades")}
                   </td>
                 </tr>
               )}

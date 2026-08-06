@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { formatDateShortMs } from "@/lib/format";
 import {
   fetchScreening,
   isExpired,
-  SEVERITY_NOTE,
   SEVERITY_TONE,
   type RiskRecord,
   type Screening,
@@ -49,6 +49,7 @@ import { shortPeerId } from "@/lib/peer-id";
  * applies to an unreachable node, one level further in.
  */
 export function AddressRisk({ peerId }: { peerId: string }) {
+  const t = useTranslations("explorer");
   const [screening, setScreening] = useState<Screening | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -72,14 +73,13 @@ export function AddressRisk({ peerId }: { peerId: string }) {
   }, [load]);
 
   if (loading) {
-    return <p className="text-xs text-gray-500">Screening…</p>;
+    return <p className="text-xs text-gray-500">{t("screening")}</p>;
   }
 
   if (failed || !screening) {
     return (
       <p className="text-xs text-amber-300">
-        Your access node did not answer the screening methods. That is not a clean result — it is
-        no result.
+        {t("screeningFailed")}
       </p>
     );
   }
@@ -91,11 +91,10 @@ export function AddressRisk({ peerId }: { peerId: string }) {
       {highestSeverity ? (
         <>
           <p className={`text-sm font-medium ${SEVERITY_TONE[highestSeverity]}`}>
-            Flagged · {highestSeverity}
+            {t("flagged", { severity: t(`severity.${highestSeverity}`) })}
           </p>
           <p className="text-xs leading-relaxed text-gray-500">
-            {SEVERITY_NOTE[highestSeverity]} This is the worst severity among the current,
-            unsuperseded flags below — one provider&apos;s finding, not a verdict of the network.
+            {t("flaggedNote", { note: t(`severityNote.${highestSeverity}`) })}
           </p>
           <ul className="space-y-2">
             {activeFlags.map((record) => (
@@ -105,30 +104,22 @@ export function AddressRisk({ peerId }: { peerId: string }) {
         </>
       ) : registeredProviders === 0 ? (
         <p className="text-xs leading-relaxed text-gray-400">
-          <span className="text-gray-200">Nothing is screening this network.</span> Your access
-          node has no risk intelligence provider on file, and only a registered one may publish a
-          record (OFS-7100 §5) — so no wallet could be flagged here, including one that should be.
-          The absence of a flag says nothing at all about this address.
+          {t.rich("nothingScreening", { b: (c) => <span className="text-gray-200">{c}</span> })}
         </p>
       ) : history.length === 0 ? (
         <p className="text-xs leading-relaxed text-gray-400">
-          No provider has ever published a record about this wallet.{" "}
-          {registeredProviders === 1 ? "One provider is" : `${registeredProviders} providers are`}{" "}
-          registered on this node, so somebody could have — nobody has. That means nobody has
-          looked, which is not the same as looking and finding nothing.
+          {t("neverReported", { providers: registeredProviders })}
         </p>
       ) : (
         <p className="text-xs leading-relaxed text-gray-400">
-          <span className="text-gray-200">No current flag.</span> This wallet has been reported on
-          before and the finding no longer stands — superseded by a later record, or expired.
-          Records are never deleted (§14), so the history is below.
+          {t.rich("noCurrentFlag", { b: (c) => <span className="text-gray-200">{c}</span> })}
         </p>
       )}
 
       {history.length > 0 && (
         <details className="text-xs">
           <summary className="cursor-pointer text-gray-500 hover:text-gray-300">
-            Every record ever published about this wallet ({history.length})
+            {t("everyRecord", { count: history.length })}
           </summary>
           <ul className="mt-2 space-y-2">
             {history.map((record) => (
@@ -139,9 +130,7 @@ export function AddressRisk({ peerId }: { peerId: string }) {
       )}
 
       <p className="text-[11px] leading-relaxed text-gray-600">
-        Read from your access node, which answers from what has replicated to it. This app never
-        publishes a risk record: doing so is a registered provider&apos;s action, and the
-        governance approval that would gate it is not built.
+        {t("riskFooter")}
       </p>
     </div>
   );
@@ -149,6 +138,7 @@ export function AddressRisk({ peerId }: { peerId: string }) {
 
 /** One record, attributed to whoever signed it. An unattributed flag is worthless. */
 function RecordRow({ record, at }: { record: RiskRecord; at: number }) {
+  const t = useTranslations("explorer");
   // Judged against the instant the screening was taken, not this render's
   // clock — see `Screening.screenedAt`.
   const expired = isExpired(record, at);
@@ -158,16 +148,16 @@ function RecordRow({ record, at }: { record: RiskRecord; at: number }) {
         <span
           className={record.outcome === "Cleared" ? "text-emerald-400" : SEVERITY_TONE[record.severity]}
         >
-          {record.outcome === "Cleared" ? "Cleared" : record.severity}
+          {record.outcome === "Cleared" ? t("cleared") : t(`severity.${record.severity}`)}
         </span>
         <span className="text-gray-500">{record.category}</span>
-        <span className="text-gray-600">confidence {record.confidence}</span>
+        <span className="text-gray-600">{t("confidenceWord")} {record.confidence}</span>
         <span className="ml-auto text-gray-600">{formatDateShortMs(record.publishedAt)}</span>
       </div>
       <p className="mt-1 leading-relaxed text-gray-300">{record.reason}</p>
       <p className="mt-1 font-mono text-[11px] text-gray-600" title={record.provider}>
-        by {shortPeerId(record.provider)}
-        {expired && <span className="ml-2 font-sans text-gray-500">· expired</span>}
+        {t("byWord")} {shortPeerId(record.provider)}
+        {expired && <span className="ml-2 font-sans text-gray-500">· {t("expiredWord")}</span>}
       </p>
       {record.evidence.length > 0 && (
         <p className="mt-1 break-all text-[11px] leading-relaxed text-gray-600">
@@ -175,7 +165,7 @@ function RecordRow({ record, at }: { record: RiskRecord; at: number }) {
               hashes, never the evidence itself. Not rendered as links: the
               provider chose these strings and a live link would let them
               decide where a reader is sent. */}
-          Evidence references: {record.evidence.join(" · ")}
+          {t("evidenceRefs")} {record.evidence.join(" · ")}
         </p>
       )}
     </li>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { AddressRisk } from "@/components/explorer/address-risk";
@@ -32,6 +33,9 @@ import { peerIdForAddress, shortPeerId } from "@/lib/peer-id";
  * `getAdvertisements` both key on the PeerId this derives.
  */
 export function AddressProtocol({ address }: { address: string }) {
+  const t = useTranslations("explorer");
+  const L = useTranslations("lifecycle");
+  const A = useTranslations("ads");
   const peerId = peerIdForAddress(address);
   const [ads, setAds] = useState<LiveAd[] | null>(null);
   const [error, setError] = useState(false);
@@ -61,8 +65,7 @@ export function AddressProtocol({ address }: { address: string }) {
   if (!peerId) {
     return (
       <p className="text-sm text-gray-500">
-        This is not a 32-byte Ed25519 address, so it has no protocol identity
-        to ask about. On-chain state above is still read for it.
+        {t("notEd25519")}
       </p>
     );
   }
@@ -74,19 +77,17 @@ export function AddressProtocol({ address }: { address: string }) {
 
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Advertisements
+          {t("advertisementsHeading")}
         </h3>
         {error ? (
           <p className="mt-3 text-xs text-amber-300">
-            Your access node did not answer for this wallet.
+            {t("nodeNoAnswerWallet")}
           </p>
         ) : ads === null ? (
-          <p className="mt-3 text-xs text-gray-500">Reading the book…</p>
+          <p className="mt-3 text-xs text-gray-500">{t("readingBook")}</p>
         ) : ads.length === 0 ? (
           <p className="mt-3 text-xs leading-relaxed text-gray-500">
-            This wallet has published no advertisements to this node, so it is
-            not a merchant here. Publishing one is the whole of what makes a
-            wallet a merchant — there is no register to be absent from.
+            {t("noAds")}
           </p>
         ) : (
           <>
@@ -97,15 +98,15 @@ export function AddressProtocol({ address }: { address: string }) {
                   className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-md border border-white/10 px-3 py-2 text-xs"
                 >
                   <span className={ad.direction === "Sell" ? "text-emerald-400" : "text-orange-400"}>
-                    {ad.direction}
+                    {L(ad.direction)}
                   </span>
                   <span className="text-gray-300">
                     {assetLabel(ad)}/{ad.fiatCurrency}
                   </span>
                   <span className="font-mono tabular-nums text-gray-200">
-                    {ad.price === null ? "Unpriced" : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
+                    {ad.price === null ? t("unpriced") : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
                   </span>
-                  <span className="ml-auto text-gray-500">{ad.status}</span>
+                  <span className="ml-auto text-gray-500">{A(`status.${ad.status}`)}</span>
                 </li>
               ))}
             </ul>
@@ -113,7 +114,7 @@ export function AddressProtocol({ address }: { address: string }) {
               href={`/merchants/${peerId}`}
               className="mt-3 inline-block text-xs text-brand hover:text-brand-hover"
             >
-              Full merchant profile for {shortPeerId(peerId)} →
+              {t("fullProfileFor", { short: shortPeerId(peerId) })}
             </Link>
           </>
         )}
@@ -129,7 +130,7 @@ export function AddressProtocol({ address }: { address: string }) {
       */}
     <div className="mt-8">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-        Risk intelligence
+        {t("riskIntelHeading")}
       </h3>
       <div className="mt-3">
         <AddressRisk peerId={peerId} />

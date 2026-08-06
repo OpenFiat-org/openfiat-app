@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { tradingSymbol } from "@/lib/asset-display";
@@ -37,6 +38,7 @@ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
  *    global total.
  */
 export function SettledVolumePanel() {
+  const t = useTranslations("explorer");
   const [volume, setVolume] = useState<SettledVolume | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nodeLabel, setNodeLabel] = useState("");
@@ -65,13 +67,15 @@ export function SettledVolumePanel() {
   return (
     <div>
       <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-        Settled volume
+        {t("settledVolumeHeading")}
       </h2>
 
       {error !== null && (
         <p className="mt-3 border-l-2 border-amber-400/50 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200">
-          {nodeLabel || "This node"} could not answer <code className="font-mono">getSettledVolume</code>.
-          Nothing is shown rather than a zero, which would read as &ldquo;nothing has settled&rdquo;.
+          {t.rich("volumeError", {
+            node: nodeLabel || t("thisNode"),
+            code: (c) => <code className="font-mono">{c}</code>,
+          })}
           <span className="mt-1 block font-mono text-[11px] text-amber-300/70">{error}</span>
         </p>
       )}
@@ -86,9 +90,9 @@ export function SettledVolumePanel() {
                   {/* Explicit widths. Left to the auto algorithm, the caveat
                       text under a figure decided the column widths and the
                       mint column collapsed to a six-character ribbon. */}
-                  <Th className="w-[45%]">Asset</Th>
-                  <Th right className="w-[40%]">Settled</Th>
-                  <Th right className="w-[15%]">Settlements</Th>
+                  <Th className="w-[45%]">{t("colAsset")}</Th>
+                  <Th right className="w-[40%]">{t("colSettled")}</Th>
+                  <Th right className="w-[15%]">{t("colSettlements")}</Th>
                 </tr>
               }
             >
@@ -130,14 +134,12 @@ export function SettledVolumePanel() {
                           own column. */}
                       {figure.rawBaseUnits && (
                         <span className="mt-1 ml-auto block max-w-64 whitespace-normal text-left text-[11px] leading-snug text-amber-300/70">
-                          This node has no name for this mint and so no decimals for it. Base
-                          units, not whole tokens — where the point goes is not something this
-                          app may guess.
+                          {t("rawBaseUnitsNote")}
                         </span>
                       )}
                       {figure.approximate && (
                         <span className="mt-1 ml-auto block max-w-64 whitespace-normal text-left text-[11px] leading-snug text-amber-300/70">
-                          Larger than a JSON number holds exactly; the last digits are lost.
+                          {t("approximateNote")}
                         </span>
                       )}
                     </Td>
@@ -150,7 +152,7 @@ export function SettledVolumePanel() {
               {volume.assets.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-gray-500">
-                    No settlement on this node has been confirmed on chain yet.
+                    {t("noSettlement")}
                   </td>
                 </tr>
               )}
@@ -159,22 +161,22 @@ export function SettledVolumePanel() {
 
           {/* Deliberately no total row above. */}
           <p className="mt-3 text-xs leading-relaxed text-gray-500">
-            One row per asset, never added together — these are different tokens at
-            different scales, and a single &ldquo;total volume&rdquo; would add SOL to USDC
-            without saying so.
+            {t("oneRowNote")}
           </p>
 
           <dl className="mt-4 grid gap-x-8 gap-y-2 text-xs sm:grid-cols-2">
             <div className="flex justify-between gap-4 border-t border-white/5 pt-2">
-              <dt className="text-gray-500">Settlements counted</dt>
+              <dt className="text-gray-500">{t("settlementsCounted")}</dt>
               <dd className="tabular-nums text-gray-300">
-                {formatNumber(countedSettlements(volume), 0)} of{" "}
-                {formatNumber(volume.settlementsKnown, 0)} known
+                {t("countedValue", {
+                  counted: formatNumber(countedSettlements(volume), 0),
+                  known: formatNumber(volume.settlementsKnown, 0),
+                })}
               </dd>
             </div>
             {volume.unattributedSettlements > 0 && (
               <div className="flex justify-between gap-4 border-t border-amber-400/20 pt-2">
-                <dt className="text-amber-200/90">Confirmed, asset unrecoverable</dt>
+                <dt className="text-amber-200/90">{t("assetUnrecoverable")}</dt>
                 <dd className="tabular-nums text-amber-200">
                   {formatNumber(volume.unattributedSettlements, 0)}
                 </dd>
@@ -184,16 +186,13 @@ export function SettledVolumePanel() {
 
           {volume.unattributedSettlements > 0 && (
             <p className="mt-2 text-[11px] leading-relaxed text-amber-300/70">
-              Real settlements, confirmed on chain, whose advertisement has since been
-              deleted — the route from a settlement to its mint runs through the
-              advertisement, so nothing can say which token these moved. They are missing
-              from every row above.
+              {t("unattributedNote")}
             </p>
           )}
 
           {/* The node's own sentence, unedited, next to the numbers it qualifies. */}
           <p className="mt-4 border-l-2 border-white/10 pl-3 text-[11px] leading-relaxed text-gray-500">
-            Scope: {volume.scope}
+            {t("scopeLabel", { scope: volume.scope })}
           </p>
         </>
       )}
