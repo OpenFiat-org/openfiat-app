@@ -7,9 +7,12 @@
  * the glyphs carry the whole meaning and a screen reader would otherwise
  * announce a row of black stars.
  */
+import { useTranslations } from "next-intl";
+
 export function Stars({ stars }: { stars: number }) {
+  const t = useTranslations("reviews");
   return (
-    <span className="text-sm text-amber-300" aria-label={`${stars} of 5 stars`}>
+    <span className="text-sm text-amber-300" aria-label={t("starsAria", { value: stars })}>
       {"★".repeat(stars)}
       <span className="text-gray-700">{"★".repeat(Math.max(0, 5 - stars))}</span>
     </span>

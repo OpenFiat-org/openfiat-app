@@ -1617,5 +1617,28 @@
     "wdTokenAccountNote": "进入你自己此 mint 的关联代币账户，若你没有则在同一笔交易中创建。若要发送到其他任何地方，之后请从你的钱包转账——程序只付款给此确切 mint 的代币账户。",
     "wdWithdrawBtn": "提取到我的钱包",
     "wdFooterNote": "向 Solana devnet 上的 openfiat-escrow 程序发起一笔交易。"
+  },
+  "reviews": {
+    "notSettled": "当商家批准付款后即可对交易进行评价。已取消、被拒绝和争议中的交易无法评价——评价是一方对已发生交易的看法，而争议结果不由本协议以星级来概括。",
+    "connectPrompt": "连接作为本次交易一方的钱包以进行评价。",
+    "notParty": "节点已回应，此钱包不是本次交易的一方——因此这里没有可供其评价的内容。只有买家和卖家可以，各评价一次。",
+    "signerError": "此钱包连接无法签名——请重新连接后再试。",
+    "published": "已发布。从此处扩散到网络的其余部分。",
+    "checkPrompt": "你是否已评价过这笔交易只有你能读取——公开信息流不带作者也不带交易 id，这是有意为之。签名一次即可查看。",
+    "waitingWallet": "正在等待你的钱包…",
+    "checkMyReviews": "查看我的评价",
+    "publishedAbout": "关于 {who} 发布。其他人看到星级、文字和日期——而非你的钱包，也非这笔交易。",
+    "theirCounterparty": "你的对手方",
+    "replaceIt": "替换它",
+    "howWasTrade": "这次交易{suffix}如何？",
+    "withName": "（与 {name}）",
+    "starsAria": "5 星中的 {value} 星",
+    "inOwnWords": "用你自己的话说（可选）",
+    "commentNote": "{count}/{max}。向所有人发布并由每个节点永久存储——无法删除，只能替换。不要写入任何你不愿以自己钱包名义公开的内容：节点会隐藏评价的作者，但无法隐藏你自己写入其中的名字。",
+    "signing": "正在签名…",
+    "replaceMyReview": "替换我的评价",
+    "publishReview": "发布评价",
+    "cancel": "取消",
+    "footerNote": "评价不会改变任何信誉分数。信誉由每个节点根据已签名的结算和争议重新计算，无法通过言语抬高或压低；这是一种看法，两者分开显示，因为它们不是同一类断言。"
   }
 }

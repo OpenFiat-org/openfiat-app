@@ -1617,5 +1617,28 @@
     "wdTokenAccountNote": "Vai para sua própria conta de token associada para este mint, criada na mesma transação se você não tiver uma. Para enviar a qualquer outro lugar, transfira da sua carteira depois — o programa só paga para uma conta de token deste mint exato.",
     "wdWithdrawBtn": "Sacar para minha carteira",
     "wdFooterNote": "Uma transação ao programa openfiat-escrow na Solana devnet."
+  },
+  "reviews": {
+    "notSettled": "Uma negociação pode ser avaliada assim que o comerciante aprovar o pagamento. Negociações canceladas, recusadas e em disputa não podem — uma avaliação é a opinião de uma parte sobre uma negociação que aconteceu, e um resultado em disputa não cabe a este protocolo resumir em estrelas.",
+    "connectPrompt": "Conecte a carteira que foi parte desta negociação para avaliá-la.",
+    "notParty": "O nó respondeu, e esta carteira não faz parte desta negociação — então não há nada aqui para ela avaliar. Só o comprador e o vendedor podem, uma avaliação cada.",
+    "signerError": "Esta conexão de carteira não pode assinar — reconecte-a e tente de novo.",
+    "published": "Publicada. Daqui é propagada ao resto da rede.",
+    "checkPrompt": "Se você já avaliou esta negociação só você pode ler — o feed público não carrega autor nem id de negociação, de propósito. Assine uma vez para verificar.",
+    "waitingWallet": "Aguardando sua carteira…",
+    "checkMyReviews": "Verificar minhas avaliações",
+    "publishedAbout": "Publicada sobre {who}. Os outros veem as estrelas, as palavras e o dia — não sua carteira e não esta negociação.",
+    "theirCounterparty": "sua contraparte",
+    "replaceIt": "Substituí-la",
+    "howWasTrade": "Como foi a negociação{suffix}?",
+    "withName": " com {name}",
+    "starsAria": "{value} de 5 estrelas",
+    "inOwnWords": "Nas suas próprias palavras (opcional)",
+    "commentNote": "{count}/{max}. Publicado para todos e armazenado por cada nó para sempre — não pode ser excluído, só substituído. Não coloque nada que você não publicaria sob sua carteira: o nó esconde quem escreveu uma avaliação, e não pode esconder um nome que você mesmo digita nela.",
+    "signing": "Assinando…",
+    "replaceMyReview": "Substituir minha avaliação",
+    "publishReview": "Publicar avaliação",
+    "cancel": "Cancelar",
+    "footerNote": "Uma avaliação não muda nenhuma pontuação de reputação. A reputação é recalculada por cada nó a partir de liquidações e disputas assinadas e não pode ser elevada ou rebaixada com conversa; isto é uma opinião, e as duas são mostradas separadas porque não são o mesmo tipo de afirmação."
   }
 }

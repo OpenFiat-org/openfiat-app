@@ -1617,5 +1617,28 @@
     "wdTokenAccountNote": "Va vers votre propre compte de jetons associé pour ce mint, créé dans la même transaction si vous n'en avez pas. Pour l'envoyer ailleurs, transférez depuis votre portefeuille ensuite — le programme ne paie que vers un compte de jetons de ce mint exact.",
     "wdWithdrawBtn": "Retirer vers mon portefeuille",
     "wdFooterNote": "Une transaction au programme openfiat-escrow sur Solana devnet."
+  },
+  "reviews": {
+    "notSettled": "Un échange peut être évalué une fois que le commerçant a approuvé le paiement. Les échanges annulés, refusés et en litige ne le peuvent pas — un avis est l'opinion d'une partie sur un échange qui a eu lieu, et un résultat en litige n'appartient pas à ce protocole de le résumer en étoiles.",
+    "connectPrompt": "Connectez le portefeuille qui était partie à cet échange pour l'évaluer.",
+    "notParty": "Le nœud a répondu, et ce portefeuille n'est pas partie à cet échange — il n'y a donc rien ici à évaluer pour lui. Seuls l'acheteur et le vendeur le peuvent, un avis chacun.",
+    "signerError": "Cette connexion de portefeuille ne peut pas signer — reconnectez-la et réessayez.",
+    "published": "Publié. Il est diffusé au reste du réseau depuis ici.",
+    "checkPrompt": "Que vous ayez déjà évalué cet échange n'est lisible que par vous — le fil public ne porte ni auteur ni id d'échange, à dessein. Signez une fois pour vérifier.",
+    "waitingWallet": "En attente de votre portefeuille…",
+    "checkMyReviews": "Vérifier mes avis",
+    "publishedAbout": "Publié à propos de {who}. Les autres voient les étoiles, les mots et le jour — pas votre portefeuille et pas cet échange.",
+    "theirCounterparty": "votre contrepartie",
+    "replaceIt": "Le remplacer",
+    "howWasTrade": "Comment s'est passé l'échange{suffix} ?",
+    "withName": " avec {name}",
+    "starsAria": "{value} sur 5 étoiles",
+    "inOwnWords": "Dans vos propres mots (facultatif)",
+    "commentNote": "{count}/{max}. Publié pour tous et stocké par chaque nœud pour toujours — il ne peut pas être supprimé, seulement remplacé. N'y mettez rien que vous ne publieriez pas sous votre portefeuille : le nœud cache qui a écrit un avis, et ne peut pas cacher un nom que vous y tapez vous-même.",
+    "signing": "Signature…",
+    "replaceMyReview": "Remplacer mon avis",
+    "publishReview": "Publier l'avis",
+    "cancel": "Annuler",
+    "footerNote": "Un avis ne change aucun score de réputation. La réputation est recalculée par chaque nœud à partir de règlements et de litiges signés et ne peut pas être gonflée ou baissée par des paroles ; ceci est une opinion, et les deux sont montrés séparément parce qu'ils ne sont pas le même type d'affirmation."
   }
 }

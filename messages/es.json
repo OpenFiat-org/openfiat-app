@@ -1617,5 +1617,28 @@
     "wdTokenAccountNote": "Va a tu propia cuenta de token asociada para este mint, creada en la misma transacción si no tienes una. Para enviarlo a cualquier otro sitio, transfiere desde tu billetera después — el programa solo paga a una cuenta de token de este mint exacto.",
     "wdWithdrawBtn": "Retirar a mi billetera",
     "wdFooterNote": "Una transacción al programa openfiat-escrow en Solana devnet."
+  },
+  "reviews": {
+    "notSettled": "Una operación se puede reseñar una vez que el comerciante haya aprobado el pago. Las operaciones canceladas, rechazadas y en disputa no — una reseña es la opinión de una parte sobre una operación que ocurrió, y un resultado en disputa no le corresponde a este protocolo resumir en estrellas.",
+    "connectPrompt": "Conecta la billetera que participó en esta operación para reseñarla.",
+    "notParty": "El nodo respondió, y esta billetera no es parte de esta operación — así que aquí no hay nada para que reseñe. Solo el comprador y el vendedor pueden, una reseña cada uno.",
+    "signerError": "Esta conexión de billetera no puede firmar — reconéctala e inténtalo de nuevo.",
+    "published": "Publicada. Desde aquí se difunde al resto de la red.",
+    "checkPrompt": "Si ya has reseñado esta operación solo lo puedes leer tú — el feed público no lleva autor ni id de operación, a propósito. Firma una vez para comprobarlo.",
+    "waitingWallet": "Esperando a tu billetera…",
+    "checkMyReviews": "Comprobar mis reseñas",
+    "publishedAbout": "Publicada sobre {who}. Los demás ven las estrellas, las palabras y el día — no tu billetera y no esta operación.",
+    "theirCounterparty": "tu contraparte",
+    "replaceIt": "Reemplazarla",
+    "howWasTrade": "¿Cómo fue la operación{suffix}?",
+    "withName": " con {name}",
+    "starsAria": "{value} de 5 estrellas",
+    "inOwnWords": "En tus propias palabras (opcional)",
+    "commentNote": "{count}/{max}. Publicado para todos y almacenado por cada nodo para siempre — no se puede borrar, solo reemplazar. No pongas nada que no publicarías bajo tu billetera: el nodo oculta quién escribió una reseña, y no puede ocultar un nombre que tú mismo escribas en ella.",
+    "signing": "Firmando…",
+    "replaceMyReview": "Reemplazar mi reseña",
+    "publishReview": "Publicar reseña",
+    "cancel": "Cancelar",
+    "footerNote": "Una reseña no cambia ninguna puntuación de reputación. La reputación la recalcula cada nodo a partir de liquidaciones y disputas firmadas y no se puede subir ni bajar hablando; esto es una opinión, y las dos se muestran por separado porque no son el mismo tipo de afirmación."
   }
 }

@@ -1617,5 +1617,28 @@
     "wdTokenAccountNote": "Menuju akun token terasosiasi Anda sendiri untuk mint ini, dibuat dalam transaksi yang sama jika Anda tidak punya. Untuk mengirimnya ke tempat lain, transfer dari dompet Anda setelahnya — program hanya membayar ke akun token dari mint yang persis ini.",
     "wdWithdrawBtn": "Tarik ke dompet saya",
     "wdFooterNote": "Satu transaksi ke program openfiat-escrow di Solana devnet."
+  },
+  "reviews": {
+    "notSettled": "Sebuah transaksi dapat diulas setelah pedagang menyetujui pembayaran. Transaksi yang dibatalkan, ditolak, dan disengketakan tidak bisa — ulasan adalah pendapat satu pihak tentang transaksi yang terjadi, dan hasil yang disengketakan bukan urusan protokol ini untuk diringkas menjadi bintang.",
+    "connectPrompt": "Hubungkan dompet yang menjadi pihak dalam transaksi ini untuk mengulasnya.",
+    "notParty": "Node merespons, dan dompet ini bukan pihak dalam transaksi ini — jadi tidak ada yang bisa diulasnya di sini. Hanya pembeli dan penjual yang boleh, masing-masing satu ulasan.",
+    "signerError": "Koneksi dompet ini tidak dapat menandatangani — hubungkan ulang dan coba lagi.",
+    "published": "Dipublikasikan. Dari sini disebarkan ke seluruh jaringan.",
+    "checkPrompt": "Apakah Anda sudah mengulas transaksi ini hanya dapat dibaca oleh Anda — umpan publik tidak membawa penulis dan tidak ada id transaksi, dengan sengaja. Tanda tangani sekali untuk memeriksa.",
+    "waitingWallet": "Menunggu dompet Anda…",
+    "checkMyReviews": "Periksa ulasan saya",
+    "publishedAbout": "Dipublikasikan tentang {who}. Orang lain melihat bintang, kata-kata, dan harinya — bukan dompet Anda dan bukan transaksi ini.",
+    "theirCounterparty": "pihak lawan Anda",
+    "replaceIt": "Ganti",
+    "howWasTrade": "Bagaimana transaksinya{suffix}?",
+    "withName": " dengan {name}",
+    "starsAria": "{value} dari 5 bintang",
+    "inOwnWords": "Dengan kata-kata Anda sendiri (opsional)",
+    "commentNote": "{count}/{max}. Dipublikasikan untuk semua orang dan disimpan setiap node selamanya — tidak dapat dihapus, hanya diganti. Jangan menaruh apa pun yang tidak akan Anda publikasikan atas nama dompet Anda: node menyembunyikan siapa yang menulis ulasan, dan tidak dapat menyembunyikan nama yang Anda ketik sendiri ke dalamnya.",
+    "signing": "Menandatangani…",
+    "replaceMyReview": "Ganti ulasan saya",
+    "publishReview": "Publikasikan ulasan",
+    "cancel": "Batal",
+    "footerNote": "Ulasan tidak mengubah skor reputasi apa pun. Reputasi dihitung ulang oleh setiap node dari penyelesaian dan sengketa yang ditandatangani dan tidak dapat dinaikkan atau diturunkan lewat ucapan; ini adalah pendapat, dan keduanya ditampilkan terpisah karena bukan jenis klaim yang sama."
   }
 }

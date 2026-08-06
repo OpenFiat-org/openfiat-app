@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { formatDateMs } from "@/lib/format";
 import { MY_REVIEWS, myReviewOf, myReviews, type MyReview } from "@/lib/live-reviews";
@@ -74,6 +75,7 @@ export function ReviewForm({
    */
   isParty: boolean | null;
 }) {
+  const t = useTranslations("reviews");
   const { status, data, error, read, forget } = useSignedRead<MyReview[]>(myReviews, MY_REVIEWS);
   const existing = myReviewOf(data, settlementId, myPeerId);
 
@@ -95,9 +97,7 @@ export function ReviewForm({
   if (!settled) {
     return (
       <p className="px-4 py-3 text-xs leading-relaxed text-gray-500">
-        A trade can be reviewed once the merchant has approved the payment. Cancelled, rejected and
-        disputed trades cannot be — a review is one party&apos;s opinion of a trade that happened,
-        and a disputed outcome is not this protocol&apos;s to summarise as stars.
+        {t("notSettled")}
       </p>
     );
   }
@@ -105,7 +105,7 @@ export function ReviewForm({
   if (status === "no-wallet") {
     return (
       <p className="px-4 py-3 text-xs leading-relaxed text-gray-500">
-        Connect the wallet that was party to this trade to review it.
+        {t("connectPrompt")}
       </p>
     );
   }
@@ -113,8 +113,7 @@ export function ReviewForm({
   if (isParty === false) {
     return (
       <p className="px-4 py-3 text-xs leading-relaxed text-gray-500">
-        The node answered, and this wallet is not a party to this trade — so there is nothing here
-        for it to review. Only the buyer and the seller may, one review each.
+        {t("notParty")}
       </p>
     );
   }
@@ -124,7 +123,7 @@ export function ReviewForm({
   async function submit() {
     const signer = currentSigner(wallet);
     if (!wallet || !signer) {
-      setNote({ text: "This wallet connection cannot sign — reconnect it and try again.", bad: true });
+      setNote({ text: t("signerError"), bad: true });
       return;
     }
     setBusy(true);
@@ -137,7 +136,7 @@ export function ReviewForm({
       forget();
       read();
       setEditing(false);
-      setNote({ text: "Published. It is gossiped to the rest of the network from here.", bad: false });
+      setNote({ text: t("published"), bad: false });
     } catch (err) {
       setNote({
         text: explainReviewRefusal(err),
@@ -155,8 +154,7 @@ export function ReviewForm({
       {data === null ? (
         <>
           <p className="text-xs leading-relaxed text-gray-500">
-            Whether you have already reviewed this trade is readable only by you — the public feed
-            carries no author and no trade id, on purpose. Sign once to check.
+            {t("checkPrompt")}
           </p>
           <button
             type="button"
@@ -164,7 +162,7 @@ export function ReviewForm({
             disabled={status === "loading"}
             className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5 disabled:opacity-50"
           >
-            {status === "loading" ? "Waiting for your wallet…" : "Check my reviews"}
+            {status === "loading" ? t("waitingWallet") : t("checkMyReviews")}
           </button>
         </>
       ) : existing && !editing ? (
@@ -177,23 +175,23 @@ export function ReviewForm({
             <p className="text-sm leading-relaxed text-gray-300">{existing.comment}</p>
           )}
           <p className="text-xs leading-relaxed text-gray-600">
-            Published about {counterparty ? shortPeerId(counterparty) : "your counterparty"}. Others
-            see the stars, the words and the day — not your wallet and not this trade.
+            {t("publishedAbout", { who: counterparty ? shortPeerId(counterparty) : t("theirCounterparty") })}
           </p>
           <button
             type="button"
             onClick={() => setEditing(true)}
             className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/5"
           >
-            Replace it
+            {t("replaceIt")}
           </button>
         </>
       ) : (
         <>
           <fieldset>
             <legend className="text-xs text-gray-500">
-              How was the trade
-              {counterparty ? ` with ${shortPeerId(counterparty)}` : ""}?
+              {t("howWasTrade", {
+                suffix: counterparty ? t("withName", { name: shortPeerId(counterparty) }) : "",
+              })}
             </legend>
             <div className="mt-1.5 flex gap-1">
               {[1, 2, 3, 4, 5].map((value) => (
@@ -202,7 +200,7 @@ export function ReviewForm({
                   type="button"
                   onClick={() => setStars(value)}
                   aria-pressed={stars === value}
-                  aria-label={`${value} of 5 stars`}
+                  aria-label={t("starsAria", { value })}
                   className={`px-1 text-xl leading-none ${
                     value <= stars ? "text-amber-300" : "text-gray-700"
                   } hover:text-amber-200`}
@@ -214,7 +212,7 @@ export function ReviewForm({
           </fieldset>
 
           <label className="block">
-            <span className="block text-xs text-gray-500">In your own words (optional)</span>
+            <span className="block text-xs text-gray-500">{t("inOwnWords")}</span>
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
@@ -223,10 +221,7 @@ export function ReviewForm({
               className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0e14]/70 px-3 py-2 text-sm text-white outline-none focus:border-brand/50"
             />
             <span className="mt-1 block text-xs leading-relaxed text-gray-500">
-              {[...comment].length}/{MAX_COMMENT_CHARS}. Published to everyone and stored by every
-              node forever — it cannot be deleted, only replaced. Put nothing in it you would not
-              publish under your wallet: the node hides who wrote a review, and cannot hide a name
-              you type into one yourself.
+              {t("commentNote", { count: [...comment].length, max: MAX_COMMENT_CHARS })}
             </span>
           </label>
 
@@ -239,7 +234,7 @@ export function ReviewForm({
               disabled={busy || problem !== null}
               className="rounded-md bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
             >
-              {busy ? "Signing…" : existing ? "Replace my review" : "Publish review"}
+              {busy ? t("signing") : existing ? t("replaceMyReview") : t("publishReview")}
             </button>
             {existing && (
               <button
@@ -247,7 +242,7 @@ export function ReviewForm({
                 onClick={() => setEditing(false)}
                 className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-white/5"
               >
-                Cancel
+                {t("cancel")}
               </button>
             )}
           </div>
@@ -261,9 +256,7 @@ export function ReviewForm({
       )}
 
       <p className="border-t border-white/5 pt-3 text-xs leading-relaxed text-gray-600">
-        A review changes no reputation score. Reputation is recomputed by every node from signed
-        settlements and disputes and cannot be talked up or down; this is an opinion, and the two
-        are shown apart because they are not the same kind of claim.
+        {t("footerNote")}
       </p>
     </div>
   );
