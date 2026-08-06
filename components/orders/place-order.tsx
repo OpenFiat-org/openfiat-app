@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 
@@ -60,6 +61,7 @@ export function PlaceOrder({
   method: string | undefined;
 }) {
   const router = useRouter();
+  const t = useTranslations("placeOrder");
   const [wallet, setWallet] = useState<WalletConnection | null>(null);
   const [phase, setPhase] = useState<"idle" | "reserving" | "opening" | "done" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -88,12 +90,12 @@ export function PlaceOrder({
     const provider = currentSigner(wallet);
     if (!wallet || !provider) {
       setPhase("error");
-      setMessage("Connect a wallet that can sign messages before placing an order.");
+      setMessage(t("errConnectSign"));
       return;
     }
     if (ad.priceAmount === null) {
       setPhase("error");
-      setMessage("This advertisement has no price right now, so there is nothing to agree to.");
+      setMessage(t("errNoPrice"));
       return;
     }
 
@@ -140,17 +142,14 @@ export function PlaceOrder({
       // the trade room can finish it.
       setPhase("error");
       setMessage(
-        `Your reservation was accepted, but opening the settlement failed: ${explainTradeRefusal(
-          err,
-          "initiate",
-        )} You can finish it from the trade room.`,
+        t("reservationOpenFailed", { reason: explainTradeRefusal(err, "initiate") }),
       );
       return;
     }
 
     setPhase("done");
     router.push(`/orders/${id}`);
-  }, [ad, assetAmount, wallet, router]);
+  }, [ad, assetAmount, wallet, router, t]);
 
   const ready = wallet !== null && assetAmount > 0 && ad.status === "Active" && ad.price !== null;
   const busy = phase === "reserving" || phase === "opening";
@@ -159,18 +158,14 @@ export function PlaceOrder({
     <div className="py-4">
       {releasable === false && (
         <p className="mb-4 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-2 text-xs leading-relaxed text-amber-200">
-          This advertisement settles in a mint the escrow program&apos;s fee treasuries do not
-          hold. A trade in it can be reserved, funded and approved, and then{" "}
-          <span className="font-medium">cannot be released</span>: the release pays the settlement
-          fee into token accounts for a different mint and the runtime rejects it. The tokens are
-          not lost — either party can return them to the merchant&apos;s vault — but the trade
-          cannot complete on this deployment.
+          {t.rich("releasableFalse", {
+            b: (chunks) => <span className="font-medium">{chunks}</span>,
+          })}
         </p>
       )}
       {releasable === null && (
         <p className="mb-4 text-xs text-gray-500">
-          Could not read the escrow program&apos;s fee configuration, so whether this mint can be
-          released is unknown — not a claim that it cannot.
+          {t("releasableUnknown")}
         </p>
       )}
 
@@ -181,30 +176,28 @@ export function PlaceOrder({
         className="w-full rounded-md bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-600/35 disabled:text-white/70"
       >
         {phase === "reserving"
-          ? "Signing the reservation…"
+          ? t("btnReserving")
           : phase === "opening"
-            ? "Opening the settlement…"
+            ? t("btnOpening")
             : phase === "done"
-              ? "Placed"
-              : `Place this order for ${formatCrypto(assetAmount, assetLabel(ad), 6)}`}
+              ? t("btnDone")
+              : t("btnPlace", { amount: formatCrypto(assetAmount, assetLabel(ad), 6) })}
       </button>
 
       {!wallet && (
         <p className="mt-2 text-xs text-amber-300">
-          Connect a wallet first — a reservation is a signed claim on this merchant&apos;s
-          liquidity, and only your wallet can make it.
+          {t("connectFirst")}
         </p>
       )}
       {wallet && ready && phase === "idle" && (
         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          Two wallet prompts: the reservation, then the settlement. The reservation lapses 30
-          minutes after you sign it if the trade has not moved.
+          {t("twoPrompts")}
           {method !== undefined && (
             <>
               {" "}
-              A <code className="font-mono">ReservationRequest</code> carries no payment method,
-              so the rail you picked is not recorded by this signature — the merchant sends the
-              account to pay into through the trade channel once the settlement is open.
+              {t.rich("methodNote", {
+                code: (chunks) => <code className="font-mono">{chunks}</code>,
+              })}
             </>
           )}
         </p>
@@ -223,7 +216,7 @@ export function PlaceOrder({
           href={`/orders/${reservationId}`}
           className="mt-2 inline-block text-xs text-brand hover:text-brand-hover"
         >
-          Go to the trade room →
+          {t("goToTradeRoom")}
         </a>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
   assetLabel,
@@ -50,6 +51,8 @@ export function NewTradeReview({
   assetAmount?: string;
   method?: string;
 }) {
+  const t = useTranslations("placeOrder");
+  const L = useTranslations("lifecycle");
   const buy = userDirection === "Buy";
   const cryptoAmount = Number(assetAmount) || 0;
   const fiatAmount = ad.price ? cryptoAmount * ad.price : 0;
@@ -60,13 +63,13 @@ export function NewTradeReview({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <Panel title="What you are agreeing to">
+      <Panel title={t("panelAgreeing")}>
         <div className="divide-y divide-white/5 px-4">
           {cryptoAmount > 0 && ad.price !== null && (
             <div className="py-4">
               <p className="flex justify-between text-sm">
                 <span className="text-gray-500">
-                  {buy ? "You pay" : "You sell"}
+                  {buy ? t("youPay") : t("youSell")}
                 </span>
                 <span className="tabular-nums font-medium text-white">
                   {buy
@@ -75,7 +78,7 @@ export function NewTradeReview({
                 </span>
               </p>
               <p className="mt-1.5 flex justify-between text-sm">
-                <span className="text-gray-500">You receive</span>
+                <span className="text-gray-500">{t("youReceive")}</span>
                 <span className="tabular-nums font-medium text-emerald-400">
                   {buy
                     ? formatCrypto(cryptoAmount, assetLabel(ad), 4)
@@ -86,54 +89,60 @@ export function NewTradeReview({
           )}
           {methodLabel && (
             <div className="py-3 text-sm">
-              <span className="text-gray-500">Payment method</span>{" "}
+              <span className="text-gray-500">{t("paymentMethod")}</span>{" "}
               <span className="text-gray-200">{methodLabel}</span>
             </div>
           )}
           <PlaceOrder ad={ad} assetAmount={cryptoAmount} method={method} />
           <p className="py-3 text-xs leading-relaxed text-gray-500">
-            <Link href="/orders" className="text-brand hover:text-brand-hover">
-              Your orders
-            </Link>{" "}
-            are what the node reports, and are the record of anything placed here.
+            {t.rich("ordersRecord", {
+              link: (chunks) => (
+                <Link href="/orders" className="text-brand hover:text-brand-hover">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </Panel>
 
-      <Panel title="Advertisement">
+      <Panel title={t("panelAdvertisement")}>
         <div className="divide-y divide-white/5 px-4">
-          <SummaryRow label="Ad" value={ad.id} />
-          <SummaryRow label="Merchant" value={`…${ad.merchantShort}`} />
-          <SummaryRow label="Direction" value={`Merchant ${ad.direction}`} />
+          <SummaryRow label={t("rowAd")} value={ad.id} />
+          <SummaryRow label={t("rowMerchant")} value={`…${ad.merchantShort}`} />
+          <SummaryRow label={t("rowDirection")} value={t("merchantDirection", { direction: L(ad.direction) })} />
           <SummaryRow
-            label="Pair"
+            label={t("rowPair")}
             value={`${assetLabel(ad)}/${ad.fiatCurrency}`}
           />
           <SummaryRow
-            label="Price"
+            label={t("rowPrice")}
             value={
               ad.price === null
                 ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
                 : `${formatNumber(ad.price)} ${ad.fiatCurrency} (${
                     ad.pricingKind === "Floating"
-                      ? `Floating ${(ad.premiumBps ?? 0) >= 0 ? "+" : ""}${((ad.premiumBps ?? 0) / 100).toFixed(2)}%`
-                      : "Fixed"
+                      ? t("floating", {
+                          sign: (ad.premiumBps ?? 0) >= 0 ? "+" : "",
+                          pct: ((ad.premiumBps ?? 0) / 100).toFixed(2),
+                        })
+                      : t("fixed")
                   })`
             }
           />
           <SummaryRow
-            label="Available"
+            label={t("rowAvailable")}
             value={formatCrypto(ad.availableLiquidity, assetLabel(ad))}
           />
           {/* In the asset — see `LiveAd.minTrade`. This row showed the same
               two numbers with the fiat currency code beside them, which on a
               KES pair overstated the band by the exchange rate. */}
-          <SummaryRow label="Limits" value={<TradeLimits ad={ad} />} />
+          <SummaryRow label={t("rowLimits")} value={<TradeLimits ad={ad} />} />
           <SummaryRow
-            label="Payment methods"
+            label={t("rowPaymentMethods")}
             value={ad.paymentMethodLabels.join(", ") || "—"}
           />
-          <SummaryRow label="Status" value={ad.status} />
+          <SummaryRow label={t("rowStatus")} value={t(`adStatus.${ad.status}`)} />
         </div>
       </Panel>
     </div>
@@ -157,18 +166,18 @@ function SummaryRow({
 
 /** Empty state when the ad id is missing, unknown, or paused/filled. */
 export function NewTradeMissingAd() {
+  const t = useTranslations("placeOrder");
   return (
     <Panel>
       <div className="px-4 py-10 text-center text-sm text-gray-500">
         <p>
-          This advertisement could not be found on the node — it may have been
-          paused, filled, or never existed.
+          {t("missingAd")}
         </p>
         <Link
           href="/"
           className="mt-3 inline-block text-brand hover:text-brand-hover"
         >
-          ← Back to the P2P exchange
+          {t("backToExchange")}
         </Link>
       </div>
     </Panel>
