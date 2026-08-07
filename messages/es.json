@@ -981,7 +981,13 @@
     "requesting": "Solicitando…",
     "signSend": "Firmar y enviar tokens de prueba",
     "connectFirst": "Conecta una billetera primero",
-    "rateLimited": "Cantidad fija por solicitud, con límite de frecuencia por billetera y por dirección IP — no ajustable por el usuario."
+    "rateLimited": "Cantidad fija por solicitud, con límite de frecuencia por billetera y por dirección IP — no ajustable por el usuario.",
+    "error": {
+      "generic": "La solicitud al faucet falló (HTTP {status}).",
+      "malformedChallenge": "El faucet devolvió un desafío mal formado.",
+      "cannotSign": "Esta billetera no puede firmar mensajes, lo que el faucet requiere para confirmar que controlas la dirección.",
+      "declined": "La solicitud de firma fue rechazada."
+    }
   },
   "staking": {
     "metaTitle": "Staking",

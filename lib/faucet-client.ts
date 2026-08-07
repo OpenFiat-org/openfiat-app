@@ -21,13 +21,24 @@ export interface FaucetDripResult {
   amounts: Partial<Record<FaucetAssetSymbol, number>>;
 }
 
-/** Thrown by `requestFaucetDrip` — carries the faucet's own error message
- *  (rate limit, daily cap, validation, or low balance) rather than a raw
- *  `fetch` failure, so the UI can show the caller something specific. */
+/**
+ * Which failure a `FaucetRequestError` represents. `"service"` means the
+ * faucet answered with its own `{ error }` string (carried in
+ * `serviceMessage`, and shown verbatim — it is the service's own copy); the
+ * rest are this app's own conditions, resolved through `faucet.error.*` so
+ * they read in the caller's language.
+ */
+export type FaucetErrorCode = "service" | "generic" | "malformedChallenge" | "cannotSign" | "declined";
+
+/** Thrown by `requestFaucetDrip` — carries a stable `code` (and the faucet's
+ *  own message where it gave one) so the UI can show the caller something
+ *  specific and translated. */
 export class FaucetRequestError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code: FaucetErrorCode = "service",
+    public readonly serviceMessage: string | null = null,
   ) {
     super(message);
     this.name = "FaucetRequestError";
@@ -35,17 +46,17 @@ export class FaucetRequestError extends Error {
 }
 
 /**
- * Extracts a human-readable message from the faucet's JSON error body, or
- * falls back to a generic one if the body isn't shaped as expected — the
- * faucet service always returns `{ error: string }` on failure, but this
- * guards against a proxy or CDN returning something else entirely (an HTML
- * error page from nginx, for instance).
+ * Reads the faucet's JSON error body into a `FaucetRequestError`. The faucet
+ * service always returns `{ error: string }` on failure; this guards against
+ * a proxy or CDN returning something else entirely (an HTML error page from
+ * nginx, for instance), which becomes the generic code.
  */
-function extractErrorMessage(status: number, body: unknown): string {
+function errorFromBody(status: number, body: unknown): FaucetRequestError {
   if (body && typeof body === "object" && "error" in body && typeof (body as { error: unknown }).error === "string") {
-    return (body as { error: string }).error;
+    const msg = (body as { error: string }).error;
+    return new FaucetRequestError(msg, status, "service", msg);
   }
-  return `Faucet request failed (HTTP ${status}).`;
+  return new FaucetRequestError(`Faucet request failed (HTTP ${status}).`, status, "generic");
 }
 
 /** Parses a faucet response, turning any non-2xx into a `FaucetRequestError`
@@ -59,7 +70,7 @@ async function readResponse(res: Response): Promise<unknown> {
     // back to a generic message below.
   }
   if (!res.ok) {
-    throw new FaucetRequestError(extractErrorMessage(res.status, body), res.status);
+    throw errorFromBody(res.status, body);
   }
   return body;
 }
@@ -79,7 +90,7 @@ async function requestChallenge(address: string): Promise<string> {
   });
   const body = (await readResponse(res)) as { challenge?: unknown };
   if (typeof body?.challenge !== "string") {
-    throw new FaucetRequestError("The faucet returned a malformed challenge.", 502);
+    throw new FaucetRequestError("The faucet returned a malformed challenge.", 502, "malformedChallenge");
   }
   return body.challenge;
 }
@@ -113,6 +124,7 @@ export async function requestFaucetDrip(
     throw new FaucetRequestError(
       "This wallet cannot sign messages, which the faucet requires to confirm you control the address.",
       400,
+      "cannotSign",
     );
   }
 
@@ -123,7 +135,7 @@ export async function requestFaucetDrip(
   } catch {
     // A user dismissing the wallet prompt is the common case here, and it is
     // not an error worth alarming language.
-    throw new FaucetRequestError("Signature request was declined.", 401);
+    throw new FaucetRequestError("Signature request was declined.", 401, "declined");
   }
   onSigned?.();
 

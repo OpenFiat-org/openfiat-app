@@ -981,7 +981,13 @@
     "requesting": "Demande en cours…",
     "signSend": "Signer et envoyer les jetons de test",
     "connectFirst": "Connectez d'abord un portefeuille",
-    "rateLimited": "Montant fixe par demande, limité par portefeuille et par adresse IP — non ajustable par l'utilisateur."
+    "rateLimited": "Montant fixe par demande, limité par portefeuille et par adresse IP — non ajustable par l'utilisateur.",
+    "error": {
+      "generic": "La requête au faucet a échoué (HTTP {status}).",
+      "malformedChallenge": "Le faucet a renvoyé un défi malformé.",
+      "cannotSign": "Ce portefeuille ne peut pas signer de messages, ce que le faucet exige pour confirmer que vous contrôlez l'adresse.",
+      "declined": "La demande de signature a été refusée."
+    }
   },
   "staking": {
     "metaTitle": "Staking",

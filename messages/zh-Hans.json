@@ -981,7 +981,13 @@
     "requesting": "正在请求…",
     "signSend": "签名并发送测试代币",
     "connectFirst": "请先连接钱包",
-    "rateLimited": "每次请求金额固定，按钱包和 IP 地址限速——不可由用户调整。"
+    "rateLimited": "每次请求金额固定，按钱包和 IP 地址限速——不可由用户调整。",
+    "error": {
+      "generic": "水龙头请求失败（HTTP {status}）。",
+      "malformedChallenge": "水龙头返回了格式错误的挑战。",
+      "cannotSign": "此钱包无法签署消息，而水龙头需要它来确认你控制该地址。",
+      "declined": "签名请求被拒绝。"
+    }
   },
   "staking": {
     "metaTitle": "质押",

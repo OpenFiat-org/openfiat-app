@@ -981,7 +981,13 @@
     "requesting": "Meminta…",
     "signSend": "Tanda tangani dan kirim token uji",
     "connectFirst": "Hubungkan dompet dulu",
-    "rateLimited": "Jumlah tetap per permintaan, dibatasi lajunya per dompet dan per alamat IP — tidak dapat disesuaikan pengguna."
+    "rateLimited": "Jumlah tetap per permintaan, dibatasi lajunya per dompet dan per alamat IP — tidak dapat disesuaikan pengguna.",
+    "error": {
+      "generic": "Permintaan faucet gagal (HTTP {status}).",
+      "malformedChallenge": "Faucet mengembalikan tantangan yang salah bentuk.",
+      "cannotSign": "Dompet ini tidak dapat menandatangani pesan, yang diperlukan faucet untuk memastikan Anda mengendalikan alamat.",
+      "declined": "Permintaan tanda tangan ditolak."
+    }
   },
   "staking": {
     "metaTitle": "Staking",

@@ -89,7 +89,9 @@ export function FaucetForm() {
     } catch (err) {
       const message =
         err instanceof FaucetRequestError
-          ? err.message
+          ? err.code === "service"
+            ? err.serviceMessage ?? err.message
+            : t(`error.${err.code}`, { status: err.status })
           : t("faucetUnreachable");
       setState({ phase: "error", message });
     }

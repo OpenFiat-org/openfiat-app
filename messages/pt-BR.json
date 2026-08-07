@@ -981,7 +981,13 @@
     "requesting": "Solicitando…",
     "signSend": "Assinar e enviar tokens de teste",
     "connectFirst": "Conecte uma carteira primeiro",
-    "rateLimited": "Quantidade fixa por solicitação, com limite de taxa por carteira e por endereço IP — não ajustável pelo usuário."
+    "rateLimited": "Quantidade fixa por solicitação, com limite de taxa por carteira e por endereço IP — não ajustável pelo usuário.",
+    "error": {
+      "generic": "A solicitação ao faucet falhou (HTTP {status}).",
+      "malformedChallenge": "O faucet retornou um desafio malformado.",
+      "cannotSign": "Esta carteira não pode assinar mensagens, o que o faucet exige para confirmar que você controla o endereço.",
+      "declined": "A solicitação de assinatura foi recusada."
+    }
   },
   "staking": {
     "metaTitle": "Staking",

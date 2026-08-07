@@ -981,7 +981,13 @@
     "requesting": "Requesting…",
     "signSend": "Sign and send test tokens",
     "connectFirst": "Connect a wallet first",
-    "rateLimited": "Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable."
+    "rateLimited": "Fixed amount per request, rate-limited per wallet and per IP address — not user-adjustable.",
+    "error": {
+      "generic": "Faucet request failed (HTTP {status}).",
+      "malformedChallenge": "The faucet returned a malformed challenge.",
+      "cannotSign": "This wallet cannot sign messages, which the faucet requires to confirm you control the address.",
+      "declined": "Signature request was declined."
+    }
   },
   "staking": {
     "metaTitle": "Staking",
