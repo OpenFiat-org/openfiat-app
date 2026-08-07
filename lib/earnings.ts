@@ -106,20 +106,18 @@ export function formatAmount(amount: Amount): string {
   });
 }
 
-const BILLING_UNIT_LABEL: Record<ServicePricing["unit"], string> = {
-  Request: "per request",
-  Trade: "per trade",
-  Month: "per month",
-};
+/** A translator that resolves `billingUnit.<Request|Trade|Month>` in the
+ *  caller's own namespace (providers or earnings both carry the sub-object). */
+type BillingT = (key: string) => string;
 
 /**
  * Format a declared price. Returns null for an absent price, which already
  * means free — there is no "free" sentinel in the protocol and inventing a
  * display one here would reintroduce the ambiguity the typed price removed.
  */
-export function formatPricing(pricing: ServicePricing | null): string | null {
+export function formatPricing(t: BillingT, pricing: ServicePricing | null): string | null {
   if (!pricing) return null;
-  return `${formatAmount(pricing.amount)} ${shortMint(pricing.token_mint)} ${BILLING_UNIT_LABEL[pricing.unit]}`;
+  return `${formatAmount(pricing.amount)} ${shortMint(pricing.token_mint)} ${t(`billingUnit.${pricing.unit}`)}`;
 }
 
 /** Mints are 32-44 base58 characters; show enough to recognise one. */

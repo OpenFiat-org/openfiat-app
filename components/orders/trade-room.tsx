@@ -26,7 +26,6 @@ import { useSignedRead, type SignedReadStatus } from "@/components/use-signed-re
 import {
   assetLabel,
   type LiveAd,
-  unpriceableLabel,
 } from "@/lib/live-advertisements";
 import type { SettlementStatus } from "@/lib/types";
 import { formatCrypto, formatDateMs, shortSig } from "@/lib/format";
@@ -399,7 +398,7 @@ export function TradeRoom({
                 label={t("price")}
                 value={
                   ad.price === null
-                    ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
+                    ? L(`unpriceable.${ad.unpriceableReason ?? "NoOracleData"}`)
                     : `${ad.price} ${ad.fiatCurrency}`
                 }
               />

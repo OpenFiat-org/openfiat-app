@@ -525,7 +525,12 @@
     "Accepted": "Aceito",
     "Expired": "Expirado",
     "Buy": "Compra",
-    "Sell": "Venda"
+    "Sell": "Venda",
+    "unpriceable": {
+      "NoOracleData": "Nenhum oráculo precifica este par",
+      "StaleOracleData": "O feed do oráculo expirou",
+      "PriceOutOfRange": "O prêmio deixa o preço fora de alcance"
+    }
   },
   "settlementSteps": {
     "reservationLabel": "Reserva",
@@ -1505,7 +1510,15 @@
     "mpImmutable": "Uma definição não pode ser editada ou excluída. Seu id é um resumo do nome e do tipo, então mudar qualquer um publica um trilho <em>diferente</em> e cada anúncio que escolheu o primeiro ainda carrega o primeiro. Acerte o nome agora.",
     "mpWaitingWallet": "Aguardando sua carteira…",
     "mpPublishSelect": "Publicar e selecionar",
-    "mpCancel": "Cancelar"
+    "mpCancel": "Cancelar",
+    "nameProblem": {
+      "empty": "Dê um nome ao trilho.",
+      "tooLong": "Nomes têm no máximo {max} caracteres — este tem {len}.",
+      "spaces": "Sem espaços iniciais, finais ou duplos — o nó os recusa em vez de aparar, então o nome que ele guarda é o que você assinou.",
+      "whitespace": "Só espaços comuns — um espaço não separável ou ideográfico parece idêntico e não é o mesmo nome.",
+      "invisible": "Esse nome carrega caracteres que se renderizam como nada, que é como se faz um nome parecer outro.",
+      "needsAlnum": "Um nome precisa de ao menos uma letra ou dígito."
+    }
   },
   "becomeMerchant": {
     "metaTitle": "Torne-se comerciante",
@@ -1647,7 +1660,11 @@
     "replaceMyReview": "Substituir minha avaliação",
     "publishReview": "Publicar avaliação",
     "cancel": "Cancelar",
-    "footerNote": "Uma avaliação não muda nenhuma pontuação de reputação. A reputação é recalculada por cada nó a partir de liquidações e disputas assinadas e não pode ser elevada ou rebaixada com conversa; isto é uma opinião, e as duas são mostradas separadas porque não são o mesmo tipo de afirmação."
+    "footerNote": "Uma avaliação não muda nenhuma pontuação de reputação. A reputação é recalculada por cada nó a partir de liquidações e disputas assinadas e não pode ser elevada ou rebaixada com conversa; isto é uma opinião, e as duas são mostradas separadas porque não são o mesmo tipo de afirmação.",
+    "commentProblem": {
+      "tooLong": "Uma avaliação tem no máximo {max} caracteres — todo nó a guarda para sempre, então o protocolo a limita. Esta tem {len}.",
+      "hazard": "Este comentário contém um caractere que redesenha o texto ao seu redor — uma anulação de direção de texto ou um código de controle. O protocolo os recusa porque podem fazer um comentário ser lido como o rótulo ao lado. Remova-o e tente de novo."
+    }
   },
   "merchants": {
     "metaTitle": "Comerciantes",
@@ -1922,7 +1939,12 @@
     "notSeenAnnouncing": "Não visto anunciando nenhum",
     "obsAvailability": "A <b>disponibilidade</b> é presença por fatia da época: em cada fatia, algo assinado por aquele par foi ouvido? Ela satura em um por fatia de propósito, então inundar a rede não ganha nada extra e perder uma corrida de propagação não custa nada — contar anúncios em vez disso teria medido quem anunciou primeiro e pago mais a um nó bem conectado do que a um igualmente disponível atrás de um enlace mais lento.",
     "obsConnectivity": "A <b>conectividade</b> é o multiplicador maior para um nó visto originando um anúncio de ponte de cadeia, e é <b>declarada e não provada</b>. Um nó só-gossip pode pegar um blockhash e slot que ouviu de outro e reanunciá-lo sob sua própria assinatura; nada no envelope distingue os dois. A OFS-4100 §9.2 diz que o problema não é resolvido por essa especificação, e o piso para nós só-gossip limita quanto a mentira vale em vez de impedi-la. Então é reportada e não marcada.",
-    "obsNoAmount": "<b>Não há valor aqui</b>, e não é uma omissão. Converter isto em tokens precisa do stake on-chain de cada candidato, que o caminho de leitura do nó não consegue buscar — então ele não publica cronograma algum em vez de publicar um vazio que parece uma resposta funcional. Este app também não computará um: um número inventado em um navegador não é o que alguém receberia."
+    "obsNoAmount": "<b>Não há valor aqui</b>, e não é uma omissão. Converter isto em tokens precisa do stake on-chain de cada candidato, que o caminho de leitura do nó não consegue buscar — então ele não publica cronograma algum em vez de publicar um vazio que parece uma resposta funcional. Este app também não computará um: um número inventado em um navegador não é o que alguém receberia.",
+    "billingUnit": {
+      "Request": "por solicitação",
+      "Trade": "por negociação",
+      "Month": "por mês"
+    }
   },
   "network": {
     "metaTitle": "Rede",
@@ -2007,7 +2029,8 @@
     "colDownload": "Download",
     "wouldHandJoiner": "O que este nó entregaria a quem entrasse",
     "noLocation": "Sem localização",
-    "snapshotRootNote": "Um snapshot carrega uma raiz de estado de 32 bytes, e esta página deliberadamente não a mostra. Renderizar um digest aqui se leria como verificação, e nada que um navegador faz verifica nada sobre isso: as verificações de assinatura e registro que um nó faz estabelecem que os bytes são o que o anunciante disse, não que o anunciante disse a verdade — por isso o <em>primeiro</em> snapshot de um nó tem que vir de uma âncora fixada e não de quem quer que tenha respondido. O produtor é mostrado em vez disso, porque essa é a parte que você pode consultar no <sr>registro de serviços</sr>."
+    "snapshotRootNote": "Um snapshot carrega uma raiz de estado de 32 bytes, e esta página deliberadamente não a mostra. Renderizar um digest aqui se leria como verificação, e nada que um navegador faz verifica nada sobre isso: as verificações de assinatura e registro que um nó faz estabelecem que os bytes são o que o anunciante disse, não que o anunciante disse a verdade — por isso o <em>primeiro</em> snapshot de um nó tem que vir de uma âncora fixada e não de quem quer que tenha respondido. O produtor é mostrado em vez disso, porque essa é a parte que você pode consultar no <sr>registro de serviços</sr>.",
+    "exchangeRecord": "{ok} ok · {failed} falhas"
   },
   "providers": {
     "metaTitle": "Provedores de serviço",
@@ -2208,7 +2231,12 @@
     "serviceTypesNote": "A governança pode adicionar tipos ao longo do tempo. Um provedor pode executar vários serviços; cada um recebe seu próprio ID de serviço.",
     "noStakeTitle": "Sem stake, sem permissão",
     "noStakeBody": "O registro em si não pede nada além de uma assinatura. Especificações de serviço individuais podem exigir um stake — um provedor de inteligência de risco cujos dados movem disputas tem mais a responder do que um host de snapshots — mas isso é definido pelo serviço, não pelo registro com o qual você está se registrando.",
-    "seeRegistered": "Ver quem já está registrado"
+    "seeRegistered": "Ver quem já está registrado",
+    "billingUnit": {
+      "Request": "por solicitação",
+      "Trade": "por negociação",
+      "Month": "por mês"
+    }
   },
   "governance": {
     "metaTitle": "Governança",
@@ -2381,7 +2409,10 @@
     "newMetaTitle": "Registrar uma proposta",
     "newMetaDescription": "Registre uma proposta OpenFiat — um registro assinado propagado via gossip a cada nó da rede.",
     "newHeroTitle": "Registrar uma proposta",
-    "newHeroDescription": "Uma proposta é um registro que você assina e cada nó replica. Isto cria a metade da rede — a que carrega o texto real — e a abre para votação imediatamente."
+    "newHeroDescription": "Uma proposta é um registro que você assina e cada nó replica. Isto cria a metade da rede — a que carrega o texto real — e a abre para votação imediatamente.",
+    "ended": "Encerrada",
+    "endsInDays": "Encerra em {days}d {hours}h",
+    "endsInHours": "Encerra em {hours}h {minutes}m"
   },
   "explorer": {
     "metaTitle": "Explorador",
@@ -2481,6 +2512,20 @@
       "Medium": "Comportamento suspeito, disputas repetidas, padrões de alto risco.",
       "High": "Carteira de golpe conhecida, phishing confirmado, quadrilha de fraude, mula de dinheiro.",
       "Critical": "Fundos roubados, sanções, financiamento ao terrorismo, ransomware."
+    },
+    "providerCategory": {
+      "BlockchainAnalytics": "Análise de blockchain",
+      "FraudIntelligence": "Inteligência de fraude",
+      "Compliance": "Conformidade",
+      "CommunityIntelligence": "Inteligência comunitária",
+      "InfrastructureIntelligence": "Inteligência de infraestrutura"
+    },
+    "confidence": {
+      "Unknown": "Desconhecida",
+      "Low": "Baixa",
+      "Medium": "Média",
+      "High": "Alta",
+      "VeryHigh": "Muito alta"
     }
   },
   "countries": {

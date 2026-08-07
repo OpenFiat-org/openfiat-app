@@ -525,7 +525,12 @@
     "Accepted": "Accepté",
     "Expired": "Expiré",
     "Buy": "Achat",
-    "Sell": "Vente"
+    "Sell": "Vente",
+    "unpriceable": {
+      "NoOracleData": "Aucun oracle ne cote cette paire",
+      "StaleOracleData": "Le flux d'oracle a expiré",
+      "PriceOutOfRange": "La prime met le prix hors plage"
+    }
   },
   "settlementSteps": {
     "reservationLabel": "Réservation",
@@ -1505,7 +1510,15 @@
     "mpImmutable": "Une définition ne peut être ni modifiée ni supprimée. Son id est un condensé du nom et du type, donc changer l'un ou l'autre publie un rail <em>différent</em> et chaque annonce ayant choisi le premier porte toujours le premier. Mettez le bon nom maintenant.",
     "mpWaitingWallet": "En attente de votre portefeuille…",
     "mpPublishSelect": "Publier et sélectionner",
-    "mpCancel": "Annuler"
+    "mpCancel": "Annuler",
+    "nameProblem": {
+      "empty": "Donnez un nom au rail.",
+      "tooLong": "Les noms font au plus {max} caractères — celui-ci en fait {len}.",
+      "spaces": "Pas d'espaces en début, en fin ou doublés — le nœud les refuse plutôt que de les rogner, donc le nom qu'il stocke est celui que vous avez signé.",
+      "whitespace": "Seulement des espaces ordinaires — une espace insécable ou idéographique paraît identique et n'est pas le même nom.",
+      "invisible": "Ce nom porte des caractères qui s'affichent comme rien, c'est ainsi qu'on fait passer un nom pour un autre.",
+      "needsAlnum": "Un nom a besoin d'au moins une lettre ou un chiffre."
+    }
   },
   "becomeMerchant": {
     "metaTitle": "Devenir commerçant",
@@ -1647,7 +1660,11 @@
     "replaceMyReview": "Remplacer mon avis",
     "publishReview": "Publier l'avis",
     "cancel": "Annuler",
-    "footerNote": "Un avis ne change aucun score de réputation. La réputation est recalculée par chaque nœud à partir de règlements et de litiges signés et ne peut pas être gonflée ou baissée par des paroles ; ceci est une opinion, et les deux sont montrés séparément parce qu'ils ne sont pas le même type d'affirmation."
+    "footerNote": "Un avis ne change aucun score de réputation. La réputation est recalculée par chaque nœud à partir de règlements et de litiges signés et ne peut pas être gonflée ou baissée par des paroles ; ceci est une opinion, et les deux sont montrés séparément parce qu'ils ne sont pas le même type d'affirmation.",
+    "commentProblem": {
+      "tooLong": "Un avis fait au plus {max} caractères — chaque nœud le stocke pour toujours, donc le protocole le borne. Celui-ci en fait {len}.",
+      "hazard": "Ce commentaire contient un caractère qui redessine le texte autour de lui — un remplacement de direction de texte ou un code de contrôle. Le protocole les refuse car ils peuvent faire lire un commentaire comme l'étiquette à côté. Retirez-le et réessayez."
+    }
   },
   "merchants": {
     "metaTitle": "Commerçants",
@@ -1922,7 +1939,12 @@
     "notSeenAnnouncing": "Pas vu en annoncer un",
     "obsAvailability": "La <b>disponibilité</b> est la présence par tranche de l'époque : dans chaque tranche, a-t-on entendu quoi que ce soit de signé par ce pair ? Elle sature à un par tranche à dessein, donc inonder le réseau ne rapporte rien de plus et perdre une course de propagation ne coûte rien — compter les annonces à la place aurait mesuré qui a annoncé en premier et payé un nœud bien connecté plus qu'un nœud tout aussi disponible derrière un lien plus lent.",
     "obsConnectivity": "La <b>connectivité</b> est le multiplicateur plus élevé pour un nœud vu à l'origine d'une annonce de pont de chaîne, et elle est <b>déclarée plutôt que prouvée</b>. Un nœud gossip-seul peut prendre un blockhash et un slot entendus d'un autre et les réannoncer sous sa propre signature ; rien dans l'enveloppe ne distingue les deux. L'OFS-4100 §9.2 dit que le problème n'est pas résolu par cette spécification, et le plancher pour les nœuds gossip-seul limite ce que vaut le mensonge plutôt que de l'empêcher. Donc c'est rapporté et non coché.",
-    "obsNoAmount": "<b>Il n'y a pas de montant ici</b>, et ce n'est pas une omission. Convertir cela en jetons nécessite la mise on-chain de chaque candidat, que le chemin de lecture du nœud ne peut pas récupérer — donc il ne publie aucun calendrier plutôt que d'en publier un vide qui ressemble à une réponse fonctionnelle. Cette app n'en calculera pas non plus : un chiffre inventé dans un navigateur n'est pas ce que quiconque serait payé."
+    "obsNoAmount": "<b>Il n'y a pas de montant ici</b>, et ce n'est pas une omission. Convertir cela en jetons nécessite la mise on-chain de chaque candidat, que le chemin de lecture du nœud ne peut pas récupérer — donc il ne publie aucun calendrier plutôt que d'en publier un vide qui ressemble à une réponse fonctionnelle. Cette app n'en calculera pas non plus : un chiffre inventé dans un navigateur n'est pas ce que quiconque serait payé.",
+    "billingUnit": {
+      "Request": "par requête",
+      "Trade": "par échange",
+      "Month": "par mois"
+    }
   },
   "network": {
     "metaTitle": "Réseau",
@@ -2007,7 +2029,8 @@
     "colDownload": "Téléchargement",
     "wouldHandJoiner": "Celui que ce nœud remettrait à un arrivant",
     "noLocation": "Aucun emplacement",
-    "snapshotRootNote": "Un snapshot porte une racine d'état de 32 octets, et cette page ne l'affiche délibérément pas. Afficher un condensé ici se lirait comme une vérification, et rien de ce que fait un navigateur ne vérifie quoi que ce soit à son sujet : les vérifications de signature et d'enregistrement qu'un nœud effectue établissent que les octets sont ce que l'annonceur a dit, non que l'annonceur a dit vrai — c'est pourquoi le <em>premier</em> snapshot d'un nœud doit venir d'une ancre épinglée et non de quiconque a répondu. Le producteur est montré à la place, car c'est la partie que vous pouvez rechercher dans le <sr>registre des services</sr>."
+    "snapshotRootNote": "Un snapshot porte une racine d'état de 32 octets, et cette page ne l'affiche délibérément pas. Afficher un condensé ici se lirait comme une vérification, et rien de ce que fait un navigateur ne vérifie quoi que ce soit à son sujet : les vérifications de signature et d'enregistrement qu'un nœud effectue établissent que les octets sont ce que l'annonceur a dit, non que l'annonceur a dit vrai — c'est pourquoi le <em>premier</em> snapshot d'un nœud doit venir d'une ancre épinglée et non de quiconque a répondu. Le producteur est montré à la place, car c'est la partie que vous pouvez rechercher dans le <sr>registre des services</sr>.",
+    "exchangeRecord": "{ok} ok · {failed} échecs"
   },
   "providers": {
     "metaTitle": "Fournisseurs de services",
@@ -2208,7 +2231,12 @@
     "serviceTypesNote": "La gouvernance peut ajouter des types au fil du temps. Un fournisseur peut faire tourner plusieurs services ; chacun reçoit son propre ID de service.",
     "noStakeTitle": "Sans stake, sans permission",
     "noStakeBody": "Le registre lui-même ne demande rien d'autre qu'une signature. Des spécifications de service individuelles peuvent exiger un stake — un fournisseur de renseignement sur les risques dont les données font bouger des litiges a plus à répondre qu'un hôte de snapshots — mais cela est fixé par le service, pas par le registre auprès duquel vous vous enregistrez.",
-    "seeRegistered": "Voir qui est déjà enregistré"
+    "seeRegistered": "Voir qui est déjà enregistré",
+    "billingUnit": {
+      "Request": "par requête",
+      "Trade": "par échange",
+      "Month": "par mois"
+    }
   },
   "governance": {
     "metaTitle": "Gouvernance",
@@ -2381,7 +2409,10 @@
     "newMetaTitle": "Déposer une proposition",
     "newMetaDescription": "Déposez une proposition OpenFiat — un enregistrement signé diffusé par gossip à chaque nœud du réseau.",
     "newHeroTitle": "Déposer une proposition",
-    "newHeroDescription": "Une proposition est un enregistrement que vous signez et que chaque nœud réplique. Ceci crée la moitié du réseau — celle qui porte le texte réel — et l'ouvre au vote immédiatement."
+    "newHeroDescription": "Une proposition est un enregistrement que vous signez et que chaque nœud réplique. Ceci crée la moitié du réseau — celle qui porte le texte réel — et l'ouvre au vote immédiatement.",
+    "ended": "Terminé",
+    "endsInDays": "Se termine dans {days}j {hours}h",
+    "endsInHours": "Se termine dans {hours}h {minutes}min"
   },
   "explorer": {
     "metaTitle": "Explorateur",
@@ -2481,6 +2512,20 @@
       "Medium": "Comportement suspect, litiges répétés, schémas à haut risque.",
       "High": "Portefeuille d'arnaque connu, hameçonnage confirmé, réseau de fraude, mule financière.",
       "Critical": "Fonds volés, sanctions, financement du terrorisme, rançongiciel."
+    },
+    "providerCategory": {
+      "BlockchainAnalytics": "Analytique blockchain",
+      "FraudIntelligence": "Renseignement sur la fraude",
+      "Compliance": "Conformité",
+      "CommunityIntelligence": "Renseignement communautaire",
+      "InfrastructureIntelligence": "Renseignement sur l'infrastructure"
+    },
+    "confidence": {
+      "Unknown": "Inconnue",
+      "Low": "Faible",
+      "Medium": "Moyenne",
+      "High": "Élevée",
+      "VeryHigh": "Très élevée"
     }
   },
   "countries": {

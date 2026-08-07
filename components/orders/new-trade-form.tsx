@@ -3,7 +3,6 @@ import { Link } from "@/i18n/navigation";
 import {
   assetLabel,
   type LiveAd,
-  unpriceableLabel,
 } from "@/lib/live-advertisements";
 import { formatCrypto, formatFiat, formatNumber } from "@/lib/format";
 import { TradeLimits } from "@/components/asset-label";
@@ -119,7 +118,7 @@ export function NewTradeReview({
             label={t("rowPrice")}
             value={
               ad.price === null
-                ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
+                ? L(`unpriceable.${ad.unpriceableReason ?? "NoOracleData"}`)
                 : `${formatNumber(ad.price)} ${ad.fiatCurrency} (${
                     ad.pricingKind === "Floating"
                       ? t("floating", {

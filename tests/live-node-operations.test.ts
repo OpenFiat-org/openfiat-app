@@ -118,7 +118,7 @@ describe("getPeers", () => {
     const view = await fetchPeers("http://node.invalid");
     // Zero of zero exchanges is not 0% reliable. It is a peer nobody has
     // tried yet, and a ratio would turn that into a verdict.
-    expect(exchangeRecord(view.peers.find((p) => p.peerId === "b")!)).toBe("4 ok · 1 failed");
+    expect(exchangeRecord(view.peers.find((p) => p.peerId === "b")!)).toEqual({ successes: 4, failures: 1 });
     expect(exchangeRecord(view.peers.find((p) => p.peerId !== "b")!)).toBeNull();
   });
 

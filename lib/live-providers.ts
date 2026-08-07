@@ -1,5 +1,6 @@
+import type { ServicePricing } from "@openfiat/sdk";
 import { Client, providers, type ServiceRecord, type ServiceType as LiveServiceType } from "@openfiat/sdk";
-import { formatPricing } from "@/lib/earnings";
+
 import { asCid } from "@/lib/ipfs/cid";
 import { ipfsUrl } from "@/lib/ipfs/gateway";
 import type { ServiceType } from "@/lib/types";
@@ -147,7 +148,7 @@ export interface DirectoryRow {
   type: ServiceType;
   region: string;
   capabilities: string[];
-  priceLabel: string;
+  pricing: ServicePricing | null;
   /**
    * `last_health_update` in millis — when the provider was last heard from.
    *
@@ -204,7 +205,7 @@ function toRow(record: RecordWithBranding): DirectoryRow {
     // text. Absent pricing already means free (OFS-4100 §9.5), so an
     // unpriced service says so rather than showing a placeholder dash that
     // reads as "unknown".
-    priceLabel: formatPricing(record.pricing) ?? "Free",
+    pricing: record.pricing,
     lastHealthUpdate: record.last_health_update,
     status: record.health,
     href: `/providers/${encodeURIComponent(record.service_id)}`,

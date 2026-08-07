@@ -150,8 +150,8 @@ function RecordRow({ record, at }: { record: RiskRecord; at: number }) {
         >
           {record.outcome === "Cleared" ? t("cleared") : t(`severity.${record.severity}`)}
         </span>
-        <span className="text-gray-500">{record.category}</span>
-        <span className="text-gray-600">{t("confidenceWord")} {record.confidence}</span>
+        <span className="text-gray-500">{t(`providerCategory.${record.category}`)}</span>
+        <span className="text-gray-600">{t("confidenceWord")} {t(`confidence.${record.confidence}`)}</span>
         <span className="ml-auto text-gray-600">{formatDateShortMs(record.publishedAt)}</span>
       </div>
       <p className="mt-1 leading-relaxed text-gray-300">{record.reason}</p>

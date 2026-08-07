@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { AssetLabel, TradeLimits } from "@/components/asset-label";
@@ -16,7 +16,6 @@ import { formatDateShortMs, formatNumber, shortAddress, sinceLabel } from "@/lib
 import {
   assetLabel,
   fetchAdsByMerchant,
-  unpriceableLabel,
   type LiveAd,
 } from "@/lib/live-advertisements";
 import { fetchReviews, meanStars, type LiveReview } from "@/lib/live-reviews";
@@ -288,7 +287,7 @@ function AdRow({ ad }: { ad: LiveAd }) {
         {ad.price === null ? (
           <span className="text-xs text-gray-500">
             {ad.pricingKind === "Floating"
-              ? unpriceableLabel(ad.unpriceableReason ?? "NoOracleData")
+              ? L(`unpriceable.${ad.unpriceableReason ?? "NoOracleData"}`)
               : t("unpriced")}
           </span>
         ) : (
@@ -348,6 +347,7 @@ function AdRow({ ad }: { ad: LiveAd }) {
  */
 function Reviews({ reviews, loading }: { reviews: LiveReview[]; loading: boolean }) {
   const t = useTranslations("merchants");
+  const locale = useLocale();
   if (loading) return <p className="mt-3 text-sm text-gray-500">{t("recReading")}</p>;
 
   if (reviews.length === 0) {
@@ -368,7 +368,7 @@ function Reviews({ reviews, loading }: { reviews: LiveReview[]; loading: boolean
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <Stars stars={review.stars} />
-              <span className="text-xs text-gray-600" title={sinceLabel(review.createdOn)}>
+              <span className="text-xs text-gray-600" title={sinceLabel(review.createdOn, locale)}>
                 {formatDateShortMs(review.createdOn)}
               </span>
             </div>

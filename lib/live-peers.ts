@@ -204,8 +204,8 @@ export function contentProof(peer: Peer): string | null {
  * is the ordinary state for a peer discovered a minute ago. A ratio would
  * turn that into a verdict.
  */
-export function exchangeRecord(peer: Peer): string | null {
+export function exchangeRecord(peer: Peer): { successes: number; failures: number } | null {
   const total = peer.successes + peer.failures;
   if (total === 0) return null;
-  return `${peer.successes} ok · ${peer.failures} failed`;
+  return { successes: peer.successes, failures: peer.failures };
 }

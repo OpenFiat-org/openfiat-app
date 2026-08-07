@@ -226,7 +226,7 @@ export function ReviewForm({
             </span>
           </label>
 
-          {problem && <p className="text-xs text-amber-300">{problem}</p>}
+          {problem && <p className="text-xs text-amber-300">{t(`commentProblem.${problem.key}`, problem.values)}</p>}
 
           <div className="flex flex-wrap gap-2">
             <button

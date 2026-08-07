@@ -225,31 +225,14 @@ export function assetLabel(
   return tradingSymbol(ad.assetMint, ad.assetSymbol) ?? ad.assetMint;
 }
 
-/**
- * Why an advertisement currently has no price, in words a trader can act
- * on.
- *
- * One function rather than a string at each call site, because the three
- * reasons imply different things about whether waiting helps and screens
- * that each invent their own wording drift into saying the same thing about
- * all three. Every one of these used to read "no oracle read yet", which
- * was true of none of them: it described the app's own failure to read the
- * node's quote, not anything about the advertisement.
+/*
+ * Why an advertisement currently has no price is shown from the enum reason
+ * itself: `unpriceableReason` is one of `NoOracleData` / `StaleOracleData` /
+ * `PriceOutOfRange`, and each screen resolves it through `lifecycle.unpriceable.*`
+ * so the three — which imply different things about whether waiting helps —
+ * read distinctly and in the reader's language rather than in one hand-written
+ * sentence per call site.
  */
-export function unpriceableLabel(
-  reason: NonNullable<LiveAd["unpriceableReason"]>,
-): string {
-  switch (reason) {
-    case "NoOracleData":
-      return "No oracle prices this pair";
-    case "StaleOracleData":
-      // The only one that plausibly resolves on its own.
-      return "Oracle feed has lapsed";
-    case "PriceOutOfRange":
-      // The merchant's own premium, so nothing external will fix it.
-      return "Premium puts the price out of range";
-  }
-}
 
 /** An `Amount` is base units plus a decimal exponent, never a float. */
 function toWhole(amount: { base_units: number; decimals: number }): number {

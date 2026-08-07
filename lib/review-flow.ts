@@ -63,12 +63,19 @@ function isDisplayHazard(char: string): boolean {
 }
 
 /** Why a comment cannot be published, in the words of whoever typed it, or `null`. */
-export function commentProblem(comment: string): string | null {
+/** A validation problem as a stable key (plus values); prose lives in
+ *  `reviews.commentProblem.*`. `null` when the comment is acceptable. */
+export interface CommentProblem {
+  key: string;
+  values?: Record<string, string | number>;
+}
+
+export function commentProblem(comment: string): CommentProblem | null {
   if ([...comment].length > MAX_COMMENT_CHARS) {
-    return `A review is at most ${MAX_COMMENT_CHARS} characters — every node stores it forever, so the protocol bounds it. This one is ${[...comment].length}.`;
+    return { key: "tooLong", values: { max: MAX_COMMENT_CHARS, len: [...comment].length } };
   }
   if ([...comment].some(isDisplayHazard)) {
-    return "This comment contains a character that redraws the text around it — a text-direction override or a control code. The protocol refuses those because they can make a comment read as the label beside it. Remove it and try again.";
+    return { key: "hazard" };
   }
   return null;
 }
@@ -117,8 +124,10 @@ export async function publishReview(
   stars: number,
   comment: string,
 ): Promise<string> {
+  // A backstop only — the form disables publishing while a problem stands, so
+  // this fires solely if that guard is bypassed. The key is enough to trace it.
   const problem = commentProblem(comment);
-  if (problem) throw new Error(problem);
+  if (problem) throw new Error(`comment:${problem.key}`);
   const review = buildReview(who, settlementId, stars, comment);
   const signature = await signPayload(who.provider, review);
   const id = await sendSignedEvent(nodeUrl(), "sendReviewPublish", { review, signature });

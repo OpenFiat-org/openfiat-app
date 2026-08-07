@@ -432,7 +432,7 @@ function DefineYourOwnRail({
         </div>
       </div>
 
-      {problem && <p className="mt-2 text-xs text-amber-300">{problem}</p>}
+      {problem && <p className="mt-2 text-xs text-amber-300">{t(`nameProblem.${problem.key}`, problem.values)}</p>}
       {error && <p className="mt-2 text-xs text-amber-300">{error}</p>}
 
       {/* The one thing a merchant cannot find out by trying: there is no

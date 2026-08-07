@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -9,7 +9,7 @@ import { AssetLabel, TradeLimits } from "@/components/asset-label";
 import { MetricStrip } from "@/components/metrics";
 import { WalletAvatar } from "@/components/wallet-avatar";
 import { formatNumber, sinceLabel } from "@/lib/format";
-import { unpriceableLabel, type LiveAd } from "@/lib/live-advertisements";
+import { type LiveAd } from "@/lib/live-advertisements";
 import {
   fetchMerchants,
   type MerchantOffering,
@@ -225,6 +225,7 @@ function MerchantRows({
   onToggle: () => void;
 }) {
   const t = useTranslations("merchants");
+  const locale = useLocale();
   return (
     <>
       <Tr>
@@ -293,7 +294,7 @@ function MerchantRows({
         <Td py="py-5" right className="text-xs text-gray-400">
           {new Date(row.firstAdvertisedAt).toLocaleDateString()}
           <span className="block text-[11px] text-gray-600">
-            {t("lastChange", { since: sinceLabel(row.lastUpdatedAt) })}
+            {t("lastChange", { since: sinceLabel(row.lastUpdatedAt, locale) })}
           </span>
         </Td>
       </Tr>
@@ -374,7 +375,7 @@ function AdLine({ ad }: { ad: LiveAd }) {
             says why. */}
         {ad.price === null
           ? ad.pricingKind === "Floating"
-            ? `${A("floating", { sign: ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : "", pct: ad.premiumBps !== null ? ad.premiumBps / 100 : 0 })} — ${unpriceableLabel(ad.unpriceableReason ?? "NoOracleData").toLowerCase()}`
+            ? `${A("floating", { sign: ad.premiumBps !== null && ad.premiumBps >= 0 ? "+" : "", pct: ad.premiumBps !== null ? ad.premiumBps / 100 : 0 })} — ${L(`unpriceable.${ad.unpriceableReason ?? "NoOracleData"}`)}`
             : t("unpriced")
           : `${formatNumber(ad.price)} ${ad.fiatCurrency}`}
       </span>

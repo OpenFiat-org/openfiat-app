@@ -1,11 +1,12 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { ServiceType } from "@/lib/types";
 import { PROVIDER_TYPES, TYPE_COLORS } from "@/lib/provider-display";
 import { sinceLabel } from "@/lib/format";
+import { formatPricing } from "@/lib/earnings";
 import { fetchLiveProviders, type DirectoryRow } from "@/lib/live-providers";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
@@ -123,6 +124,7 @@ export function ProvidersMetrics() {
 
 export function ProvidersDirectory() {
   const t = useTranslations("providers");
+  const locale = useLocale();
   const [filter, setFilter] = useState<ServiceType | "All">("All");
   const { rows, loading, errorLabel } = useProviderRows();
   const visible = filter === "All" ? rows : rows.filter((p) => p.type === filter);
@@ -237,13 +239,13 @@ export function ProvidersDirectory() {
                     {p.capabilities.length > 3 && ` ${t("moreCaps", { n: p.capabilities.length - 3 })}`}
                   </span>
                 </Td>
-                <Td py="py-5" className="text-xs text-gray-400">{p.priceLabel}</Td>
+                <Td py="py-5" className="text-xs text-gray-400">{formatPricing(t, p.pricing) ?? t("freeWord")}</Td>
                 {/* Not "Uptime". OFS-1500 records a health state and when it
                     was refreshed, and no uptime figure exists anywhere in the
                     protocol to put here — see provider-detail.tsx. */}
                 <Td py="py-5" right className="text-xs text-gray-400">
                   <span title={new Date(p.lastHealthUpdate).toLocaleString()}>
-                    {sinceLabel(p.lastHealthUpdate)}
+                    {sinceLabel(p.lastHealthUpdate, locale)}
                   </span>
                 </Td>
                 <Td py="py-5" right><StatusPill status={p.status} label={healthLabel(t, p.status)} /></Td>

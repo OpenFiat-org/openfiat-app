@@ -525,7 +525,12 @@
     "Accepted": "Accepted",
     "Expired": "Expired",
     "Buy": "Buy",
-    "Sell": "Sell"
+    "Sell": "Sell",
+    "unpriceable": {
+      "NoOracleData": "No oracle prices this pair",
+      "StaleOracleData": "Oracle feed has lapsed",
+      "PriceOutOfRange": "Premium puts the price out of range"
+    }
   },
   "settlementSteps": {
     "reservationLabel": "Reservation",
@@ -1505,7 +1510,15 @@
     "mpImmutable": "A definition cannot be edited or deleted. Its id is a digest of the name and kind, so changing either publishes a <em>different</em> rail and every advertisement that chose the first still carries the first. Get the name right now.",
     "mpWaitingWallet": "Waiting for your wallet…",
     "mpPublishSelect": "Publish and select",
-    "mpCancel": "Cancel"
+    "mpCancel": "Cancel",
+    "nameProblem": {
+      "empty": "Give the rail a name.",
+      "tooLong": "Names are at most {max} characters — this is {len}.",
+      "spaces": "No leading, trailing or doubled spaces — the node refuses them rather than trimming, so the name it stores is the name you signed.",
+      "whitespace": "Only ordinary spaces — a no-break or ideographic space looks identical and is not the same name.",
+      "invisible": "That name carries characters that render as nothing, which is how one name is made to look like another.",
+      "needsAlnum": "A name needs at least one letter or digit."
+    }
   },
   "becomeMerchant": {
     "metaTitle": "Become a Merchant",
@@ -1647,7 +1660,11 @@
     "replaceMyReview": "Replace my review",
     "publishReview": "Publish review",
     "cancel": "Cancel",
-    "footerNote": "A review changes no reputation score. Reputation is recomputed by every node from signed settlements and disputes and cannot be talked up or down; this is an opinion, and the two are shown apart because they are not the same kind of claim."
+    "footerNote": "A review changes no reputation score. Reputation is recomputed by every node from signed settlements and disputes and cannot be talked up or down; this is an opinion, and the two are shown apart because they are not the same kind of claim.",
+    "commentProblem": {
+      "tooLong": "A review is at most {max} characters — every node stores it forever, so the protocol bounds it. This one is {len}.",
+      "hazard": "This comment contains a character that redraws the text around it — a text-direction override or a control code. The protocol refuses those because they can make a comment read as the label beside it. Remove it and try again."
+    }
   },
   "merchants": {
     "metaTitle": "Merchants",
@@ -1922,7 +1939,12 @@
     "notSeenAnnouncing": "Not seen announcing one",
     "obsAvailability": "<b>Availability</b> is presence per slice of the epoch: in each slice, was anything at all heard signed by that peer? It saturates at one per slice on purpose, so flooding the network earns nothing extra and losing a propagation race costs nothing — counting announcements instead would have measured who announced first and paid a well-connected node more than an equally available one behind a slower link.",
     "obsConnectivity": "<b>Connectivity</b> is the higher multiplier for a node seen originating a chain-bridge announcement, and it is <b>claimed rather than proven</b>. A gossip-only node can take a blockhash and slot it heard from somebody else and re-announce it under its own signature; nothing in the envelope tells the two apart. OFS-4100 §9.2 says the problem is not solved by that specification, and the floor for gossip-only nodes limits what the lie is worth rather than preventing it. So it is reported and not ticked.",
-    "obsNoAmount": "There is <b>no amount here</b>, and it is not an omission. Converting these into tokens needs every candidate's on-chain stake, which the node's read path cannot fetch — so it publishes no schedule rather than publishing an empty one that looks like a working answer. This app will not compute one either: a figure invented in a browser is not what anybody would be paid."
+    "obsNoAmount": "There is <b>no amount here</b>, and it is not an omission. Converting these into tokens needs every candidate's on-chain stake, which the node's read path cannot fetch — so it publishes no schedule rather than publishing an empty one that looks like a working answer. This app will not compute one either: a figure invented in a browser is not what anybody would be paid.",
+    "billingUnit": {
+      "Request": "per request",
+      "Trade": "per trade",
+      "Month": "per month"
+    }
   },
   "network": {
     "metaTitle": "Network",
@@ -2007,7 +2029,8 @@
     "colDownload": "Download",
     "wouldHandJoiner": "The one this node would hand a joiner",
     "noLocation": "No location",
-    "snapshotRootNote": "A snapshot carries a 32-byte state root, and this page deliberately does not show it. Rendering a digest here would read as verification, and nothing a browser does verifies anything about it: the signature and registration checks a node performs establish that the bytes are what the announcer said, not that the announcer told the truth — which is why a node's <em>first</em> snapshot has to come from a pinned anchor rather than from whoever answered. The producer is shown instead, because that is the part you can look up in the <sr>service registry</sr>."
+    "snapshotRootNote": "A snapshot carries a 32-byte state root, and this page deliberately does not show it. Rendering a digest here would read as verification, and nothing a browser does verifies anything about it: the signature and registration checks a node performs establish that the bytes are what the announcer said, not that the announcer told the truth — which is why a node's <em>first</em> snapshot has to come from a pinned anchor rather than from whoever answered. The producer is shown instead, because that is the part you can look up in the <sr>service registry</sr>.",
+    "exchangeRecord": "{ok} ok · {failed} failed"
   },
   "providers": {
     "metaTitle": "Service Providers",
@@ -2208,7 +2231,12 @@
     "serviceTypesNote": "Governance may add types over time. A provider may run several services; each gets its own Service ID.",
     "noStakeTitle": "No stake, no permission",
     "noStakeBody": "The registry itself asks for nothing but a signature. Individual service specifications may require a stake — a risk intelligence provider whose data moves disputes has more to answer for than a snapshot host — but that is set by the service, not by the registry you are registering with.",
-    "seeRegistered": "See who is already registered"
+    "seeRegistered": "See who is already registered",
+    "billingUnit": {
+      "Request": "per request",
+      "Trade": "per trade",
+      "Month": "per month"
+    }
   },
   "governance": {
     "metaTitle": "Governance",
@@ -2381,7 +2409,10 @@
     "newMetaTitle": "File a proposal",
     "newMetaDescription": "File an OpenFiat proposal — a signed record gossiped to every node on the network.",
     "newHeroTitle": "File a proposal",
-    "newHeroDescription": "A proposal is a record you sign and every node replicates. This creates the network's half — the one that carries the actual text — and opens it for voting straight away."
+    "newHeroDescription": "A proposal is a record you sign and every node replicates. This creates the network's half — the one that carries the actual text — and opens it for voting straight away.",
+    "ended": "Ended",
+    "endsInDays": "Ends in {days}d {hours}h",
+    "endsInHours": "Ends in {hours}h {minutes}m"
   },
   "explorer": {
     "metaTitle": "Explorer",
@@ -2481,6 +2512,20 @@
       "Medium": "Suspicious behaviour, repeated disputes, high-risk patterns.",
       "High": "Known scam wallet, confirmed phishing, fraud ring, money mule.",
       "Critical": "Stolen funds, sanctions, terrorist financing, ransomware."
+    },
+    "providerCategory": {
+      "BlockchainAnalytics": "Blockchain analytics",
+      "FraudIntelligence": "Fraud intelligence",
+      "Compliance": "Compliance",
+      "CommunityIntelligence": "Community intelligence",
+      "InfrastructureIntelligence": "Infrastructure intelligence"
+    },
+    "confidence": {
+      "Unknown": "Unknown",
+      "Low": "Low",
+      "Medium": "Medium",
+      "High": "High",
+      "VeryHigh": "Very high"
     }
   },
   "countries": {

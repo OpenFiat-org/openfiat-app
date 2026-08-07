@@ -525,7 +525,12 @@
     "Accepted": "Diterima",
     "Expired": "Kedaluwarsa",
     "Buy": "Beli",
-    "Sell": "Jual"
+    "Sell": "Jual",
+    "unpriceable": {
+      "NoOracleData": "Tidak ada orakel yang menghargai pasangan ini",
+      "StaleOracleData": "Feed orakel telah kedaluwarsa",
+      "PriceOutOfRange": "Premi membuat harga di luar rentang"
+    }
   },
   "settlementSteps": {
     "reservationLabel": "Reservasi",
@@ -1505,7 +1510,15 @@
     "mpImmutable": "Sebuah definisi tidak dapat disunting atau dihapus. Id-nya adalah ringkasan dari nama dan jenis, jadi mengubah salah satunya memublikasikan rel yang <em>berbeda</em> dan setiap iklan yang memilih yang pertama tetap membawa yang pertama. Buat namanya benar sekarang.",
     "mpWaitingWallet": "Menunggu dompet Anda…",
     "mpPublishSelect": "Publikasikan dan pilih",
-    "mpCancel": "Batal"
+    "mpCancel": "Batal",
+    "nameProblem": {
+      "empty": "Beri rel itu nama.",
+      "tooLong": "Nama paling banyak {max} karakter — ini {len}.",
+      "spaces": "Tanpa spasi awal, akhir, atau ganda — node menolaknya alih-alih memangkasnya, jadi nama yang disimpannya adalah nama yang Anda tandatangani.",
+      "whitespace": "Hanya spasi biasa — spasi tanpa-putus atau ideografis tampak identik dan bukan nama yang sama.",
+      "invisible": "Nama itu membawa karakter yang dirender sebagai kosong, itulah cara membuat satu nama tampak seperti yang lain.",
+      "needsAlnum": "Sebuah nama memerlukan setidaknya satu huruf atau angka."
+    }
   },
   "becomeMerchant": {
     "metaTitle": "Menjadi Pedagang",
@@ -1647,7 +1660,11 @@
     "replaceMyReview": "Ganti ulasan saya",
     "publishReview": "Publikasikan ulasan",
     "cancel": "Batal",
-    "footerNote": "Ulasan tidak mengubah skor reputasi apa pun. Reputasi dihitung ulang oleh setiap node dari penyelesaian dan sengketa yang ditandatangani dan tidak dapat dinaikkan atau diturunkan lewat ucapan; ini adalah pendapat, dan keduanya ditampilkan terpisah karena bukan jenis klaim yang sama."
+    "footerNote": "Ulasan tidak mengubah skor reputasi apa pun. Reputasi dihitung ulang oleh setiap node dari penyelesaian dan sengketa yang ditandatangani dan tidak dapat dinaikkan atau diturunkan lewat ucapan; ini adalah pendapat, dan keduanya ditampilkan terpisah karena bukan jenis klaim yang sama.",
+    "commentProblem": {
+      "tooLong": "Ulasan paling banyak {max} karakter — setiap node menyimpannya selamanya, jadi protokol membatasinya. Yang ini {len}.",
+      "hazard": "Komentar ini memuat karakter yang menggambar ulang teks di sekitarnya — penimpaan arah teks atau kode kontrol. Protokol menolaknya karena bisa membuat komentar terbaca sebagai label di sebelahnya. Hapus dan coba lagi."
+    }
   },
   "merchants": {
     "metaTitle": "Pedagang",
@@ -1922,7 +1939,12 @@
     "notSeenAnnouncing": "Tidak terlihat mengumumkan satu pun",
     "obsAvailability": "<b>Ketersediaan</b> adalah kehadiran per irisan epoch: pada tiap irisan, apakah ada apa pun yang terdengar ditandatangani oleh peer itu? Ia jenuh pada satu per irisan dengan sengaja, jadi membanjiri jaringan tidak menghasilkan tambahan dan kalah dalam lomba propagasi tidak berbiaya — menghitung pengumuman sebagai gantinya akan mengukur siapa yang mengumumkan lebih dulu dan membayar node yang terhubung baik lebih dari node yang sama-sama tersedia di balik tautan yang lebih lambat.",
     "obsConnectivity": "<b>Konektivitas</b> adalah pengali yang lebih tinggi untuk node yang terlihat mengawali pengumuman jembatan rantai, dan itu <b>diklaim bukan dibuktikan</b>. Node gossip-saja dapat mengambil blockhash dan slot yang ia dengar dari orang lain dan mengumumkannya ulang di bawah tanda tangannya sendiri; tidak ada dalam amplop yang membedakan keduanya. OFS-4100 §9.2 menyatakan masalah itu tidak diselesaikan oleh spesifikasi tersebut, dan batas bawah untuk node gossip-saja membatasi berapa nilai kebohongan itu alih-alih mencegahnya. Jadi ia dilaporkan dan tidak dicentang.",
-    "obsNoAmount": "<b>Tidak ada jumlah di sini</b>, dan itu bukan kelalaian. Mengonversi ini menjadi token memerlukan stake on-chain setiap kandidat, yang tidak bisa diambil oleh jalur baca node — jadi ia tidak memublikasikan jadwal apa pun alih-alih memublikasikan jadwal kosong yang tampak seperti jawaban yang berfungsi. Aplikasi ini pun tidak akan menghitungnya: angka yang direka di peramban bukanlah yang akan dibayarkan kepada siapa pun."
+    "obsNoAmount": "<b>Tidak ada jumlah di sini</b>, dan itu bukan kelalaian. Mengonversi ini menjadi token memerlukan stake on-chain setiap kandidat, yang tidak bisa diambil oleh jalur baca node — jadi ia tidak memublikasikan jadwal apa pun alih-alih memublikasikan jadwal kosong yang tampak seperti jawaban yang berfungsi. Aplikasi ini pun tidak akan menghitungnya: angka yang direka di peramban bukanlah yang akan dibayarkan kepada siapa pun.",
+    "billingUnit": {
+      "Request": "per permintaan",
+      "Trade": "per transaksi",
+      "Month": "per bulan"
+    }
   },
   "network": {
     "metaTitle": "Jaringan",
@@ -2007,7 +2029,8 @@
     "colDownload": "Unduh",
     "wouldHandJoiner": "Yang akan diserahkan node ini kepada yang bergabung",
     "noLocation": "Tidak ada lokasi",
-    "snapshotRootNote": "Sebuah snapshot membawa root keadaan 32-byte, dan halaman ini sengaja tidak menampilkannya. Merender digest di sini akan terbaca sebagai verifikasi, dan tidak ada yang dilakukan peramban yang memverifikasi apa pun tentangnya: pemeriksaan tanda tangan dan pendaftaran yang dilakukan node menetapkan bahwa byte adalah yang dikatakan pengumum, bukan bahwa pengumum berkata benar — itulah sebabnya snapshot <em>pertama</em> sebuah node harus datang dari jangkar yang dipatok alih-alih dari siapa pun yang menjawab. Produsennya ditampilkan sebagai gantinya, karena itulah bagian yang dapat Anda cari di <sr>registri layanan</sr>."
+    "snapshotRootNote": "Sebuah snapshot membawa root keadaan 32-byte, dan halaman ini sengaja tidak menampilkannya. Merender digest di sini akan terbaca sebagai verifikasi, dan tidak ada yang dilakukan peramban yang memverifikasi apa pun tentangnya: pemeriksaan tanda tangan dan pendaftaran yang dilakukan node menetapkan bahwa byte adalah yang dikatakan pengumum, bukan bahwa pengumum berkata benar — itulah sebabnya snapshot <em>pertama</em> sebuah node harus datang dari jangkar yang dipatok alih-alih dari siapa pun yang menjawab. Produsennya ditampilkan sebagai gantinya, karena itulah bagian yang dapat Anda cari di <sr>registri layanan</sr>.",
+    "exchangeRecord": "{ok} ok · {failed} gagal"
   },
   "providers": {
     "metaTitle": "Penyedia layanan",
@@ -2208,7 +2231,12 @@
     "serviceTypesNote": "Tata kelola dapat menambah tipe seiring waktu. Seorang penyedia dapat menjalankan beberapa layanan; masing-masing mendapat ID Layanannya sendiri.",
     "noStakeTitle": "Tanpa stake, tanpa izin",
     "noStakeBody": "Registri itu sendiri tidak meminta apa pun selain tanda tangan. Spesifikasi layanan individual mungkin memerlukan stake — penyedia intelijen risiko yang datanya menggerakkan sengketa punya lebih banyak yang harus dipertanggungjawabkan daripada host snapshot — tetapi itu ditetapkan oleh layanan, bukan oleh registri tempat Anda mendaftar.",
-    "seeRegistered": "Lihat siapa yang sudah terdaftar"
+    "seeRegistered": "Lihat siapa yang sudah terdaftar",
+    "billingUnit": {
+      "Request": "per permintaan",
+      "Trade": "per transaksi",
+      "Month": "per bulan"
+    }
   },
   "governance": {
     "metaTitle": "Tata Kelola",
@@ -2381,7 +2409,10 @@
     "newMetaTitle": "Ajukan proposal",
     "newMetaDescription": "Ajukan proposal OpenFiat — catatan bertanda tangan yang disebarkan lewat gossip ke setiap node di jaringan.",
     "newHeroTitle": "Ajukan proposal",
-    "newHeroDescription": "Sebuah proposal adalah catatan yang Anda tandatangani dan direplikasi setiap node. Ini membuat separuh jaringan — yang membawa teks sebenarnya — dan membukanya untuk pemungutan suara seketika."
+    "newHeroDescription": "Sebuah proposal adalah catatan yang Anda tandatangani dan direplikasi setiap node. Ini membuat separuh jaringan — yang membawa teks sebenarnya — dan membukanya untuk pemungutan suara seketika.",
+    "ended": "Berakhir",
+    "endsInDays": "Berakhir dalam {days}h {hours}j",
+    "endsInHours": "Berakhir dalam {hours}j {minutes}m"
   },
   "explorer": {
     "metaTitle": "Penjelajah",
@@ -2481,6 +2512,20 @@
       "Medium": "Perilaku mencurigakan, sengketa berulang, pola berisiko tinggi.",
       "High": "Dompet penipuan dikenal, phishing terkonfirmasi, sindikat penipuan, kurir uang.",
       "Critical": "Dana curian, sanksi, pendanaan terorisme, ransomware."
+    },
+    "providerCategory": {
+      "BlockchainAnalytics": "Analitik blockchain",
+      "FraudIntelligence": "Intelijen penipuan",
+      "Compliance": "Kepatuhan",
+      "CommunityIntelligence": "Intelijen komunitas",
+      "InfrastructureIntelligence": "Intelijen infrastruktur"
+    },
+    "confidence": {
+      "Unknown": "Tidak diketahui",
+      "Low": "Rendah",
+      "Medium": "Sedang",
+      "High": "Tinggi",
+      "VeryHigh": "Sangat tinggi"
     }
   },
   "countries": {

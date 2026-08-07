@@ -14,6 +14,10 @@ import en from "@/messages/en.json";
 
 const MINT = "29w8TroBTYoaqrXBDcpv5L54VZRA8Kf7kU5U1cakvFdj";
 
+// formatPricing now resolves its unit through the caller's catalogue.
+const UNIT = (en as unknown as { earnings: { billingUnit: Record<string, string> } }).earnings.billingUnit;
+const unitT = (key: string): string => UNIT[key.replace("billingUnit.", "")] ?? key;
+
 // The per-role payment copy moved to the message catalogue so it translates;
 // these regression guards now assert against the English source of truth.
 const MODEL = (en as { earnings: { model: Record<string, { consumerPays: string; providerReceives: string; blockedBy?: string }> } }).earnings.model;
@@ -94,14 +98,14 @@ describe("pricing display", () => {
       amount: { base_units: 50_000, decimals: 6 },
       unit: "Request",
     };
-    expect(formatPricing(pricing)).toBe("0.05 29w8…vFdj per request");
+    expect(formatPricing(unitT, pricing)).toBe("0.05 29w8…vFdj per request");
   });
 
   // Absent pricing already means free in the protocol; there is no sentinel,
   // and inventing a display one would reintroduce the ambiguity the typed
   // price removed.
   it("returns null for an absent price so callers decide how to say free", () => {
-    expect(formatPricing(null)).toBeNull();
+    expect(formatPricing(unitT, null)).toBeNull();
   });
 
   it("keeps full precision without floating the base units", () => {

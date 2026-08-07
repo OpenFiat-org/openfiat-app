@@ -56,7 +56,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ local
         <StatusPill status={statusLabel(proposal)} label={t(`status.${statusLabel(proposal)}`)} />
         <CategoryBadge category={category} />
       </div>
-      <p className="mt-1 text-sm text-gray-500">{votingEndsLabel(proposal)}</p>
+      <p className="mt-1 text-sm text-gray-500">{votingEndsLabel(t, proposal)}</p>
 
       <div className="mt-8 space-y-6">
         <Panel title={t("onchainRecordTitle")}>

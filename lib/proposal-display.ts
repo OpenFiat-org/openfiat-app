@@ -49,18 +49,21 @@ export function statusLabel(p: DecodedProposal): string {
   return STATUS_LABEL[p.state];
 }
 
-function secondsUntil(unixSecs: bigint): string {
+/** A translator scoped to the `governance` namespace, as the caller passes it. */
+type GovT = (key: string, values?: Record<string, string | number>) => string;
+
+function secondsUntil(t: GovT, unixSecs: bigint): string {
   const nowSecs = BigInt(Math.floor(Date.now() / 1000));
   const diff = unixSecs - nowSecs;
-  if (diff <= 0n) return "Ended";
+  if (diff <= 0n) return t("ended");
   const days = diff / 86400n;
   const hours = (diff % 86400n) / 3600n;
-  if (days > 0n) return `Ends in ${days}d ${hours}h`;
+  if (days > 0n) return t("endsInDays", { days: Number(days), hours: Number(hours) });
   const minutes = (diff % 3600n) / 60n;
-  return `Ends in ${hours}h ${minutes}m`;
+  return t("endsInHours", { hours: Number(hours), minutes: Number(minutes) });
 }
 
-export function votingEndsLabel(p: DecodedProposal): string {
-  if (p.state !== "Voting") return "Voting closed";
-  return secondsUntil(p.votingEndsAt);
+export function votingEndsLabel(t: GovT, p: DecodedProposal): string {
+  if (p.state !== "Voting") return t("votingClosedLabel");
+  return secondsUntil(t, p.votingEndsAt);
 }

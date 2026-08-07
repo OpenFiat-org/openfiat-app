@@ -136,7 +136,7 @@ export function EarningsConsole() {
   }
 
   const model = result ? paymentModelFor(result.record.service_type) : null;
-  const price = result ? formatPricing(result.record.pricing) : null;
+  const price = result ? formatPricing(t, result.record.pricing) : null;
 
   return (
     <div className="space-y-6">

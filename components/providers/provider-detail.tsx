@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import { ProviderFeeQuote } from "@/components/providers/fee-quote";
@@ -46,6 +46,7 @@ function healthLabel(t: (k: string) => string, status: string): string {
  */
 export function ProviderDetail({ serviceId }: { serviceId: string }) {
   const t = useTranslations("providers");
+  const locale = useLocale();
   const [record, setRecord] = useState<RecordWithBranding | null>(null);
   const [nodeLabel, setNodeLabel] = useState("");
   const [loading, setLoading] = useState(true);
@@ -190,7 +191,7 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
             value={record.region ? t("regionDeclared", { region: record.region }) : t("regionNotDeclared")}
           />
           {/* Absent pricing means free (OFS-4100 §9.5) — not unknown. */}
-          <Row label={t("rowPricing")} value={formatPricing(record.pricing) ?? t("freeWord")} />
+          <Row label={t("rowPricing")} value={formatPricing(t, record.pricing) ?? t("freeWord")} />
           {/*
             * The operator's own business, and this is their page rather
             * than a directory row — the services list deliberately does
@@ -346,7 +347,7 @@ export function ProviderDetail({ serviceId }: { serviceId: string }) {
           <Row label={t("rowRegistered")} value={formatMoment(record.registered_at)} />
           <Row
             label={t("rowLastHealth")}
-            value={`${formatMoment(record.last_health_update)} · ${sinceLabel(record.last_health_update)}`}
+            value={`${formatMoment(record.last_health_update)} · ${sinceLabel(record.last_health_update, locale)}`}
           />
         </div>
         <p className="px-4 pb-4 pt-1 text-xs text-gray-500">

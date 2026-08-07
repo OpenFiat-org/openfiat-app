@@ -68,7 +68,7 @@ export function GovernanceProposalsPanel() {
               {turnoutPct(p).toFixed(0)}%
               {p.quorumMet && <span className="text-emerald-400"> ✓</span>}
             </Td>
-            <Td py="py-5" className="w-32 text-xs text-gray-500">{votingEndsLabel(p)}</Td>
+            <Td py="py-5" className="w-32 text-xs text-gray-500">{votingEndsLabel(t, p)}</Td>
             <Td py="py-5" right className="w-24"><StatusPill status={statusLabel(p)} label={t(`status.${statusLabel(p)}`)} /></Td>
           </Tr>
         );

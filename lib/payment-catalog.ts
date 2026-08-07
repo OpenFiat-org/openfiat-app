@@ -210,28 +210,38 @@ export const MAX_METHOD_NAME_CHARS = 64;
  * while the node refuses it, or worse, the reverse. The node owns that
  * question; {@link explainDefineRefusal} translates its answer.
  */
-export function nameProblem(name: string): string | null {
+/**
+ * A validation problem, as a stable key (plus values) the UI resolves — the
+ * prose lives in the `ads.nameProblem.*` catalogue so it reads in the
+ * screen's language. `null` when the name is acceptable.
+ */
+export interface NameProblem {
+  key: string;
+  values?: Record<string, string | number>;
+}
+
+export function nameProblem(name: string): NameProblem | null {
   const length = [...name].length;
-  if (length === 0) return "Give the rail a name.";
+  if (length === 0) return { key: "empty" };
   if (length > MAX_METHOD_NAME_CHARS) {
-    return `Names are at most ${MAX_METHOD_NAME_CHARS} characters — this is ${length}.`;
+    return { key: "tooLong", values: { max: MAX_METHOD_NAME_CHARS, len: length } };
   }
   if (name !== name.trim() || name.includes("  ")) {
-    return "No leading, trailing or doubled spaces — the node refuses them rather than trimming, so the name it stores is the name you signed.";
+    return { key: "spaces" };
   }
   // Any whitespace other than a plain space: a no-break space and an
   // ideographic space are the same picture and a different string.
   if (/[\s]/.test(name.replace(/ /g, ""))) {
-    return "Only ordinary spaces — a no-break or ideographic space looks identical and is not the same name.";
+    return { key: "whitespace" };
   }
   // `Cc` is the control characters, `Cf` the format ones — which is every
   // zero-width space and joiner, the soft hyphen, the bidi overrides and
   // isolates, the BOM and the Unicode tag block, in one class. The braille
   // blank is the one hazard outside both, so it is named.
   if (/[\p{Cc}\p{Cf}⠀]/u.test(name)) {
-    return "That name carries characters that render as nothing, which is how one name is made to look like another.";
+    return { key: "invisible" };
   }
-  if (!/[\p{L}\p{N}]/u.test(name)) return "A name needs at least one letter or digit.";
+  if (!/[\p{L}\p{N}]/u.test(name)) return { key: "needsAlnum" };
   return null;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { MetricStrip } from "@/components/metrics";
@@ -43,6 +43,7 @@ import { shortPeerId } from "@/lib/peer-id";
  */
 export function NodeOperations() {
   const t = useTranslations("network");
+  const locale = useLocale();
   const section = useRef<HTMLElement>(null);
   /**
    * Whether this section has been reached, and therefore whether it is
@@ -263,7 +264,7 @@ export function NodeOperations() {
                   )}
                 </Td>
                 <Td py="py-4" right className="w-28 text-xs text-gray-400">
-                  {sinceLabel(peer.lastSeen)}
+                  {sinceLabel(peer.lastSeen, locale)}
                 </Td>
                 {/* Never zero for "never measured": a peer this node has not
                     timed and one that answers instantly are different facts. */}
@@ -271,9 +272,14 @@ export function NodeOperations() {
                   {peer.latencyMs === null ? "—" : t("latencyMs", { ms: peer.latencyMs })}
                 </Td>
                 <Td py="py-4" right className="w-32 text-xs text-gray-400">
-                  {exchangeRecord(peer) ?? (
-                    <span className="text-gray-600">{t("notYetTried")}</span>
-                  )}
+                  {(() => {
+                    const rec = exchangeRecord(peer);
+                    return rec ? (
+                      t("exchangeRecord", { ok: rec.successes, failed: rec.failures })
+                    ) : (
+                      <span className="text-gray-600">{t("notYetTried")}</span>
+                    );
+                  })()}
                 </Td>
               </Tr>
             ))}
@@ -340,7 +346,7 @@ export function NodeOperations() {
                   {formatBytes(snapshot.sizeBytes)}
                 </Td>
                 <Td py="py-4" right className="w-28 text-xs text-gray-400">
-                  {sinceLabel(snapshot.createdAt)}
+                  {sinceLabel(snapshot.createdAt, locale)}
                 </Td>
                 <Td py="py-4" className="w-24">
                   {snapshot.locations.length === 0 ? (
