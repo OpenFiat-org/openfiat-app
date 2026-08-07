@@ -150,7 +150,7 @@ export function PlaceOrder({
 
     setPhase("done");
     router.push(`/orders/${id}`);
-  }, [ad, assetAmount, wallet, router, t]);
+  }, [ad, assetAmount, wallet, router, t, R]);
 
   const ready = wallet !== null && assetAmount > 0 && ad.status === "Active" && ad.price !== null;
   const busy = phase === "reserving" || phase === "opening";

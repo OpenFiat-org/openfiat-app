@@ -165,7 +165,7 @@ export function TradeActions({
         });
       }
     },
-    [wallet, onChanged, readEscrow, t],
+    [wallet, onChanged, readEscrow, t, R],
   );
 
   /** The four fixed facts every on-chain step needs, read rather than assumed. */

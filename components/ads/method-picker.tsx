@@ -13,7 +13,6 @@ import {
   methodLabel,
   nameProblem,
   searchGrouped,
-  type GroupedMethod,
 } from "@/lib/payment-catalog";
 import { useCountryPaymentMethods } from "@/components/use-country-methods";
 import { MAX_PAYMENT_METHODS } from "@/lib/ad-draft";
