@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import en from "@/messages/en.json";
 import {
-  chainModeClaim,
   claimContradicted,
   readCapabilities,
 } from "@/lib/node-capabilities";
@@ -69,18 +69,22 @@ describe("readCapabilities", () => {
   });
 });
 
-describe("chainModeClaim", () => {
+describe("chain-mode claim wording", () => {
   /*
-   * The wording is the safeguard. "RPC-connected" states as fact something
-   * signed only by the party it flatters; "Claims RPC-connected" does not.
+   * The wording is the safeguard, and it moved to the message catalogue when
+   * the network/providers surfaces were localized. "RPC-connected" states as
+   * fact something signed only by the party it flatters; "Claims RPC-connected"
+   * does not. Asserted here against the English source of truth.
    */
   it("never phrases a claim as an established fact", () => {
-    expect(chainModeClaim("RpcConnected")).toBe("Claims RPC-connected");
-    expect(chainModeClaim("GossipOnly")).toBe("Claims gossip-only");
-    expect(chainModeClaim(null)).toBe("No chain mode declared");
-    for (const mode of ["RpcConnected", "GossipOnly", null] as const) {
-      expect(chainModeClaim(mode)).not.toMatch(/[✓✔]/);
-      expect(chainModeClaim(mode)).not.toMatch(/\bverified\b/i);
+    const network = (en as { network: { chainMode: Record<string, string> } }).network.chainMode;
+    const providers = (en as { providers: { chainClaim: Record<string, string> } }).providers.chainClaim;
+    expect(network.RpcConnected).toBe("Claims RPC-connected");
+    expect(network.GossipOnly).toBe("Claims gossip-only");
+    expect(network.none).toBe("No chain mode declared");
+    for (const copy of [...Object.values(network), ...Object.values(providers)]) {
+      expect(copy).not.toMatch(/[✓✔]/);
+      expect(copy).not.toMatch(/\bverified\b/i);
     }
   });
 });

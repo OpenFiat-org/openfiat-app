@@ -107,25 +107,17 @@ export function readCapabilities(capabilities: readonly string[]): NodeClaims {
   return claims;
 }
 
-/**
- * The chain mode a node claims, phrased so it cannot be read as verified.
- *
- * "Claims" is load-bearing: the alternative phrasings ("RPC-connected",
- * a green tick) state as fact something signed only by the party it
- * flatters.
+/*
+ * The chain mode a node claims and the one-phrase result of probing
+ * `getChainStatus` are both rendered from the raw value now, through the
+ * `network`/`providers` catalogues, so they read in the viewer's language and
+ * can never be phrased as verified. See `components/network/live-network.tsx`
+ * (`observationLabel`) and `providers`/`network`'s `chainClaim`/`chainMode`
+ * keys — there is no lib-side English sentence to drift out of the UI's.
  */
-export function chainModeClaim(mode: NodeClaims["chainMode"]): string {
-  switch (mode) {
-    case "RpcConnected":
-      return "Claims RPC-connected";
-    case "GossipOnly":
-      return "Claims gossip-only";
-    default:
-      return "No chain mode declared";
-  }
-}
 
-/** What a probe of `getChainStatus` establishes, in one phrase. */
+/** What a probe of `getChainStatus` establishes. Consumers render it via the
+ *  catalogue keyed on `kind` (plus the slot for `answered`). */
 export type ChainObservation =
   /**
    * The node answered with a slot. It had one to give — which a gossip-only
@@ -138,19 +130,6 @@ export type ChainObservation =
   | { kind: "unreachable" }
   /** Not asked yet. */
   | { kind: "pending" };
-
-export function chainObservationLabel(observation: ChainObservation): string {
-  switch (observation.kind) {
-    case "answered":
-      return `Answered getChainStatus at slot ${observation.slot.toLocaleString("en-US")}`;
-    case "no-slot":
-      return "Answered, but with no slot — it has not observed the chain";
-    case "unreachable":
-      return "Not observed — this node did not answer";
-    case "pending":
-      return "Checking…";
-  }
-}
 
 /**
  * Whether a node's claim and what it actually answered disagree.
