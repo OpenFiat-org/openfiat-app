@@ -43,6 +43,7 @@ import {
   forgetChannelIdentity,
   isUsableEncryptionKey,
 } from "@/lib/channel-identity";
+import { tags } from "@/lib/signing-tags";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /** A real Solana address, so `peerIdForAddress` has 32 bytes to work with. */
@@ -105,6 +106,22 @@ describe("enrolling", () => {
     expect(publish.value).toBe(await publishedValueFor(1));
     expect(publish.value).toBe(
       (await import("@openfiat/sdk")).encodeEncryptionPublicKey(keypair.publicKey),
+    );
+  });
+
+  it("signs the claim under ClaimPublish, the identity tag every claim type shares", async () => {
+    // `signPayload` is mocked wholesale in this file (see the top of the
+    // file), so there is no domain-header preimage to read a tag back out
+    // of the way `tagOfSignedMessage` does elsewhere — the mock stands in
+    // for `lib/domain.ts` entirely. What is still checkable, and just as
+    // load-bearing, is the tag argument `enrol` actually reached for: a typo
+    // or a copy-pasted neighbour tag here would sign a claim the node
+    // refuses to verify, exactly like a swap anywhere else in F-01.
+    await enrol(stableWallet(1), ADDRESS);
+    expect(signPayload).toHaveBeenCalledWith(
+      expect.anything(),
+      tags.ClaimPublish,
+      expect.anything(),
     );
   });
 

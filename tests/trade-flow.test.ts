@@ -3,16 +3,21 @@ import bs58 from "bs58";
 
 import {
   approveSettlement,
+  cancelReservation,
+  cancelSettlement,
   escrowIdFor,
   initiateSettlement,
   newReservationId,
   openDispute,
+  reversePayment,
+  rejectSettlement,
   submitPayment,
   submitReservation,
   tradeIdentity,
 } from "@/lib/trade-flow";
+import { tags } from "@/lib/signing-tags";
 import type { SolanaProvider } from "@/lib/wallet-connection";
-import { payloadOfSignedMessage } from "./mocks/domain-header";
+import { payloadOfSignedMessage, tagOfSignedMessage } from "./mocks/domain-header";
 
 /**
  * The bytes a wallet is asked to sign, field by field and in order.
@@ -34,6 +39,17 @@ import { payloadOfSignedMessage } from "./mocks/domain-header";
  * `agreed_mid: null` is asserted as *present* on purpose. It is an
  * `Option<f64>`, `serde_json` renders `None` as an explicit `null`, and
  * omitting the key changes the transcript.
+ *
+ * Field order proves the *shape* is right; it says nothing about which
+ * F-01 domain tag the message was signed under (`lib/domain.ts`'s header,
+ * ahead of the JSON body). Several of these actions share a body shape
+ * almost exactly — `SettlementApproved`/`SettlementCancelled`/
+ * `PaymentReversed` are each two or three fields differing only in one
+ * party's name — so a swapped tag would pass every assertion above and
+ * fail only against a real node. Each case therefore also asserts
+ * `tagOfSignedMessage(signedRaw[0])` against the `tags` entry it should
+ * have used, and the block at the end puts all six near-identical
+ * settlement/reservation exits side by side.
  */
 
 const ADDRESS = "EA8TyQ58C3eavg3ThRFTMu1KLyV9e1v2oTQubSBQ9s5z";
@@ -41,6 +57,12 @@ const ADDRESS = "EA8TyQ58C3eavg3ThRFTMu1KLyV9e1v2oTQubSBQ9s5z";
 /** Captures what the wallet was asked to sign, and what reached the node. */
 function recorder() {
   const signed: unknown[] = [];
+  // The raw bytes behind each `signed[i]` — same order, kept separately so
+  // every existing `signed[0]` body assertion is untouched. A test that
+  // also cares which tag the message was signed under reads this with
+  // `tagOfSignedMessage` rather than only checking the body parses, which
+  // would pass for a message signed under the *wrong* tag too.
+  const signedRaw: Uint8Array[] = [];
   const sent: { method: string; envelope: unknown }[] = [];
 
   const provider: SolanaProvider = {
@@ -48,6 +70,7 @@ function recorder() {
     signAndSendTransaction: async () => ({ signature: "unused" }),
     signMessage: async (message: Uint8Array) => {
       signed.push(payloadOfSignedMessage(message));
+      signedRaw.push(message);
       return { signature: new Uint8Array(64) };
     },
   };
@@ -64,7 +87,7 @@ function recorder() {
     }),
   );
 
-  return { provider, signed, sent };
+  return { provider, signed, signedRaw, sent };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -73,7 +96,7 @@ const AMOUNT = { base_units: 1_000_000, decimals: 6 };
 
 describe("the bytes each trade event is signed over", () => {
   it("orders a ReservationRequest exactly as openfiat-reservations declares it", async () => {
-    const { provider, signed, sent } = recorder();
+    const { provider, signed, signedRaw, sent } = recorder();
     await submitReservation(tradeIdentity(provider, ADDRESS), {
       reservationId: "42",
       advertisementId: "ad-1",
@@ -92,6 +115,10 @@ describe("the bytes each trade event is signed over", () => {
       "agreed_mid",
       "timestamp",
     ]);
+    // The body alone would pass just as well under a swapped tag — e.g.
+    // ReservationCancel's, which shares several field names — so the tag
+    // itself is pinned separately.
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.ReservationRequest);
     // Present and null, not absent — see the note above.
     expect(signed[0]).toHaveProperty("agreed_mid", null);
     // An Amount is base units plus an exponent, in that order, and never a float.
@@ -122,7 +149,7 @@ describe("the bytes each trade event is signed over", () => {
   });
 
   it("orders a SettlementInitiate exactly as openfiat-settlement declares it", async () => {
-    const { provider, signed, sent } = recorder();
+    const { provider, signed, signedRaw, sent } = recorder();
     await initiateSettlement(tradeIdentity(provider, ADDRESS), {
       settlementId: "s-1",
       reservationId: "42",
@@ -142,10 +169,11 @@ describe("the bytes each trade event is signed over", () => {
       "timestamp",
     ]);
     expect(Object.keys(sent[0]!.envelope as object)).toEqual(["initiate", "signature"]);
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.SettlementInitiate);
   });
 
   it("orders a PaymentSubmitted as the settlement_action macro expands it", async () => {
-    const { provider, signed, sent } = recorder();
+    const { provider, signed, signedRaw, sent } = recorder();
     await submitPayment(tradeIdentity(provider, ADDRESS), "s-1", "ref-9");
 
     // The macro puts `settlement_id` first and `timestamp` last, with the
@@ -158,6 +186,10 @@ describe("the bytes each trade event is signed over", () => {
       "timestamp",
     ]);
     expect(Object.keys(sent[0]!.envelope as object)).toEqual(["action", "signature"]);
+    // Same shape as PaymentReversed's body (`settlement_id`, `buyer`,
+    // `timestamp`) minus one field — exactly the pair a swapped tag would
+    // sail through undetected.
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.PaymentSubmitted);
   });
 
   it("keeps payment_reference present as null when there is none", async () => {
@@ -167,17 +199,22 @@ describe("the bytes each trade event is signed over", () => {
   });
 
   it("orders a SettlementApproved as the same macro expands it", async () => {
-    const { provider, signed } = recorder();
+    const { provider, signed, signedRaw } = recorder();
     await approveSettlement(tradeIdentity(provider, ADDRESS), "s-1");
     expect(Object.keys(signed[0] as object)).toEqual([
       "settlement_id",
       "seller",
       "timestamp",
     ]);
+    // Body is `{ settlement_id, seller, timestamp }` — identical in shape to
+    // SettlementCancelled's `{ settlement_id, canceller, timestamp }` up to
+    // the field name, and SettlementRejected extends this exact prefix. The
+    // tag is what actually tells the node "approved" apart from those.
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.SettlementApproved);
   });
 
   it("orders a DisputeOpen exactly as openfiat-disputes declares it", async () => {
-    const { provider, signed, sent } = recorder();
+    const { provider, signed, signedRaw, sent } = recorder();
     await openDispute(tradeIdentity(provider, ADDRESS), "s-1", "no money arrived");
     expect(Object.keys(signed[0] as object)).toEqual([
       "id",
@@ -188,6 +225,59 @@ describe("the bytes each trade event is signed over", () => {
       "timestamp",
     ]);
     expect(Object.keys(sent[0]!.envelope as object)).toEqual(["open", "signature"]);
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.DisputeOpen);
+  });
+
+  it("tags each of a settlement's near-identical exits under its own event, not a neighbour's", async () => {
+    // `submitPayment`, `approveSettlement`, `rejectSettlement`,
+    // `reversePayment` and `cancelSettlement` all sign a body built from the
+    // same handful of fields (`settlement_id`, one party, sometimes
+    // `timestamp` alone) — see the comments above. Field-order assertions
+    // pass identically whichever of these five tags actually signed the
+    // message, which is exactly the swap a future PR could make invisibly.
+    // This is the one place all five sit side by side so a swap between any
+    // pair is caught, not just the ones exercised individually elsewhere.
+    const { provider, signedRaw: paymentRaw } = recorder();
+    await submitPayment(tradeIdentity(provider, ADDRESS), "s-1", "ref-9");
+
+    const { provider: approveProvider, signedRaw: approveRaw } = recorder();
+    await approveSettlement(tradeIdentity(approveProvider, ADDRESS), "s-1");
+
+    const { provider: rejectProvider, signedRaw: rejectRaw } = recorder();
+    await rejectSettlement(
+      tradeIdentity(rejectProvider, ADDRESS),
+      "s-1",
+      "no transfer found",
+      "WrongReference",
+    );
+
+    const { provider: reverseProvider, signedRaw: reverseRaw } = recorder();
+    await reversePayment(tradeIdentity(reverseProvider, ADDRESS), "s-1");
+
+    const { provider: cancelSettlementProvider, signedRaw: cancelSettlementRaw } = recorder();
+    await cancelSettlement(tradeIdentity(cancelSettlementProvider, ADDRESS), "s-1");
+
+    const { provider: cancelReservationProvider, signedRaw: cancelReservationRaw } = recorder();
+    await cancelReservation(tradeIdentity(cancelReservationProvider, ADDRESS), "42");
+
+    expect(tagOfSignedMessage(paymentRaw[0]!)).toBe(tags.PaymentSubmitted);
+    expect(tagOfSignedMessage(approveRaw[0]!)).toBe(tags.SettlementApproved);
+    expect(tagOfSignedMessage(rejectRaw[0]!)).toBe(tags.SettlementRejected);
+    expect(tagOfSignedMessage(reverseRaw[0]!)).toBe(tags.PaymentReversed);
+    expect(tagOfSignedMessage(cancelSettlementRaw[0]!)).toBe(tags.SettlementCancelled);
+    expect(tagOfSignedMessage(cancelReservationRaw[0]!)).toBe(tags.ReservationCancel);
+
+    // And no two of the six collide with each other — belt and braces on
+    // top of each matching its own expected tag above.
+    const seen = [
+      tagOfSignedMessage(paymentRaw[0]!),
+      tagOfSignedMessage(approveRaw[0]!),
+      tagOfSignedMessage(rejectRaw[0]!),
+      tagOfSignedMessage(reverseRaw[0]!),
+      tagOfSignedMessage(cancelSettlementRaw[0]!),
+      tagOfSignedMessage(cancelReservationRaw[0]!),
+    ];
+    expect(new Set(seen).size).toBe(seen.length);
   });
 
   it("signs a timestamp taken now, not one carried in from a draft", async () => {

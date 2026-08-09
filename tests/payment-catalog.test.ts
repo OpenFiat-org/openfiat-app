@@ -20,8 +20,9 @@ import {
   type CountryMethods,
 } from "@/lib/payment-catalog";
 import { peerIdForPublicKey } from "@/lib/arbitration";
+import { tags } from "@/lib/signing-tags";
 import type { SolanaProvider } from "@/lib/wallet-connection";
-import { bodyOfSignedMessage } from "./mocks/domain-header";
+import { bodyOfSignedMessage, tagOfSignedMessage } from "./mocks/domain-header";
 
 const KENYA: CountryMethods = {
   country: "KE",
@@ -103,10 +104,15 @@ const PUBLIC_KEY = Uint8Array.from({ length: 32 }, (_, i) => i + 1);
 function capture(result: unknown = "12D3KooWtest:9f3c1a20b4d7e6f8") {
   const calls: { method: string; params: Record<string, unknown> }[] = [];
   const signed: string[] = [];
+  // Raw bytes behind each `signed[i]`, kept alongside so a test can also
+  // check which F-01 domain tag the message was signed under — see
+  // `tagOfSignedMessage`.
+  const signedRaw: Uint8Array[] = [];
 
   const provider = {
     signMessage: async (message: Uint8Array) => {
       signed.push(bodyOfSignedMessage(message));
+      signedRaw.push(message);
       return { signature: new Uint8Array(64).fill(9) };
     },
   } as unknown as SolanaProvider;
@@ -124,7 +130,7 @@ function capture(result: unknown = "12D3KooWtest:9f3c1a20b4d7e6f8") {
     };
   });
 
-  return { calls, signed, provider };
+  return { calls, signed, signedRaw, provider };
 }
 
 afterEach(() => {
@@ -165,7 +171,7 @@ describe("publishing a rail the node has never heard of", () => {
     // the node verifies the signature over those bytes. A reordered literal
     // produces INVALID_SIGNATURE, which reads like a wallet fault and sends
     // whoever debugs it to the wrong place.
-    const { signed, calls, provider } = capture();
+    const { signed, signedRaw, calls, provider } = capture();
     await defineMerchantMethod(
       "http://node.invalid",
       provider,
@@ -181,6 +187,13 @@ describe("publishing a rail the node has never heard of", () => {
       "category",
     ]);
     expect(calls[0]!.method).toBe("sendPaymentMethodDefine");
+    // `PaymentMethodDefine` is a pre-existing core taxonomy tag with no
+    // sibling in `openfiat/taxonomy/` this app also signs, so it has no
+    // near-namesake to be confused for — but the tag is what tells the node
+    // this is a taxonomy submission at all, not an assertion this test
+    // should skip just because collision risk here is lower than the
+    // settlement/reservation cluster.
+    expect(tagOfSignedMessage(signedRaw[0]!)).toBe(tags.PaymentMethodDefine);
 
     const envelope = JSON.parse(
       Buffer.from(String(calls[0]!.params.data), "base64").toString("utf8"),

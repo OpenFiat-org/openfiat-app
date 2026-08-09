@@ -1,0 +1,1538 @@
+=== stat ===
+ .superpowers/sdd/f01-domain-separation/progress.md |   2 +
+ .../sdd/f01-domain-separation/task-app-report.md   | 166 ++++++++++++++++++
+ CHANGELOG.md                                       |  14 ++
+ components/arbitrate/arbitration-console.tsx       |   7 +-
+ lib/arbitration.ts                                 |  24 ++-
+ lib/attachments.ts                                 |   3 +-
+ lib/avatar.ts                                      |   3 +-
+ lib/channel-identity.ts                            |   3 +-
+ lib/domain.ts                                      |  39 +++++
+ lib/merchant-ads.ts                                |   7 +-
+ lib/merchant-name.ts                               | Bin 4729 -> 4791 bytes
+ lib/notifications.ts                               |   3 +-
+ lib/payment-catalog.ts                             |   3 +-
+ lib/proposal-flow.ts                               |   5 +-
+ lib/review-flow.ts                                 |   3 +-
+ lib/signing-tags.ts                                |  69 ++++++++
+ lib/trade-channel.ts                               |   5 +-
+ lib/trade-flow.ts                                  |  19 ++-
+ tests/conformance_vectors.test.ts                  |  46 +++++
+ tests/e2e/governance.spec.ts                       |   4 +-
+ tests/e2e/merchant-ads.spec.ts                     |   6 +-
+ tests/e2e/taker-order.spec.ts                      |   6 +-
+ tests/merchant-ads.test.ts                         |   3 +-
+ tests/mocks/domain-header.ts                       |  27 +++
+ tests/payment-catalog.test.ts                      |   3 +-
+ tests/settlement-codes.live.test.ts                |  15 +-
+ tests/trade-flow.test.ts                           |   3 +-
+ tests/vectors/client_signed_v1.json                | 187 +++++++++++++++++++++
+ 28 files changed, 628 insertions(+), 47 deletions(-)
+
+=== full diff ===
+diff --git a/.superpowers/sdd/f01-domain-separation/progress.md b/.superpowers/sdd/f01-domain-separation/progress.md
+new file mode 100644
+index 0000000..1593806
+--- /dev/null
++++ b/.superpowers/sdd/f01-domain-separation/progress.md
+@@ -0,0 +1,2 @@
++# SDD ledger — F-01 app phase
++Branch: sdd/f01-domain-separation (openfiat-app)
+diff --git a/.superpowers/sdd/f01-domain-separation/task-app-report.md b/.superpowers/sdd/f01-domain-separation/task-app-report.md
+new file mode 100644
+index 0000000..2a751b8
+--- /dev/null
++++ b/.superpowers/sdd/f01-domain-separation/task-app-report.md
+@@ -0,0 +1,166 @@
++# F-01 domain separation — openfiat-app report
++
++Branch: `sdd/f01-domain-separation`. Node already migrated; this task ports the app's
++sole signing choke point (`lib/arbitration.ts`'s `signPayload`) to the domain-separated
++preimage `len(tag):u32be ‖ utf8(tag) ‖ json(payload)` and re-tags every caller.
++
++## New files
++
++- `lib/domain.ts` — `preimage(tag, body)` / `preimageOf(tag, payload)`, byte-identical
++  mirror of the TS SDK's `src/domain.ts` and the Rust `crates/serialization/src/domain.rs`.
++- `lib/signing-tags.ts` — `tags` const, one entry per payload type this app actually
++  signs (23 entries). Literals copied verbatim from the Rust `tag` module.
++- `tests/conformance_vectors.test.ts` — 38 cases (1 file-loaded + 37 rows) against the
++  vendored `tests/vectors/client_signed_v1.json`; asserts `preimage(tag, encode(payload_json))`
++  hex-matches `preimage_hex` for every vector, i.e. every tag the Rust side emits, not just
++  the ones this app happens to use.
++- `tests/mocks/domain-header.ts` — shared test helper (`tagOfSignedMessage`,
++  `bodyOfSignedMessage`, `payloadOfSignedMessage`) to strip the new header in unit tests
++  that previously did `JSON.parse(new TextDecoder().decode(message))` directly.
++
++## `signPayload` signature change
++
++`lib/arbitration.ts`: `signPayload(provider, payload)` → `signPayload(provider, tag, payload)`.
++Doc comment updated from "raw Ed25519 over the UTF-8 bytes of JSON.stringify(payload)" to the
++domain-separated preimage, and the module-level "Identity" paragraph updated to match.
++
++## Caller → tag map (26 call sites, all read and confirmed against their builder + RPC method)
++
++| File:line | Function | RPC method | Tag |
++|---|---|---|---|
++| `lib/trade-flow.ts:162` | `submitReservation` | `sendReservationRequest` | `ReservationRequest` |
++| `lib/trade-flow.ts:212` | `initiateSettlement` | `sendSettlementInitiate` | `SettlementInitiate` |
++| `lib/trade-flow.ts:240` | `submitPayment` | `sendPaymentSubmitted` | `PaymentSubmitted` |
++| `lib/trade-flow.ts:262` | `approveSettlement` | `sendSettlementApproved` | `SettlementApproved` |
++| `lib/trade-flow.ts:291` | `cancelReservation` | `sendReservationCancel` | `ReservationCancel` |
++| `lib/trade-flow.ts:318` | `cancelSettlement` | `sendSettlementCancelled` | `SettlementCancelled` |
++| `lib/trade-flow.ts:350` | `reversePayment` | `sendPaymentReversed` | `PaymentReversed` |
++| `lib/trade-flow.ts:389` | `rejectSettlement` | `sendSettlementRejected` | `SettlementRejected` |
++| `lib/trade-flow.ts:413` | `openDispute` | `sendDisputeOpen` | `DisputeOpen` |
++| `lib/merchant-ads.ts:84` | `setAdvertisementStatus` | `sendAdvertisementStatusSet` | `AdvertisementStatusSet` |
++| `lib/merchant-ads.ts:119` | `updateAdvertisementTerms` | `sendAdvertisementTermsUpdate` | `AdvertisementTermsUpdate` |
++| `lib/merchant-ads.ts:172` | `publishAdvertisement` | `sendAdvertisementCreate` | `AdvertisementCreate` |
++| `components/arbitrate/arbitration-console.tsx:159` | `offchainJoin` | `sendArbitratorJoin` | `ArbitratorJoin` |
++| `components/arbitrate/arbitration-console.tsx:171` | `offchainCommit` | `sendVoteCommit` | `DisputeVoteCommit` (`VoteCommit/v1`) |
++| `components/arbitrate/arbitration-console.tsx:186` | `offchainReveal` | `sendVoteReveal` | `DisputeVoteReveal` (`VoteReveal/v1`) |
++| `lib/trade-channel.ts:329` | `grantChannelKey` | `sendTradeChannelKeyGrant` | `TradeChannelKeyGrant` |
++| `lib/trade-channel.ts:406` | `postChannelEntry` | `sendTradeChannelEntry` | `TradeChannelEntryPost` |
++| `lib/proposal-flow.ts:107` | `createProposal` | `sendProposalCreate` | `ProposalCreate` |
++| `lib/proposal-flow.ts:132` | `castNodeVote` | `sendVoteCast` | `VoteCast` |
++| `lib/review-flow.ts:133` | `publishReview` | `sendReviewPublish` | `ReviewPublish` |
++| `lib/attachments.ts:178` | `publishAttachment` | `sendAttachmentPublish` | `AttachmentPublish` |
++| `lib/avatar.ts:116` | `publishAvatar` | `sendClaimPublish` | `ClaimPublish` |
++| `lib/channel-identity.ts:288` | `enrol` | `sendClaimPublish` | `ClaimPublish` |
++| `lib/merchant-name.ts:115` | `publishMerchantName` | `sendClaimPublish` | `ClaimPublish` |
++| `lib/notifications.ts:169` | `publishSubscription` | `sendSubscriptionUpdate` | `SubscriptionUpdate` |
++| `lib/payment-catalog.ts:185` | `defineMerchantMethod` | `sendPaymentMethodDefine` | `PaymentMethodDefine` |
++
++## Corrections to the task's starting map
++
++- **`lib/avatar.ts` and `lib/channel-identity.ts` are `ClaimPublish`, not `AttachmentPublish`.**
++  Both call `sendSignedEvent(nodeUrl(), "sendClaimPublish", ...)` — the avatar is published as
++  an identity claim (OFS-5000, value = a CID), not a content attachment. Only `lib/attachments.ts`
++  (evidence files on a settlement) is genuinely `AttachmentPublish`.
++- `lib/merchant-ads.ts`'s `update` builder is confirmed `AdvertisementTermsUpdate` (fields:
++  `id, merchant, min_trade, max_trade, payment_methods, timestamp`, RPC
++  `sendAdvertisementTermsUpdate`). The app has no `AdvertisementPriceUpdate` caller at all —
++  not included in `lib/signing-tags.ts`.
++- `lib/trade-flow.ts` `cancel`/`action` sites disambiguated purely by each function's own RPC
++  method name (`sendReservationCancel` vs. the five `sendSettlement*` methods) — no ambiguity
++  once read; every function name plus its `sendSignedEvent` call states its type outright.
++- No `DeliveryReport` caller exists in the app (matches the SDK, which also omits it) — dropped
++  from `lib/signing-tags.ts`.
++
++## Two callers not in the task's starting list, found via a grep encoding gap
++
++`grep -rn "signPayload("` without `-a` silently skipped `lib/merchant-name.ts` and
++`lib/payment-catalog.ts` — both contain one raw `\x00` byte each (pre-existing, unrelated to
++this change: a control-char regex literal in `merchant-name.ts`, a template-literal cache-key
++separator in `payment-catalog.ts`), which makes plain `grep` treat them as binary. A full
++`os.walk` + byte-level Python scan turned up both:
++
++- **`lib/merchant-name.ts:115`** `publishMerchantName` → `sendClaimPublish` → `ClaimPublish`.
++- **`lib/payment-catalog.ts:185`** `defineMerchantMethod` → `sendPaymentMethodDefine` →
++  `PaymentMethodDefine` (`openfiat/taxonomy/PaymentMethodDefine/v1` — one of the tags that
++  pre-dates F-01 on the Rust side, but is signed by this app's wallet the same way every
++  F-01 event is, so it needed the same header and is now in `lib/signing-tags.ts`).
++
++I re-ran the byte-level scan after fixing both and confirmed all 26 `signPayload(` call sites
++across the repo (`.ts`/`.tsx`, excluding `node_modules`) now pass a `tags.*` argument — none
++missed.
++
++## Flagged / ambiguous
++
++None left unresolved. Every caller above was confirmed by reading its builder's field list,
++its doc comment (most name the exact Rust struct and RPC method already), and the
++`sendSignedEvent(..., "sendX", ...)` call it feeds. The only real ambiguities the task
++anticipated (avatar/channel-identity's tag, merchant-ads `update`'s tag) are resolved and
++noted above.
++
++## Also updated (not `signPayload` callers, but hand-rolled raw-JSON signing that would break
++against an F-01 node)
++
++- `tests/settlement-codes.live.test.ts` — its local `signed()` helper built
++  `sign(keypair, TextEncoder().encode(JSON.stringify(payload)))` directly (bypassing
++  `signPayload`, since it signs with a bare `@openfiat/sdk` keypair rather than a wallet
++  provider). Switched to `sign(keypair, preimageOf(tag, payload))` with the correct tag per
++  call site (`SettlementCancelled`, `SettlementInitiate`). Skipped by default
++  (`OPENFIAT_LIVE_CODES=1` required); fixed so it stays correct if someone runs it.
++- `tests/e2e/governance.spec.ts`, `tests/e2e/merchant-ads.spec.ts`, `tests/e2e/taker-order.spec.ts`
++  — Playwright fixtures that publish an `AdvertisementCreate`/`ProposalCreate` straight to a
++  real node with a hand-signed bare-JSON signature (bypassing the UI, as fixture setup for a
++  different flow under test). Switched to `preimageOf(tags.AdvertisementCreate/ProposalCreate, ...)`.
++  These need a live node (`OPENFIAT_E2E_NODE_URL`) and are skipped without one, so `pnpm test`
++  doesn't exercise them, but they'd have failed outright against a real F-01 node otherwise.
++- Left alone (verified they route through `signPayload`'s own mock or a real `SolanaProvider`
++  built around the app's `signMessage`, so they picked up the fix automatically): the
++  Playwright `__e2eSign` fixtures in `onboarding.spec.ts`, `reviews.spec.ts`,
++  `merchant-journey.spec.ts`; the `walletFor()` mocks in `tests/trade-devnet.live.test.ts` and
++  `tests/trade-channel.live.test.ts` (both call real `lib/trade-flow.ts` / `lib/trade-channel.ts`
++  functions, which now build the correct preimage internally).
++- Left alone, confirmed out of scope per the task: `channel-identity.ts`'s
++  `signDerivationMessage` (signs `DERIVATION_MESSAGE` directly, no `signPayload`, not a wire
++  event), `faucet-client.ts`, `earnings.ts` (`earningsChallengeBytes`), `wallet-proof.ts`
++  (`challengeBytes`) — none of these call `signPayload` or construct a client-signed wire event.
++
++## Existing tests updated for the new header (previously asserted bare-JSON bytes)
++
++- `tests/trade-flow.test.ts` — its `recorder()`'s mock `signMessage` now decodes the payload via
++  the new `tests/mocks/domain-header.ts#payloadOfSignedMessage` (strips the `len(tag) ‖ tag`
++  header before `JSON.parse`) instead of parsing the raw bytes directly.
++- `tests/merchant-ads.test.ts`, `tests/payment-catalog.test.ts` — same fix, via
++  `bodyOfSignedMessage` (these push the still-stringified body, since the test bodies do their
++  own `JSON.parse` downstream).
++- `tests/arbitration.test.ts`, `tests/signed-key-order.test.ts`, `tests/channel-identity.test.ts`
++  — untouched; all three mock `signPayload`/`sendSignedEvent` wholesale (`vi.fn(async () =>
++  "sig")` or similar) and never construct or parse real signed bytes, so they were unaffected
++  by the header change.
++
++## CHANGELOG
++
++Added a `### Breaking` section to the existing `CHANGELOG.md` (`[Unreleased]`), describing the
++domain-separated signing switch and the new node requirement.
++
++## Test results
++
++- `npx vitest run`: **707 passed, 9 skipped** (0 failed), 60 files passed / 5 skipped
++  (the skipped ones are the `*.live.test.ts` files, gated on env vars pointing at a live node).
++  Includes the new `tests/conformance_vectors.test.ts` (38/38 passed) proving this app's
++  `preimage()` matches every vector `openfiat-core` vendors — not just the tags this app uses.
++- `npx tsc --noEmit`: clean, no output.
++- `npx eslint .`: clean, no output.
++- `npx next build`: succeeded (Turbopack, all locales/routes generated).
++
++## Concerns / notes for reviewers
++
++- The two hidden-by-grep callers (`merchant-name.ts`, `payment-catalog.ts`) are a real lesson:
++  a plain `grep -rn` without `-a`/`-I` silently drops any file `grep` heuristically calls
++  binary — worth remembering for the next repo-wide audit in this codebase, since it already
++  has two files with a stray literal NUL byte in otherwise-ordinary TypeScript.
++- `PaymentMethodDefine` sits in a slightly different bucket than the other F-01 tags: the Rust
++  `tag` module lists it in the *pre-existing* section (types "constructed and verified entirely
++  inside this workspace... never by an SDK or the app"), but `lib/payment-catalog.ts` very much
++  does sign and send it from a connected wallet. I tagged it with the existing
++  `tag::PAYMENT_METHOD_DEFINE` literal since that's the one live on the Rust side for this
++  struct shape — flagging in case the node-side doc comment there needs a one-line correction
++  to acknowledge the app also signs this type.
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 338aa14..abb4daa 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -4,12 +4,26 @@ All notable changes to `openfiat-app` will be documented in this file.
+ 
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
+ ## [Unreleased]
+ 
++### Breaking
++
++- Every client-signed wire event (reservations, settlement, disputes,
++  advertisements, reviews, attachments, proposals, votes, the trade
++  channel, identity claims, notification subscriptions) is now signed over
++  a domain-separated preimage — `len(tag):u32be ‖ utf8(tag) ‖
++  json(payload)`, one tag per event type — rather than bare
++  `json(payload)` (F-01). `lib/arbitration.ts`'s `signPayload` takes the
++  tag as its second argument now; see `lib/domain.ts` and
++  `lib/signing-tags.ts`. **Requires a node running F-01's domain-separated
++  verification** — an older node rejects every signature this app now
++  produces with `INVALID_SIGNATURE`, and this app rejects nothing from an
++  older node's own writes since verification is entirely server-side.
++
+ ### Added
+ 
+ - Initial repository scaffold: directory layout, CI, developer tooling,
+   and community health files.
+ 
+ [Unreleased]: https://github.com/OpenFiat-org/openfiat-app/commits/main
+diff --git a/components/arbitrate/arbitration-console.tsx b/components/arbitrate/arbitration-console.tsx
+index 4e29535..c8a8407 100644
+--- a/components/arbitrate/arbitration-console.tsx
++++ b/components/arbitrate/arbitration-console.tsx
+@@ -28,12 +28,13 @@ import {
+ } from "@/lib/arbitration";
+ import { useMyDisputes } from "@/components/disputes/use-my-disputes";
+ import { fetchDisputes, type PublicDispute } from "@/lib/live-disputes";
+ import { shortSig } from "@/lib/format";
+ import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
+ import { escrow, getConnection, staking } from "@/lib/onchain-config";
++import { tags } from "@/lib/signing-tags";
+ import {
+   WALLET_CHANGED_EVENT,
+   currentSigner,
+   readWalletConnection,
+   type WalletConnection,
+ } from "@/lib/wallet-connection";
+@@ -152,25 +153,25 @@ export function ArbitrationConsole() {
+   }
+ 
+   const offchainJoin = () =>
+     run(t("busyJoin"), async () => {
+       const { provider, who, endpoint: url, dispute } = requireContext();
+       const join = buildJoin(dispute.id, who);
+-      const signature = await signPayload(provider, join);
++      const signature = await signPayload(provider, tags.ArbitratorJoin, join);
+       await sendSignedEvent(url, "sendArbitratorJoin", { join, signature });
+       mine.forget();
+       return t("joinedMsg");
+     });
+ 
+   const offchainCommit = () =>
+     run(t("busyCommit"), async () => {
+       const { provider, who, endpoint: url, dispute } = requireContext();
+       const salt = newSalt();
+       const commitment = await commitmentFor(OFFCHAIN_VOTE_BYTE[outcome], salt);
+       const commit = buildCommit(dispute.id, who, commitment);
+-      const signature = await signPayload(provider, commit);
++      const signature = await signPayload(provider, tags.DisputeVoteCommit, commit);
+       await sendSignedEvent(url, "sendVoteCommit", { commit, signature });
+       saveSalt(dispute.id, salt, outcome);
+       mine.forget();
+       return t("committedMsg", { outcome: t(`outcome.${outcome}`) });
+     });
+ 
+@@ -179,13 +180,13 @@ export function ArbitrationConsole() {
+       const { provider, who, endpoint: url, dispute } = requireContext();
+       const stored = loadSalt(dispute.id);
+       if (!stored) {
+         throw new Error(t("noSaltReveal"));
+       }
+       const reveal = buildReveal(dispute.id, who, stored.outcome, stored.salt);
+-      const signature = await signPayload(provider, reveal);
++      const signature = await signPayload(provider, tags.DisputeVoteReveal, reveal);
+       await sendSignedEvent(url, "sendVoteReveal", { reveal, signature });
+       clearSalt(dispute.id);
+       mine.forget();
+       return t("revealedMsg", { outcome: t(`outcome.${stored.outcome}`) });
+     });
+ 
+diff --git a/lib/arbitration.ts b/lib/arbitration.ts
+index 3ed22d0..53ed649 100644
+--- a/lib/arbitration.ts
++++ b/lib/arbitration.ts
+@@ -1,8 +1,9 @@
+ import bs58 from "bs58";
+ import { peerIdFromPublicKey } from "@openfiat/sdk";
++import { preimageOf } from "@/lib/domain";
+ import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
+ import { NodeRpcError, type NodeErrorData } from "@/lib/node-rpc";
+ import type { Dispute, PublicDispute } from "@/lib/live-disputes";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+@@ -25,15 +26,16 @@ import type { SolanaProvider } from "@/lib/wallet-connection";
+  *
+  * Neither is relayed from the other, so an arbitrator casts both. The same
+  * salt is reused, but the hashed preimage is NOT the same on both sides — see
+  * the two byte tables below.
+  *
+  * Identity: the connected Solana wallet doubles as the protocol identity. Both
+- * are Ed25519, the node verifies a raw signature over the payload's JSON
+- * bytes, and the PeerId is a pure function of the public key — so a wallet's
+- * `signMessage` is exactly what the node expects. Verified against a live
++ * are Ed25519, the node verifies a raw signature over the domain-separated
++ * preimage of the payload's JSON bytes (see `lib/domain.ts`, F-01), and the
++ * PeerId is a pure function of the public key — so a wallet's `signMessage`
++ * is exactly what the node expects. Verified against a live
+  * node: a correctly signed `sendArbitratorJoin` for a non-existent dispute is
+  * rejected with DISPUTE_NOT_FOUND (i.e. it got past `verify()`), while a
+  * tampered signature gives INVALID_SIGNATURE and a mismatched peer id gives
+  * INVALID_IDENTITY_CLAIM.
+  */
+ 
+@@ -132,24 +134,32 @@ export function clearSalt(disputeId: string): void {
+ /** The PeerId this wallet's public key derives to, base58 as the node writes it. */
+ export function peerIdForPublicKey(publicKey: Uint8Array): string {
+   return bs58.encode(peerIdFromPublicKey(publicKey));
+ }
+ 
+ /**
+- * Sign a payload the way the node verifies it: raw Ed25519 over the UTF-8
+- * bytes of `JSON.stringify(payload)`. Key order therefore has to match the
+- * Rust struct's field order — every builder below is written in that order.
++ * Sign a payload the way the node verifies it (F-01): raw Ed25519 over
++ * `preimage(tag, payload)` — `len(tag):u32be ‖ utf8(tag) ‖ json(payload)`,
++ * see `lib/domain.ts`. `tag` must name the exact wire type `payload` is —
++ * one of `lib/signing-tags.ts`'s `tags` — since the node verifies against
++ * the same tag its own event handler expects, and a mismatched tag fails
++ * with `INVALID_SIGNATURE` exactly as a reordered field would.
++ *
++ * Key order within `payload` is still load-bearing beneath that: the node
++ * re-serialises with `serde_json`, struct declaration order, so every
++ * builder below is written in the Rust struct's own order.
+  */
+ export async function signPayload(
+   provider: SolanaProvider,
++  tag: string,
+   payload: unknown,
+ ): Promise<string> {
+   if (!provider.signMessage) {
+     throw new Error("This wallet does not support message signing, which arbitration requires.");
+   }
+-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
++  const bytes = preimageOf(tag, payload);
+   const { signature } = await provider.signMessage(bytes);
+   return bs58.encode(signature);
+ }
+ 
+ /**
+  * Submit an already-signed event as an OFS-8200 `sendX` call.
+diff --git a/lib/attachments.ts b/lib/attachments.ts
+index 57f3bc4..c7fc776 100644
+--- a/lib/attachments.ts
++++ b/lib/attachments.ts
+@@ -1,12 +1,13 @@
+ import bs58 from "bs58";
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { asCid } from "@/lib/ipfs/cid";
+ import { MAX_UPLOAD_BYTES, ipfsUrl, isAcceptedMediaType } from "@/lib/ipfs/gateway";
+ import { uploadToIpfs } from "@/lib/ipfs/upload-client";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * Files attached to a trade: receipts, screenshots, statements.
+  *
+  * # Everyone can read these
+@@ -171,13 +172,13 @@ export async function publishAttachment(
+     media_type: variant,
+     size_bytes: uploaded.sizeBytes,
+     caption: trimmed,
+     created_at: Date.now(),
+   };
+ 
+-  const signature = await signPayload(provider, attachment);
++  const signature = await signPayload(provider, tags.AttachmentPublish, attachment);
+   const attachmentId = await sendSignedEvent(nodeUrl(), "sendAttachmentPublish", {
+     attachment,
+     signature,
+   });
+   return { attachmentId: String(attachmentId), cid: uploaded.cid };
+ }
+diff --git a/lib/avatar.ts b/lib/avatar.ts
+index 1c404f3..5d07c8b 100644
+--- a/lib/avatar.ts
++++ b/lib/avatar.ts
+@@ -1,12 +1,13 @@
+ import bs58 from "bs58";
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { asCid } from "@/lib/ipfs/cid";
+ import { MAX_AVATAR_BYTES, ipfsUrl } from "@/lib/ipfs/gateway";
+ import { currentClaims, fetchIdentityClaims } from "@/lib/live-identity";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import { uploadToIpfs } from "@/lib/ipfs/upload-client";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * A merchant's profile picture, published as an identity claim (OFS-5000).
+  *
+@@ -109,10 +110,10 @@ export async function publishAvatar(
+     verified: false,
+     supersedes,
+     expires_at: null,
+     timestamp: Date.now(),
+   };
+ 
+-  const signature = await signPayload(provider, publish);
++  const signature = await signPayload(provider, tags.ClaimPublish, publish);
+   const claimId = await sendSignedEvent(nodeUrl(), "sendClaimPublish", { publish, signature });
+   return { claimId: String(claimId), cid };
+ }
+diff --git a/lib/channel-identity.ts b/lib/channel-identity.ts
+index 168e6db..8d67a6e 100644
+--- a/lib/channel-identity.ts
++++ b/lib/channel-identity.ts
+@@ -8,12 +8,13 @@ import {
+ } from "@openfiat/sdk";
+ 
+ import { sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { currentClaims, fetchIdentityClaims } from "@/lib/live-identity";
+ import { nodeUrl } from "@/lib/node-endpoint";
+ import { peerIdForAddress } from "@/lib/peer-id";
++import { tags } from "@/lib/signing-tags";
+ import { WALLET_CHANGED_EVENT, type SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * The key this wallet can actually be sealed to.
+  *
+  * # What was broken
+@@ -281,13 +282,13 @@ export async function enrol(
+     value: encodeEncryptionPublicKey(first.publicKey),
+     verified: false,
+     supersedes,
+     expires_at: null,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(provider, publish);
++  const signature = await signPayload(provider, tags.ClaimPublish, publish);
+   await sendSignedEvent(nodeUrl(), "sendClaimPublish", { publish, signature });
+ 
+   derived.set(address, first);
+   return first;
+ }
+ 
+diff --git a/lib/domain.ts b/lib/domain.ts
+new file mode 100644
+index 0000000..d864d9b
+--- /dev/null
++++ b/lib/domain.ts
+@@ -0,0 +1,39 @@
++/**
++ * Domain-separated signing preimages (F-01).
++ *
++ * A node verifies client-signed events over
++ * `preimage(tag, payload) = len(tag):u32be ‖ utf8(tag) ‖ json(payload)`
++ * rather than bare `json(payload)`. Binding the payload's type into the
++ * signed bytes is what stops a signature made for one event type being
++ * replayed as a different event type that happens to share the same JSON
++ * shape — see `openfiat-core`'s `crates/serialization/src/domain.rs` for
++ * the full rationale, which this module mirrors exactly (and matches the
++ * TS SDK's own `src/domain.ts`, a self-contained copy rather than a shared
++ * import so this app has no runtime dependency on the SDK for signing).
++ *
++ * The tag is length-prefixed rather than merely concatenated so that
++ * `(tag, payload)` pairs are unambiguous: without the length prefix, a tag
++ * ending in the prefix of another plus a payload whose first bytes make up
++ * the difference could still collide.
++ */
++
++/** The bytes to sign for an already-encoded `body` under `tag`:
++ *  `len(tag):u32be ‖ utf8(tag) ‖ body`. Byte-identical to the Rust
++ *  workspace's `preimage_raw`. */
++export function preimage(tag: string, body: Uint8Array): Uint8Array {
++  const tagBytes = new TextEncoder().encode(tag);
++  const out = new Uint8Array(4 + tagBytes.length + body.length);
++  const view = new DataView(out.buffer);
++  view.setUint32(0, tagBytes.length, false);
++  out.set(tagBytes, 4);
++  out.set(body, 4 + tagBytes.length);
++  return out;
++}
++
++/** Convenience form of {@link preimage}: JSON-encodes `payload` the same
++ *  way every signed event in this app already does, then wraps it with the
++ *  domain header. Do not change how `payload` is encoded here — the JSON
++ *  body is unchanged by F-01, only the header wrapping it is new. */
++export function preimageOf(tag: string, payload: unknown): Uint8Array {
++  return preimage(tag, new TextEncoder().encode(JSON.stringify(payload)));
++}
+diff --git a/lib/merchant-ads.ts b/lib/merchant-ads.ts
+index da50287..beba598 100644
+--- a/lib/merchant-ads.ts
++++ b/lib/merchant-ads.ts
+@@ -1,11 +1,12 @@
+ import bs58 from "bs58";
+ 
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * The three things a merchant can do to their own advertisement, signed by
+  * the connected wallet.
+  *
+@@ -77,13 +78,13 @@ export async function setAdvertisementStatus(
+   const set = {
+     id,
+     merchant: peerIdForPublicKey(who.publicKey),
+     status,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, set);
++  const signature = await signPayload(who.provider, tags.AdvertisementStatusSet, set);
+   await sendSignedEvent(nodeUrl(), "sendAdvertisementStatusSet", { set, signature });
+ }
+ 
+ export interface TermsDraft {
+   minTrade: number;
+   maxTrade: number;
+@@ -112,13 +113,13 @@ export async function updateAdvertisementTerms(
+     merchant: peerIdForPublicKey(who.publicKey),
+     min_trade: toWireAmount(draft.minTrade, draft.decimals),
+     max_trade: toWireAmount(draft.maxTrade, draft.decimals),
+     payment_methods: draft.paymentMethods,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, update);
++  const signature = await signPayload(who.provider, tags.AdvertisementTermsUpdate, update);
+   await sendSignedEvent(nodeUrl(), "sendAdvertisementTermsUpdate", { update, signature });
+ }
+ 
+ export type WirePricing =
+   | { Fixed: { price: WireAmount } }
+   | {
+@@ -165,13 +166,13 @@ export async function publishAdvertisement(
+     max_trade: toWireAmount(draft.maxTrade, draft.decimals),
+     initial_liquidity: toWireAmount(draft.initialLiquidity, draft.decimals),
+     pricing: draft.pricing,
+     payment_methods: draft.paymentMethods,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, create);
++  const signature = await signPayload(who.provider, tags.AdvertisementCreate, create);
+   const id = await sendSignedEvent(nodeUrl(), "sendAdvertisementCreate", { create, signature });
+   return String(id);
+ }
+ 
+ /**
+  * What the node's refusals mean, in the merchant's terms.
+diff --git a/lib/merchant-name.ts b/lib/merchant-name.ts
+index cf1cc17..fc09187 100644
+Binary files a/lib/merchant-name.ts and b/lib/merchant-name.ts differ
+diff --git a/lib/notifications.ts b/lib/notifications.ts
+index b5be18d..a62912b 100644
+--- a/lib/notifications.ts
++++ b/lib/notifications.ts
+@@ -1,8 +1,9 @@
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import { walletParam } from "@/lib/wallet-param";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * A wallet's notification subscription (OFS-6000), as the protocol records it.
+  *
+@@ -162,9 +163,9 @@ export async function publishSubscription(
+     // wallet's destinations with nothing. Empty is what this app can
+     // honestly assert, because it can build no sealed destination.
+     destinations: [],
+     timestamp: Date.now(),
+   };
+ 
+-  const signature = await signPayload(provider, update);
++  const signature = await signPayload(provider, tags.SubscriptionUpdate, update);
+   await sendSignedEvent(nodeUrl(), "sendSubscriptionUpdate", { update, signature });
+ }
+diff --git a/lib/payment-catalog.ts b/lib/payment-catalog.ts
+index c0910c5..02c14b4 100644
+--- a/lib/payment-catalog.ts
++++ b/lib/payment-catalog.ts
+@@ -1,12 +1,13 @@
+ import bs58 from "bs58";
+ import type { PaymentMethodCategory, ReferenceData } from "@openfiat/sdk";
+ 
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import type { RefusalTranslator } from "@/lib/node-refusal";
+ import { nodeRpc } from "@/lib/node-rpc";
++import { tags } from "@/lib/signing-tags";
+ import { peerIdParam } from "@/lib/wallet-param";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * Which payment rails are worth offering *here*, asked of the node.
+  *
+@@ -179,13 +180,13 @@ export async function defineMerchantMethod(
+   const method = {
+     merchant: peerIdForPublicKey(publicKey),
+     merchant_public_key: bs58.encode(publicKey),
+     name,
+     category,
+   };
+-  const signature = await signPayload(signer, method);
++  const signature = await signPayload(signer, tags.PaymentMethodDefine, method);
+   const id = await sendSignedEvent(endpoint, "sendPaymentMethodDefine", { method, signature });
+   return String(id);
+ }
+ 
+ /** Longest name the node will store — `openfiat_taxonomy::MAX_NAME_CHARS`. */
+ export const MAX_METHOD_NAME_CHARS = 64;
+diff --git a/lib/proposal-flow.ts b/lib/proposal-flow.ts
+index 26c7764..1a26cf5 100644
+--- a/lib/proposal-flow.ts
++++ b/lib/proposal-flow.ts
+@@ -1,11 +1,12 @@
+ import bs58 from "bs58";
+ 
+ import { sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { ProposalCategory, VoteChoice } from "@/lib/live-proposals";
+ import type { TradeIdentity } from "@/lib/trade-flow";
+ 
+ /**
+  * Creating an off-chain proposal and voting on one, as the connected
+  * wallet signs them.
+@@ -100,13 +101,13 @@ export function buildVoteCast(
+ /** Submits a proposal and returns the id the node recorded. */
+ export async function createProposal(
+   who: TradeIdentity,
+   draft: Parameters<typeof buildProposalCreate>[1],
+ ): Promise<string> {
+   const create = buildProposalCreate(who, draft);
+-  const signature = await signPayload(who.provider, create);
++  const signature = await signPayload(who.provider, tags.ProposalCreate, create);
+   const id = await sendSignedEvent(nodeUrl(), "sendProposalCreate", { create, signature });
+   return String(id);
+ }
+ 
+ /**
+  * Submits a vote.
+@@ -125,13 +126,13 @@ export async function createProposal(
+  */
+ export async function castNodeVote(
+   who: TradeIdentity,
+   vote: Parameters<typeof buildVoteCast>[1],
+ ): Promise<void> {
+   const payload = buildVoteCast(who, vote);
+-  const signature = await signPayload(who.provider, payload);
++  const signature = await signPayload(who.provider, tags.VoteCast, payload);
+   await sendSignedEvent(nodeUrl(), "sendVoteCast", { vote: payload, signature });
+ }
+ 
+ /*
+  * `INVALID_PROPOSAL` used to be the answer to three different things — a
+  * duplicate id, an action by somebody who is not the author, and an illegal
+diff --git a/lib/review-flow.ts b/lib/review-flow.ts
+index eae4c0e..2ad207b 100644
+--- a/lib/review-flow.ts
++++ b/lib/review-flow.ts
+@@ -1,11 +1,12 @@
+ import bs58 from "bs58";
+ 
+ import { sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { TradeIdentity } from "@/lib/trade-flow";
+ 
+ /**
+  * Publishing a review of a trade, as the connected wallet signs it.
+  *
+  * # Key order is load-bearing, and silent when wrong
+@@ -126,13 +127,13 @@ export async function publishReview(
+ ): Promise<string> {
+   // A backstop only — the form disables publishing while a problem stands, so
+   // this fires solely if that guard is bypassed. The key is enough to trace it.
+   const problem = commentProblem(comment);
+   if (problem) throw new Error(`comment:${problem.key}`);
+   const review = buildReview(who, settlementId, stars, comment);
+-  const signature = await signPayload(who.provider, review);
++  const signature = await signPayload(who.provider, tags.ReviewPublish, review);
+   const id = await sendSignedEvent(nodeUrl(), "sendReviewPublish", { review, signature });
+   return String(id);
+ }
+ 
+ 
+ /** What a refusal means to somebody who just pressed "publish". */
+diff --git a/lib/signing-tags.ts b/lib/signing-tags.ts
+new file mode 100644
+index 0000000..81a17e8
+--- /dev/null
++++ b/lib/signing-tags.ts
+@@ -0,0 +1,69 @@
++/**
++ * Domain tags for the client-signed wire events this app signs (F-01).
++ *
++ * Each literal must be byte-identical to its counterpart in
++ * `openfiat-core`'s `crates/serialization/src/domain.rs` (the `tag`
++ * module) and to the TS SDK's own `tags.ts` — this is a cross-repo
++ * contract, not a local convention. `tests/conformance_vectors.test.ts`
++ * proves the header these tags feed into matches the Rust side byte for
++ * byte, using vectors vendored from that crate.
++ *
++ * This is deliberately a subset: only the payload types this app actually
++ * signs appear here (every call site is `lib/arbitration.ts`'s
++ * `signPayload`, grep for its callers to audit this list against the
++ * code). Types this app never constructs — sessions, risk, oracles,
++ * snapshot, and the two governance/identity tags this app has no builder
++ * for — are not reproduced here to avoid a tag going stale from disuse.
++ */
++export const tags = {
++  // advertisements
++  AdvertisementCreate: "openfiat/advertisements/AdvertisementCreate/v1",
++  AdvertisementStatusSet: "openfiat/advertisements/AdvertisementStatusSet/v1",
++  AdvertisementTermsUpdate: "openfiat/advertisements/AdvertisementTermsUpdate/v1",
++
++  // reservations
++  ReservationRequest: "openfiat/reservations/ReservationRequest/v1",
++  ReservationCancel: "openfiat/reservations/ReservationCancel/v1",
++
++  // settlement
++  SettlementInitiate: "openfiat/settlement/SettlementInitiate/v1",
++  PaymentSubmitted: "openfiat/settlement/PaymentSubmitted/v1",
++  PaymentReversed: "openfiat/settlement/PaymentReversed/v1",
++  SettlementApproved: "openfiat/settlement/SettlementApproved/v1",
++  SettlementRejected: "openfiat/settlement/SettlementRejected/v1",
++  SettlementCancelled: "openfiat/settlement/SettlementCancelled/v1",
++
++  // reviews
++  ReviewPublish: "openfiat/reviews/ReviewPublish/v1",
++
++  // disputes
++  DisputeOpen: "openfiat/disputes/DisputeOpen/v1",
++  ArbitratorJoin: "openfiat/disputes/ArbitratorJoin/v1",
++  DisputeVoteCommit: "openfiat/disputes/VoteCommit/v1",
++  DisputeVoteReveal: "openfiat/disputes/VoteReveal/v1",
++
++  // governance
++  ProposalCreate: "openfiat/governance/ProposalCreate/v1",
++  VoteCast: "openfiat/governance/VoteCast/v1",
++
++  // identity — both the avatar claim (`lib/avatar.ts`) and the trade
++  // channel's encryption-key enrolment claim (`lib/channel-identity.ts`)
++  // are `sendClaimPublish` and share this one tag.
++  ClaimPublish: "openfiat/identity/ClaimPublish/v1",
++
++  // content (evidence attachments)
++  AttachmentPublish: "openfiat/content/AttachmentPublish/v1",
++
++  // notifications
++  SubscriptionUpdate: "openfiat/notifications/SubscriptionUpdate/v1",
++
++  // tradechannel
++  TradeChannelKeyGrant: "openfiat/tradechannel/TradeChannelKeyGrant/v1",
++  TradeChannelEntryPost: "openfiat/tradechannel/TradeChannelEntryPost/v1",
++
++  // taxonomy — pre-dates F-01's client-signed batch (already tagged on the
++  // Rust side as one of the node-internal types), but `sendPaymentMethodDefine`
++  // is signed by this app's connected wallet the same way every event above
++  // is, so it needs the header here too.
++  PaymentMethodDefine: "openfiat/taxonomy/PaymentMethodDefine/v1",
++} as const;
+diff --git a/lib/trade-channel.ts b/lib/trade-channel.ts
+index 15b2fcd..9cb5e23 100644
+--- a/lib/trade-channel.ts
++++ b/lib/trade-channel.ts
+@@ -6,12 +6,13 @@ import {
+   sealToEncryptionKey,
+   type EncryptionKeypair,
+ } from "@openfiat/sdk";
+ 
+ import { sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { TradeIdentity } from "@/lib/trade-flow";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ import { signedRead, type GatedSurface } from "@/lib/wallet-proof";
+ 
+ /**
+  * The confidential trade channel (openfiat-core's `openfiat-tradechannel`),
+@@ -322,13 +323,13 @@ export async function grantChannelKey(
+     granter: who.peerId,
+     recipient: recipient.peerId,
+     key_id: channelKeyId(key),
+     sealed_key: sealToEncryptionKey(recipient.encryptionKey, key),
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, grant);
++  const signature = await signPayload(who.provider, tags.TradeChannelKeyGrant, grant);
+   await sendSignedEvent(nodeUrl(), "sendTradeChannelKeyGrant", { grant, signature });
+ }
+ 
+ /**
+  * The channel key this wallet holds a grant for, or `null` if none of the
+  * grants on the channel are addressed to it or open under its key.
+@@ -399,13 +400,13 @@ export async function postChannelEntry(
+     author: who.peerId,
+     sequence,
+     kind,
+     payload,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, post);
++  const signature = await signPayload(who.provider, tags.TradeChannelEntryPost, post);
+   await sendSignedEvent(nodeUrl(), "sendTradeChannelEntry", { post, signature });
+ }
+ 
+ /** The next sequence number `author` should write at, from what the node holds. */
+ export function nextSequence(channel: WireTradeChannel, author: string): number {
+   return channel.entries
+diff --git a/lib/trade-flow.ts b/lib/trade-flow.ts
+index 11814b5..21a2c5e 100644
+--- a/lib/trade-flow.ts
++++ b/lib/trade-flow.ts
+@@ -1,10 +1,11 @@
+ import bs58 from "bs58";
+ 
+ import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
+ import { nodeUrl } from "@/lib/node-endpoint";
++import { tags } from "@/lib/signing-tags";
+ import type { WireAmount } from "@/lib/merchant-ads";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
+ 
+ /**
+  * The signed events a trade is made of — the five that move it forward and
+  * the four that end it early — as the connected wallet signs them.
+@@ -155,13 +156,13 @@ export async function submitReservation(
+     requester_public_key: publicKeyOf(who),
+     amount: draft.amount,
+     agreed_price: draft.agreedPrice,
+     agreed_mid: draft.agreedMid,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, request);
++  const signature = await signPayload(who.provider, tags.ReservationRequest, request);
+   const id = await sendSignedEvent(nodeUrl(), "sendReservationRequest", {
+     request,
+     signature,
+   });
+   return String(id);
+ }
+@@ -205,13 +206,13 @@ export async function initiateSettlement(
+     buyer_public_key: publicKeyOf(who),
+     seller: draft.seller,
+     seller_public_key: draft.sellerPublicKey,
+     amount: draft.amount,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, initiate);
++  const signature = await signPayload(who.provider, tags.SettlementInitiate, initiate);
+   const id = await sendSignedEvent(nodeUrl(), "sendSettlementInitiate", {
+     initiate,
+     signature,
+   });
+   return String(id);
+ }
+@@ -233,13 +234,13 @@ export async function submitPayment(
+   const action = {
+     settlement_id: settlementId,
+     buyer: who.peerId,
+     payment_reference: reference,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, action);
++  const signature = await signPayload(who.provider, tags.PaymentSubmitted, action);
+   await sendSignedEvent(nodeUrl(), "sendPaymentSubmitted", { action, signature });
+ }
+ 
+ /**
+  * `openfiat_settlement::events::SettlementApproved` — settlement_id, seller,
+  * timestamp. Legal only from `PaymentSubmitted`.
+@@ -255,13 +256,13 @@ export async function approveSettlement(
+ ): Promise<void> {
+   const action = {
+     settlement_id: settlementId,
+     seller: who.peerId,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, action);
++  const signature = await signPayload(who.provider, tags.SettlementApproved, action);
+   await sendSignedEvent(nodeUrl(), "sendSettlementApproved", { action, signature });
+ }
+ 
+ /**
+  * `openfiat_reservations::events::ReservationCancel` — id, requester,
+  * timestamp.
+@@ -284,13 +285,13 @@ export async function cancelReservation(
+ ): Promise<void> {
+   const cancel = {
+     id: reservationId,
+     requester: who.peerId,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, cancel);
++  const signature = await signPayload(who.provider, tags.ReservationCancel, cancel);
+   await sendSignedEvent(nodeUrl(), "sendReservationCancel", { cancel, signature });
+ }
+ 
+ /**
+  * `openfiat_settlement::events::SettlementCancelled` — settlement_id,
+  * canceller, timestamp. Legal only from `AwaitingPayment`.
+@@ -311,13 +312,13 @@ export async function cancelSettlement(
+ ): Promise<void> {
+   const action = {
+     settlement_id: settlementId,
+     canceller: who.peerId,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, action);
++  const signature = await signPayload(who.provider, tags.SettlementCancelled, action);
+   await sendSignedEvent(nodeUrl(), "sendSettlementCancelled", { action, signature });
+ }
+ 
+ /**
+  * `openfiat_settlement::events::PaymentReversed` — settlement_id, buyer,
+  * timestamp. Legal only from `PaymentSubmitted`, and only for the buyer.
+@@ -343,13 +344,13 @@ export async function reversePayment(
+ ): Promise<void> {
+   const action = {
+     settlement_id: settlementId,
+     buyer: who.peerId,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, action);
++  const signature = await signPayload(who.provider, tags.PaymentReversed, action);
+   await sendSignedEvent(nodeUrl(), "sendPaymentReversed", { action, signature });
+ }
+ 
+ /**
+  * `openfiat_settlement::events::SettlementRejected` — settlement_id,
+  * seller, reason, discrepancy, timestamp. Legal only from
+@@ -382,13 +383,13 @@ export async function rejectSettlement(
+     settlement_id: settlementId,
+     seller: who.peerId,
+     reason,
+     discrepancy,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, action);
++  const signature = await signPayload(who.provider, tags.SettlementRejected, action);
+   await sendSignedEvent(nodeUrl(), "sendSettlementRejected", { action, signature });
+ }
+ 
+ /**
+  * `openfiat_disputes::events::DisputeOpen` — id, settlement_id, opener,
+  * opener_public_key, reason, timestamp.
+@@ -406,13 +407,13 @@ export async function openDispute(
+     settlement_id: settlementId,
+     opener: who.peerId,
+     opener_public_key: publicKeyOf(who),
+     reason,
+     timestamp: Date.now(),
+   };
+-  const signature = await signPayload(who.provider, open);
++  const signature = await signPayload(who.provider, tags.DisputeOpen, open);
+   const id = await sendSignedEvent(nodeUrl(), "sendDisputeOpen", { open, signature });
+   return String(id);
+ }
+ 
+ // Turning a refusal into words a trader can act on is `lib/trade-refusal.ts`.
+ // It used to live here, and it is a different job from building the bytes a
+diff --git a/tests/conformance_vectors.test.ts b/tests/conformance_vectors.test.ts
+new file mode 100644
+index 0000000..8ac57df
+--- /dev/null
++++ b/tests/conformance_vectors.test.ts
+@@ -0,0 +1,46 @@
++import { describe, expect, it } from "vitest";
++
++import { preimage } from "@/lib/domain";
++import vectors from "./vectors/client_signed_v1.json";
++
++/**
++ * Proves this app's `preimage()` header matches `openfiat-core`'s Rust
++ * implementation byte for byte (F-01).
++ *
++ * The vectors are vendored from `openfiat-core`'s
++ * `crates/serialization/tests/conformance_vectors.rs` — the same file the
++ * Rust workspace, the TS SDK, and this app all check against, so agreement
++ * here is agreement with every other signer of these events, not just with
++ * itself.
++ *
++ * Each row's `payload_json` is already-encoded bytes, not a value to
++ * re-encode: this test hashes it as opaque UTF-8, exactly as
++ * `preimage_raw`/`preimage` treat `body` on the Rust side. Re-parsing and
++ * re-stringifying it here would only prove `JSON.stringify` can reproduce
++ * `serde_json`'s output, which is a different (and narrower) claim than
++ * the one this file exists to make.
++ */
++interface Vector {
++  tag: string;
++  payload_json: string;
++  preimage_hex: string;
++}
++
++function toHex(bytes: Uint8Array): string {
++  return Array.from(bytes)
++    .map((b) => b.toString(16).padStart(2, "0"))
++    .join("");
++}
++
++describe("client-signed preimage conformance vectors", () => {
++  const rows = vectors as Vector[];
++
++  it("loaded a non-empty vector file", () => {
++    expect(rows.length).toBeGreaterThan(0);
++  });
++
++  it.each(rows.map((row) => [row.tag, row] as const))("matches Rust for %s", (_tag, row) => {
++    const body = new TextEncoder().encode(row.payload_json);
++    expect(toHex(preimage(row.tag, body))).toBe(row.preimage_hex);
++  });
++});
+diff --git a/tests/e2e/governance.spec.ts b/tests/e2e/governance.spec.ts
+index 31af7b5..adbb326 100644
+--- a/tests/e2e/governance.spec.ts
++++ b/tests/e2e/governance.spec.ts
+@@ -1,9 +1,11 @@
+ import { expect, test } from "@playwright/test";
+ import bs58 from "bs58";
+ import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
++import { preimageOf } from "@/lib/domain";
++import { tags } from "@/lib/signing-tags";
+ 
+ /**
+  * Filing a proposal, and voting on one, driven through the real UI against
+  * a real node.
+  *
+  * # What is real here
+@@ -199,13 +201,13 @@ test("the vote panel says a wallet with no stake cannot vote, rather than preten
+   await page.goto("/governance");
+   const signature = await page.evaluate(
+     async (bytes: number[]) =>
+       Array.from(
+         await (window as unknown as { __e2eSign(b: number[]): Promise<number[]> }).__e2eSign(bytes),
+       ),
+-    Array.from(new TextEncoder().encode(JSON.stringify(create))),
++    Array.from(preimageOf(tags.ProposalCreate, create)),
+   );
+   await rpc("sendProposalCreate", {
+     data: Buffer.from(
+       JSON.stringify({ create, signature: bs58.encode(Uint8Array.from(signature)) }),
+       "utf8",
+     ).toString("base64"),
+diff --git a/tests/e2e/merchant-ads.spec.ts b/tests/e2e/merchant-ads.spec.ts
+index 005d747..89c891b 100644
+--- a/tests/e2e/merchant-ads.spec.ts
++++ b/tests/e2e/merchant-ads.spec.ts
+@@ -1,9 +1,11 @@
+ import { expect, test } from "@playwright/test";
+ import bs58 from "bs58";
+ import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
++import { preimageOf } from "@/lib/domain";
++import { tags } from "@/lib/signing-tags";
+ 
+ /**
+  * The merchant console, driven through the real UI against a real node.
+  *
+  * Everything here is genuine except the browser-extension layer: the
+  * keypair is real, `signMessage` really signs with it, the node really
+@@ -157,15 +159,13 @@ async function newMerchant(page: import("@playwright/test").Page) {
+       max_trade: amount(500),
+       initial_liquidity: amount(1_000),
+       pricing: { Fixed: { price: { base_units: 129_000_000, decimals: 6 } } },
+       payment_methods: paymentMethods,
+       timestamp: Date.now(),
+     };
+-    const signature = bs58.encode(
+-      await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
+-    );
++    const signature = bs58.encode(await sign(keypair, preimageOf(tags.AdvertisementCreate, create)));
+     await rpc("sendAdvertisementCreate", {
+       data: Buffer.from(JSON.stringify({ create, signature }), "utf8").toString("base64"),
+     });
+     return id;
+   };
+ 
+diff --git a/tests/e2e/taker-order.spec.ts b/tests/e2e/taker-order.spec.ts
+index b196810..5138204 100644
+--- a/tests/e2e/taker-order.spec.ts
++++ b/tests/e2e/taker-order.spec.ts
+@@ -1,9 +1,11 @@
+ import { expect, test } from "@playwright/test";
+ import bs58 from "bs58";
+ import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
++import { preimageOf } from "@/lib/domain";
++import { tags } from "@/lib/signing-tags";
+ 
+ /**
+  * The taker half: a buyer arrives at the book, finds a real advertisement,
+  * and opens an order against it.
+  *
+  * The advertisement is published straight to the node with a real signature
+@@ -74,15 +76,13 @@ test("a taker browses the book and opens an order against a real advertisement",
+     max_trade: amount(500_000_000),
+     initial_liquidity: amount(1_000_000_000),
+     pricing: { Fixed: { price: { base_units: 129_500_000, decimals: 6 } } },
+     payment_methods: [rail!.id],
+     timestamp: Date.now(),
+   };
+-  const signature = bs58.encode(
+-    await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
+-  );
++  const signature = bs58.encode(await sign(keypair, preimageOf(tags.AdvertisementCreate, create)));
+   await rpc("sendAdvertisementCreate", {
+     data: Buffer.from(JSON.stringify({ create, signature }), "utf8").toString("base64"),
+   });
+ 
+   await page.addInitScript(
+     ({ nodeUrl }) => localStorage.setItem("openfiat:node", `custom:${nodeUrl}`),
+diff --git a/tests/merchant-ads.test.ts b/tests/merchant-ads.test.ts
+index bac8096..1878610 100644
+--- a/tests/merchant-ads.test.ts
++++ b/tests/merchant-ads.test.ts
+@@ -8,12 +8,13 @@ import {
+   toWireAmount,
+   updateAdvertisementTerms,
+   type MerchantIdentity,
+ } from "@/lib/merchant-ads";
+ import { NodeRpcError } from "@/lib/node-rpc";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
++import { bodyOfSignedMessage } from "./mocks/domain-header";
+ 
+ /**
+  * The merchant's three signed actions, checked at the one place they can
+  * silently break.
+  *
+  * The node verifies each signature over `serde_json`'s rendering of the
+@@ -50,13 +51,13 @@ const PUBLIC_KEY = Uint8Array.from({ length: 32 }, (_, i) => i + 1);
+ function capture() {
+   const signed: string[] = [];
+   const posted: { method: string; envelope: Record<string, unknown> }[] = [];
+ 
+   const provider: SolanaProvider = {
+     signMessage: async (message: Uint8Array) => {
+-      signed.push(new TextDecoder().decode(message));
++      signed.push(bodyOfSignedMessage(message));
+       return { signature: new Uint8Array(64).fill(9) };
+     },
+   } as SolanaProvider;
+ 
+   vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
+     const call = JSON.parse(init.body) as { method: string; params: { data: string } };
+diff --git a/tests/mocks/domain-header.ts b/tests/mocks/domain-header.ts
+new file mode 100644
+index 0000000..f405e64
+--- /dev/null
++++ b/tests/mocks/domain-header.ts
+@@ -0,0 +1,27 @@
++/**
++ * Strips the F-01 domain header off bytes a mock wallet's `signMessage`
++ * received, for tests that want to assert on the payload underneath
++ * without also asserting on the tag.
++ *
++ * Layout is `lib/domain.ts`'s `preimage`: `len(tag):u32be ‖ utf8(tag) ‖
++ * body`. A test that cares which tag was used should read it directly —
++ * see `tagOfSignedMessage` — rather than only checking the body parses,
++ * which would pass for a message signed under the *wrong* tag too.
++ */
++export function tagOfSignedMessage(message: Uint8Array): string {
++  const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
++  const tagLen = view.getUint32(0, false);
++  return new TextDecoder().decode(message.slice(4, 4 + tagLen));
++}
++
++/** The JSON body after the header, decoded as a string (not yet parsed). */
++export function bodyOfSignedMessage(message: Uint8Array): string {
++  const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
++  const tagLen = view.getUint32(0, false);
++  return new TextDecoder().decode(message.slice(4 + tagLen));
++}
++
++/** The JSON body after the header, parsed. */
++export function payloadOfSignedMessage(message: Uint8Array): unknown {
++  return JSON.parse(bodyOfSignedMessage(message));
++}
+diff --git a/tests/payment-catalog.test.ts b/tests/payment-catalog.test.ts
+index 8f217bd..31ecb9d 100644
+--- a/tests/payment-catalog.test.ts
++++ b/tests/payment-catalog.test.ts
+@@ -18,12 +18,13 @@ import {
+   nameProblem,
+   searchGrouped,
+   type CountryMethods,
+ } from "@/lib/payment-catalog";
+ import { peerIdForPublicKey } from "@/lib/arbitration";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
++import { bodyOfSignedMessage } from "./mocks/domain-header";
+ 
+ const KENYA: CountryMethods = {
+   country: "KE",
+   merchant: [
+     { id: "builtin:mpesa-kenya", name: "M-Pesa Kenya (Safaricom)", category: "MobileMoney", aliases: ["mpesa", "m-pesa"] },
+   ],
+@@ -102,13 +103,13 @@ const PUBLIC_KEY = Uint8Array.from({ length: 32 }, (_, i) => i + 1);
+ function capture(result: unknown = "12D3KooWtest:9f3c1a20b4d7e6f8") {
+   const calls: { method: string; params: Record<string, unknown> }[] = [];
+   const signed: string[] = [];
+ 
+   const provider = {
+     signMessage: async (message: Uint8Array) => {
+-      signed.push(new TextDecoder().decode(message));
++      signed.push(bodyOfSignedMessage(message));
+       return { signature: new Uint8Array(64).fill(9) };
+     },
+   } as unknown as SolanaProvider;
+ 
+   vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
+     const call = JSON.parse(init.body) as {
+diff --git a/tests/settlement-codes.live.test.ts b/tests/settlement-codes.live.test.ts
+index 4f1fb72..33a887c 100644
+--- a/tests/settlement-codes.live.test.ts
++++ b/tests/settlement-codes.live.test.ts
+@@ -3,13 +3,15 @@
+ import { describe, expect, it } from "vitest";
+ import { R } from "./refusal-translator";
+ import bs58 from "bs58";
+ import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
+ 
+ import { sendSignedEvent } from "@/lib/arbitration";
++import { preimageOf } from "@/lib/domain";
+ import { NodeRpcError } from "@/lib/node-rpc";
++import { tags } from "@/lib/signing-tags";
+ import { explainTradeRefusal } from "@/lib/trade-refusal";
+ 
+ /**
+  * The three settlement refusals that used to arrive as one, read off a
+  * real node.
+  *
+@@ -28,15 +30,18 @@ import { explainTradeRefusal } from "@/lib/trade-refusal";
+  *     NEXT_PUBLIC_OPENFIAT_NODE_URL=http://127.0.0.1:7080 \
+  *     npx vitest run tests/settlement-codes.live.test.ts
+  */
+ const NODE = process.env.NEXT_PUBLIC_OPENFIAT_NODE_URL ?? "";
+ const ENABLED = process.env.OPENFIAT_LIVE_CODES === "1" && NODE !== "";
+ 
+-async function signed(payload: unknown, keypair: Awaited<ReturnType<typeof generateKeypair>>) {
+-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+-  return bs58.encode(await sign(keypair, bytes));
++async function signed(
++  tag: string,
++  payload: unknown,
++  keypair: Awaited<ReturnType<typeof generateKeypair>>,
++) {
++  return bs58.encode(await sign(keypair, preimageOf(tag, payload)));
+ }
+ 
+ function caught(error: unknown) {
+   const e = error as NodeRpcError;
+   return {
+     ofsErrorCode: e.ofsErrorCode,
+@@ -55,13 +60,13 @@ describe.skipIf(!ENABLED)("three refusals the app could not tell apart", () => {
+ 
+     // 5008: cancel a settlement that does not exist.
+     const cancelOf = async (id: string) => {
+       const action = { settlement_id: id, canceller: buyerPeer, timestamp: Date.now() };
+       return sendSignedEvent(NODE, "sendSettlementCancelled", {
+         action,
+-        signature: await signed(action, buyer),
++        signature: await signed(tags.SettlementCancelled, action, buyer),
+       });
+     };
+     const notFound = await cancelOf("openfiat-app-live-never-existed").catch((e: unknown) => e);
+ 
+     // Open a real settlement.
+     const initiate = {
+@@ -71,13 +76,13 @@ describe.skipIf(!ENABLED)("three refusals the app could not tell apart", () => {
+       buyer_public_key: bs58.encode(buyer.publicKey),
+       seller: sellerPeer,
+       seller_public_key: bs58.encode(seller.publicKey),
+       amount: { base_units: 1_000_000, decimals: 6 },
+       timestamp: Date.now(),
+     };
+-    const envelope = { initiate, signature: await signed(initiate, buyer) };
++    const envelope = { initiate, signature: await signed(tags.SettlementInitiate, initiate, buyer) };
+     await sendSignedEvent(NODE, "sendSettlementInitiate", envelope);
+ 
+     // 5010: the same id a second time.
+     const duplicate = await sendSignedEvent(NODE, "sendSettlementInitiate", envelope).catch(
+       (e: unknown) => e,
+     );
+diff --git a/tests/trade-flow.test.ts b/tests/trade-flow.test.ts
+index b322f24..7974dde 100644
+--- a/tests/trade-flow.test.ts
++++ b/tests/trade-flow.test.ts
+@@ -9,12 +9,13 @@ import {
+   openDispute,
+   submitPayment,
+   submitReservation,
+   tradeIdentity,
+ } from "@/lib/trade-flow";
+ import type { SolanaProvider } from "@/lib/wallet-connection";
++import { payloadOfSignedMessage } from "./mocks/domain-header";
+ 
+ /**
+  * The bytes a wallet is asked to sign, field by field and in order.
+  *
+  * This is the test the whole trade path most needs, and the reason is that
+  * the failure it catches is invisible everywhere else. The node re-serializes
+@@ -43,13 +44,13 @@ function recorder() {
+   const sent: { method: string; envelope: unknown }[] = [];
+ 
+   const provider: SolanaProvider = {
+     connect: async () => ({ publicKey: { toString: () => ADDRESS } }),
+     signAndSendTransaction: async () => ({ signature: "unused" }),
+     signMessage: async (message: Uint8Array) => {
+-      signed.push(JSON.parse(new TextDecoder().decode(message)));
++      signed.push(payloadOfSignedMessage(message));
+       return { signature: new Uint8Array(64) };
+     },
+   };
+ 
+   vi.stubGlobal(
+     "fetch",
+diff --git a/tests/vectors/client_signed_v1.json b/tests/vectors/client_signed_v1.json
+new file mode 100644
+index 0000000..0bd8328
+--- /dev/null
++++ b/tests/vectors/client_signed_v1.json
+@@ -0,0 +1,187 @@
++[
++  {
++    "tag": "openfiat/identity/ClaimVerify/v1",
++    "payload_json": "{\"claim_id\": \"clm-1\", \"wallet\": \"peer-1\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000206f70656e666961742f6964656e746974792f436c61696d5665726966792f76317b22636c61696d5f6964223a2022636c6d2d31222c202277616c6c6574223a2022706565722d31222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/registry/FeeSettlement/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"amount\": {\"base_units\": 1000, \"decimals\": 6}, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000226f70656e666961742f72656769737472792f466565536574746c656d656e742f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c2022616d6f756e74223a207b22626173655f756e697473223a20313030302c2022646563696d616c73223a20367d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/advertisements/AdvertisementCreate/v1",
++    "payload_json": "{\"id\": \"ad-1\", \"merchant\": \"peer-1\", \"merchant_public_key\": \"pk-1\", \"asset_mint\": \"mint-1\", \"direction\": \"Sell\", \"fiat_currency\": \"KES\", \"min_trade\": {\"base_units\": 1000, \"decimals\": 6}, \"max_trade\": {\"base_units\": 100000, \"decimals\": 6}, \"initial_liquidity\": {\"base_units\": 50000, \"decimals\": 6}, \"pricing\": {\"Fixed\": {\"price\": {\"base_units\": 1, \"decimals\": 2}}}, \"payment_methods\": [\"mpesa\"], \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002e6f70656e666961742f6164766572746973656d656e74732f4164766572746973656d656e744372656174652f76317b226964223a202261642d31222c20226d65726368616e74223a2022706565722d31222c20226d65726368616e745f7075626c69635f6b6579223a2022706b2d31222c202261737365745f6d696e74223a20226d696e742d31222c2022646972656374696f6e223a202253656c6c222c2022666961745f63757272656e6379223a20224b4553222c20226d696e5f7472616465223a207b22626173655f756e697473223a20313030302c2022646563696d616c73223a20367d2c20226d61785f7472616465223a207b22626173655f756e697473223a203130303030302c2022646563696d616c73223a20367d2c2022696e697469616c5f6c6971756964697479223a207b22626173655f756e697473223a2035303030302c2022646563696d616c73223a20367d2c202270726963696e67223a207b224669786564223a207b227072696365223a207b22626173655f756e697473223a20312c2022646563696d616c73223a20327d7d7d2c20227061796d656e745f6d6574686f6473223a205b226d70657361225d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/advertisements/AdvertisementStatusSet/v1",
++    "payload_json": "{\"id\": \"ad-1\", \"merchant\": \"peer-1\", \"status\": \"Disabled\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000316f70656e666961742f6164766572746973656d656e74732f4164766572746973656d656e745374617475735365742f76317b226964223a202261642d31222c20226d65726368616e74223a2022706565722d31222c2022737461747573223a202244697361626c6564222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/advertisements/AdvertisementTermsUpdate/v1",
++    "payload_json": "{\"id\": \"ad-1\", \"merchant\": \"peer-1\", \"min_trade\": {\"base_units\": 1000, \"decimals\": 6}, \"max_trade\": {\"base_units\": 200000, \"decimals\": 6}, \"payment_methods\": [\"mpesa\", \"bank\"], \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000336f70656e666961742f6164766572746973656d656e74732f4164766572746973656d656e745465726d735570646174652f76317b226964223a202261642d31222c20226d65726368616e74223a2022706565722d31222c20226d696e5f7472616465223a207b22626173655f756e697473223a20313030302c2022646563696d616c73223a20367d2c20226d61785f7472616465223a207b22626173655f756e697473223a203230303030302c2022646563696d616c73223a20367d2c20227061796d656e745f6d6574686f6473223a205b226d70657361222c202262616e6b225d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/advertisements/AdvertisementPriceUpdate/v1",
++    "payload_json": "{\"id\": \"ad-1\", \"merchant\": \"peer-1\", \"pricing\": {\"Fixed\": {\"price\": {\"base_units\": 2, \"decimals\": 2}}}, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000336f70656e666961742f6164766572746973656d656e74732f4164766572746973656d656e7450726963655570646174652f76317b226964223a202261642d31222c20226d65726368616e74223a2022706565722d31222c202270726963696e67223a207b224669786564223a207b227072696365223a207b22626173655f756e697473223a20322c2022646563696d616c73223a20327d7d7d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/reservations/ReservationRequest/v1",
++    "payload_json": "{\"id\": \"res-1\", \"advertisement_id\": \"ad-1\", \"requester\": \"peer-2\", \"requester_public_key\": \"pk-2\", \"amount\": {\"base_units\": 5000, \"decimals\": 6}, \"agreed_price\": {\"base_units\": 1, \"decimals\": 2}, \"agreed_mid\": null, \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002b6f70656e666961742f7265736572766174696f6e732f5265736572766174696f6e526571756573742f76317b226964223a20227265732d31222c20226164766572746973656d656e745f6964223a202261642d31222c2022726571756573746572223a2022706565722d32222c20227265717565737465725f7075626c69635f6b6579223a2022706b2d32222c2022616d6f756e74223a207b22626173655f756e697473223a20353030302c2022646563696d616c73223a20367d2c20226167726565645f7072696365223a207b22626173655f756e697473223a20312c2022646563696d616c73223a20327d2c20226167726565645f6d6964223a206e756c6c2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/reservations/ReservationCancel/v1",
++    "payload_json": "{\"id\": \"res-1\", \"requester\": \"peer-2\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002a6f70656e666961742f7265736572766174696f6e732f5265736572766174696f6e43616e63656c2f76317b226964223a20227265732d31222c2022726571756573746572223a2022706565722d32222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/SettlementInitiate/v1",
++    "payload_json": "{\"id\": \"settle-1\", \"reservation_id\": \"res-1\", \"buyer\": \"peer-2\", \"buyer_public_key\": \"pk-2\", \"seller\": \"peer-1\", \"seller_public_key\": \"pk-1\", \"amount\": {\"base_units\": 5000, \"decimals\": 6}, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000296f70656e666961742f736574746c656d656e742f536574746c656d656e74496e6974696174652f76317b226964223a2022736574746c652d31222c20227265736572766174696f6e5f6964223a20227265732d31222c20226275796572223a2022706565722d32222c202262757965725f7075626c69635f6b6579223a2022706b2d32222c202273656c6c6572223a2022706565722d31222c202273656c6c65725f7075626c69635f6b6579223a2022706b2d31222c2022616d6f756e74223a207b22626173655f756e697473223a20353030302c2022646563696d616c73223a20367d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/PaymentSubmitted/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"buyer\": \"peer-2\", \"payment_reference\": \"REF123\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000276f70656e666961742f736574746c656d656e742f5061796d656e745375626d69747465642f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c20226275796572223a2022706565722d32222c20227061796d656e745f7265666572656e6365223a2022524546313233222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/PaymentReversed/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"buyer\": \"peer-2\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000266f70656e666961742f736574746c656d656e742f5061796d656e7452657665727365642f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c20226275796572223a2022706565722d32222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/SettlementApproved/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"seller\": \"peer-1\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000296f70656e666961742f736574746c656d656e742f536574746c656d656e74417070726f7665642f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c202273656c6c6572223a2022706565722d31222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/SettlementRejected/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"seller\": \"peer-1\", \"reason\": \"amount mismatch\", \"discrepancy\": \"Underpaid\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000296f70656e666961742f736574746c656d656e742f536574746c656d656e7452656a65637465642f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c202273656c6c6572223a2022706565722d31222c2022726561736f6e223a2022616d6f756e74206d69736d61746368222c202264697363726570616e6379223a2022556e64657270616964222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/settlement/SettlementCancelled/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"canceller\": \"peer-2\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002a6f70656e666961742f736574746c656d656e742f536574746c656d656e7443616e63656c6c65642f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c202263616e63656c6c6572223a2022706565722d32222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/registry/Registration/v1",
++    "payload_json": "{\"service_id\": \"svc-1\", \"service_type\": {\"MarketData\": \"FxOracle\"}, \"provider\": \"peer-3\", \"provider_public_key\": \"pk-3\", \"endpoints\": [\"/ip4/127.0.0.1/udp/4001/quic-v1\"], \"supported_ofs\": [1500, 7000], \"region\": \"Kenya\", \"capabilities\": [\"KES/USD\"], \"branding\": null, \"pricing\": null, \"payout_wallet\": null, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000216f70656e666961742f72656769737472792f526567697374726174696f6e2f76317b22736572766963655f6964223a20227376632d31222c2022736572766963655f74797065223a207b224d61726b657444617461223a202246784f7261636c65227d2c202270726f7669646572223a2022706565722d33222c202270726f76696465725f7075626c69635f6b6579223a2022706b2d33222c2022656e64706f696e7473223a205b222f6970342f3132372e302e302e312f7564702f343030312f717569632d7631225d2c2022737570706f727465645f6f6673223a205b313530302c20373030305d2c2022726567696f6e223a20224b656e7961222c20226361706162696c6974696573223a205b224b45532f555344225d2c20226272616e64696e67223a206e756c6c2c202270726963696e67223a206e756c6c2c20227061796f75745f77616c6c6574223a206e756c6c2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/registry/HealthUpdate/v1",
++    "payload_json": "{\"service_id\": \"svc-1\", \"provider\": \"peer-3\", \"state\": \"Online\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000216f70656e666961742f72656769737472792f4865616c74685570646174652f76317b22736572766963655f6964223a20227376632d31222c202270726f7669646572223a2022706565722d33222c20227374617465223a20224f6e6c696e65222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/registry/Withdrawal/v1",
++    "payload_json": "{\"service_id\": \"svc-1\", \"provider\": \"peer-3\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000001f6f70656e666961742f72656769737472792f5769746864726177616c2f76317b22736572766963655f6964223a20227376632d31222c202270726f7669646572223a2022706565722d33222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/sessions/SessionCreate/v1",
++    "payload_json": "{\"id\": \"sess-1\", \"wallet\": \"peer-2\", \"wallet_public_key\": \"pk-2\", \"client\": \"app-web\", \"host_node\": \"peer-9\", \"permissions\": [\"trade\"], \"timestamp\": 1700000000000, \"expires_at\": 1700003600000}",
++    "preimage_hex": "000000226f70656e666961742f73657373696f6e732f53657373696f6e4372656174652f76317b226964223a2022736573732d31222c202277616c6c6574223a2022706565722d32222c202277616c6c65745f7075626c69635f6b6579223a2022706b2d32222c2022636c69656e74223a20226170702d776562222c2022686f73745f6e6f6465223a2022706565722d39222c20227065726d697373696f6e73223a205b227472616465225d2c202274696d657374616d70223a20313730303030303030303030302c2022657870697265735f6174223a20313730303030333630303030307d"
++  },
++  {
++    "tag": "openfiat/sessions/SessionRenew/v1",
++    "payload_json": "{\"session_id\": \"sess-1\", \"wallet\": \"peer-2\", \"new_expires_at\": 1700007200000, \"version\": 2, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000216f70656e666961742f73657373696f6e732f53657373696f6e52656e65772f76317b2273657373696f6e5f6964223a2022736573732d31222c202277616c6c6574223a2022706565722d32222c20226e65775f657870697265735f6174223a20313730303030373230303030302c202276657273696f6e223a20322c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/sessions/SessionRevoke/v1",
++    "payload_json": "{\"session_id\": \"sess-1\", \"wallet\": \"peer-2\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000226f70656e666961742f73657373696f6e732f53657373696f6e5265766f6b652f76317b2273657373696f6e5f6964223a2022736573732d31222c202277616c6c6574223a2022706565722d32222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/sessions/SessionMigrate/v1",
++    "payload_json": "{\"session_id\": \"sess-1\", \"wallet\": \"peer-2\", \"new_host_node\": \"peer-10\", \"version\": 3, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000236f70656e666961742f73657373696f6e732f53657373696f6e4d6967726174652f76317b2273657373696f6e5f6964223a2022736573732d31222c202277616c6c6574223a2022706565722d32222c20226e65775f686f73745f6e6f6465223a2022706565722d3130222c202276657273696f6e223a20332c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/reviews/ReviewPublish/v1",
++    "payload_json": "{\"id\": \"rev-1\", \"settlement_id\": \"settle-1\", \"author\": \"peer-2\", \"author_public_key\": \"pk-2\", \"subject\": \"peer-1\", \"rating\": \"Five\", \"comment\": \"quick and easy\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000216f70656e666961742f726576696577732f5265766965775075626c6973682f76317b226964223a20227265762d31222c2022736574746c656d656e745f6964223a2022736574746c652d31222c2022617574686f72223a2022706565722d32222c2022617574686f725f7075626c69635f6b6579223a2022706b2d32222c20227375626a656374223a2022706565722d31222c2022726174696e67223a202246697665222c2022636f6d6d656e74223a2022717569636b20616e642065617379222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/risk/RiskPublish/v1",
++    "payload_json": "{\"id\": \"risk-1\", \"provider\": \"peer-4\", \"provider_public_key\": \"pk-4\", \"wallet\": \"peer-2\", \"category\": \"Sanctions\", \"outcome\": \"Clear\", \"severity\": \"Low\", \"confidence\": \"High\", \"reason\": \"no matches\", \"evidence\": [], \"timestamp\": 1700000000000, \"expires_at\": null}",
++    "preimage_hex": "0000001c6f70656e666961742f7269736b2f5269736b5075626c6973682f76317b226964223a20227269736b2d31222c202270726f7669646572223a2022706565722d34222c202270726f76696465725f7075626c69635f6b6579223a2022706b2d34222c202277616c6c6574223a2022706565722d32222c202263617465676f7279223a202253616e6374696f6e73222c20226f7574636f6d65223a2022436c656172222c20227365766572697479223a20224c6f77222c2022636f6e666964656e6365223a202248696768222c2022726561736f6e223a20226e6f206d617463686573222c202265766964656e6365223a205b5d2c202274696d657374616d70223a20313730303030303030303030302c2022657870697265735f6174223a206e756c6c7d"
++  },
++  {
++    "tag": "openfiat/oracles/OraclePublish/v1",
++    "payload_json": "{\"id\": \"oracle-1\", \"provider\": \"peer-5\", \"provider_public_key\": \"pk-5\", \"data\": {\"pair\": \"KES/USD\", \"mid\": 129.5}, \"version\": 1, \"timestamp\": 1700000000000, \"expires_at\": 1700000300000}",
++    "preimage_hex": "000000216f70656e666961742f6f7261636c65732f4f7261636c655075626c6973682f76317b226964223a20226f7261636c652d31222c202270726f7669646572223a2022706565722d35222c202270726f76696465725f7075626c69635f6b6579223a2022706b2d35222c202264617461223a207b2270616972223a20224b45532f555344222c20226d6964223a203132392e357d2c202276657273696f6e223a20312c202274696d657374616d70223a20313730303030303030303030302c2022657870697265735f6174223a20313730303030303330303030307d"
++  },
++  {
++    "tag": "openfiat/snapshot/SnapshotAnnounce/v1",
++    "payload_json": "{\"producer\": \"peer-6\", \"producer_public_key\": \"pk-6\", \"snapshot_id\": \"snap-1\", \"locations\": [\"https://snapshots.example.com/snap-1\"], \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000256f70656e666961742f736e617073686f742f536e617073686f74416e6e6f756e63652f76317b2270726f6475636572223a2022706565722d36222c202270726f64756365725f7075626c69635f6b6579223a2022706b2d36222c2022736e617073686f745f6964223a2022736e61702d31222c20226c6f636174696f6e73223a205b2268747470733a2f2f736e617073686f74732e6578616d706c652e636f6d2f736e61702d31225d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/disputes/DisputeOpen/v1",
++    "payload_json": "{\"id\": \"dis-1\", \"settlement_id\": \"settle-1\", \"opener\": \"peer-2\", \"opener_public_key\": \"pk-2\", \"reason\": \"no payment received\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000206f70656e666961742f64697370757465732f446973707574654f70656e2f76317b226964223a20226469732d31222c2022736574746c656d656e745f6964223a2022736574746c652d31222c20226f70656e6572223a2022706565722d32222c20226f70656e65725f7075626c69635f6b6579223a2022706b2d32222c2022726561736f6e223a20226e6f207061796d656e74207265636569766564222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/disputes/ArbitratorJoin/v1",
++    "payload_json": "{\"dispute_id\": \"dis-1\", \"arbitrator\": \"peer-7\", \"arbitrator_public_key\": \"pk-7\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000236f70656e666961742f64697370757465732f41726269747261746f724a6f696e2f76317b22646973707574655f6964223a20226469732d31222c202261726269747261746f72223a2022706565722d37222c202261726269747261746f725f7075626c69635f6b6579223a2022706b2d37222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/disputes/VoteCommit/v1",
++    "payload_json": "{\"dispute_id\": \"dis-1\", \"arbitrator\": \"peer-7\", \"commitment\": [1, 2, 3], \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000001f6f70656e666961742f64697370757465732f566f7465436f6d6d69742f76317b22646973707574655f6964223a20226469732d31222c202261726269747261746f72223a2022706565722d37222c2022636f6d6d69746d656e74223a205b312c20322c20335d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/disputes/VoteReveal/v1",
++    "payload_json": "{\"dispute_id\": \"dis-1\", \"arbitrator\": \"peer-7\", \"vote\": \"Buyer\", \"secret\": [1, 2, 3], \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000001f6f70656e666961742f64697370757465732f566f746552657665616c2f76317b22646973707574655f6964223a20226469732d31222c202261726269747261746f72223a2022706565722d37222c2022766f7465223a20224275796572222c2022736563726574223a205b312c20322c20335d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/governance/ProposalCreate/v1",
++    "payload_json": "{\"id\": \"prop-1\", \"title\": \"Lower fees\", \"summary\": \"Reduce settlement fee by 1bp\", \"category\": \"Economic\", \"author\": \"peer-8\", \"author_public_key\": \"pk-8\", \"onchain_proposal_id\": null, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000256f70656e666961742f676f7665726e616e63652f50726f706f73616c4372656174652f76317b226964223a202270726f702d31222c20227469746c65223a20224c6f7765722066656573222c202273756d6d617279223a202252656475636520736574746c656d656e742066656520627920316270222c202263617465676f7279223a202245636f6e6f6d6963222c2022617574686f72223a2022706565722d38222c2022617574686f725f7075626c69635f6b6579223a2022706b2d38222c20226f6e636861696e5f70726f706f73616c5f6964223a206e756c6c2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/governance/VoteCast/v1",
++    "payload_json": "{\"proposal_id\": \"prop-1\", \"voter\": \"peer-9\", \"voter_public_key\": \"pk-9\", \"choice\": \"For\", \"weight\": 1000, \"stake_account\": \"StakeAcct111\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000001f6f70656e666961742f676f7665726e616e63652f566f7465436173742f76317b2270726f706f73616c5f6964223a202270726f702d31222c2022766f746572223a2022706565722d39222c2022766f7465725f7075626c69635f6b6579223a2022706b2d39222c202263686f696365223a2022466f72222c2022776569676874223a20313030302c20227374616b655f6163636f756e74223a20225374616b6541636374313131222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/identity/ClaimPublish/v1",
++    "payload_json": "{\"id\": \"clm-2\", \"wallet\": \"peer-2\", \"wallet_public_key\": \"pk-2\", \"claim_type\": \"Kyc\", \"value\": \"verified-tier-1\", \"verified\": true, \"supersedes\": null, \"expires_at\": null, \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000216f70656e666961742f6964656e746974792f436c61696d5075626c6973682f76317b226964223a2022636c6d2d32222c202277616c6c6574223a2022706565722d32222c202277616c6c65745f7075626c69635f6b6579223a2022706b2d32222c2022636c61696d5f74797065223a20224b7963222c202276616c7565223a202276657269666965642d746965722d31222c20227665726966696564223a20747275652c202273757065727365646573223a206e756c6c2c2022657870697265735f6174223a206e756c6c2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/content/AttachmentPublish/v1",
++    "payload_json": "{\"id\": \"att-1\", \"subject\": {\"Settlement\": \"settle-1\"}, \"author\": \"peer-2\", \"author_public_key\": \"pk-2\", \"cid\": \"bafy-probe\", \"media_type\": \"Png\", \"size_bytes\": 4096, \"caption\": \"bank transfer receipt\", \"created_at\": 1700000000000}",
++    "preimage_hex": "000000256f70656e666961742f636f6e74656e742f4174746163686d656e745075626c6973682f76317b226964223a20226174742d31222c20227375626a656374223a207b22536574746c656d656e74223a2022736574746c652d31227d2c2022617574686f72223a2022706565722d32222c2022617574686f725f7075626c69635f6b6579223a2022706b2d32222c2022636964223a2022626166792d70726f6265222c20226d656469615f74797065223a2022506e67222c202273697a655f6279746573223a20343039362c202263617074696f6e223a202262616e6b207472616e736665722072656365697074222c2022637265617465645f6174223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/notifications/SubscriptionUpdate/v1",
++    "payload_json": "{\"wallet\": \"peer-2\", \"wallet_public_key\": \"pk-2\", \"enabled_categories\": [\"Trading\"], \"destinations\": [], \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002c6f70656e666961742f6e6f74696669636174696f6e732f537562736372697074696f6e5570646174652f76317b2277616c6c6574223a2022706565722d32222c202277616c6c65745f7075626c69635f6b6579223a2022706b2d32222c2022656e61626c65645f63617465676f72696573223a205b2254726164696e67225d2c202264657374696e6174696f6e73223a205b5d2c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/notifications/DeliveryReport/v1",
++    "payload_json": "{\"notification_id\": \"notif-1\", \"service_id\": \"svc-1\", \"provider\": \"peer-3\", \"provider_public_key\": \"pk-3\", \"recipient_wallet\": \"peer-2\", \"trigger\": \"SettlementApproved\", \"status\": \"Delivered\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "000000286f70656e666961742f6e6f74696669636174696f6e732f44656c69766572795265706f72742f76317b226e6f74696669636174696f6e5f6964223a20226e6f7469662d31222c2022736572766963655f6964223a20227376632d31222c202270726f7669646572223a2022706565722d33222c202270726f76696465725f7075626c69635f6b6579223a2022706b2d33222c2022726563697069656e745f77616c6c6574223a2022706565722d32222c202274726967676572223a2022536574746c656d656e74417070726f766564222c2022737461747573223a202244656c697665726564222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/tradechannel/TradeChannelKeyGrant/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"granter\": \"peer-1\", \"recipient\": \"peer-7\", \"key_id\": \"key-1\", \"sealed_key\": \"sealed-blob\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002d6f70656e666961742f74726164656368616e6e656c2f54726164654368616e6e656c4b65794772616e742f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c20226772616e746572223a2022706565722d31222c2022726563697069656e74223a2022706565722d37222c20226b65795f6964223a20226b65792d31222c20227365616c65645f6b6579223a20227365616c65642d626c6f62222c202274696d657374616d70223a20313730303030303030303030307d"
++  },
++  {
++    "tag": "openfiat/tradechannel/TradeChannelEntryPost/v1",
++    "payload_json": "{\"settlement_id\": \"settle-1\", \"author\": \"peer-1\", \"sequence\": 0, \"kind\": \"PaymentDetails\", \"payload\": \"ciphertext-blob\", \"timestamp\": 1700000000000}",
++    "preimage_hex": "0000002e6f70656e666961742f74726164656368616e6e656c2f54726164654368616e6e656c456e747279506f73742f76317b22736574746c656d656e745f6964223a2022736574746c652d31222c2022617574686f72223a2022706565722d31222c202273657175656e6365223a20302c20226b696e64223a20225061796d656e7444657461696c73222c20227061796c6f6164223a2022636970686572746578742d626c6f62222c202274696d657374616d70223a20313730303030303030303030307d"
++  }
++]
