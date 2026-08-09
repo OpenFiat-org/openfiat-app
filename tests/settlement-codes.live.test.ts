@@ -6,7 +6,9 @@ import bs58 from "bs58";
 import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
 
 import { sendSignedEvent } from "@/lib/arbitration";
+import { preimageOf } from "@/lib/domain";
 import { NodeRpcError } from "@/lib/node-rpc";
+import { tags } from "@/lib/signing-tags";
 import { explainTradeRefusal } from "@/lib/trade-refusal";
 
 /**
@@ -31,9 +33,12 @@ import { explainTradeRefusal } from "@/lib/trade-refusal";
 const NODE = process.env.NEXT_PUBLIC_OPENFIAT_NODE_URL ?? "";
 const ENABLED = process.env.OPENFIAT_LIVE_CODES === "1" && NODE !== "";
 
-async function signed(payload: unknown, keypair: Awaited<ReturnType<typeof generateKeypair>>) {
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
-  return bs58.encode(await sign(keypair, bytes));
+async function signed(
+  tag: string,
+  payload: unknown,
+  keypair: Awaited<ReturnType<typeof generateKeypair>>,
+) {
+  return bs58.encode(await sign(keypair, preimageOf(tag, payload)));
 }
 
 function caught(error: unknown) {
@@ -58,7 +63,7 @@ describe.skipIf(!ENABLED)("three refusals the app could not tell apart", () => {
       const action = { settlement_id: id, canceller: buyerPeer, timestamp: Date.now() };
       return sendSignedEvent(NODE, "sendSettlementCancelled", {
         action,
-        signature: await signed(action, buyer),
+        signature: await signed(tags.SettlementCancelled, action, buyer),
       });
     };
     const notFound = await cancelOf("openfiat-app-live-never-existed").catch((e: unknown) => e);
@@ -74,7 +79,7 @@ describe.skipIf(!ENABLED)("three refusals the app could not tell apart", () => {
       amount: { base_units: 1_000_000, decimals: 6 },
       timestamp: Date.now(),
     };
-    const envelope = { initiate, signature: await signed(initiate, buyer) };
+    const envelope = { initiate, signature: await signed(tags.SettlementInitiate, initiate, buyer) };
     await sendSignedEvent(NODE, "sendSettlementInitiate", envelope);
 
     // 5010: the same id a second time.

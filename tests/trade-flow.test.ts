@@ -12,6 +12,7 @@ import {
   tradeIdentity,
 } from "@/lib/trade-flow";
 import type { SolanaProvider } from "@/lib/wallet-connection";
+import { payloadOfSignedMessage } from "./mocks/domain-header";
 
 /**
  * The bytes a wallet is asked to sign, field by field and in order.
@@ -46,7 +47,7 @@ function recorder() {
     connect: async () => ({ publicKey: { toString: () => ADDRESS } }),
     signAndSendTransaction: async () => ({ signature: "unused" }),
     signMessage: async (message: Uint8Array) => {
-      signed.push(JSON.parse(new TextDecoder().decode(message)));
+      signed.push(payloadOfSignedMessage(message));
       return { signature: new Uint8Array(64) };
     },
   };

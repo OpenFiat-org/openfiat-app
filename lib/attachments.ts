@@ -4,6 +4,7 @@ import { asCid } from "@/lib/ipfs/cid";
 import { MAX_UPLOAD_BYTES, ipfsUrl, isAcceptedMediaType } from "@/lib/ipfs/gateway";
 import { uploadToIpfs } from "@/lib/ipfs/upload-client";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -174,7 +175,7 @@ export async function publishAttachment(
     created_at: Date.now(),
   };
 
-  const signature = await signPayload(provider, attachment);
+  const signature = await signPayload(provider, tags.AttachmentPublish, attachment);
   const attachmentId = await sendSignedEvent(nodeUrl(), "sendAttachmentPublish", {
     attachment,
     signature,

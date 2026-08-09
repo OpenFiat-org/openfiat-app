@@ -9,6 +9,7 @@ import {
 
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { TradeIdentity } from "@/lib/trade-flow";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 import { signedRead, type GatedSurface } from "@/lib/wallet-proof";
@@ -325,7 +326,7 @@ export async function grantChannelKey(
     sealed_key: sealToEncryptionKey(recipient.encryptionKey, key),
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, grant);
+  const signature = await signPayload(who.provider, tags.TradeChannelKeyGrant, grant);
   await sendSignedEvent(nodeUrl(), "sendTradeChannelKeyGrant", { grant, signature });
 }
 
@@ -402,7 +403,7 @@ export async function postChannelEntry(
     payload,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, post);
+  const signature = await signPayload(who.provider, tags.TradeChannelEntryPost, post);
   await sendSignedEvent(nodeUrl(), "sendTradeChannelEntry", { post, signature });
 }
 

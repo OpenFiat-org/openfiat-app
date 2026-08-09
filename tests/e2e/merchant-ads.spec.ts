@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import bs58 from "bs58";
 import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
+import { preimageOf } from "@/lib/domain";
+import { tags } from "@/lib/signing-tags";
 
 /**
  * The merchant console, driven through the real UI against a real node.
@@ -160,9 +162,7 @@ async function newMerchant(page: import("@playwright/test").Page) {
       payment_methods: paymentMethods,
       timestamp: Date.now(),
     };
-    const signature = bs58.encode(
-      await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
-    );
+    const signature = bs58.encode(await sign(keypair, preimageOf(tags.AdvertisementCreate, create)));
     await rpc("sendAdvertisementCreate", {
       data: Buffer.from(JSON.stringify({ create, signature }), "utf8").toString("base64"),
     });

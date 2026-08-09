@@ -3,6 +3,7 @@ import bs58 from "bs58";
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { TradeIdentity } from "@/lib/trade-flow";
 
 /**
@@ -129,7 +130,7 @@ export async function publishReview(
   const problem = commentProblem(comment);
   if (problem) throw new Error(`comment:${problem.key}`);
   const review = buildReview(who, settlementId, stars, comment);
-  const signature = await signPayload(who.provider, review);
+  const signature = await signPayload(who.provider, tags.ReviewPublish, review);
   const id = await sendSignedEvent(nodeUrl(), "sendReviewPublish", { review, signature });
   return String(id);
 }

@@ -4,6 +4,7 @@ import type { PaymentMethodCategory, ReferenceData } from "@openfiat/sdk";
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import type { RefusalTranslator } from "@/lib/node-refusal";
 import { nodeRpc } from "@/lib/node-rpc";
+import { tags } from "@/lib/signing-tags";
 import { peerIdParam } from "@/lib/wallet-param";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -182,7 +183,7 @@ export async function defineMerchantMethod(
     name,
     category,
   };
-  const signature = await signPayload(signer, method);
+  const signature = await signPayload(signer, tags.PaymentMethodDefine, method);
   const id = await sendSignedEvent(endpoint, "sendPaymentMethodDefine", { method, signature });
   return String(id);
 }

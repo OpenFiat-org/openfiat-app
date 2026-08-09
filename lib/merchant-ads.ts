@@ -3,6 +3,7 @@ import bs58 from "bs58";
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -80,7 +81,7 @@ export async function setAdvertisementStatus(
     status,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, set);
+  const signature = await signPayload(who.provider, tags.AdvertisementStatusSet, set);
   await sendSignedEvent(nodeUrl(), "sendAdvertisementStatusSet", { set, signature });
 }
 
@@ -115,7 +116,7 @@ export async function updateAdvertisementTerms(
     payment_methods: draft.paymentMethods,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, update);
+  const signature = await signPayload(who.provider, tags.AdvertisementTermsUpdate, update);
   await sendSignedEvent(nodeUrl(), "sendAdvertisementTermsUpdate", { update, signature });
 }
 
@@ -168,7 +169,7 @@ export async function publishAdvertisement(
     payment_methods: draft.paymentMethods,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, create);
+  const signature = await signPayload(who.provider, tags.AdvertisementCreate, create);
   const id = await sendSignedEvent(nodeUrl(), "sendAdvertisementCreate", { create, signature });
   return String(id);
 }

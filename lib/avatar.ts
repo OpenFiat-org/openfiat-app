@@ -4,6 +4,7 @@ import { asCid } from "@/lib/ipfs/cid";
 import { MAX_AVATAR_BYTES, ipfsUrl } from "@/lib/ipfs/gateway";
 import { currentClaims, fetchIdentityClaims } from "@/lib/live-identity";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import { uploadToIpfs } from "@/lib/ipfs/upload-client";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -112,7 +113,7 @@ export async function publishAvatar(
     timestamp: Date.now(),
   };
 
-  const signature = await signPayload(provider, publish);
+  const signature = await signPayload(provider, tags.ClaimPublish, publish);
   const claimId = await sendSignedEvent(nodeUrl(), "sendClaimPublish", { publish, signature });
   return { claimId: String(claimId), cid };
 }

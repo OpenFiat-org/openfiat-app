@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import bs58 from "bs58";
 import { generateKeypair, peerIdFromPublicKey, sign } from "@openfiat/sdk";
+import { preimageOf } from "@/lib/domain";
+import { tags } from "@/lib/signing-tags";
 
 /**
  * The taker half: a buyer arrives at the book, finds a real advertisement,
@@ -77,9 +79,7 @@ test("a taker browses the book and opens an order against a real advertisement",
     payment_methods: [rail!.id],
     timestamp: Date.now(),
   };
-  const signature = bs58.encode(
-    await sign(keypair, new TextEncoder().encode(JSON.stringify(create))),
-  );
+  const signature = bs58.encode(await sign(keypair, preimageOf(tags.AdvertisementCreate, create)));
   await rpc("sendAdvertisementCreate", {
     data: Buffer.from(JSON.stringify({ create, signature }), "utf8").toString("base64"),
   });

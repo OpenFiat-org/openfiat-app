@@ -1,5 +1,6 @@
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import { walletParam } from "@/lib/wallet-param";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -165,6 +166,6 @@ export async function publishSubscription(
     timestamp: Date.now(),
   };
 
-  const signature = await signPayload(provider, update);
+  const signature = await signPayload(provider, tags.SubscriptionUpdate, update);
   await sendSignedEvent(nodeUrl(), "sendSubscriptionUpdate", { update, signature });
 }

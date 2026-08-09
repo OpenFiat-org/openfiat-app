@@ -11,6 +11,7 @@ import { sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { currentClaims, fetchIdentityClaims } from "@/lib/live-identity";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { peerIdForAddress } from "@/lib/peer-id";
+import { tags } from "@/lib/signing-tags";
 import { WALLET_CHANGED_EVENT, type SolanaProvider } from "@/lib/wallet-connection";
 
 /**
@@ -284,7 +285,7 @@ export async function enrol(
     expires_at: null,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(provider, publish);
+  const signature = await signPayload(provider, tags.ClaimPublish, publish);
   await sendSignedEvent(nodeUrl(), "sendClaimPublish", { publish, signature });
 
   derived.set(address, first);

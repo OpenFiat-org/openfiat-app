@@ -1,5 +1,6 @@
 import bs58 from "bs58";
 import { peerIdFromPublicKey } from "@openfiat/sdk";
+import { preimageOf } from "@/lib/domain";
 import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { NodeRpcError, type NodeErrorData } from "@/lib/node-rpc";
 import type { Dispute, PublicDispute } from "@/lib/live-disputes";
@@ -28,9 +29,10 @@ import type { SolanaProvider } from "@/lib/wallet-connection";
  * the two byte tables below.
  *
  * Identity: the connected Solana wallet doubles as the protocol identity. Both
- * are Ed25519, the node verifies a raw signature over the payload's JSON
- * bytes, and the PeerId is a pure function of the public key — so a wallet's
- * `signMessage` is exactly what the node expects. Verified against a live
+ * are Ed25519, the node verifies a raw signature over the domain-separated
+ * preimage of the payload's JSON bytes (see `lib/domain.ts`, F-01), and the
+ * PeerId is a pure function of the public key — so a wallet's `signMessage`
+ * is exactly what the node expects. Verified against a live
  * node: a correctly signed `sendArbitratorJoin` for a non-existent dispute is
  * rejected with DISPUTE_NOT_FOUND (i.e. it got past `verify()`), while a
  * tampered signature gives INVALID_SIGNATURE and a mismatched peer id gives
@@ -135,18 +137,26 @@ export function peerIdForPublicKey(publicKey: Uint8Array): string {
 }
 
 /**
- * Sign a payload the way the node verifies it: raw Ed25519 over the UTF-8
- * bytes of `JSON.stringify(payload)`. Key order therefore has to match the
- * Rust struct's field order — every builder below is written in that order.
+ * Sign a payload the way the node verifies it (F-01): raw Ed25519 over
+ * `preimage(tag, payload)` — `len(tag):u32be ‖ utf8(tag) ‖ json(payload)`,
+ * see `lib/domain.ts`. `tag` must name the exact wire type `payload` is —
+ * one of `lib/signing-tags.ts`'s `tags` — since the node verifies against
+ * the same tag its own event handler expects, and a mismatched tag fails
+ * with `INVALID_SIGNATURE` exactly as a reordered field would.
+ *
+ * Key order within `payload` is still load-bearing beneath that: the node
+ * re-serialises with `serde_json`, struct declaration order, so every
+ * builder below is written in the Rust struct's own order.
  */
 export async function signPayload(
   provider: SolanaProvider,
+  tag: string,
   payload: unknown,
 ): Promise<string> {
   if (!provider.signMessage) {
     throw new Error("This wallet does not support message signing, which arbitration requires.");
   }
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  const bytes = preimageOf(tag, payload);
   const { signature } = await provider.signMessage(bytes);
   return bs58.encode(signature);
 }

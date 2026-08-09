@@ -3,6 +3,7 @@ import bs58 from "bs58";
 import { sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { explainNodeRefusal, type RefusalTranslator } from "@/lib/node-refusal";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { ProposalCategory, VoteChoice } from "@/lib/live-proposals";
 import type { TradeIdentity } from "@/lib/trade-flow";
 
@@ -103,7 +104,7 @@ export async function createProposal(
   draft: Parameters<typeof buildProposalCreate>[1],
 ): Promise<string> {
   const create = buildProposalCreate(who, draft);
-  const signature = await signPayload(who.provider, create);
+  const signature = await signPayload(who.provider, tags.ProposalCreate, create);
   const id = await sendSignedEvent(nodeUrl(), "sendProposalCreate", { create, signature });
   return String(id);
 }
@@ -128,7 +129,7 @@ export async function castNodeVote(
   vote: Parameters<typeof buildVoteCast>[1],
 ): Promise<void> {
   const payload = buildVoteCast(who, vote);
-  const signature = await signPayload(who.provider, payload);
+  const signature = await signPayload(who.provider, tags.VoteCast, payload);
   await sendSignedEvent(nodeUrl(), "sendVoteCast", { vote: payload, signature });
 }
 

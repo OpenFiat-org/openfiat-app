@@ -2,6 +2,7 @@ import bs58 from "bs58";
 
 import { peerIdForPublicKey, sendSignedEvent, signPayload } from "@/lib/arbitration";
 import { nodeUrl } from "@/lib/node-endpoint";
+import { tags } from "@/lib/signing-tags";
 import type { WireAmount } from "@/lib/merchant-ads";
 import type { SolanaProvider } from "@/lib/wallet-connection";
 
@@ -158,7 +159,7 @@ export async function submitReservation(
     agreed_mid: draft.agreedMid,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, request);
+  const signature = await signPayload(who.provider, tags.ReservationRequest, request);
   const id = await sendSignedEvent(nodeUrl(), "sendReservationRequest", {
     request,
     signature,
@@ -208,7 +209,7 @@ export async function initiateSettlement(
     amount: draft.amount,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, initiate);
+  const signature = await signPayload(who.provider, tags.SettlementInitiate, initiate);
   const id = await sendSignedEvent(nodeUrl(), "sendSettlementInitiate", {
     initiate,
     signature,
@@ -236,7 +237,7 @@ export async function submitPayment(
     payment_reference: reference,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, action);
+  const signature = await signPayload(who.provider, tags.PaymentSubmitted, action);
   await sendSignedEvent(nodeUrl(), "sendPaymentSubmitted", { action, signature });
 }
 
@@ -258,7 +259,7 @@ export async function approveSettlement(
     seller: who.peerId,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, action);
+  const signature = await signPayload(who.provider, tags.SettlementApproved, action);
   await sendSignedEvent(nodeUrl(), "sendSettlementApproved", { action, signature });
 }
 
@@ -287,7 +288,7 @@ export async function cancelReservation(
     requester: who.peerId,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, cancel);
+  const signature = await signPayload(who.provider, tags.ReservationCancel, cancel);
   await sendSignedEvent(nodeUrl(), "sendReservationCancel", { cancel, signature });
 }
 
@@ -314,7 +315,7 @@ export async function cancelSettlement(
     canceller: who.peerId,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, action);
+  const signature = await signPayload(who.provider, tags.SettlementCancelled, action);
   await sendSignedEvent(nodeUrl(), "sendSettlementCancelled", { action, signature });
 }
 
@@ -346,7 +347,7 @@ export async function reversePayment(
     buyer: who.peerId,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, action);
+  const signature = await signPayload(who.provider, tags.PaymentReversed, action);
   await sendSignedEvent(nodeUrl(), "sendPaymentReversed", { action, signature });
 }
 
@@ -385,7 +386,7 @@ export async function rejectSettlement(
     discrepancy,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, action);
+  const signature = await signPayload(who.provider, tags.SettlementRejected, action);
   await sendSignedEvent(nodeUrl(), "sendSettlementRejected", { action, signature });
 }
 
@@ -409,7 +410,7 @@ export async function openDispute(
     reason,
     timestamp: Date.now(),
   };
-  const signature = await signPayload(who.provider, open);
+  const signature = await signPayload(who.provider, tags.DisputeOpen, open);
   const id = await sendSignedEvent(nodeUrl(), "sendDisputeOpen", { open, signature });
   return String(id);
 }

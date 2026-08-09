@@ -21,6 +21,7 @@ import {
 } from "@/lib/payment-catalog";
 import { peerIdForPublicKey } from "@/lib/arbitration";
 import type { SolanaProvider } from "@/lib/wallet-connection";
+import { bodyOfSignedMessage } from "./mocks/domain-header";
 
 const KENYA: CountryMethods = {
   country: "KE",
@@ -105,7 +106,7 @@ function capture(result: unknown = "12D3KooWtest:9f3c1a20b4d7e6f8") {
 
   const provider = {
     signMessage: async (message: Uint8Array) => {
-      signed.push(new TextDecoder().decode(message));
+      signed.push(bodyOfSignedMessage(message));
       return { signature: new Uint8Array(64).fill(9) };
     },
   } as unknown as SolanaProvider;

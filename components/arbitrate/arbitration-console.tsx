@@ -31,6 +31,7 @@ import { fetchDisputes, type PublicDispute } from "@/lib/live-disputes";
 import { shortSig } from "@/lib/format";
 import { NODE_CHANGED_EVENT, readNodeSelection } from "@/lib/node-preference";
 import { escrow, getConnection, staking } from "@/lib/onchain-config";
+import { tags } from "@/lib/signing-tags";
 import {
   WALLET_CHANGED_EVENT,
   currentSigner,
@@ -155,7 +156,7 @@ export function ArbitrationConsole() {
     run(t("busyJoin"), async () => {
       const { provider, who, endpoint: url, dispute } = requireContext();
       const join = buildJoin(dispute.id, who);
-      const signature = await signPayload(provider, join);
+      const signature = await signPayload(provider, tags.ArbitratorJoin, join);
       await sendSignedEvent(url, "sendArbitratorJoin", { join, signature });
       mine.forget();
       return t("joinedMsg");
@@ -167,7 +168,7 @@ export function ArbitrationConsole() {
       const salt = newSalt();
       const commitment = await commitmentFor(OFFCHAIN_VOTE_BYTE[outcome], salt);
       const commit = buildCommit(dispute.id, who, commitment);
-      const signature = await signPayload(provider, commit);
+      const signature = await signPayload(provider, tags.DisputeVoteCommit, commit);
       await sendSignedEvent(url, "sendVoteCommit", { commit, signature });
       saveSalt(dispute.id, salt, outcome);
       mine.forget();
@@ -182,7 +183,7 @@ export function ArbitrationConsole() {
         throw new Error(t("noSaltReveal"));
       }
       const reveal = buildReveal(dispute.id, who, stored.outcome, stored.salt);
-      const signature = await signPayload(provider, reveal);
+      const signature = await signPayload(provider, tags.DisputeVoteReveal, reveal);
       await sendSignedEvent(url, "sendVoteReveal", { reveal, signature });
       clearSalt(dispute.id);
       mine.forget();
