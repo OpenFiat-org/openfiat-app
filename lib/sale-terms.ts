@@ -18,20 +18,23 @@
  *
  * # The figures, and their standing
  *
- * `OPEN_PRICE_USDC` is [CONFIRMED] and is also what the deployed program
- * enforces: `SaleConfig::open_entitlement_for` scales a USDC amount by the
- * two mints' decimal difference and applies no other rate, so a different
- * price shown anywhere would be a figure the chain refuses.
+ * `OPEN_PRICE_USDC` is [CONFIRMED] against OFS-4100 §3, re-baselined
+ * 2026-08-09 (1 USDC = 100 OPEN, i.e. $0.01/OPEN). It is what the *upgraded*
+ * presale program will enforce once deployed: `SaleConfig::open_entitlement_for`
+ * scales a USDC amount by the two mints' decimal difference and then by the
+ * configured `open_per_usdc` rate. No `SaleConfig` exists on this cluster
+ * today (`fetchSaleConfig` returns `null`), so this figure has nothing live
+ * to contradict — it is the specification's stated term, shown as one.
  *
  * `PUBLIC_SALE_PRICE_USDC` is [CONFIRMED] in the specification but has no
  * deployed program behind it yet — it prices a later phase against the
  * remainder of the same bucket. It is a stated future term, and a UI must
  * present it as one.
  *
- * `PRESALE_BUCKET_OPEN` is the entire Community Presale allocation (§2), and
- * it is the presale's own ceiling: §3 gives the sale no hard cap distinct
- * from the bucket, and `claim` pays out of a vault holding exactly that much
- * OPEN.
+ * `PRESALE_BUCKET_OPEN` is the entire Community Presale allocation (§2,
+ * re-baselined 2026-08-09), and it is the presale's own ceiling: §3 gives
+ * the sale no hard cap distinct from the bucket, and `claim` pays out of a
+ * vault holding exactly that much OPEN.
  *
  * There is no soft cap and no refund condition derived from one — §3 records
  * that as [CONFIRMED]. The deployed program still carries a `soft_cap` field
@@ -41,14 +44,23 @@
  * imply a refundable presale.
  */
 
-/** [CONFIRMED] OFS-4100 §3, and enforced by the deployed program. */
-export const OPEN_PRICE_USDC = 1;
+/**
+ * [CONFIRMED] OFS-4100 §3, re-baselined 2026-08-09 (was 1). 1 USDC = 100
+ * OPEN — will be enforced once the upgraded presale program is deployed.
+ */
+export const OPEN_PRICE_USDC = 0.01;
 
-/** [CONFIRMED] OFS-4100 §3. A later phase, not yet deployed anywhere. */
-export const PUBLIC_SALE_PRICE_USDC = 1.25;
+/**
+ * [CONFIRMED] OFS-4100 §3, re-baselined 2026-08-09 (was 1.25). A later
+ * phase, not yet deployed anywhere. 1 USDC = 80 OPEN.
+ */
+export const PUBLIC_SALE_PRICE_USDC = 0.0125;
 
-/** [CONFIRMED] OFS-4100 §2. The entire Community Presale bucket, in OPEN. */
-export const PRESALE_BUCKET_OPEN = 200_000_000;
+/**
+ * [CONFIRMED] OFS-4100 §2, re-baselined 2026-08-09 (was 200_000_000). The
+ * entire Community Presale bucket, in OPEN.
+ */
+export const PRESALE_BUCKET_OPEN = 20_000_000_000;
 
 /**
  * The three phases OPEN passes through, and what each is priced at.
@@ -63,7 +75,7 @@ export const SALE_PHASES = [
   {
     name: "Community Presale",
     priceUsdc: OPEN_PRICE_USDC,
-    allocation: "200,000,000 OPEN",
+    allocation: "20,000,000,000 OPEN",
     note: "The full Community Presale bucket. Presale OPEN unlocks at claim — there is no vesting (§2).",
   },
   {

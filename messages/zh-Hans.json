@@ -1811,7 +1811,7 @@
       "mainnet": "销售阶段之后没有固定汇率，因此不显示数字。"
     },
     "phaseAllocation": {
-      "communityPresale": "200,000,000 OPEN",
+      "communityPresale": "20,000,000,000 OPEN",
       "publicSale": "预售未售出的剩余部分",
       "mainnet": "市场定价"
     },
@@ -1860,7 +1860,7 @@
     "wouldEntitle": "将使你有权获得",
     "belowMin": "低于该销售的 {min} USDC 最低额度。",
     "aboveMax": "高于该销售的 {max} USDC 最高额度。",
-    "calcNote": "这是一个计算器，而非购买——此应用尚无法构建 <code>contribute</code> 指令，此处也不签署任何内容。其算术是程序自身的：1 OPEN = {price} USDC，仅按两种铸币的小数位缩放，没有其他。"
+    "calcNote": "这是一个计算器，而非购买——此应用尚无法构建 <code>contribute</code> 指令，此处也不签署任何内容。其算术是程序自身的：1 OPEN = {price} USDC，按两种铸币的小数位与销售自身的汇率缩放。"
   },
   "earnings": {
     "metaTitle": "提供方收益",

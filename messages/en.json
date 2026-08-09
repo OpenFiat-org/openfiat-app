@@ -1811,7 +1811,7 @@
       "mainnet": "No fixed rate after the sale phases, so no figure is shown."
     },
     "phaseAllocation": {
-      "communityPresale": "200,000,000 OPEN",
+      "communityPresale": "20,000,000,000 OPEN",
       "publicSale": "Unsold presale remainder",
       "mainnet": "Market priced"
     },
@@ -1860,7 +1860,7 @@
     "wouldEntitle": "Would entitle you to",
     "belowMin": "Below the sale's {min} USDC minimum.",
     "aboveMax": "Above the sale's {max} USDC maximum.",
-    "calcNote": "A calculator, not a purchase — this app cannot build a <code>contribute</code> instruction yet, and nothing here signs anything. The arithmetic is the program's own: 1 OPEN = {price} USDC, scaled by the two mints' decimals and nothing else."
+    "calcNote": "A calculator, not a purchase — this app cannot build a <code>contribute</code> instruction yet, and nothing here signs anything. The arithmetic is the program's own: 1 OPEN = {price} USDC, scaled by the two mints' decimals and the sale's own rate."
   },
   "earnings": {
     "metaTitle": "Provider earnings",

@@ -475,7 +475,13 @@ export interface DecodedSaleConfig {
   presaleVault: PublicKey;
   usdcVault: PublicKey;
   treasury: PublicKey;
-  /** USDC base units. The whole Community Presale bucket, at 1 OPEN = 1 USDC. */
+  /**
+   * USDC base units. The whole Community Presale bucket, at the deployed
+   * program's rate — currently the pre-2026-08-09-re-baseline implicit
+   * 1 OPEN = 1 USDC (see `lib/live-presale.ts`'s `openEntitlementFor`); this
+   * decoder's byte offsets, and this comment, need updating together once
+   * the upgraded presale program (OFS-4100 §3, 1 USDC = 100 OPEN) deploys.
+   */
   hardCap: bigint;
   /**
    * USDC base units, and `0n` on a spec-conforming sale.

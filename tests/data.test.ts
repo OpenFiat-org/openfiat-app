@@ -469,17 +469,18 @@ describe("OPEN sale terms", () => {
    * there is no account on devnet — so the page says the sale is not open
    * rather than showing a number.
    */
-  it("prices the presale at 1 OPEN = 1 USDC", () => {
-    // [CONFIRMED] in OFS-4100 §3, and enforced on chain by
-    // `open_entitlement_for`, which applies no rate beyond a decimal scale.
-    // Any other value here is a number the program would refuse.
-    expect(OPEN_PRICE_USDC).toBe(1);
+  it("prices the presale at 1 USDC = 100 OPEN ($0.01)", () => {
+    // [CONFIRMED] in OFS-4100 §3, re-baselined 2026-08-09 (was 1 OPEN = 1
+    // USDC). The upgraded, not-yet-deployed presale program enforces this
+    // via `open_entitlement_for`'s `open_per_usdc` rate.
+    expect(OPEN_PRICE_USDC).toBe(0.01);
   });
 
   it("sizes the presale at the whole Community Presale bucket", () => {
     // OFS-4100 §2-3: the bucket is the full 20% of supply, and the presale
-    // has no hard cap distinct from it.
-    expect(PRESALE_BUCKET_OPEN).toBe(200_000_000);
+    // has no hard cap distinct from it. 20,000,000,000 OPEN, re-baselined
+    // 2026-08-09 (was 200,000,000).
+    expect(PRESALE_BUCKET_OPEN).toBe(20_000_000_000);
   });
 
   it("offers a presale and a public-sale price, with market pricing after", () => {

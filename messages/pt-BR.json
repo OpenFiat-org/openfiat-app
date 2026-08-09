@@ -1811,7 +1811,7 @@
       "mainnet": "Sem taxa fixa após as fases de venda, então nenhum número é mostrado."
     },
     "phaseAllocation": {
-      "communityPresale": "200.000.000 OPEN",
+      "communityPresale": "20.000.000.000 OPEN",
       "publicSale": "Remanescente não vendido da pré-venda",
       "mainnet": "Preço de mercado"
     },
@@ -1860,7 +1860,7 @@
     "wouldEntitle": "Daria a você direito a",
     "belowMin": "Abaixo do mínimo de {min} USDC da venda.",
     "aboveMax": "Acima do máximo de {max} USDC da venda.",
-    "calcNote": "Uma calculadora, não uma compra — este app ainda não pode construir uma instrução <code>contribute</code>, e nada aqui assina nada. A aritmética é a do próprio programa: 1 OPEN = {price} USDC, escalada pelos decimais dos dois mints e nada mais."
+    "calcNote": "Uma calculadora, não uma compra — este app ainda não pode construir uma instrução <code>contribute</code>, e nada aqui assina nada. A aritmética é a do próprio programa: 1 OPEN = {price} USDC, escalada pelos decimais dos dois mints e pela própria taxa da venda."
   },
   "earnings": {
     "metaTitle": "Ganhos do provedor",

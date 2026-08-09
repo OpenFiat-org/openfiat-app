@@ -51,9 +51,13 @@ const inputCls =
  * one told a reader their contribution had been recorded.
  *
  * What remains is an entitlement calculator, and it is honest arithmetic
- * rather than a mock of a purchase — it applies the same 1:1 scaling
+ * rather than a mock of a purchase — it applies the same decimal-scaling
  * `SaleConfig::open_entitlement_for` applies, against the decimals read off
- * the live account, and it says that is what it is.
+ * the live account, and it says that is what it is. (It does not yet apply
+ * `open_entitlement_for`'s `open_per_usdc` rate multiplier, added alongside
+ * the 2026-08-09 tokenomics re-baseline — see `lib/live-presale.ts`'s
+ * `openEntitlementFor` for why: no `SaleConfig` on this cluster carries that
+ * field yet.)
  */
 
 type SaleState =

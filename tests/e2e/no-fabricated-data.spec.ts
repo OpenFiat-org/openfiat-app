@@ -183,8 +183,9 @@ test("the OPEN page states there is no sale rather than inventing a total", asyn
     /raised.*\$[\d,]+ *\/ *\$[\d,]+/,
   );
   expect(has(text, "not open")).toBe(true);
-  // The confirmed price the deployed program enforces is still stated.
-  expect(has(text, "1 OPEN = 1 USDC")).toBe(true);
+  // The confirmed specification price (re-baselined 2026-08-09) is stated
+  // even though no upgraded SaleConfig exists yet to enforce it.
+  expect(has(text, "1 OPEN = 0.01 USDC")).toBe(true);
   // And nothing offers to take money.
   expect(
     has(text, "buy open"),

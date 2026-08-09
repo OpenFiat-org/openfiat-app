@@ -56,8 +56,9 @@ export default function OpenTokenPage() {
             live whether or not a SaleConfig existed — and none does on this
             cluster. Whether a sale is running is a fact about the chain, and
             `BuyOpen` below is the one place that reads it. The price is a
-            [CONFIRMED] specification figure the deployed program enforces,
-            so it is safe to state without a chain read. */}
+            [CONFIRMED] specification figure (re-baselined 2026-08-09) with
+            no live SaleConfig to contradict it yet, so it is safe to state
+            without a chain read. */}
         <p className="font-mono text-sm tabular-nums text-gray-200">
           1 OPEN = {OPEN_PRICE_USDC} USDC
         </p>
@@ -88,9 +89,13 @@ export default function OpenTokenPage() {
                     </span>
                   </Td>
                   {/* Null price means market priced — there is no fixed rate
-                      after the sale phases, so a figure would be invented. */}
+                      after the sale phases, so a figure would be invented.
+                      Fixed to 4 decimal places and trimmed rather than 2:
+                      post-2026-08-09-re-baseline prices ($0.01, $0.0125) are
+                      sub-cent apart, and `.toFixed(2)` rounded both to the
+                      same "$0.01", making the two phases indistinguishable. */}
                   <Td py="py-5" right num className="text-gray-200">
-                    {p.priceUsdc === null ? "—" : `$${p.priceUsdc.toFixed(2)}`}
+                    {p.priceUsdc === null ? "—" : `$${Number(p.priceUsdc.toFixed(4))}`}
                   </Td>
                   <Td py="py-5" right num className="text-gray-400">{t(`phaseAllocation.${PHASE_KEYS[i]}`)}</Td>
                 </Tr>
