@@ -7,6 +7,13 @@ on:
     branches: ["main"]
 
 jobs:
+  tokenomics-literals:
+    name: stale tokenomics literals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scripts/check-stale-tokenomics-literals.sh
+
   build:
     name: install / lint / typecheck / test / build
     runs-on: ubuntu-latest
