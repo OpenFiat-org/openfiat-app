@@ -456,7 +456,7 @@ describe("decodeSaleConfig", () => {
     // not this one. A transposed character derives a PDA that does not exist,
     // which renders as "the sale is not open" — the same answer as the truth
     // today, so nothing on screen would catch it.
-    expect(PRESALE_PROGRAM_ID).toBe("75rJ9MRAaSnAc8tg4AfeTFVDCVrN6jdD5CqeyE4UoUw7");
+    expect(PRESALE_PROGRAM_ID).toBe("7KaEpDzZuqye1xqqp3RnvBJXnDxbU3W9zVrUr5vBS2fU");
   });
 });
 

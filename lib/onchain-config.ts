@@ -50,7 +50,7 @@ export const SOLANA_RPC_ENDPOINT = SOLANA_RPC_URL;
  * the SDK is a real gap and is filed rather than papered over; it is not
  * fixable from this repository.
  */
-export const DEVNET_OPEN_MINT = "29w8TroBTYoaqrXBDcpv5L54VZRA8Kf7kU5U1cakvFdj";
+export const DEVNET_OPEN_MINT = "GwieDVo2mWeWpqAErbH9TQ94Pd2GusrfWQscJeJ4p532";
 
 /**
  * What the protocol's own token is called.
@@ -143,7 +143,7 @@ export const OFFERED_DEVNET_MINTS: OfferedMint[] = [
   },
   {
     address: DEVNET_OPEN_MINT,
-    decimals: 9,
+    decimals: 6,
     note: "This mint's authority is permanently unset — no more can ever be issued, so a wallet holding none can never obtain any on devnet.",
     obtainable: false,
   },

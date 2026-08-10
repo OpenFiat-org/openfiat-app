@@ -76,9 +76,9 @@ at a time, verified against real devnet state before each cutover:
   terms are final — nothing there is purchasable yet.
 
 Real on-chain reads/writes are devnet-only (`lib/onchain-config.ts`):
-program ids `HaPpM1QYM3dKp3sX7zhEdft9hB6ncu6xfALAbkyQChQP` (escrow),
-`HYEXk8XQukBkZbiYB33JyVefQDxqyCpPudad3wBCyYmx` (staking), and
-`AVJfKUjHsizkGGUy8sdz4Xma2hVgmgvgg8GmUMs8E4eE` (governance), against the
+program ids `CYdn27x69hQ8WBxBeWRGpr9c8B4dcKj8GvyBn6Sdma9s` (escrow),
+`3MF1nAPiECRAGs36RpQTkLb8CvMZuhcgXv1hGZoXEiid` (staking), and
+`2k71DBDoxM4SUFYGbyMXFiTSUynPuY2CqFUsx3FuarXF` (governance), against the
 real devnet OPEN Token-2022 mint. There is no mainnet deployment.
 
 Features:

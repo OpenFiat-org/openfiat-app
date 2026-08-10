@@ -33,7 +33,7 @@ import { test, expect } from "@playwright/test";
  */
 
 const DEVNET_RPC = "https://api.devnet.solana.com";
-const STAKING_PROGRAM_ID = new PublicKey("HYEXk8XQukBkZbiYB33JyVefQDxqyCpPudad3wBCyYmx");
+const STAKING_PROGRAM_ID = new PublicKey("3MF1nAPiECRAGs36RpQTkLb8CvMZuhcgXv1hGZoXEiid");
 const STAKE_ACCOUNT_DISCRIMINATOR = [80, 158, 67, 124, 50, 189, 192, 255];
 
 function loadTestWallet(): Keypair {

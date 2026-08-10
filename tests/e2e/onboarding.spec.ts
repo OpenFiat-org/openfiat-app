@@ -42,7 +42,7 @@ import { createPrivateKey, sign as edSign } from "node:crypto";
 const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 
 const DEVNET_RPC = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
-const OPEN_MINT = new PublicKey("29w8TroBTYoaqrXBDcpv5L54VZRA8Kf7kU5U1cakvFdj");
+const OPEN_MINT = new PublicKey("GwieDVo2mWeWpqAErbH9TQ94Pd2GusrfWQscJeJ4p532");
 const MOCK_USDC = new PublicKey("2bHPi5hA4zrmPAfrvLmEexg3KJjpTjNkUcxWnzUPeRRU");
 const MOCK_USDT = new PublicKey("C4rSGhdxWhSFQuFcAxQti1JvBxriwHJoHtJjfhs5p24Y");
 

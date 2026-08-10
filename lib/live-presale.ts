@@ -44,7 +44,7 @@ import { decodeSaleConfig, type DecodedSaleConfig } from "@/lib/onchain-decode";
  * catch. It is pinned by `tests/onchain-decode.test.ts` against the
  * `declare_id!` in `openfiat-core/programs/programs/presale/src/lib.rs`.
  */
-export const PRESALE_PROGRAM_ID = "75rJ9MRAaSnAc8tg4AfeTFVDCVrN6jdD5CqeyE4UoUw7";
+export const PRESALE_PROGRAM_ID = "7KaEpDzZuqye1xqqp3RnvBJXnDxbU3W9zVrUr5vBS2fU";
 
 /** PDA seed for the singleton `SaleConfig` (OFS-4200 §3). */
 const SALE_CONFIG_SEED = "sale_config";
