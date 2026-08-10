@@ -44,7 +44,7 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react-dom": "^19.2.4",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.0.0",
