@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { OPEN_PRICE_USDC, SALE_PHASES } from "@/lib/sale-terms";
 import { DataTable, Td, Th, Tr } from "@/components/data-table";
 import { BuyOpen } from "@/components/open/buy-open";
+import { PayCrossChain } from "@/components/open/pay-cross-chain";
 import { PageHero } from "@/components/page-hero";
 
 export async function generateMetadata({
@@ -67,6 +68,7 @@ export default function OpenTokenPage() {
       <div className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr]">
         <div>
           <BuyOpen />
+          <PayCrossChain />
 
           <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-gray-400">{t("salePhases")}</h2>
           <div className="mt-3">
