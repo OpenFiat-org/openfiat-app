@@ -51,12 +51,23 @@ import { decodeSaleConfig, type DecodedSaleConfig } from "@/lib/onchain-decode";
  */
 export const PRESALE_PROGRAM_ID = "7KaEpDzZuqye1xqqp3RnvBJXnDxbU3W9zVrUr5vBS2fU";
 
-/** PDA seed for the singleton `SaleConfig` (OFS-4200 §3). */
+/**
+ * The `SaleConfig` PDA is keyed by a sale nonce, not a bare singleton seed:
+ * `seeds = [SALE_CONFIG_SEED, sale_nonce as u64 LE]` (see
+ * `initialize_sale.rs`). The live devnet sale is nonce 1
+ * (`devnet-addresses.json` → `devnet_sale.saleNonce`), whose PDA is
+ * `79UQFdUjraHGb6LCduVELiM9c8rtUQwKXMRy7eTH3tSf`. Omitting the nonce derives a
+ * different, nonexistent account — which silently reads as "the sale is not
+ * open" even though it is live.
+ */
 const SALE_CONFIG_SEED = "sale_config";
+export const SALE_NONCE = 1;
 
 export function saleConfigPda(): PublicKey {
+  const nonceLe = Buffer.alloc(8);
+  nonceLe.writeBigUInt64LE(BigInt(SALE_NONCE));
   const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from(SALE_CONFIG_SEED)],
+    [Buffer.from(SALE_CONFIG_SEED), nonceLe],
     new PublicKey(PRESALE_PROGRAM_ID),
   );
   return pda;
