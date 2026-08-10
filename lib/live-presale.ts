@@ -70,28 +70,22 @@ export function toWhole(baseUnits: bigint, decimals: number): number {
 
 /**
  * OPEN base units a USDC contribution entitles a wallet to, computed the way
- * the *currently deployed* `SaleConfig::open_entitlement_for` computes it on
- * this cluster: scaled by the two mints' decimal difference and nothing
- * else, matching the pre-2026-08-09-re-baseline program (no `open_per_usdc`
- * field, implicit 1 OPEN = 1 USDC).
- *
- * OFS-4100 §3 now confirms 1 USDC = 100 OPEN, and the on-chain
- * `SaleConfig::open_entitlement_for` was updated to multiply by a configured
- * `open_per_usdc` rate accordingly — but that is a program *upgrade*, not
- * yet deployed to this cluster (no `SaleConfig` exists here at all right
- * now). This mirror, and `DecodedSaleConfig` in `lib/onchain-decode.ts`,
- * both need updating in lockstep with that upgrade — reading a rate this
- * function does not apply against a layout this decoder does not expect
- * would silently produce a wrong number rather than a chain-refused one.
+ * the deployed `SaleConfig::open_entitlement_for` computes it: scaled by the
+ * two mints' decimal difference, then multiplied by the configured
+ * `open_per_usdc` rate — OFS-4100 §3's re-baselined 1 USDC = 100 OPEN,
+ * deployed 2026-08-09.
  *
  * Mirrored rather than fetched because it is the program's arithmetic, not a
- * parameter — a different rate shown here would be a figure the chain
- * refuses. It still takes the decimals off the account rather than assuming
- * them.
+ * parameter — a different formula shown here would be a figure the chain
+ * refuses. It still takes the decimals and the rate off the account rather
+ * than assuming them: `openPerUsdc` is `SaleConfig`'s own field (see
+ * `DecodedSaleConfig` in `lib/onchain-decode.ts`), not a constant baked in
+ * here, so a config the admin re-initializes at a different rate is read
+ * correctly without a code change.
  */
 export function openEntitlementFor(
   usdcBaseUnits: bigint,
-  config: Pick<DecodedSaleConfig, "openDecimals" | "usdcDecimals">,
+  config: Pick<DecodedSaleConfig, "openDecimals" | "usdcDecimals" | "openPerUsdc">,
 ): bigint {
-  return usdcBaseUnits * 10n ** BigInt(config.openDecimals - config.usdcDecimals);
+  return usdcBaseUnits * 10n ** BigInt(config.openDecimals - config.usdcDecimals) * config.openPerUsdc;
 }

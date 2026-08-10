@@ -386,7 +386,8 @@ function saleConfigBytes(options: {
     ...u64le(options.minContribution),
     ...u64le(options.maxContribution),
     ...u16le(50), // max_slippage_bps
-    9, // open_decimals
+    ...u64le(100n), // open_per_usdc
+    6, // open_decimals
     6, // usdc_decimals
     ...i64le(1_700_000_000n), // start_time
     ...i64le(1_800_000_000n), // end_time
@@ -415,7 +416,8 @@ describe("decodeSaleConfig", () => {
     expect(decoded.minContribution).toBe(50_000_000n);
     expect(decoded.maxContribution).toBe(10_000_000_000_000n);
     expect(decoded.totalRaised).toBe(1_234_567_000_000n);
-    expect(decoded.openDecimals).toBe(9);
+    expect(decoded.openPerUsdc).toBe(100n);
+    expect(decoded.openDecimals).toBe(6);
     expect(decoded.usdcDecimals).toBe(6);
     expect(decoded.state).toBe("Active");
   });
@@ -441,7 +443,7 @@ describe("decodeSaleConfig", () => {
 
   it("refuses an account whose whitelist length runs past its own bytes", () => {
     const bytes = saleConfigBytes({ ...base, whitelist: [] });
-    bytes.writeUInt32LE(9999, 284);
+    bytes.writeUInt32LE(9999, 292);
     expect(() => decodeSaleConfig(bytes)).toThrow(/runs past the account/);
   });
 

@@ -33,12 +33,6 @@ ALLOWLIST=(
   "components/staking/stake-form.tsx"
   "lib/proposal-display.ts"
   "lib/staking-roles.ts"
-  # Mirrors the deployed (pre-upgrade) presale program's SaleConfig byte
-  # layout and entitlement arithmetic — no open_per_usdc field, implicit
-  # 1 OPEN = 1 USDC — because no upgraded SaleConfig exists on this cluster
-  # to read the new layout from yet.
-  "lib/onchain-decode.ts"
-  "lib/live-presale.ts"
   # Asserts the live StakingConfig's CURRENT on-chain minimums (500 OPEN
   # Merchant/Arbitrator, not the re-baselined 100,000/500,000), because
   # apply-devnet-staking-floors.ts has not yet been run against this

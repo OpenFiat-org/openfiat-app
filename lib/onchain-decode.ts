@@ -475,13 +475,7 @@ export interface DecodedSaleConfig {
   presaleVault: PublicKey;
   usdcVault: PublicKey;
   treasury: PublicKey;
-  /**
-   * USDC base units. The whole Community Presale bucket, at the deployed
-   * program's rate — currently the pre-2026-08-09-re-baseline implicit
-   * 1 OPEN = 1 USDC (see `lib/live-presale.ts`'s `openEntitlementFor`); this
-   * decoder's byte offsets, and this comment, need updating together once
-   * the upgraded presale program (OFS-4100 §3, 1 USDC = 100 OPEN) deploys.
-   */
+  /** USDC base units. The whole Community Presale bucket. */
   hardCap: bigint;
   /**
    * USDC base units, and `0n` on a spec-conforming sale.
@@ -494,6 +488,14 @@ export interface DecodedSaleConfig {
   softCap: bigint;
   minContribution: bigint;
   maxContribution: bigint;
+  /**
+   * OPEN base units credited per USDC base unit, before the decimal-scaling
+   * `openEntitlementFor` also applies — 100 on the re-baselined program
+   * (OFS-4100 §3, 1 USDC = 100 OPEN), deployed 2026-08-09. Inserted at byte
+   * offset 266, right after `max_slippage_bps`, which is what shifted every
+   * field below it by 8 bytes relative to the pre-re-baseline layout.
+   */
+  openPerUsdc: bigint;
   openDecimals: number;
   usdcDecimals: number;
   startTime: bigint;
@@ -507,9 +509,15 @@ export interface DecodedSaleConfig {
  * Layout: disc(8) admin(32) open_mint(32) usdc_mint(32) presale_vault(32)
  * usdc_vault(32) treasury(32) swap_program(32) hard_cap(8) soft_cap(8)
  * min_contribution(8) max_contribution(8) max_slippage_bps(2)
- * open_decimals(1) usdc_decimals(1) start_time(8) end_time(8)
+ * open_per_usdc(8) open_decimals(1) usdc_decimals(1) start_time(8) end_time(8)
  * stablecoin_whitelist(4 + n*32) total_raised(8) state(1) bump(1)
  * usdc_vault_bump(1).
+ *
+ * Offsets below are taken from the re-baselined program (OFS-4100 §3,
+ * deployed 2026-08-09), which inserted `open_per_usdc` right after
+ * `max_slippage_bps` at byte 266 — shifting `open_decimals` and every field
+ * after it by 8 bytes relative to the pre-re-baseline layout this decoder
+ * used to match.
  *
  * `stablecoin_whitelist` is a `Vec<Pubkey>`, so everything after it sits at
  * an offset that depends on the account's own contents — a fixed offset for
@@ -517,7 +525,7 @@ export interface DecodedSaleConfig {
  * with a different whitelist length and report it as a number of dollars.
  * The length prefix is read and the cursor moved by it.
  */
-const WHITELIST_LEN_OFFSET = 284;
+const WHITELIST_LEN_OFFSET = 292;
 
 export function decodeSaleConfig(data: Uint8Array): DecodedSaleConfig {
   checkDiscriminator(data, SALE_CONFIG_DISCRIMINATOR, "SaleConfig");
@@ -544,10 +552,11 @@ export function decodeSaleConfig(data: Uint8Array): DecodedSaleConfig {
     softCap: readU64(data, 240),
     minContribution: readU64(data, 248),
     maxContribution: readU64(data, 256),
-    openDecimals: data[266]!,
-    usdcDecimals: data[267]!,
-    startTime: readI64(data, 268),
-    endTime: readI64(data, 276),
+    openPerUsdc: readU64(data, 266),
+    openDecimals: data[274]!,
+    usdcDecimals: data[275]!,
+    startTime: readI64(data, 276),
+    endTime: readI64(data, 284),
     totalRaised: readU64(data, afterWhitelist),
     state: SALE_STATE[stateIndex] ?? "Active",
   };
