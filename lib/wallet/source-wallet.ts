@@ -13,6 +13,16 @@
  * would mean an EVM adapter with TRON-shaped branches threaded through it —
  * this keeps the two isolated instead, exactly as the brief asks.
  *
+ * # SP-C Task 2 widened the EVM side to "EVM majors"
+ *
+ * SP-B Task 3 only ever needed Ethereum and BSC (the presale's own
+ * "pay from another chain" chain list). SP-C's stablecoin bridge panel
+ * offers the same chains `@openfiat/sdk`'s `debridge.CHAIN_STABLECOIN_TOKENS`
+ * covers, so `EVM_CHAIN_ID`/`SourceChainKey` grew Polygon, Arbitrum,
+ * Optimism, Avalanche and Base alongside Ethereum and BSC — same
+ * `window.ethereum` EIP-1193 connector, just more `chainId`s it knows how to
+ * ask a wallet to switch to. Nothing about the connector itself changed.
+ *
  * # No `wagmi`/`viem`
  *
  * Nothing in this app depends on either today (`package.json` has neither),
@@ -28,7 +38,16 @@
  * chain-switching UX later, is separate work.
  */
 
-export type SourceChainKey = "ethereum" | "bsc" | "tron";
+export type EvmSourceChainKey =
+  | "ethereum"
+  | "bsc"
+  | "polygon"
+  | "arbitrum"
+  | "optimism"
+  | "avalanche"
+  | "base";
+
+export type SourceChainKey = EvmSourceChainKey | "tron";
 
 export interface SourceWalletConnection {
   chain: SourceChainKey;
@@ -64,10 +83,26 @@ declare global {
   }
 }
 
-/** EVM chain ids (real ones — MetaMask/`eth_requestAccounts` speak these, not deBridge's internal ids in `lib/debridge-order.ts`). */
-const EVM_CHAIN_ID: Record<"ethereum" | "bsc", string> = {
+/** EVM chain ids (real ones — MetaMask/`eth_requestAccounts` speak these, not deBridge's internal ids in `lib/debridge-order.ts`/`lib/bridge-funds.ts`). */
+const EVM_CHAIN_ID: Record<EvmSourceChainKey, string> = {
   ethereum: "0x1",
   bsc: "0x38",
+  polygon: "0x89",
+  arbitrum: "0xa4b1",
+  optimism: "0xa",
+  avalanche: "0xa86a",
+  base: "0x2105",
+};
+
+/** Human-readable chain names for the one error message below that needs one. */
+const EVM_CHAIN_NAME: Record<EvmSourceChainKey, string> = {
+  ethereum: "Ethereum",
+  bsc: "BNB Chain",
+  polygon: "Polygon",
+  arbitrum: "Arbitrum",
+  optimism: "Optimism",
+  avalanche: "Avalanche",
+  base: "Base",
 };
 
 /**
@@ -81,7 +116,7 @@ const EVM_CHAIN_ID: Record<"ethereum" | "bsc", string> = {
  * flow builds a `srcChainId`-specific order, and a mismatched network is
  * exactly the class of mistake that strands funds.
  */
-export function evmWalletAdapter(chain: "ethereum" | "bsc"): SourceWalletAdapter {
+export function evmWalletAdapter(chain: EvmSourceChainKey): SourceWalletAdapter {
   return {
     chain,
     isAvailable(): boolean {
@@ -103,7 +138,7 @@ export function evmWalletAdapter(chain: "ethereum" | "bsc"): SourceWalletAdapter
         });
       } catch (error) {
         throw new Error(
-          `Connected, but the wallet would not switch to ${chain === "ethereum" ? "Ethereum" : "BNB Chain"}: ${error instanceof Error ? error.message : String(error)}`,
+          `Connected, but the wallet would not switch to ${EVM_CHAIN_NAME[chain]}: ${error instanceof Error ? error.message : String(error)}`,
           { cause: error },
         );
       }
@@ -143,11 +178,16 @@ export function tronWalletAdapter(): SourceWalletAdapter {
   };
 }
 
-/** One adapter per supported source chain, keyed the same way `lib/debridge-order.ts`'s `SOURCE_CHAIN_IDS` is. */
+/** One adapter per supported source chain, keyed the same way `lib/debridge-order.ts`'s `SOURCE_CHAIN_IDS` and `lib/bridge-funds.ts`'s `DEBRIDGE_CHAIN_IDS` are. */
 export function sourceWalletAdapters(): Record<SourceChainKey, SourceWalletAdapter> {
   return {
     ethereum: evmWalletAdapter("ethereum"),
     bsc: evmWalletAdapter("bsc"),
+    polygon: evmWalletAdapter("polygon"),
+    arbitrum: evmWalletAdapter("arbitrum"),
+    optimism: evmWalletAdapter("optimism"),
+    avalanche: evmWalletAdapter("avalanche"),
+    base: evmWalletAdapter("base"),
     tron: tronWalletAdapter(),
   };
 }

@@ -12,6 +12,12 @@ import {
   parseSolanaRecipient,
   resolveCrossChainHookInputs,
   type CrossChainOrderRequest,
+  // This presale flow only ever offers Ethereum/BSC/TRON (`CHAIN_ORDER`
+  // below) — deliberately the narrower, presale-specific chain list this
+  // module owns, not `lib/wallet/source-wallet.ts`'s `SourceChainKey`, which
+  // SP-C Task 2 widened to "EVM majors" for the stablecoin bridge panel. The
+  // wallet adapters are shared; which chains this *flow* offers is not.
+  type SourceChainKey,
   type SolanaRecipientError,
 } from "@/lib/debridge-order";
 import { openEntitlementFor, toWhole } from "@/lib/live-presale";
@@ -21,11 +27,7 @@ import {
   WALLET_CHANGED_EVENT,
   type WalletConnection,
 } from "@/lib/wallet-connection";
-import {
-  sourceWalletAdapters,
-  type SourceChainKey,
-  type SourceWalletConnection,
-} from "@/lib/wallet/source-wallet";
+import { sourceWalletAdapters, type SourceWalletConnection } from "@/lib/wallet/source-wallet";
 
 const inputCls =
   "w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-brand/50";

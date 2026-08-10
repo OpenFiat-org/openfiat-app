@@ -23,7 +23,7 @@
     "@dicebear/core": "^9.4.3",
     "@noble/ciphers": "^2.2.0",
     "@noble/hashes": "^2.2.0",
-    "@openfiat/sdk": "git+https://github.com/OpenFiat-org/openfiat-sdks.git#3325ca40ca1daf69e334d127c440b5b082e79b8c&path:typescript",
+    "@openfiat/sdk": "git+https://github.com/OpenFiat-org/openfiat-sdks.git#ca585e192871a94ba8719d313ee82733a0d25030&path:typescript",
     "@solana-mobile/wallet-adapter-mobile": "^2.2.9",
     "@solana/spl-token": "^0.4.15",
     "@solana/wallet-adapter-base": "^0.9.27",

@@ -28,6 +28,13 @@ export async function generateMetadata({
  */
 export default function WalletPage() {
   const t = useTranslations("wallet");
+  // Own namespace, not `wallet`'s: `bridgeFunds` is new (SP-C Task 2) and
+  // not yet translated into every locale `wallet` itself already is —
+  // keeping this one key under its own namespace, rather than adding it to
+  // `wallet`, avoids requiring every locale that already has `wallet` to
+  // gain this key too (`tests/messages.test.ts` enforces every namespace a
+  // locale touches at all is complete, never half-translated).
+  const tFunds = useTranslations("bridgeFunds");
   return (
     <section>
       <PageHero
@@ -50,6 +57,12 @@ export default function WalletPage() {
             className="rounded-md border border-white/15 px-5 py-2 text-sm font-medium text-gray-200 hover:bg-white/5"
           >
             {t("withdraw")}
+          </Link>
+          <Link
+            href="/wallet/funds"
+            className="rounded-md border border-white/15 px-5 py-2 text-sm font-medium text-gray-200 hover:bg-white/5"
+          >
+            {tFunds("walletPageLink")}
           </Link>
         </div>
       </PageHero>
