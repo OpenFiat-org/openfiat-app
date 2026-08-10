@@ -16,15 +16,19 @@ import { decodeSaleConfig, type DecodedSaleConfig } from "@/lib/onchain-decode";
  * most consequential invented number this app could carry, and it was the
  * headline of the page.
  *
- * # There is no SaleConfig on devnet, and this says so
+ * # The SaleConfig singleton is live on devnet
  *
- * The presale program is deployed at the id below, but its singleton
- * `SaleConfig` PDA does not exist — `initialize_sale` has not been run on
- * this cluster. `fetchSaleConfig` therefore returns `null`, and `null` means
- * exactly one thing: **the sale is not open, and there is no raised figure,
- * no cap, no minimum and no deadline to show.** Callers must render that as
- * an unavailable state, never as zero and never as a placeholder. Zero
- * raised is a claim about a sale that is running; there is no sale running.
+ * The presale program is deployed at the id below, and as of the
+ * 2026-08-09 re-baseline `initialize_sale` has been run on this cluster:
+ * the singleton `SaleConfig` PDA (`79UQFdUjraHGb6LCduVELiM9c8rtUQwKXMRy7eTH3tSf`)
+ * exists, reads `state: Active`, and carries `openPerUsdc: 100` (1 USDC =
+ * 100 OPEN). `fetchSaleConfig` still returns `null` on any cluster where the
+ * account genuinely doesn't exist — a fresh localnet, or a devnet reset —
+ * and `null` still means exactly one thing there: **the sale is not open,
+ * and there is no raised figure, no cap, no minimum and no deadline to
+ * show.** Callers must render that as an unavailable state, never as zero
+ * and never as a placeholder. Zero raised is a claim about a sale that is
+ * running.
  *
  * Every economic parameter is an `initialize_sale` argument rather than a
  * compile-time constant, precisely so a tokenomics sign-off does not require
@@ -39,10 +43,11 @@ import { decodeSaleConfig, type DecodedSaleConfig } from "@/lib/onchain-decode";
  * `DEVNET_OPEN_MINT` in `lib/onchain-config.ts`: `@openfiat/sdk` exports the
  * escrow, staking and governance ids from the protocol's own pinning and
  * does not export this one. A transposed character here would derive a PDA
- * that does not exist, which reads as "the sale is not open" — the same
- * answer as the truth today, and therefore an error nothing on screen would
- * catch. It is pinned by `tests/onchain-decode.test.ts` against the
- * `declare_id!` in `openfiat-core/programs/programs/presale/src/lib.rs`.
+ * that does not exist, which reads as "the sale is not open" — a plausible
+ * answer even though the real sale is live, and therefore an error nothing
+ * on screen would catch. It is pinned by `tests/onchain-decode.test.ts`
+ * against the `declare_id!` in
+ * `openfiat-core/programs/programs/presale/src/lib.rs`.
  */
 export const PRESALE_PROGRAM_ID = "7KaEpDzZuqye1xqqp3RnvBJXnDxbU3W9zVrUr5vBS2fU";
 

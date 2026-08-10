@@ -31,16 +31,21 @@ const inputCls =
  * OPEN figure and a promise it would be claimable at launch. The word
  * "simulated" appeared twice, in small grey text, at the bottom.
  *
- * # Three states, and the middle one is the honest answer today
+ * # Three states, and `open` is the honest answer today
  *
  * `loading`, `unavailable`, and `open`. There is deliberately no fourth state
  * that fills in defaults: `fetchSaleConfig` returning `null` means
- * `initialize_sale` has never run on this cluster, so there is no raised
- * total, no cap, no minimum and no deadline — not zeroes for them. A zero
- * raised is a statement about a sale that is running.
+ * `initialize_sale` has never run on the connected cluster, so there is no
+ * raised total, no cap, no minimum and no deadline — not zeroes for them. A
+ * zero raised is a statement about a sale that is running.
  *
- * That is the state on devnet right now, and this says so plainly rather
- * than showing a form that cannot do anything.
+ * `initialize_sale` *has* run on devnet as of the 2026-08-09 re-baseline —
+ * the singleton `SaleConfig` (`79UQFdUjraHGb6LCduVELiM9c8rtUQwKXMRy7eTH3tSf`)
+ * exists, reads `state: Active`, and prices the sale at 1 USDC = 100 OPEN
+ * (`openPerUsdc: 100`) — so this panel renders the `open` state there. The
+ * `unavailable` state stays real rather than theoretical: it is what any
+ * other cluster with no `SaleConfig` yet, or a sale that has since
+ * finalized, still gets.
  *
  * # No purchase button, in any state
  *
