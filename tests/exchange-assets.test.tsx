@@ -37,13 +37,16 @@ const { P2PExchange } = await import("@/components/p2p/exchange");
 const NAMED = ["wSOL", "USDC", "USDT", "tUSDC"];
 
 /**
- * The addresses those names stand for. Only the native mint's is real and
- * only it has to be: it is the one address this app is entitled to
- * recognise, because the SPL Token program defines it (`WRAPPED_SOL_MINT`),
- * and a pill row built from `mint-wSOL` would never exercise that.
+ * The addresses those names stand for — real for every symbol the fixture
+ * book below actually advertises, since `getAdvertisements` now filters by
+ * this identity rather than by the label a pill shows (`AdvertisementFilter
+ * .asset_mint`, never a ticker). A synthetic `mint-<symbol>` placeholder
+ * here would never match `BOOK`'s own `asset_mint`, which is exactly the gap
+ * that would let a pill claim to filter while quietly showing everything.
  */
 const MINT_FOR: Record<string, string> = {
   wSOL: "So11111111111111111111111111111111111111112",
+  USDC: "2bHPi5hA4zrmPAfrvLmEexg3KJjpTjNkUcxWnzUPeRRU",
 };
 
 /** What the pill for a node symbol should read — `SOL` for the native mint. */
@@ -88,21 +91,54 @@ function jsonRpc(result: unknown) {
 }
 
 /**
- * One node answering both calls the exchange makes, routed on the JSON-RPC
+ * One node answering every call the exchange makes, routed on the JSON-RPC
  * method so the pills and the book cannot accidentally be served the same
  * payload. `mints: undefined` is a node too old to publish the table, which
  * is silence rather than an empty answer.
+ *
+ * `getAdvertisements` filters `BOOK` itself now, the way the real node's
+ * `openfiat_advertisements::query::page` does — narrowed by whatever
+ * `params.filter` carries. That is the property these tests exist to check:
+ * a pill's effect on the table has to come from the *request* this stub
+ * inspects, not from `P2PExchange` throwing rows away after reading
+ * everything, which is what a stub that ignored the filter and always
+ * returned the whole book would let slide.
  */
 function nodeAnswering(mints: string[] | undefined, { reachable = true } = {}) {
   vi.stubGlobal("fetch", async (_url: string, init?: { body?: string }) => {
-    const { method } = JSON.parse(init?.body ?? "{}") as { method?: string };
+    const { method, params } = JSON.parse(init?.body ?? "{}") as {
+      method?: string;
+      params?: { filter?: Record<string, unknown> };
+    };
     if (method === "getReferenceData") {
       if (!reachable) throw new Error("offline");
       return jsonRpc({
         mints: mints?.map((symbol) => ({ mint: MINT_FOR[symbol] ?? `mint-${symbol}`, symbol })),
+        payment_methods: [],
       });
     }
-    return jsonRpc({ advertisements: BOOK, total: BOOK.length });
+    if (method === "getAdvertisements") {
+      const filter = params?.filter ?? {};
+      const matches = BOOK.filter((ad) => {
+        if (filter.asset_mint && ad.asset_mint !== filter.asset_mint) return false;
+        if (
+          typeof filter.fiat_currency === "string" &&
+          ad.fiat_currency.toUpperCase() !== filter.fiat_currency.toUpperCase()
+        ) {
+          return false;
+        }
+        if (filter.direction && ad.direction !== filter.direction) return false;
+        if (
+          typeof filter.payment_method === "string" &&
+          !ad.payment_methods.includes(filter.payment_method)
+        ) {
+          return false;
+        }
+        return true;
+      });
+      return jsonRpc({ advertisements: matches, next_cursor: null });
+    }
+    return jsonRpc({ advertisements: BOOK, next_cursor: null });
   });
 }
 

@@ -134,6 +134,19 @@ function fetchReferenceData(endpoint: string): Promise<Partial<ReferenceData>> {
 export interface NamedAsset {
   symbol: string;
   label: string;
+  /**
+   * The mint address `symbol` names — base58, exactly as `ReferenceMint.mint`
+   * carries it.
+   *
+   * Carried so a caller can narrow the book by *identity* rather than by the
+   * label a pill happens to show: `getAdvertisements`' `AdvertisementFilter`
+   * takes `asset_mint`, never a ticker, and the pill's own label is a rename
+   * for exactly one entry (`wSOL` → `SOL`, see `label` above) that must not
+   * leak into the value asked of the node. `components/p2p/exchange.tsx`
+   * reads this to fetch one filtered page instead of every advertisement on
+   * the network.
+   */
+  assetMint: string;
 }
 
 /**
@@ -169,6 +182,7 @@ export async function fetchNamedAssets(
       .map((entry) => ({
         symbol: entry.symbol,
         label: tradingSymbol(entry.mint, entry.symbol) ?? entry.symbol,
+        assetMint: entry.mint,
       }));
   } catch {
     return null;
@@ -226,7 +240,7 @@ export async function normalisePair(
   // sides come from the same row of the node's table — this is not the app
   // deciding that SOL means a mint, which is the failure `PAIR_ASSETS`
   // shipped; it is one row answering to the two names it is published under.
-  const resolved: NamedAsset | undefined =
+  const resolved: Pick<NamedAsset, "symbol" | "label"> | undefined =
     named === null
       ? { symbol: upperAsset, label: upperAsset }
       : named.find(

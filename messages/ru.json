@@ -101,6 +101,8 @@
     "sortBestPrice": "Лучшая цена",
     "sortHighestLimits": "Самые высокие лимиты",
     "advertiserCount": "{count, plural, one {# рекламодатель} few {# рекламодателя} many {# рекламодателей} other {# рекламодателя}}",
+    "loadMore": "Загрузить ещё",
+    "loadingMore": "Загрузка…",
     "bookError": "Не удалось прочитать книгу объявлений с узла",
     "retry": "Повторить",
     "reading": "Чтение книги объявлений…",

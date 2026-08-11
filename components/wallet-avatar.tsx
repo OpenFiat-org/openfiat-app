@@ -30,6 +30,27 @@ import { placeholderAvatarUri } from "@/lib/placeholder-avatar";
  * it is a shape that never appears around a published avatar, so it does not
  * need the dimming's help to be noticed. What is left is enough to feel a
  * difference when the two are side by side, and not enough to hide anything.
+ *
+ * # The chip is a second, separate fix
+ *
+ * The work above (#164) made the robot legible against *its own* gradient
+ * disc — brand blue to brand teal, per `CHASSIS_HEX`'s doc — but said nothing
+ * about the disc's edge against whatever it is laid on top of. In a table row
+ * that is `hover:bg-white/[0.03]` over a near-black page: barely a shade
+ * different from the row itself, so a small disc sat there with nothing
+ * marking where it starts. A P2P order book is exactly the dense, scannable
+ * list where that matters most.
+ *
+ * So every avatar — published or generated — now sits inside a fixed chip: a
+ * faint raised background plus a hairline ring, both drawn from the same
+ * `white/*` tokens the rest of this app frames things with (`AssetPill`'s
+ * `bg-white/10`, `DataTable`'s `border-white/10`), so the frame reads as this
+ * app's own chrome rather than a one-off. The chip is sized to `size` and the
+ * picture drawn smaller inside it, so a caller reserving `size` pixels of
+ * layout for this component — `merchants-directory.tsx`'s
+ * `pl-[2.625rem]` alignment under a 32px avatar, for one — keeps working
+ * unchanged: only what is drawn inside that box gained a frame, never the
+ * box itself.
  */
 export function WalletAvatar({
   seed,
@@ -51,32 +72,38 @@ export function WalletAvatar({
   size?: number;
   className?: string;
 }) {
-  const dimensions = { width: size, height: size };
+  // The chip's own border, in pixels — thick enough to read as a ring at
+  // every size this component is asked for (22px in a trade list, 80px in
+  // the account form) without swallowing a small avatar's picture entirely.
+  const border = Math.max(2, Math.round(size * 0.08));
+  const picture = size - border * 2;
+  const dimensions = { width: picture, height: picture };
+  const chip =
+    "inline-flex shrink-0 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-white/10";
 
   if (src) {
     return (
-      /*
-       * A plain <img>, not next/image, for the same reason as the avatar
-       * form: next/image would route the fetch through this app's server to
-       * resize it, making our origin fetch and re-serve an image a stranger
-       * chose. The browser should go to the gateway directly.
-       */
-      <img
-        src={src}
-        alt={label}
-        {...dimensions}
-        className={`shrink-0 rounded-full border border-white/10 object-cover ${className}`}
-      />
+      <span className={`${chip} ${className}`} style={{ width: size, height: size }}>
+        {/*
+         * A plain <img>, not next/image, for the same reason as the avatar
+         * form: next/image would route the fetch through this app's server to
+         * resize it, making our origin fetch and re-serve an image a stranger
+         * chose. The browser should go to the gateway directly.
+         */}
+        <img src={src} alt={label} {...dimensions} className="rounded-full object-cover" />
+      </span>
     );
   }
 
   return (
-    <img
-      src={placeholderAvatarUri(seed)}
-      alt={`Generated placeholder for ${label} — no avatar published`}
-      title={`${label} has not published an avatar. This robot is generated from the key and is not a picture they chose.`}
-      {...dimensions}
-      className={`shrink-0 rounded-full border border-dashed border-white/35 opacity-90 ${className}`}
-    />
+    <span className={`${chip} ${className}`} style={{ width: size, height: size }}>
+      <img
+        src={placeholderAvatarUri(seed)}
+        alt={`Generated placeholder for ${label} — no avatar published`}
+        title={`${label} has not published an avatar. This robot is generated from the key and is not a picture they chose.`}
+        {...dimensions}
+        className="rounded-full border border-dashed border-white/40 opacity-95"
+      />
+    </span>
   );
 }

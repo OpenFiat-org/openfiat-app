@@ -101,6 +101,8 @@
     "sortBestPrice": "Best price",
     "sortHighestLimits": "Highest limits",
     "advertiserCount": "{count, plural, one {# advertiser} other {# advertisers}}",
+    "loadMore": "Load more",
+    "loadingMore": "Loading…",
     "bookError": "Could not read the advertisement book from the node",
     "retry": "Retry",
     "reading": "Reading the advertisement book…",

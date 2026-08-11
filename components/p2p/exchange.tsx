@@ -2,9 +2,15 @@
 
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TradeDirection } from "@/lib/types";
-import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import {
+  assetLabel,
+  fetchAdvertisementBook,
+  type BookFilter,
+  type LiveAd,
+} from "@/lib/live-advertisements";
+import { fetchMerchantNames } from "@/lib/live-merchants";
 import { fetchNamedAssets, type NamedAsset } from "@/lib/pairs";
 import { nodeUrl } from "@/lib/node-endpoint";
 import { WalletAvatar } from "@/components/wallet-avatar";
@@ -44,6 +50,32 @@ import { OrderPanel } from "@/components/p2p/order-panel";
  * "advertiser reputation floor" filter and "sort by completion rate" are
  * gone with them, since there is no live reputation figure to sort or filter
  * by yet.
+ *
+ * # Filtering used to happen here, after downloading everything
+ *
+ * This screen used to call `fetchAdvertisements()` — which walks every page
+ * `getAdvertisements` has, up to `MAX_PAGES * PAGE_SIZE` — and then applied
+ * the side, asset, currency and payment-method filters to the result with
+ * `Array.prototype.filter`. That worked at devnet volume for the same reason
+ * `openfiat_advertisements::query`'s module doc gives: it fails in both
+ * directions at any real one. The node now does the narrowing:
+ * `fetchAdvertisementBook` sends the tab's side, the chosen asset's mint,
+ * the chosen currency and the chosen payment method to `getAdvertisements`'
+ * `AdvertisementFilter`, and reads back one page at a time — the table below
+ * shows exactly what one page holds, and "Load more" is how a reader asks
+ * for the next one, rather than this screen fetching a hundred pages nobody
+ * scrolled to.
+ *
+ * The fiat amount and the sort order stay client-side. An amount filter
+ * compares a fiat figure against each advertisement's own resolved price
+ * (`LiveAd.price`), which the node does not expose as a filterable field —
+ * `AdvertisementFilter.amount` is denominated in the *asset*, at the
+ * advertisement's own decimals, and converting a fiat figure into that scale
+ * for every possible advertisement is exactly the per-row work a filter
+ * exists to avoid doing on this side. Sorting has nowhere else to go either:
+ * the node's own order is by id, for cursor stability (see `query::page`),
+ * and "best price first" is a reading of a page already in hand, not a
+ * narrowing of what is asked for.
  */
 
 /*
@@ -86,6 +118,19 @@ const selectCls =
 
 const DEFAULT_FIAT = "USD";
 
+/** Rows per request. `DEFAULT_PAGE` on the node is 25; asked for explicitly
+ *  so a page's size is a fact stated here, not the node's default leaking
+ *  through unstated. */
+const PAGE_LIMIT = 25;
+
+/**
+ * The size of the two reference reads below (the currency picker's priority
+ * sample and the payment-method catalogue) — bounded at the node's own
+ * `MAX_PAGE`, since both exist to populate a picker rather than to be the
+ * table, and neither needs to be exhaustive to be useful.
+ */
+const PRIORITY_SAMPLE_LIMIT = 100;
+
 export function P2PExchange({
   initialFiat = DEFAULT_FIAT,
   showHeading = true,
@@ -122,6 +167,9 @@ export function P2PExchange({
   const [openAd, setOpenAd] = useState<string | null>(null);
 
   const [ads, setAds] = useState<LiveAd[] | null>(null);
+  /** The RPC's own bookmark for this filter. `null` once there is no more. */
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -135,9 +183,10 @@ export function P2PExchange({
 
   useEffect(() => {
     let cancelled = false;
-    // `nodeUrl()`, not the build's default: `fetchAdvertisements` reads the
-    // node the user selected, and pills sourced from a different node would
-    // offer filters for a table the book below was never resolved against.
+    // `nodeUrl()`, not the build's default: `fetchAdvertisementBook` reads
+    // the node the user selected, and pills sourced from a different node
+    // would offer filters for a table the book below was never resolved
+    // against.
     void fetchNamedAssets(nodeUrl()).then((assets) => {
       if (!cancelled) setNamed(assets);
     });
@@ -145,22 +194,6 @@ export function P2PExchange({
       cancelled = true;
     };
   }, []);
-
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      setAds(await fetchAdvertisements());
-    } catch (err) {
-      // "No advertisements" and "could not reach a node" are different
-      // facts — see components/ads/merchant-console.tsx for the same call.
-      setError(err instanceof Error ? err.message : String(err));
-      setAds(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   /*
    * Apply the remembered market after mount (landing page only).
@@ -194,13 +227,123 @@ export function P2PExchange({
     writePreferredCurrency(code);
   }
 
-  const BOOK = useMemo(() => (ads ?? []).filter((a) => a.status === "Active"), [ads]);
+  // The taker's tab is the opposite of what the filter has to ask for: a
+  // buyer is reading merchants who are *selling*. Naming this once means the
+  // request and the heading below never risk disagreeing about which half
+  // of the book "Buy" means.
+  const merchantDirection: "Buy" | "Sell" = tab === "Buy" ? "Sell" : "Buy";
 
-  /** Currencies with at least one active ad — floated to the top of the picker. */
-  const LIQUID_CURRENCIES = useMemo(
-    () => new Set(BOOK.map((a) => a.fiatCurrency)),
-    [BOOK],
+  // The mint the pill filters on, never the label it shows — see
+  // `NamedAsset.mint`. `undefined` while `named` has not answered yet is the
+  // same "no constraint" `AdvertisementFilter.asset_mint` already gives an
+  // absent field, which only matters here because nothing can select a pill
+  // before `named` exists to draw it.
+  const assetMint = useMemo(
+    () =>
+      asset === ALL_ASSETS ? undefined : named?.find((entry) => entry.symbol === asset)?.assetMint,
+    [asset, named],
   );
+
+  const rowsFilter = useMemo<BookFilter>(
+    () => ({
+      fiatCurrency: fiat,
+      direction: merchantDirection,
+      assetMint,
+      paymentMethod: method || undefined,
+    }),
+    [fiat, merchantDirection, assetMint, method],
+  );
+
+  const load = useCallback(async () => {
+    setError(null);
+    setAds(null);
+    setCursor(null);
+    try {
+      const first = await fetchAdvertisementBook(rowsFilter, { limit: PAGE_LIMIT });
+      setAds(first.ads);
+      setCursor(first.nextCursor);
+    } catch (err) {
+      // "No advertisements" and "could not reach a node" are different
+      // facts — see components/ads/merchant-console.tsx for the same call.
+      setError(err instanceof Error ? err.message : String(err));
+      setAds(null);
+    }
+  }, [rowsFilter]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const loadMore = useCallback(async () => {
+    if (cursor === null || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const next = await fetchAdvertisementBook(rowsFilter, { after: cursor, limit: PAGE_LIMIT });
+      setAds((prev) => [...(prev ?? []), ...next.ads]);
+      setCursor(next.nextCursor);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [rowsFilter, cursor, loadingMore]);
+
+  /**
+   * A currency picker cannot filter on this screen's own book, because the
+   * book *is* filtered to one currency — that is the whole point of the
+   * change above. So this reads one bounded, unfiltered sample instead: the
+   * first `PRIORITY_SAMPLE_LIMIT` active advertisements, in the node's own
+   * id order, once per mount. It floats currencies to the top of the picker
+   * on a best-effort basis, exactly as `priorityCodes` is documented to —
+   * never as a claim that a currency missing from it has no offers, which a
+   * full walk could have supported and this sample cannot.
+   */
+  const [currencySample, setCurrencySample] = useState<LiveAd[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchAdvertisementBook({}, { limit: PRIORITY_SAMPLE_LIMIT })
+      .then((page) => {
+        if (!cancelled) setCurrencySample(page.ads);
+      })
+      .catch(() => {
+        // A missing priority hint degrades to an alphabetical picker, not a
+        // broken one — see `CurrencyCombobox`'s own handling of `undefined`.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Currencies with at least one active ad in the sample above. */
+  const LIQUID_CURRENCIES = useMemo(
+    () => new Set(currencySample.map((a) => a.fiatCurrency)),
+    [currencySample],
+  );
+
+  /**
+   * The rails on offer for this side, asset and currency — asked for
+   * *without* `method`, so picking one rail never narrows the list of rails
+   * there was to pick from. A bounded single page, like the currency sample
+   * above and for the same reason: this is a picker's contents, not the
+   * table, and does not need every matching advertisement to be useful.
+   */
+  const [methodCatalog, setMethodCatalog] = useState<LiveAd[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchAdvertisementBook(
+      { fiatCurrency: fiat, direction: merchantDirection, assetMint },
+      { limit: PRIORITY_SAMPLE_LIMIT },
+    )
+      .then((page) => {
+        if (!cancelled) setMethodCatalog(page.ads);
+      })
+      .catch(() => {
+        if (!cancelled) setMethodCatalog([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fiat, merchantDirection, assetMint]);
 
   /**
    * The rails on offer in this currency, as `{ id, label }`.
@@ -212,45 +355,58 @@ export function P2PExchange({
    */
   const methodOptions = useMemo(() => {
     const byId = new Map<string, string>();
-    for (const ad of BOOK) {
-      if (ad.fiatCurrency !== fiat) continue;
+    for (const ad of methodCatalog) {
       ad.paymentMethods.forEach((id, i) => byId.set(id, ad.paymentMethodLabels[i] ?? id));
     }
     return [...byId].map(([id, label]) => ({ id, label }));
-  }, [BOOK, fiat]);
+  }, [methodCatalog]);
 
+  /**
+   * Every registered merchant's display name for the wallets on the loaded
+   * page(s) — see `fetchMerchantNames`' own doc for why this can only ever
+   * be asked about wallets already on screen. Grows as "Load more" adds
+   * pages; never shrinks, since a name a node once answered does not stop
+   * being true when the filter narrows to a different page.
+   */
+  const [merchantNames, setMerchantNames] = useState<ReadonlyMap<string, string>>(new Map());
+  const requestedWallets = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const toResolve = [...new Set((ads ?? []).map((ad) => ad.merchantPublicKey))].filter(
+      (wallet) => !requestedWallets.current.has(wallet),
+    );
+    if (toResolve.length === 0) return;
+    toResolve.forEach((wallet) => requestedWallets.current.add(wallet));
+    let cancelled = false;
+    void fetchMerchantNames(toResolve).then((resolved) => {
+      if (cancelled || resolved.size === 0) return;
+      setMerchantNames((prev) => new Map([...prev, ...resolved]));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ads]);
+
+  /**
+   * The fiat-amount box and the sort order, applied to whatever pages are
+   * loaded — see the module doc above for why these two stayed client-side
+   * rather than travelling to the RPC filter with the rest.
+   */
   const rows = useMemo(() => {
-    const wantDirection = tab === "Buy" ? "Sell" : "Buy";
     const fiatAmount = Number(amount) || 0;
-    const out: LiveAd[] = [];
-    for (const ad of BOOK) {
-      if (ad.direction !== wantDirection) continue;
-      // Matched against the symbol the NODE resolved for the ad's mint, not
-      // against a mint this app mapped `asset` to. The pill says "USDC", so
-      // the question is "which advertisements does the node call USDC" — and
-      // an ad naming a mint nothing has a name for belongs to no ticker
-      // market, because nothing names it. See `assetLabel`.
-      //
-      // Both sides of this comparison now come out of the node's mint table:
-      // the pill was built from it, and `assetSymbol` was resolved through
-      // it. Nothing case-folds, because there is no longer a spelling
-      // mismatch to paper over.
-      if (asset !== ALL_ASSETS && ad.assetSymbol !== asset) continue;
-      if (ad.fiatCurrency !== fiat) continue;
-      if (ad.price === null) continue; // no oracle read yet — nothing to quote
-      if (method !== "" && !ad.paymentMethods.includes(method)) continue;
+    const out = (ads ?? []).filter((ad) => {
+      if (ad.price === null) return false; // no oracle read yet — nothing to quote
       // The box asks for a fiat amount; the bounds are in the asset (see
       // `LiveAd.minTrade`), so the comparison needs a conversion and it has
       // to happen per advertisement, at that advertisement's own price.
-      // Comparing the typed figure directly, as this did, filtered the book
-      // by a number roughly 129x off on a KES pair — hiding every ad that
-      // would take the trade and keeping ones that would not.
+      // Comparing the typed figure directly filtered the book by a number
+      // roughly 129x off on a KES pair — hiding every ad that would take the
+      // trade and keeping ones that would not.
       if (fiatAmount > 0) {
         const assetAmount = fiatAmount / ad.price;
-        if (assetAmount < ad.minTrade || assetAmount > ad.maxTrade) continue;
+        if (assetAmount < ad.minTrade || assetAmount > ad.maxTrade) return false;
       }
-      out.push(ad);
-    }
+      return true;
+    });
     switch (sort) {
       case "price":
         out.sort((a, b) => (tab === "Buy" ? a.price! - b.price! : b.price! - a.price!));
@@ -260,7 +416,7 @@ export function P2PExchange({
         break;
     }
     return out;
-  }, [BOOK, tab, asset, fiat, amount, method, sort]);
+  }, [ads, amount, sort, tab]);
 
   /*
    * The selected asset as a heading should say it. `asset` is the node's
@@ -437,10 +593,28 @@ export function P2PExchange({
                 key={ad.id}
                 ad={ad}
                 userDirection={tab}
+                merchantName={merchantNames.get(ad.merchantPublicKey) ?? null}
                 open={openAd === ad.id}
                 onToggle={() => setOpenAd((current) => (current === ad.id ? null : ad.id))}
               />
             ))}
+            {rows.length > 0 && cursor !== null && (
+              // A page at a time, on request — never the whole matching set
+              // fetched up front. See the module doc's "Filtering used to
+              // happen here" section for what this replaced.
+              <tr>
+                <td colSpan={5} className="px-4 py-5 text-center">
+                  <button
+                    type="button"
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                    className="rounded-md border border-white/15 px-4 py-2 text-sm font-medium text-gray-200 hover:border-white/30 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingMore ? t("loadingMore") : t("loadMore")}
+                  </button>
+                </td>
+              </tr>
+            )}
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-12">
@@ -527,29 +701,51 @@ function AssetPill({
 function AdRow({
   ad,
   userDirection,
+  merchantName,
   open,
   onToggle,
 }: {
   ad: LiveAd;
   userDirection: TradeDirection;
+  /**
+   * The wallet's `MerchantName` identity claim (OFS-5000), or `null` when it
+   * has never published one — see `lib/live-merchants.ts`'s
+   * `fetchMerchantNames`. Resolved by `P2PExchange` for the page it is
+   * showing, never fetched per row: this component only reads the answer.
+   */
+  merchantName: string | null;
   open: boolean;
   onToggle: () => void;
 }) {
   const t = useTranslations("exchange");
   const buy = userDirection === "Buy";
+  const shortLabel = t("merchantLabel", { short: ad.merchantShort });
 
   return (
     <>
     <Tr>
       <Td py="py-6">
-        {/* A merchant is a PeerId and nothing else — `LiveAd` carries no
-            name, and there is none to show unless they published a
-            MerchantName claim. The robot is drawn from that same id, so it
-            adds no information the row did not already state, but it makes
-            the same counterparty recognisable across the book. */}
+        {/* A merchant is a PeerId and nothing else the protocol vouches for
+            — but a wallet that published a `MerchantName` claim gets to be
+            called that instead of six hex characters, the same self-asserted
+            name `merchant-profile.tsx` shows on the full profile. The robot
+            is drawn from the id either way, so it stays recognisable across
+            the book even before a name loads. */}
         <span className="flex items-center gap-2.5" title={ad.merchantPeerId}>
-          <WalletAvatar seed={ad.merchantPeerId} label={t("merchantLabel", { short: ad.merchantShort })} size={32} />
-          <span className="font-mono text-sm text-gray-300">{t("merchantLabel", { short: ad.merchantShort })}</span>
+          <WalletAvatar seed={ad.merchantPeerId} label={merchantName ?? shortLabel} size={32} />
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium text-white">
+              {merchantName ?? shortLabel}
+            </span>
+            {/* The raw id stays visible under a name, since the name is a
+                claim and the id is what every other screen — the order
+                panel, the trade summary, a dispute — identifies this
+                counterparty by. Omitted when there is no name to
+                disambiguate from: `shortLabel` above already says it once. */}
+            {merchantName && (
+              <span className="block font-mono text-xs text-gray-500">…{ad.merchantShort}</span>
+            )}
+          </span>
         </span>
       </Td>
       <Td right num py="py-6">

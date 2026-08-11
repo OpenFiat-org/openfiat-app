@@ -101,6 +101,8 @@
     "sortBestPrice": "Melhor preço",
     "sortHighestLimits": "Maiores limites",
     "advertiserCount": "{count, plural, one {# anunciante} other {# anunciantes}}",
+    "loadMore": "Carregar mais",
+    "loadingMore": "Carregando…",
     "bookError": "Não foi possível ler o livro de anúncios do nó",
     "retry": "Tentar novamente",
     "reading": "Lendo o livro de anúncios…",

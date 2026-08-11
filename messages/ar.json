@@ -101,6 +101,8 @@
     "sortBestPrice": "أفضل سعر",
     "sortHighestLimits": "أعلى الحدود",
     "advertiserCount": "{count, plural, zero {لا معلنين} one {معلن واحد} two {معلنان} few {# معلنين} many {# معلنًا} other {# معلن}}",
+    "loadMore": "تحميل المزيد",
+    "loadingMore": "جارٍ التحميل…",
     "bookError": "تعذّرت قراءة دفتر الإعلانات من العقدة",
     "retry": "إعادة المحاولة",
     "reading": "جارٍ قراءة دفتر الإعلانات…",

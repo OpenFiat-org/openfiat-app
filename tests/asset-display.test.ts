@@ -160,7 +160,16 @@ describe("the boundary the rename must not cross", () => {
     const pairData = readFileSync("app/[locale]/[asset]/[currency]/pair-data.ts", "utf8");
     expect(pairData).toContain("ad.assetSymbol === pair.asset");
 
+    // The exchange no longer filters a downloaded book with
+    // `ad.assetSymbol !== asset` — `getAdvertisements` does the narrowing
+    // now, by mint identity, so the client-side comparison this used to
+    // check moved into `AdvertisementFilter.asset_mint` on the node. What
+    // stays true here is the property the old assertion was really about:
+    // the mint the pill's click handler resolves is looked up by matching
+    // `asset` against `entry.symbol` — the node's own spelling — never
+    // against `entry.label`, the display rename `SOL` is one example of.
     const exchange = readFileSync("components/p2p/exchange.tsx", "utf8");
-    expect(exchange).toContain("ad.assetSymbol !== asset");
+    expect(exchange).toContain("named?.find((entry) => entry.symbol === asset)");
+    expect(exchange).not.toContain("entry.label === asset");
   });
 });

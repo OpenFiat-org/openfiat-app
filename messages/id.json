@@ -101,6 +101,8 @@
     "sortBestPrice": "Harga terbaik",
     "sortHighestLimits": "Batas tertinggi",
     "advertiserCount": "{count, plural, other {# pengiklan}}",
+    "loadMore": "Muat lebih banyak",
+    "loadingMore": "Memuat…",
     "bookError": "Tak bisa membaca buku iklan dari node",
     "retry": "Coba lagi",
     "reading": "Membaca buku iklan…",

@@ -101,6 +101,8 @@
     "sortBestPrice": "Meilleur prix",
     "sortHighestLimits": "Limites les plus élevées",
     "advertiserCount": "{count, plural, one {# annonceur} other {# annonceurs}}",
+    "loadMore": "Charger plus",
+    "loadingMore": "Chargement…",
     "bookError": "Impossible de lire le carnet d’annonces depuis le nœud",
     "retry": "Réessayer",
     "reading": "Lecture du carnet d’annonces…",

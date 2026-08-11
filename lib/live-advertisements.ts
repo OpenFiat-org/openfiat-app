@@ -357,6 +357,86 @@ export async function fetchAdvertisements(
   return collected.map((ad) => toLiveAd(ad, names));
 }
 
+/**
+ * What a trader actually narrows by, in this app's own vocabulary rather
+ * than the wire one — see `openfiat_advertisements::query::AdvertisementFilter`
+ * for the field-by-field reasoning this mirrors.
+ *
+ * `assetMint`, not a ticker: a pill reads `SOL` and filters on the mint
+ * `lib/pairs.ts`'s `NamedAsset.mint` names for it, never on the label. See
+ * that field's own doc for why the two must not be conflated here.
+ */
+export interface BookFilter {
+  assetMint?: string;
+  fiatCurrency?: string;
+  direction?: "Buy" | "Sell";
+  paymentMethod?: string;
+  merchant?: string;
+  statuses?: LiveAd["status"][];
+}
+
+/** Where to resume, and how many rows to ask for — passed straight to the node. */
+export interface BookPageRequest {
+  after?: string | null;
+  limit?: number;
+}
+
+export interface BookPage {
+  ads: LiveAd[];
+  /** `null` means this was the last page. */
+  nextCursor: string | null;
+}
+
+/**
+ * One page of the order book, narrowed by the node rather than by this app.
+ *
+ * This is what `components/p2p/exchange.tsx` reads, and it replaces reading
+ * the *whole* book through `fetchAdvertisements` and throwing away every row
+ * that did not match the reader's fiat, asset, side or payment method — the
+ * exact shape `openfiat_advertisements::query`'s module doc calls out: "the
+ * node would still serialize every advertisement on every request, and every
+ * client would still download the whole book to show a page of it." The
+ * filter travels to `getAdvertisements` and the node applies it before a
+ * single row crosses the wire; this function does not walk pages the way
+ * `fetchAdvertisements` does, because the whole point of a page is that a
+ * caller who wants more asks for it, on the reader's own "load more" rather
+ * than on a loop this app runs regardless of whether anyone scrolls that far.
+ */
+export async function fetchAdvertisementBook(
+  filter: BookFilter = {},
+  page: BookPageRequest = {},
+): Promise<BookPage> {
+  const endpoint = nodeUrl();
+  const result = await advertisements.getAdvertisements(client(), {
+    filter: {
+      asset_mint: filter.assetMint,
+      fiat_currency: filter.fiatCurrency,
+      direction: filter.direction,
+      payment_method: filter.paymentMethod,
+      merchant: filter.merchant,
+      statuses: filter.statuses,
+    },
+    // Verbatim, per `AdvertisementPageRequest.after`'s own doc: `null` and
+    // `undefined` mean the same thing to the node, so a caller's `null`
+    // cursor needs no translation on the way in.
+    page: { after: page.after, limit: page.limit },
+  });
+  // After the read, not before — see `fetchAdvertisements` above for why a
+  // rail's name can only be asked about once its id is in hand.
+  const names = await methodNamesFor(
+    endpoint,
+    result.advertisements.flatMap((ad) => ad.payment_methods),
+  );
+  return {
+    ads: result.advertisements.map((ad) => toLiveAd(ad, names)),
+    // `?? null`: a page missing the key entirely reads as "no more" rather
+    // than as `undefined`, which `advertisements.eachAdvertisement` treats
+    // the same way for the same reason — an omitted cursor must not be
+    // mistaken for "start over".
+    nextCursor: result.next_cursor ?? null,
+  };
+}
+
 /** One advertisement, or `null` if this node has never seen that id. */
 export async function fetchAdvertisement(id: string): Promise<LiveAd | null> {
   const ad = await advertisements.getAdvertisement(client(), id);

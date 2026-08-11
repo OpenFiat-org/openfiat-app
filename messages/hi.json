@@ -101,6 +101,8 @@
     "sortBestPrice": "सर्वोत्तम मूल्य",
     "sortHighestLimits": "सबसे ऊँची सीमाएँ",
     "advertiserCount": "{count, plural, one {# विज्ञापनदाता} other {# विज्ञापनदाता}}",
+    "loadMore": "और लोड करें",
+    "loadingMore": "लोड हो रहा है…",
     "bookError": "नोड से विज्ञापन बुक नहीं पढ़ी जा सकी",
     "retry": "पुनः प्रयास करें",
     "reading": "विज्ञापन बुक पढ़ी जा रही है…",

@@ -101,6 +101,8 @@
     "sortBestPrice": "最优价格",
     "sortHighestLimits": "最高额度",
     "advertiserCount": "{count, plural, other {# 个广告商}}",
+    "loadMore": "加载更多",
+    "loadingMore": "加载中…",
     "bookError": "无法从节点读取广告簿",
     "retry": "重试",
     "reading": "正在读取广告簿…",

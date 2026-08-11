@@ -1,4 +1,5 @@
 import { assetLabel, fetchAdvertisements, type LiveAd } from "@/lib/live-advertisements";
+import { fetchMerchantName } from "@/lib/merchant-name";
 
 /**
  * The set of wallets this app is willing to call merchants, and what it can
@@ -221,4 +222,56 @@ export function merchantsFrom(ads: LiveAd[]): MerchantRow[] {
 /** Every merchant the selected node knows of, from one read of the book. */
 export async function fetchMerchants(): Promise<MerchantRow[]> {
   return merchantsFrom(await fetchAdvertisements());
+}
+
+/**
+ * A merchant's registered display name, for exactly the wallets a caller
+ * already has in hand — resolved in parallel rather than one screen at a
+ * time.
+ *
+ * # Why this exists, and why it cannot be one call
+ *
+ * A name here is a `MerchantName` identity claim (OFS-5000) — see
+ * `lib/merchant-name.ts`, which is also what `components/merchants/
+ * merchant-profile.tsx` reads for the same field. It is not
+ * `openfiat_registry::ServiceBranding`: that field lives on a *Service
+ * Registry* registration (OFS-1500), a different record for a different
+ * kind of participant, and nothing ties a `ServiceRecord.provider` to an
+ * advertisement's `merchant` beyond the two happening to share a key. A
+ * name shown on that coincidence would be this app asserting a connection
+ * the protocol does not.
+ *
+ * `getIdentityClaimsByWallet` needs a wallet you already know and cannot
+ * enumerate — the reason this module's own doc gives for why a merchant
+ * directory cannot be founded on identity claims at all (see above). It can
+ * still answer for a wallet this app already has cause to ask about, which
+ * is exactly the merchants on one page of the order book. That is a real
+ * per-wallet round trip, so the caller matters as much as the function:
+ * `components/p2p/exchange.tsx` calls this with the unique merchants on the
+ * page it is showing, never with a whole book's worth — the same discipline
+ * `crates/reputation`'s trade counts are read under, see the module doc
+ * above.
+ */
+export async function fetchMerchantNames(
+  wallets: readonly string[],
+): Promise<Map<string, string>> {
+  const unique = [...new Set(wallets)];
+  const resolved = await Promise.all(
+    unique.map(async (wallet) => {
+      try {
+        const claim = await fetchMerchantName(wallet);
+        return [wallet, claim?.name ?? null] as const;
+      } catch {
+        // A name is decoration, the same way a payment rail's label is
+        // (`methodNamesFor`). Losing one must not cost a reader the row —
+        // the short PeerId this replaces is always available.
+        return [wallet, null] as const;
+      }
+    }),
+  );
+  const names = new Map<string, string>();
+  for (const [wallet, name] of resolved) {
+    if (name) names.set(wallet, name);
+  }
+  return names;
 }
